@@ -47,7 +47,7 @@ Oyuncunun telefonu hasar, puan veya kazanan bildiremez.
 | Darbe Topu | Yavaş ve yüksek hasar verir |
 | Kalkan | Gelen hasarı emer |
 | Soğutucu | Isınmayı azaltır |
-| Güçlendirici | Bağlı modülü hızlandırır; ek ısı üretir |
+| Güçlendirici | Enerjiyi dört yöne taşır; ok yönündeki komşuyu güçlendirir |
 | Onarım | Hasarlı modülü iyileştirir |
 
 Oyunun ilk adalet kuralı şudur: en pahalı veya en yüksek seviyeli parçaya sahip

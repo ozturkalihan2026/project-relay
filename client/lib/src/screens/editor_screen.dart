@@ -12,8 +12,32 @@ import '../widgets/game_manual.dart';
 import '../widgets/module_palette.dart';
 import 'replay_screen.dart';
 
+enum EditorMode {
+  online,
+  training;
+
+  String get title => switch (this) {
+        EditorMode.online => 'ÇEVRİMİÇİ SAVAŞ',
+        EditorMode.training => 'ANTRENMAN',
+  };
+}
+
+enum _EditorNoticeTone { info, success, warning, error }
+
+class _EditorNotice {
+  const _EditorNotice(this.message, this.tone);
+
+  final String message;
+  final _EditorNoticeTone tone;
+}
+
 class EditorScreen extends ConsumerStatefulWidget {
-  const EditorScreen({super.key});
+  const EditorScreen({
+    required this.mode,
+    super.key,
+  });
+
+  final EditorMode mode;
 
   @override
   ConsumerState<EditorScreen> createState() => _EditorScreenState();
@@ -22,18 +46,21 @@ class EditorScreen extends ConsumerStatefulWidget {
 class _EditorScreenState extends ConsumerState<EditorScreen> {
   String _selectedBotId = 'starter_laser';
   bool _busy = false;
+  _EditorNotice? _notice;
 
   @override
   Widget build(BuildContext context) {
     final catalogs = ref.watch(catalogsProvider);
-    final guestSession = ref.watch(guestSessionProvider);
+    final guestSession = widget.mode == EditorMode.online
+        ? ref.watch(guestSessionProvider)
+        : const AsyncValue<GuestSession>.loading();
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.transparent,
-        title: const Column(
+        title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
+            const Text(
               'PROJECT RELAY',
               style: TextStyle(
                 fontWeight: FontWeight.w900,
@@ -41,8 +68,8 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
               ),
             ),
             Text(
-              'DEVRE LABORATUVARI • v0.4.2',
-              style: TextStyle(
+              '${widget.mode.title} • v0.4.7',
+              style: const TextStyle(
                 color: RelayColors.muted,
                 fontSize: 10,
                 letterSpacing: 1.1,
@@ -51,11 +78,13 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
           ],
         ),
         actions: [
-          _SessionBadge(
-            session: guestSession,
-            onRetry: () => ref.invalidate(guestSessionProvider),
-          ),
-          const SizedBox(width: 6),
+          if (widget.mode == EditorMode.online) ...[
+            _SessionBadge(
+              session: guestSession,
+              onRetry: () => ref.invalidate(guestSessionProvider),
+            ),
+            const SizedBox(width: 6),
+          ],
           IconButton(
             tooltip: 'Katalogları yenile',
             onPressed: () => ref.invalidate(catalogsProvider),
@@ -79,7 +108,9 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
 
   Widget _buildEditor(CatalogBundle catalogs) {
     final boardState = ref.watch(boardControllerProvider);
-    final guestSession = ref.watch(guestSessionProvider);
+    final guestSession = widget.mode == EditorMode.online
+        ? ref.watch(guestSessionProvider)
+        : const AsyncValue<GuestSession>.loading();
     final controller = ref.read(boardControllerProvider.notifier);
     final specs = {
       for (final module in catalogs.modules) module.kind: module,
@@ -98,14 +129,26 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
           specs: specs,
           modules: catalogs.modules,
           boardMaxWidth: boardMaxWidth,
-          onPaletteSelected: controller.selectPalette,
+          notice: _notice,
+          onNoticeDismissed: _clearNotice,
+          onPaletteSelected: (kind) {
+            controller.selectPalette(kind);
+            _clearNotice();
+          },
           onBoardModuleReturned: _returnModuleToPalette,
           onCellTap: _tapCell,
           onModuleDropped: _dropModule,
           onRotateModule: controller.rotateAt,
-          onReset: controller.reset,
+          onReset: () {
+            controller.reset();
+            _showNotice(
+              'Devre başlangıç düzenine döndürüldü.',
+              _EditorNoticeTone.info,
+            );
+          },
         );
         final actionPanel = _ActionPanel(
+          mode: widget.mode,
           rulesVersion: catalogs.rulesVersion,
           state: boardState,
           specs: specs,
@@ -161,6 +204,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
   void _tapCell(int index) {
     try {
       ref.read(boardControllerProvider.notifier).tapCell(index);
+      _clearNotice();
     } on StateError catch (error) {
       _showError(error.toString().replaceFirst('Bad state: ', ''));
     }
@@ -169,6 +213,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
   void _dropModule(int index, ModuleDragData data) {
     try {
       ref.read(boardControllerProvider.notifier).dropModule(index, data);
+      _clearNotice();
     } on StateError catch (error) {
       _showError(error.toString().replaceFirst('Bad state: ', ''));
     }
@@ -180,8 +225,9 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
       return;
     }
     ref.read(boardControllerProvider.notifier).removeModuleAt(sourceCell);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Modül devre kartından kaldırıldı.')),
+    _showNotice(
+      'Modül devre kartından kaldırıldı.',
+      _EditorNoticeTone.info,
     );
   }
 
@@ -199,14 +245,13 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
           .applyValidation(validation);
       if (mounted) {
         final unpowered = validation.unpoweredIds.length;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              unpowered == 0
-                  ? 'Devre geçerli; bütün modüller enerji alıyor.'
-                  : 'Devre geçerli; $unpowered modül enerji almıyor.',
-            ),
-          ),
+        _showNotice(
+          unpowered == 0
+              ? 'Devre geçerli; bütün modüller enerji alıyor.'
+              : 'Devre geçerli; $unpowered modül enerji almıyor.',
+          unpowered == 0
+              ? _EditorNoticeTone.success
+              : _EditorNoticeTone.warning,
         );
       }
     } on RelayApiException catch (error) {
@@ -307,15 +352,21 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
   }
 
   void _showError(String message) {
+    _showNotice(message, _EditorNoticeTone.error);
+  }
+
+  void _showNotice(String message, _EditorNoticeTone tone) {
     if (!mounted) {
       return;
     }
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: const Color(0xFF713D45),
-      ),
-    );
+    setState(() => _notice = _EditorNotice(message, tone));
+  }
+
+  void _clearNotice() {
+    if (!mounted || _notice == null) {
+      return;
+    }
+    setState(() => _notice = null);
   }
 }
 
@@ -325,6 +376,8 @@ class _BoardPanel extends StatelessWidget {
     required this.specs,
     required this.modules,
     required this.boardMaxWidth,
+    required this.notice,
+    required this.onNoticeDismissed,
     required this.onPaletteSelected,
     required this.onBoardModuleReturned,
     required this.onCellTap,
@@ -337,6 +390,8 @@ class _BoardPanel extends StatelessWidget {
   final Map<ModuleKind, ModuleSpec> specs;
   final List<ModuleSpec> modules;
   final double boardMaxWidth;
+  final _EditorNotice? notice;
+  final VoidCallback onNoticeDismissed;
   final ValueChanged<ModuleKind> onPaletteSelected;
   final ValueChanged<ModuleDragData> onBoardModuleReturned;
   final ValueChanged<int> onCellTap;
@@ -405,13 +460,99 @@ class _BoardPanel extends StatelessWidget {
             ),
           ),
         ),
+        const SizedBox(height: 8),
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 180),
+          child: notice == null
+              ? const SizedBox.shrink(
+                  key: ValueKey('editor-notice-empty'),
+                )
+              : _EditorNoticeBanner(
+                  key: ValueKey(
+                    'editor-notice-${notice!.tone.name}-${notice!.message}',
+                  ),
+                  notice: notice!,
+                  onDismissed: onNoticeDismissed,
+                ),
+        ),
       ],
+    );
+  }
+}
+
+class _EditorNoticeBanner extends StatelessWidget {
+  const _EditorNoticeBanner({
+    required this.notice,
+    required this.onDismissed,
+    super.key,
+  });
+
+  final _EditorNotice notice;
+  final VoidCallback onDismissed;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = switch (notice.tone) {
+      _EditorNoticeTone.info => RelayColors.cyan,
+      _EditorNoticeTone.success => RelayColors.mint,
+      _EditorNoticeTone.warning => RelayColors.amber,
+      _EditorNoticeTone.error => RelayColors.coral,
+    };
+    final icon = switch (notice.tone) {
+      _EditorNoticeTone.info => Icons.info_outline,
+      _EditorNoticeTone.success => Icons.check_circle_outline,
+      _EditorNoticeTone.warning => Icons.warning_amber_rounded,
+      _EditorNoticeTone.error => Icons.error_outline,
+    };
+
+    return Semantics(
+      liveRegion: true,
+      child: Container(
+        key: const ValueKey('editor-context-notice'),
+        padding: const EdgeInsets.fromLTRB(11, 7, 5, 7),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.10),
+          borderRadius: BorderRadius.circular(11),
+          border: Border.all(color: color.withValues(alpha: 0.58)),
+          boxShadow: [
+            BoxShadow(
+              color: color.withValues(alpha: 0.10),
+              blurRadius: 12,
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: color, size: 19),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                notice.message,
+                style: TextStyle(
+                  color: color,
+                  fontSize: 11,
+                  height: 1.3,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+            IconButton(
+              key: const ValueKey('editor-notice-dismiss'),
+              tooltip: 'Bildirimi kapat',
+              visualDensity: VisualDensity.compact,
+              onPressed: onDismissed,
+              icon: Icon(Icons.close, color: color, size: 17),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
 
 class _ActionPanel extends StatelessWidget {
   const _ActionPanel({
+    required this.mode,
     required this.rulesVersion,
     required this.state,
     required this.specs,
@@ -425,6 +566,7 @@ class _ActionPanel extends StatelessWidget {
     required this.onStartBot,
   });
 
+  final EditorMode mode;
   final String rulesVersion;
   final BoardEditorState state;
   final Map<ModuleKind, ModuleSpec> specs;
@@ -501,92 +643,119 @@ class _ActionPanel extends StatelessWidget {
           onValidate: onValidate,
         ),
         const SizedBox(height: 12),
-        _SectionHeader(
-          index: '04',
-          title: 'ASENKRON PvP',
-          subtitle: 'Kartınızı kaydedin; sunucu eşit modüllü gerçek bir '
-              'oyuncu devresi bulsun.',
-        ),
-        const SizedBox(height: 7),
-        Card(
-          key: const ValueKey('async-pvp-card'),
-          child: Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Row(
-                  children: [
-                    const Icon(
-                      Icons.public,
-                      color: RelayColors.mint,
-                    ),
-                    const SizedBox(width: 9),
-                    Expanded(
-                      child: Text(
-                        session.when(
-                          data: (value) =>
-                              '${value.player.displayName} olarak hazırsınız',
-                          loading: () => 'Misafir oturumu hazırlanıyor…',
-                          error: (error, stackTrace) =>
-                              'Oturum kurulamadı',
-                        ),
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w800,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 9),
-                FilledButton.icon(
-                  key: const ValueKey('async-match-button'),
-                  onPressed:
-                      busy || !session.hasValue ? null : onStartAsync,
-                  icon: busy
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.hub),
-                  label: Text(
-                    busy
-                        ? 'RAKİP ARANIYOR'
-                        : 'KARTI KAYDET VE OYUNCU BUL',
-                  ),
-                ),
-                const SizedBox(height: 6),
-                const Text(
-                  'Kendinizle ve son rakiplerinizle eşleşmezsiniz. Uygun '
-                  'yeni oyuncu yoksa dengeli sunucu rakibi devreye girer.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: RelayColors.muted,
-                    fontSize: 10,
-                  ),
-                ),
-              ],
-            ),
+        if (mode == EditorMode.online) ...[
+          const _SectionHeader(
+            index: '04',
+            title: 'ASENKRON PvP',
+            subtitle:
+                'Kartınızı kaydedin; sunucu eşit modüllü gerçek bir oyuncu '
+                'devresi bulsun.',
           ),
-        ),
-        const SizedBox(height: 8),
-        _BotPracticePanel(
-          bots: bots,
-          moduleCount: state.placements.length,
-          selectedBotId: selectedBotId,
-          busy: busy,
-          onBotSelected: onBotSelected,
-          onStartBot: onStartBot,
-        ),
+          const SizedBox(height: 7),
+          _AsyncMatchCard(
+            session: session,
+            busy: busy,
+            onStartAsync: onStartAsync,
+          ),
+        ] else ...[
+          const _SectionHeader(
+            index: '04',
+            title: 'RAKİBİ SEÇ',
+            subtitle:
+                'Dokuz sabit rakipten birini seçip düzeninizi sınayın.',
+          ),
+          const SizedBox(height: 7),
+          _TrainingPanel(
+            bots: bots,
+            moduleCount: state.placements.length,
+            selectedBotId: selectedBotId,
+            busy: busy,
+            onBotSelected: onBotSelected,
+            onStartBot: onStartBot,
+          ),
+        ],
       ],
     );
   }
 }
 
-class _BotPracticePanel extends StatelessWidget {
-  const _BotPracticePanel({
+class _AsyncMatchCard extends StatelessWidget {
+  const _AsyncMatchCard({
+    required this.session,
+    required this.busy,
+    required this.onStartAsync,
+  });
+
+  final AsyncValue<GuestSession> session;
+  final bool busy;
+  final VoidCallback onStartAsync;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      key: const ValueKey('async-pvp-card'),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                const Icon(
+                  Icons.public,
+                  color: RelayColors.mint,
+                ),
+                const SizedBox(width: 9),
+                Expanded(
+                  child: Text(
+                    session.when(
+                      data: (value) =>
+                          '${value.player.displayName} olarak hazırsınız',
+                      loading: () => 'Misafir oturumu hazırlanıyor…',
+                      error: (error, stackTrace) => 'Oturum kurulamadı',
+                    ),
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 9),
+            FilledButton.icon(
+              key: const ValueKey('async-match-button'),
+              onPressed: busy || !session.hasValue ? null : onStartAsync,
+              icon: busy
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.hub),
+              label: Text(
+                busy ? 'RAKİP ARANIYOR' : 'KARTI KAYDET VE OYUNCU BUL',
+              ),
+            ),
+            const SizedBox(height: 6),
+            const Text(
+              'Kendinizle ve son rakiplerinizle eşleşmezsiniz. Uygun yeni '
+              'oyuncu yoksa dengeli sunucu rakibi devreye girer.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: RelayColors.muted,
+                fontSize: 10,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _TrainingPanel extends StatelessWidget {
+  const _TrainingPanel({
     required this.bots,
     required this.moduleCount,
     required this.selectedBotId,
@@ -605,44 +774,54 @@ class _BotPracticePanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
+      key: const ValueKey('training-panel'),
       clipBehavior: Clip.antiAlias,
-      child: ExpansionTile(
-        key: const ValueKey('bot-practice-panel'),
-        leading: const Icon(
-          Icons.smart_toy_outlined,
-          color: RelayColors.amber,
-        ),
-        title: const Text(
-          'BOT ANTRENMANI',
-          style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12),
-        ),
-        subtitle: const Text(
-          'İsterseniz dokuz sabit rakiple düzeninizi sınayın.',
-          style: TextStyle(color: RelayColors.muted, fontSize: 10),
-        ),
-        childrenPadding: const EdgeInsets.fromLTRB(10, 0, 10, 10),
-        children: [
-          SizedBox(
-            height: (MediaQuery.sizeOf(context).height * 0.22)
-                .clamp(165.0, 215.0)
-                .toDouble(),
-            child: _BotPicker(
-              bots: bots,
-              moduleCount: moduleCount,
-              selectedBotId: selectedBotId,
-              onBotSelected: onBotSelected,
+      child: Padding(
+        padding: const EdgeInsets.all(10),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Row(
+              children: [
+                Icon(
+                  Icons.smart_toy_outlined,
+                  color: RelayColors.amber,
+                ),
+                SizedBox(width: 9),
+                Expanded(
+                  child: Text(
+                    'ANTRENMAN RAKİPLERİ',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w900,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ),
-          const SizedBox(height: 8),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: busy ? null : onStartBot,
-              icon: const Icon(Icons.sports_mma),
-              label: const Text('SEÇİLİ BOTLA SAVAŞ'),
+            const SizedBox(height: 9),
+            SizedBox(
+              height: (MediaQuery.sizeOf(context).height * 0.22)
+                  .clamp(165.0, 215.0)
+                  .toDouble(),
+              child: _BotPicker(
+                bots: bots,
+                moduleCount: moduleCount,
+                selectedBotId: selectedBotId,
+                onBotSelected: onBotSelected,
+              ),
             ),
-          ),
-        ],
+            const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: busy ? null : onStartBot,
+                icon: const Icon(Icons.sports_mma),
+                label: const Text('SEÇİLİ BOTLA SAVAŞ'),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

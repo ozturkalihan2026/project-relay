@@ -96,7 +96,7 @@ class DatabaseMatchStore:
                     replay_checksum=str(match.result["replay_checksum"]),
                     event_count=len(events),
                     seed=int(match.result["seed"]),
-                    rules_version="0.7",
+                    rules_version="0.8",
                 )
             )
 

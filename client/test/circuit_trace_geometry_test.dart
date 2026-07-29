@@ -101,6 +101,108 @@ void main() {
     );
   });
 
+  test('kart dışına ve kapısız çekirdek kenarına bakan portları gizler', () {
+    const cornerBattery = ModulePlacement(
+      id: 'corner-battery',
+      kind: ModuleKind.battery,
+      row: 0,
+      column: 0,
+    );
+    const gateAmplifier = ModulePlacement(
+      id: 'gate-amplifier',
+      kind: ModuleKind.amplifier,
+      row: 0,
+      column: 1,
+    );
+    const nonGateAmplifier = ModulePlacement(
+      id: 'non-gate-amplifier',
+      kind: ModuleKind.amplifier,
+      row: 0,
+      column: 2,
+    );
+
+    expect(
+      usableBoardPorts(cornerBattery, RelayDirection.values),
+      {RelayDirection.east, RelayDirection.south},
+    );
+    expect(
+      usableBoardPorts(gateAmplifier, RelayDirection.values),
+      {
+        RelayDirection.east,
+        RelayDirection.south,
+        RelayDirection.west,
+      },
+    );
+    expect(
+      usableBoardPorts(nonGateAmplifier, RelayDirection.values),
+      {RelayDirection.east, RelayDirection.west},
+    );
+  });
+
+  testWidgets(
+    'güçlendirici yön oku döndürme düğmesinin karşısında görünür kalır',
+    (tester) async {
+      const amplifier = ModulePlacement(
+        id: 'amplifier',
+        kind: ModuleKind.amplifier,
+        row: 0,
+        column: 1,
+      );
+      const spec = ModuleSpec(
+        kind: ModuleKind.amplifier,
+        displayName: 'Güçlendirici',
+        description: 'Ok yönündeki komşuyu güçlendirir.',
+        maxHp: 25,
+        ports: {
+          RelayDirection.north,
+          RelayDirection.east,
+          RelayDirection.south,
+          RelayDirection.west,
+        },
+        energyOutput: 0,
+        batteryCapacity: 0,
+        energyCost: 0,
+        cooldownTicks: 0,
+        heatPerAction: 0,
+        damage: 0,
+        shield: 0,
+        cooling: 0,
+        repair: 0,
+        threat: 90,
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SizedBox.square(
+              dimension: 400,
+              child: CircuitBoard(
+                placements: const {1: amplifier},
+                specs: const {ModuleKind.amplifier: spec},
+                poweredIds: const {},
+                validationVisible: false,
+                selectedCell: 1,
+                onCellTap: (_) {},
+                onModuleDropped: (_, _) {},
+                onRotateModule: (_) {},
+              ),
+            ),
+          ),
+        ),
+      );
+
+      final rotate = find.byKey(const ValueKey('rotate-module-1'));
+      final direction = find.byKey(const ValueKey('module-direction-1'));
+      expect(rotate, findsOneWidget);
+      expect(direction, findsOneWidget);
+      expect(
+        tester.getCenter(rotate).dx,
+        lessThan(tester.getCenter(direction).dx),
+      );
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   test('savaş kartında enerji hattı modül portları arasında kalır', () {
     const first = ModulePlacement(
       id: 'first',

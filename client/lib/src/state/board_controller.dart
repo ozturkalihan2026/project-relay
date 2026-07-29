@@ -303,7 +303,8 @@ class BoardController extends Notifier<BoardEditorState> {
     if (selected == null) {
       return;
     }
-    if (selected.kind == ModuleKind.generator) {
+    if (selected.kind == ModuleKind.generator ||
+        selected.kind == ModuleKind.battery) {
       return;
     }
     final placements = Map<int, ModulePlacement>.from(state.placements)

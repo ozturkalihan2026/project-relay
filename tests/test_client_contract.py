@@ -16,13 +16,17 @@ class FlutterClientContractTests(unittest.TestCase):
         editor = (
             CLIENT / "lib" / "src" / "screens" / "editor_screen.dart"
         ).read_text(encoding="utf-8")
+        main_menu = (
+            CLIENT / "lib" / "src" / "screens" / "main_menu_screen.dart"
+        ).read_text(encoding="utf-8")
         manual = (
             CLIENT / "lib" / "src" / "widgets" / "game_manual.dart"
         ).read_text(encoding="utf-8")
 
-        self.assertIn("version: 0.4.2+21", pubspec)
-        self.assertIn("DEVRE LABORATUVARI • v0.4.2", editor)
-        self.assertIn("PROJECT RELAY • v0.4.2", manual)
+        self.assertIn("version: 0.4.7+26", pubspec)
+        self.assertIn("${widget.mode.title} • v0.4.7", editor)
+        self.assertIn("ASENKRON DEVRE SAVAŞI • v0.4.7", main_menu)
+        self.assertIn("PROJECT RELAY • v0.4.7", manual)
         self.assertIn("audioplayers:", pubspec)
         self.assertIn("assets/sounds/", pubspec)
         self.assertIn("flame:", pubspec)
@@ -46,6 +50,18 @@ class FlutterClientContractTests(unittest.TestCase):
             "http.Response(jsonEncode(_savedBoardPayload()), 200)",
             session_test,
         )
+
+    def test_app_settings_uses_a_const_list_for_double_speeds(self) -> None:
+        settings = (
+            CLIENT / "lib" / "src" / "state" / "app_settings.dart"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn(
+            "const supportedReplaySpeeds = <double>[0.25, 0.5, 1, 2];",
+            settings,
+        )
+        self.assertIn("supportedReplaySpeeds.contains(speed)", settings)
+        self.assertNotIn("const <double>{", settings)
 
     def test_bootstrap_replaces_flutter_generated_sources_and_tests(self) -> None:
         powershell = (
@@ -174,6 +190,75 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("RelayApp()", widget_test)
         self.assertNotIn("MyApp()", widget_test)
 
+    def test_main_menu_separates_online_training_career_and_settings(
+        self,
+    ) -> None:
+        app_source = (
+            CLIENT / "lib" / "src" / "app.dart"
+        ).read_text(encoding="utf-8")
+        main_menu = (
+            CLIENT / "lib" / "src" / "screens" / "main_menu_screen.dart"
+        ).read_text(encoding="utf-8")
+        play_mode = (
+            CLIENT / "lib" / "src" / "screens" / "play_mode_screen.dart"
+        ).read_text(encoding="utf-8")
+        editor = (
+            CLIENT / "lib" / "src" / "screens" / "editor_screen.dart"
+        ).read_text(encoding="utf-8")
+        career = (
+            CLIENT / "lib" / "src" / "screens" / "career_screen.dart"
+        ).read_text(encoding="utf-8")
+        settings = (
+            CLIENT / "lib" / "src" / "screens" / "settings_screen.dart"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("home: const MainMenuScreen()", app_source)
+        self.assertIn("main-menu-play", main_menu)
+        self.assertIn("main-menu-career", main_menu)
+        self.assertIn("main-menu-settings", main_menu)
+        self.assertNotIn("ÇIKIŞ", main_menu)
+        self.assertIn("play-mode-online", play_mode)
+        self.assertIn("play-mode-training", play_mode)
+        self.assertIn("EditorMode.online", play_mode)
+        self.assertIn("EditorMode.training", play_mode)
+        self.assertIn("mode == EditorMode.online", editor)
+        self.assertIn("training-panel", editor)
+        self.assertIn("async-pvp-card", editor)
+        self.assertIn("KARİYER HAZIRLANIYOR", career)
+        self.assertIn("settings-replay-sound", settings)
+        self.assertIn("settings-replay-speed", settings)
+
+    def test_board_shows_compact_server_stat_badges(self) -> None:
+        board_source = (
+            CLIENT / "lib" / "src" / "widgets" / "circuit_board.dart"
+        ).read_text(encoding="utf-8")
+        stats_source = (
+            CLIENT
+            / "lib"
+            / "src"
+            / "widgets"
+            / "module_compact_stats.dart"
+        ).read_text(encoding="utf-8")
+        stats_test = (
+            CLIENT / "test" / "module_compact_stats_test.dart"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("moduleCompactStats(spec!)", board_source)
+        self.assertIn("module-stat-badges-${module.id}", board_source)
+        self.assertIn("_ModuleStatBadges", board_source)
+        for label in (
+            "E +",
+            "D ",
+            "H ",
+            "K ",
+            "S ",
+            "×1,35",
+            "Onarım +",
+        ):
+            with self.subTest(label=label):
+                self.assertIn(label, stats_source)
+        self.assertIn("sekiz modül", stats_test)
+
     def test_module_tooltips_use_server_tactical_descriptions(self) -> None:
         palette_source = (
             CLIENT / "lib" / "src" / "widgets" / "module_palette.dart"
@@ -219,6 +304,16 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("CircuitTraceGeometry.modulePortAnchor", board_source)
         self.assertIn("CircuitTraceGeometry.corePortAnchor", board_source)
         self.assertNotIn("drawLine(gateCenter, coreCenter", board_source)
+        self.assertIn(
+            "placement.kind == ModuleKind.battery",
+            board_source,
+        )
+        self.assertIn(
+            "'kullanılabilir uçlar gösterilir'",
+            board_source,
+        )
+        self.assertIn("usableBoardPorts(", board_source)
+        self.assertIn("module-direction-$cellIndex", board_source)
         self.assertIn("'YER DEĞİŞTİR'", board_source)
         self.assertIn("'DEĞİŞTİR'", board_source)
 
@@ -265,6 +360,7 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("ReplayCircuitGeometry.modulePortAnchor", replay_source)
         self.assertIn("ReplayCircuitGeometry.corePortAnchor", replay_source)
         self.assertIn("_drawModulePorts", replay_source)
+        self.assertIn("usableBoardPorts(", replay_source)
         self.assertNotIn("final coreCenter = rect.center", replay_source)
         self.assertNotIn("_moduleCenter(fromModule", replay_source)
         self.assertNotIn("class _Metric", (
@@ -322,7 +418,8 @@ class FlutterClientContractTests(unittest.TestCase):
 
         self.assertIn("match.playerBoard", replay_game)
         self.assertIn("match.opponentBoard", replay_game)
-        self.assertIn("YENİ OYUN", replay_screen)
+        self.assertNotIn("appBar:", replay_screen)
+        self.assertIn("onNewGame: _newGame", replay_screen)
         self.assertIn("_togglePlayback", replay_screen)
         self.assertIn("ReplayEventFeed", replay_screen)
         self.assertIn("ReplayAttackOverlay", replay_screen)
@@ -332,9 +429,15 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertNotIn("DropdownButton<double>", replay_screen)
         self.assertNotIn("IconButton.filledTonal", replay_screen)
         self.assertIn("CANLI OLAY AKIŞI", event_feed)
-        self.assertIn("C: can • E: enerji • I: ısı", event_feed)
         self.assertIn("inline-server-result", event_feed)
         self.assertIn("SUNUCU SONUCU", event_feed)
+        self.assertIn("live-server-metrics", event_feed)
+        self.assertIn("CANLI • ADIM $visibleTick/${result.ticks}", event_feed)
+        self.assertIn("currentLeftHp: snapshot.leftHp", replay_screen)
+        self.assertIn("currentRightHp: snapshot.rightHp", replay_screen)
+        self.assertIn("if (widget.compact)", event_feed)
+        self.assertIn("Expanded(child: eventList)", event_feed)
+        self.assertIn("height: compact ? 150 : 182", event_feed)
         self.assertIn("_DecisionTable", event_feed)
         self.assertIn("← KARAR", event_feed)
         self.assertIn("Hasar/enerji", event_feed)
@@ -346,8 +449,10 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("replay-restart-button", playback_controls)
         self.assertIn("replay-sound-button", playback_controls)
         self.assertIn("replay-speed-button", playback_controls)
+        self.assertIn("replay-new-game-button", playback_controls)
         self.assertIn("Wrap(", playback_controls)
         self.assertIn("Yeniden Oynat", playback_controls)
+        self.assertIn("Yeni Oyun", playback_controls)
         self.assertIn("Hız ${_speedLabel(speed)}", playback_controls)
         self.assertNotIn("_ResultDetails", replay_screen)
         self.assertNotIn("class _Metric", replay_screen)
@@ -369,6 +474,7 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("'Enerji: ", replay_game)
         self.assertIn("'Isı: ", replay_game)
         self.assertIn("'Doluyor: ", replay_game)
+
         self.assertIn("'Hazır'", replay_game)
         self.assertIn("_deltaSuffix", replay_game)
         self.assertNotIn("ui.Offset(width / 2, height - 16)", replay_game)
@@ -408,6 +514,22 @@ class FlutterClientContractTests(unittest.TestCase):
             sound_player,
         )
 
+    def test_editor_uses_contextual_translucent_notices(self) -> None:
+        editor_source = (
+            CLIENT / "lib" / "src" / "screens" / "editor_screen.dart"
+        ).read_text(encoding="utf-8")
+        widget_test = (
+            CLIENT / "test" / "widget_test.dart"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("editor-context-notice", editor_source)
+        self.assertIn("_EditorNoticeTone.success", editor_source)
+        self.assertIn("_EditorNoticeTone.warning", editor_source)
+        self.assertIn("_EditorNoticeTone.error", editor_source)
+        self.assertIn("color.withValues(alpha: 0.10)", editor_source)
+        self.assertNotIn("showSnackBar", editor_source)
+        self.assertIn("await tester.ensureVisible(dismissButton)", widget_test)
+
     def test_replay_scrollbar_and_audio_lifecycle_regressions(self) -> None:
         event_feed = (
             CLIENT / "lib" / "src" / "widgets" / "replay_event_feed.dart"
@@ -429,6 +551,12 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("controller: _scrollController", event_feed)
         self.assertIn("controller!.hasClients", feed_test)
         self.assertIn("PointerDeviceKind.mouse", feed_test)
+        self.assertIn("final resultBottom", feed_test)
+        self.assertIn("greaterThan(resultBottom.dy)", feed_test)
+        self.assertNotIn(
+            "of: find.byKey(const ValueKey('inline-server-result'))",
+            feed_test,
+        )
         self.assertIn("EventSoundChannelFactory", sound_player)
         self.assertIn("_activeChannels", sound_player)
         self.assertIn("channel.onComplete.first", sound_player)
@@ -480,7 +608,8 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("relay.refresh_token", storage_source)
         self.assertIn("ASENKRON PvP", editor_source)
         self.assertIn("KARTI KAYDET VE OYUNCU BUL", editor_source)
-        self.assertIn("BOT ANTRENMANI", editor_source)
+        self.assertIn("ANTRENMAN RAKİPLERİ", editor_source)
+        self.assertIn("mode == EditorMode.online", editor_source)
         self.assertIn("guest-session-badge", editor_source)
         self.assertIn("süresi dolan erişim", session_test)
 

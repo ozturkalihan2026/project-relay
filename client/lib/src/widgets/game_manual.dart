@@ -200,7 +200,7 @@ class GameManualScreen extends StatelessWidget {
               ),
             ),
             Text(
-              'PROJECT RELAY • v0.4.2',
+              'PROJECT RELAY • v0.4.7',
               style: TextStyle(
                 color: RelayColors.muted,
                 fontSize: 10,
@@ -244,8 +244,8 @@ class GameManualScreen extends StatelessWidget {
                       _RuleLine(
                         index: '4',
                         text: 'Halkadaki komşu modüller yine karşılıklı '
-                            'portlarla bağlanır. Batarya dört yönlü kavşak, '
-                            'Güçlendirici düz aktarıcı, diğerleri uç modüldür.',
+                            'portlarla bağlanır. Batarya ve Güçlendirici dört '
+                            'yönlü kavşak, diğerleri uç modüldür.',
                       ),
                     ],
                   ),
@@ -679,10 +679,11 @@ class _OrientationGuide extends StatelessWidget {
               'karşı karşıya getirin.',
         ),
         _ManualParagraph(
-          text: 'Bataryanın dört kenarında da port bulunduğu için dönüş yönü '
-              'enerji bağlantısını değiştirmez. Güçlendiricide ise yön, hem '
-              'düz enerji hattını hem de hangi ön modülün güçleneceğini '
-              'belirler.',
+          text: 'Batarya ve Güçlendiricinin dört kenarında da port bulunur. '
+              'Batarya yönsüzdür ve döndürülmez. Güçlendiricinin oku ise '
+              'enerji bağlantısını değil, hangi komşu modülün güçleneceğini '
+              'belirler. Kart dışına veya kapısız çekirdek kenarına bakan '
+              'kullanılamayan uçlar kalabalık oluşturmaması için çizilmez.',
         ),
         _ManualParagraph(
           text: 'Jeneratör yalnızca dört çekirdek kapısına yerleşir ve ön '
@@ -978,12 +979,12 @@ const _moduleGuides = [
   _ModuleGuideData(
     kind: ModuleKind.amplifier,
     role: 'Etki güçlendirme ve enerji aktarma',
-    connection: 'Arka ve ön olmak üzere iki portludur; hattı devam ettirir.',
+    connection: 'Dört portludur; çekirdek kapısında iki halka kolunu besler.',
     effect: 'Hemen önündeki bağlı modülün etkisini 1,35×, ısısını 1,25× yapar.',
-    advantage: 'Tek bir kritik saldırı, Kalkan veya Onarım etkisini büyütür.',
+    advantage: 'Enerjiyi dallandırırken seçilen tek bir kritik modülü büyütür.',
     disadvantage: 'Ek ısı üretir ve yalnızca önündeki doğru bağlı hedefe '
         'etki eder.',
-    tip: 'Güçlendirilecek modülü okun gösterdiği ön hücreye yerleştirin.',
+    tip: 'Kapıda oku halka üzerindeki güçlendirilecek komşuya çevirin.',
   ),
   _ModuleGuideData(
     kind: ModuleKind.repair,

@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import '../game/replay_event_formatter.dart';
@@ -12,6 +14,8 @@ class ReplayEventFeed extends StatefulWidget {
     required this.match,
     required this.replay,
     required this.complete,
+    this.currentLeftHp,
+    this.currentRightHp,
     this.compact = false,
     this.controls,
     super.key,
@@ -23,6 +27,8 @@ class ReplayEventFeed extends StatefulWidget {
   final MatchResponse match;
   final ReplayResponse replay;
   final bool complete;
+  final double? currentLeftHp;
+  final double? currentRightHp;
   final bool compact;
   final Widget? controls;
 
@@ -41,11 +47,56 @@ class _ReplayEventFeedState extends State<ReplayEventFeed> {
 
   @override
   Widget build(BuildContext context) {
-    final allVisible = widget.events
+    final visibleEvents = widget.events
         .where((event) => event.tick <= widget.visibleTick)
-        .toList(growable: false)
+        .toList(growable: false);
+    final allVisible = visibleEvents
         .reversed
         .toList(growable: false);
+    final eventList = Stack(
+      children: [
+        Positioned.fill(
+          child: Scrollbar(
+            key: const ValueKey('replay-event-scrollbar'),
+            controller: _scrollController,
+            thumbVisibility: true,
+            interactive: true,
+            child: ScrollConfiguration(
+              behavior: ScrollConfiguration.of(context).copyWith(
+                scrollbars: false,
+              ),
+              child: ListView.separated(
+                key: const ValueKey('replay-event-list'),
+                controller: _scrollController,
+                primary: false,
+                itemCount: allVisible.length,
+                separatorBuilder: (context, index) =>
+                    const Divider(height: 1),
+                itemBuilder: (context, index) {
+                  final event = allVisible[index];
+                  return _EventRow(
+                    event: event,
+                    formatter: widget.formatter,
+                    compact: widget.compact,
+                  );
+                },
+              ),
+            ),
+          ),
+        ),
+        if (allVisible.isEmpty)
+          const Positioned.fill(
+            child: IgnorePointer(
+              child: Center(
+                child: Text(
+                  'İlk savaş olayı bekleniyor…',
+                  style: TextStyle(color: RelayColors.muted),
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
     final content = Padding(
       padding: EdgeInsets.all(widget.compact ? 11 : 16),
       child: Column(
@@ -86,58 +137,21 @@ class _ReplayEventFeedState extends State<ReplayEventFeed> {
               ],
             ),
             SizedBox(height: widget.compact ? 8 : 12),
-            SizedBox(
-              height: widget.compact ? 150 : 245,
-              child: Stack(
-                children: [
-                  Positioned.fill(
-                    child: Scrollbar(
-                      key: const ValueKey('replay-event-scrollbar'),
-                      controller: _scrollController,
-                      thumbVisibility: true,
-                      interactive: true,
-                      child: ScrollConfiguration(
-                        behavior: ScrollConfiguration.of(context).copyWith(
-                          scrollbars: false,
-                        ),
-                        child: ListView.separated(
-                          key: const ValueKey('replay-event-list'),
-                          controller: _scrollController,
-                          primary: false,
-                          itemCount: allVisible.length,
-                          separatorBuilder: (context, index) =>
-                              const Divider(height: 1),
-                          itemBuilder: (context, index) {
-                            final event = allVisible[index];
-                            return _EventRow(
-                              event: event,
-                              formatter: widget.formatter,
-                              compact: widget.compact,
-                            );
-                          },
-                        ),
-                      ),
-                    ),
-                  ),
-                  if (allVisible.isEmpty)
-                    const Positioned.fill(
-                      child: IgnorePointer(
-                        child: Center(
-                          child: Text(
-                            'İlk savaş olayı bekleniyor…',
-                            style: TextStyle(color: RelayColors.muted),
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ),
+            if (widget.compact)
+              Expanded(child: eventList)
+            else
+              SizedBox(height: 245, child: eventList),
             const SizedBox(height: 6),
             _FeedFooter(
               match: widget.match,
               replay: widget.replay,
               complete: widget.complete,
+              visibleTick: widget.visibleTick,
+              visibleEvents: visibleEvents,
+              currentLeftHp: widget.currentLeftHp ??
+                  widget.match.result.left.coreMaxHp,
+              currentRightHp: widget.currentRightHp ??
+                  widget.match.result.right.coreMaxHp,
               compact: widget.compact,
               controls: widget.controls,
             ),
@@ -171,6 +185,10 @@ class _FeedFooter extends StatelessWidget {
     required this.match,
     required this.replay,
     required this.complete,
+    required this.visibleTick,
+    required this.visibleEvents,
+    required this.currentLeftHp,
+    required this.currentRightHp,
     required this.compact,
     this.controls,
   });
@@ -178,33 +196,15 @@ class _FeedFooter extends StatelessWidget {
   final MatchResponse match;
   final ReplayResponse replay;
   final bool complete;
+  final int visibleTick;
+  final List<BattleEvent> visibleEvents;
+  final double currentLeftHp;
+  final double currentRightHp;
   final bool compact;
   final Widget? controls;
 
   @override
   Widget build(BuildContext context) {
-    if (!complete) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const Text(
-            'C: can • E: enerji • I: ısı\n'
-            'K: kalkan • R: rezerv • Ü: üretim',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: RelayColors.muted,
-              fontSize: 8.5,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          if (controls != null) ...[
-            const SizedBox(height: 6),
-            controls!,
-          ],
-        ],
-      );
-    }
-
     final result = match.result;
     final resultLabel = switch (result.winner) {
       'left' => 'ZAFER',
@@ -223,65 +223,95 @@ class _FeedFooter extends StatelessWidget {
     );
     final decision = result.decision;
 
-    return Container(
-      key: const ValueKey('inline-server-result'),
-      padding: const EdgeInsets.only(top: 8),
-      decoration: const BoxDecoration(
-        border: Border(top: BorderSide(color: Color(0xFF28515E))),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              const Expanded(
-                child: Text(
-                  'SUNUCU SONUCU',
-                  style: TextStyle(
-                    color: RelayColors.cyan,
-                    fontSize: 9,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 0.8,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SizedBox(
+          height: compact ? 150 : 182,
+          child: Container(
+            key: const ValueKey('inline-server-result'),
+            padding: const EdgeInsets.only(top: 8),
+            decoration: const BoxDecoration(
+              border: Border(top: BorderSide(color: Color(0xFF28515E))),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    const Expanded(
+                      child: Text(
+                        'SUNUCU SONUCU',
+                        style: TextStyle(
+                          color: RelayColors.cyan,
+                          fontSize: 9,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 0.8,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      complete
+                          ? resultLabel
+                          : 'CANLI • ADIM $visibleTick/${result.ticks}',
+                      key: const ValueKey('server-result-status'),
+                      style: TextStyle(
+                        color: complete ? resultColor : RelayColors.amber,
+                        fontSize: compact ? 10.5 : 12,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 0.7,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 3),
+                if (complete) ...[
+                  Text(
+                    _decisionExplanation(result),
+                    style: detailStyle.copyWith(
+                      color: resultColor,
+                      fontWeight: FontWeight.w800,
+                    ),
                   ),
+                  const SizedBox(height: 4),
+                  _DecisionTable(
+                    decision: decision,
+                    compact: compact,
+                    highlightColor: resultColor,
+                  ),
+                ] else ...[
+                  Text(
+                    'Sunucunun replay verileri oynatılıyor; '
+                    'değerler her adımda güncelleniyor.',
+                    style: detailStyle.copyWith(
+                      color: RelayColors.amber,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  _LiveBattleTable(
+                    match: match,
+                    events: visibleEvents,
+                    leftCoreHp: currentLeftHp,
+                    rightCoreHp: currentRightHp,
+                    compact: compact,
+                  ),
+                ],
+                const Spacer(),
+                Text(
+                  '${visibleEvents.length}/${replay.events.length} olay • '
+                  'sunucu doğrulaması ${replay.checksum.substring(0, 8)}…',
+                  style: detailStyle,
                 ),
-              ),
-              Text(
-                resultLabel,
-                style: TextStyle(
-                  color: resultColor,
-                  fontSize: compact ? 11 : 13,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: 1,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 3),
-          Text(
-            _decisionExplanation(result),
-            style: detailStyle.copyWith(
-              color: resultColor,
-              fontWeight: FontWeight.w800,
+              ],
             ),
           ),
-          const SizedBox(height: 4),
-          _DecisionTable(
-            decision: decision,
-            compact: compact,
-            highlightColor: resultColor,
-          ),
-          const SizedBox(height: 3),
-          Text(
-            '${replay.events.length} olay • '
-            'sunucu doğrulaması ${replay.checksum.substring(0, 8)}…',
-            style: detailStyle,
-          ),
-          if (controls != null) ...[
-            const SizedBox(height: 6),
-            controls!,
-          ],
+        ),
+        if (controls != null) ...[
+          const SizedBox(height: 6),
+          controls!,
         ],
-      ),
+      ],
     );
   }
 
@@ -312,6 +342,116 @@ class _FeedFooter extends StatelessWidget {
         ? 'daha düşük değer kazandırdı'
         : 'daha yüksek değer kazandırdı';
     return 'Karar: ${_metricLabel(decisive.key)}; $preference.';
+  }
+}
+
+class _LiveBattleTable extends StatelessWidget {
+  const _LiveBattleTable({
+    required this.match,
+    required this.events,
+    required this.leftCoreHp,
+    required this.rightCoreHp,
+    required this.compact,
+  });
+
+  final MatchResponse match;
+  final List<BattleEvent> events;
+  final double leftCoreHp;
+  final double rightCoreHp;
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    var leftDamage = 0.0;
+    var rightDamage = 0.0;
+    var leftEvents = 0;
+    var rightEvents = 0;
+    final destroyedLeft = <String>{};
+    final destroyedRight = <String>{};
+    for (final event in events) {
+      final fromLeft = event.side == 'left';
+      if (fromLeft) {
+        leftEvents += 1;
+      } else {
+        rightEvents += 1;
+      }
+      if (event.type == 'attack' || event.type == 'core_damage') {
+        if (fromLeft) {
+          leftDamage += event.amount;
+        } else {
+          rightDamage += event.amount;
+        }
+      }
+      if (event.type == 'destroyed' && event.targetId != null) {
+        if (fromLeft) {
+          destroyedRight.add(event.targetId!);
+        } else {
+          destroyedLeft.add(event.targetId!);
+        }
+      }
+    }
+    final leftModules =
+        math.max(0, match.playerBoard.modules.length - destroyedLeft.length);
+    final rightModules = math.max(
+      0,
+      match.opponentBoard.modules.length - destroyedRight.length,
+    );
+    final style = TextStyle(
+      color: RelayColors.muted,
+      fontSize: compact ? 7.8 : 9.5,
+      height: 1.2,
+      fontWeight: FontWeight.w700,
+    );
+
+    return Table(
+      key: const ValueKey('live-server-metrics'),
+      columnWidths: const {
+        0: FlexColumnWidth(1.55),
+        1: FlexColumnWidth(0.8),
+        2: FlexColumnWidth(0.8),
+      },
+      children: [
+        _row('ÖLÇÜT', 'SEN', 'RAKİP', style),
+        _row(
+          'Çekirdek canı',
+          leftCoreHp.toStringAsFixed(0),
+          rightCoreHp.toStringAsFixed(0),
+          style,
+        ),
+        _row('Kalan modül', '$leftModules', '$rightModules', style),
+        _row(
+          'Oynatılan hasar',
+          leftDamage.toStringAsFixed(0),
+          rightDamage.toStringAsFixed(0),
+          style,
+        ),
+        _row('Olay sayısı', '$leftEvents', '$rightEvents', style),
+      ],
+    );
+  }
+
+  TableRow _row(
+    String label,
+    String left,
+    String right,
+    TextStyle style,
+  ) {
+    return TableRow(
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(top: 1.5),
+          child: Text(label, style: style),
+        ),
+        Padding(
+          padding: const EdgeInsets.only(top: 1.5),
+          child: Text(left, textAlign: TextAlign.right, style: style),
+        ),
+        Padding(
+          padding: const EdgeInsets.only(top: 1.5),
+          child: Text(right, textAlign: TextAlign.right, style: style),
+        ),
+      ],
+    );
   }
 }
 

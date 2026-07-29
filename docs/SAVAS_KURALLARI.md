@@ -1,4 +1,4 @@
-# Project Relay — Savaş Kuralları v0.7
+# Project Relay — Savaş Kuralları v0.8
 
 ## 1. Kart ve bağlantı
 
@@ -15,9 +15,10 @@ gerekir.
   yönünü besler.
 - Çekirdek enerji üretmez ve depolamaz. Jeneratörden enerji alırsa onu diğer
   üç kapıya ileten dört portlu pasif omurga gibi davranır.
-- Batarya dört yönlü kavşaktır; enerjiyi döndürebilir ve birden fazla kola
-  dağıtabilir.
-- Güçlendirici arka ve ön bağlantılarıyla enerjiyi düz hatta iletir.
+- Batarya dört yönlü ve yönsüz kavşaktır; enerjiyi döndürebilir, birden fazla
+  kola dağıtabilir ve kullanılmayan enerjiyi depolar.
+- Güçlendirici de dört yönlü enerji kavşağıdır. Yön oku bağlantıyı değil,
+  güçlendirilecek tek komşu modülü seçer.
 - Diğer başlangıç modülleri yalnızca arka bağlantılarından enerji alır.
 - Modülün oku ön tarafını gösterir. Örneğin jeneratörün sağındaki doğuya bakan
   Lazerin arka bağlantısı batıya, yani jeneratöre bakar.
@@ -84,9 +85,12 @@ Böylece işlemlerin teknik sırası oyunculardan birine gizli avantaj sağlamaz
 
 ## 6. Güçlendirici
 
-Güçlendirici yalnızca önündeki, kendisine doğru bağlanmış modülü etkiler.
-Temel sürümde etkiyi 1,35 katına, eylem ısısını 1,25 katına çıkarır.
-Birden fazla etki için üst sınır vardır; sonsuz çarpan kurulamaz.
+Güçlendirici dört portuyla enerjiyi tüm bağlı komşularına taşıyabilir. Yalnızca
+okun gösterdiği ön hücredeki, kendisine portla bağlı modülü etkiler. Temel
+sürümde etkiyi 1,35 katına, eylem ısısını 1,25 katına çıkarır. Bu nedenle
+çekirdek kapısında iki halka kolunu beslerken bunlardan yalnız birindeki ilk
+modülü güçlendirebilir. Birden fazla etki için üst sınır vardır; sonsuz çarpan
+kurulamaz.
 
 ## 7. Hedef seçimi
 

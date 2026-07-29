@@ -164,7 +164,7 @@ void main() {
   );
 
   testWidgets(
-    'savaş tamamlanınca açıklama alanı sunucu sonucuna dönüşür',
+    'sunucu sonucu savaş boyunca görünür ve canlı değerleri günceller',
     (tester) async {
       final events = <BattleEvent>[
         const BattleEvent(
@@ -177,21 +177,87 @@ void main() {
         ),
       ];
 
-      await tester.pumpWidget(_eventFeed(events, 1, complete: false));
-      expect(find.textContaining('C: can'), findsOneWidget);
-      expect(
-        find.byKey(const ValueKey('inline-server-result')),
-        findsNothing,
+      await tester.pumpWidget(
+        _eventFeed(
+          events,
+          1,
+          currentLeftHp: 87,
+          currentRightHp: 64,
+        ),
       );
-
-      await tester.pumpWidget(_eventFeed(events, 1, complete: true));
-      expect(find.textContaining('C: can'), findsNothing);
+      expect(find.text('SUNUCU SONUCU'), findsOneWidget);
       expect(
         find.byKey(const ValueKey('inline-server-result')),
         findsOneWidget,
       );
-      expect(find.text('SUNUCU SONUCU'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('live-server-metrics')),
+        findsOneWidget,
+      );
+      expect(find.textContaining('CANLI • ADIM 1/24'), findsOneWidget);
+      expect(find.text('87'), findsOneWidget);
+      expect(find.text('64'), findsOneWidget);
+
+      await tester.pumpWidget(_eventFeed(events, 1, complete: true));
+      expect(
+        find.byKey(const ValueKey('inline-server-result')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey('live-server-metrics')),
+        findsNothing,
+      );
       expect(find.text('ZAFER'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'kompakt panel taşmaz ve kontroller savaş bitince yer değiştirmez',
+    (tester) async {
+      final events = List<BattleEvent>.generate(
+        12,
+        (index) => BattleEvent(
+          tick: index + 1,
+          side: index.isEven ? 'left' : 'right',
+          type: 'attack',
+          actorId: 'P-LASER',
+          targetId: 'BOT-SHIELD',
+          amount: 3,
+        ),
+      );
+      const controls = SizedBox(
+        key: ValueKey('fixed-test-controls'),
+        height: 82,
+      );
+
+      await tester.pumpWidget(
+        _eventFeed(
+          events,
+          6,
+          height: 402,
+          controls: controls,
+        ),
+      );
+      final duringTop = tester.getTopLeft(
+        find.byKey(const ValueKey('fixed-test-controls')),
+      );
+      expect(tester.takeException(), isNull);
+
+      await tester.pumpWidget(
+        _eventFeed(
+          events,
+          12,
+          complete: true,
+          height: 402,
+          controls: controls,
+        ),
+      );
+      final completedTop = tester.getTopLeft(
+        find.byKey(const ValueKey('fixed-test-controls')),
+      );
+
+      expect(completedTop.dy, closeTo(duringTop.dy, 0.01));
+      expect(tester.takeException(), isNull);
     },
   );
 
@@ -260,7 +326,7 @@ void main() {
         ),
       );
 
-      final checksumBottom = tester.getBottomRight(
+      final resultBottom = tester.getBottomRight(
         find.textContaining('sunucu doğrulaması'),
       );
       final controlsTop = tester.getTopLeft(
@@ -268,13 +334,14 @@ void main() {
       );
 
       expect(
-        find.descendant(
-          of: find.byKey(const ValueKey('inline-server-result')),
-          matching: find.byKey(const ValueKey('test-replay-controls')),
-        ),
+        find.byKey(const ValueKey('inline-server-result')),
         findsOneWidget,
       );
-      expect(controlsTop.dy, greaterThan(checksumBottom.dy));
+      expect(
+        find.byKey(const ValueKey('test-replay-controls')),
+        findsOneWidget,
+      );
+      expect(controlsTop.dy, greaterThan(resultBottom.dy));
       expect(tester.takeException(), isNull);
     },
   );
@@ -284,13 +351,17 @@ Widget _eventFeed(
   List<BattleEvent> events,
   int visibleTick, {
   bool complete = false,
+  double currentLeftHp = 120,
+  double currentRightHp = 120,
+  double height = 420,
+  Widget? controls,
 }) {
   final match = _match();
   return MaterialApp(
     home: Scaffold(
       body: SizedBox(
         width: 500,
-        height: 420,
+        height: height,
         child: ReplayEventFeed(
           key: const ValueKey('persistent-replay-event-feed'),
           events: events,
@@ -299,7 +370,10 @@ Widget _eventFeed(
           match: match,
           replay: _replay(events),
           complete: complete,
+          currentLeftHp: currentLeftHp,
+          currentRightHp: currentRightHp,
           compact: true,
+          controls: controls,
         ),
       ),
     ),
@@ -309,7 +383,7 @@ Widget _eventFeed(
 ReplayResponse _replay(List<BattleEvent> events) {
   return ReplayResponse(
     matchId: 'match-1',
-    rulesVersion: '0.7',
+    rulesVersion: '0.8',
     checksum: List.filled(64, 'a').join(),
     events: events,
     stateFrames: const [],

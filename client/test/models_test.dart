@@ -79,7 +79,7 @@ void main() {
     );
   });
 
-  test('iki portlu aktarma modülleri her yönde hattı sürdürür', () {
+  test('Batarya ve Güçlendirici dört yönde hattı sürdürür', () {
     final battery = ModuleSpec.fromJson({
       'kind': 'battery',
       'display_name': 'Batarya',
@@ -116,6 +116,31 @@ void main() {
     );
     expect(battery.batteryCapacity, 20);
     expect(battery.threat, 40);
+
+    final amplifier = ModuleSpec.fromJson({
+      'kind': 'amplifier',
+      'display_name': 'Güçlendirici',
+      'description': 'Dört portlu, yönlü etki veren enerji kavşağı.',
+      'max_hp': 25,
+      'ports': ['north', 'east', 'south', 'west'],
+      'energy_output': 0,
+      'battery_capacity': 0,
+      'energy_cost': 0,
+      'cooldown_ticks': 0,
+      'heat_per_action': 0,
+      'damage': 0,
+      'shield': 0,
+      'cooling': 0,
+      'repair': 0,
+      'threat': 90,
+    });
+
+    for (final orientation in RelayDirection.values) {
+      expect(
+        amplifier.worldPorts(orientation),
+        RelayDirection.values.toSet(),
+      );
+    }
   });
 
   test('jeneratör üç portunu kapı yönüne göre döndürür', () {
@@ -300,7 +325,7 @@ void main() {
   test('savaş durum karelerini can enerji ve ısıyla ayrıştırır', () {
     final replay = ReplayResponse.fromJson({
       'match_id': 'match-1',
-      'rules_version': '0.7',
+      'rules_version': '0.8',
       'checksum': List.filled(64, 'b').join(),
       'events': [
         {

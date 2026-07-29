@@ -1,4 +1,4 @@
-# Project Relay v0.4.2 — Kalıcı Asenkron PvP Temeli
+# Project Relay v0.4.7 — Flutter Widget Test Uyumluluğu
 
 Project Relay, oyuncuların 4×4 yönlü devre kartına modüller yerleştirip
 sunucu tarafından hesaplanan asenkron savaşlara katıldığı rekabetçi oyun
@@ -102,7 +102,44 @@ geçerli kart; gerçek oyuncu düzeni havuzu ve kalıcı maç/replay kaydı ekle
 kartı kaydedip asenkron rakip arar. Bot savaşları antrenman seçeneği olarak
 korunur.
 
-## v0.4.0 kapsamı
+v0.4.3, çekirdek kapısında karşılıklı iki port yüzünden boşa çıkan destek
+yerleşimini düzeltir. Batarya ile Güçlendirici dört portlu kavşaktır. Batarya
+yönsüz biçimde enerji depolar; Güçlendirici bütün bağlı komşulara enerji
+taşırken yalnız okun gösterdiği tek komşuyu güçlendirir. Savaş ekranındaki
+**Yeni Oyun** eylemi üst köşeden kaldırılıp oynatma düğmelerinin altına
+ortalanır.
+
+v0.4.4, uygulamayı doğrudan devre düzenleyicide açmak yerine **Oyna**,
+**Kariyer** ve **Ayarlar** seçenekli ana menüyle başlatır. Oyna ekranındaki
+**Çevrimiçi Savaş** ile **Antrenman** tamamen ayrı düzenleyici akışlarıdır;
+çevrimiçi ekranda bot seçimi, antrenmanda oyuncu eşleştirmesi görünmez.
+Devre kartındaki her modül gerçek katalog değerlerinden üretilen kompakt
+`C 30` ve role özgü ikinci etiketi gösterir. Ayrıntı fare/dokunma ipucunda
+korunur. Kariyer ekranı görev sistemi tamamlanana kadar sahte ilerleme
+üretmez; Ayarlar yeni savaş tekrarlarının ses ve hız başlangıcını belirler.
+
+v0.4.5, savaş ekranındaki taşma ve hareketli kontrol sorunlarını giderir.
+**Sunucu Sonucu** savaş başından itibaren görünür; çekirdek canı, kalan modül,
+oynatılan hasar ve olay sayısı replay ilerledikçe güncellenir. Olay listesi
+esnek/kaydırılabilir alanda, oynatma ve **Yeni Oyun** düğmeleri panelin sabit
+alt bölümünde kalır. Doğrulama ve yerleşim mesajları okunamayan alt şerit
+yerine devre kartına bağlı saydam, renk kodlu bildirimlerde gösterilir.
+Batarya ile Güçlendiricinin dört yönlü oynanış yeteneği korunurken kart dışına
+ve kapısız çekirdek kenarına bakan kullanılamayan port işaretleri gizlenir;
+Güçlendiricinin yön oku döndürme düğmesi seçiliyken de görünür kalır.
+
+v0.4.6, Ayarlardaki dört tekrar hızını tanımlayan sabit `double` kümesini
+Dart analizörüyle uyumlu değişmez listeye dönüştürür. `0.25×`, `0.5×`, `1×`
+ve `2×` seçenekleri değişmez; savaş paneli, bildirimler, port görünümü,
+PostgreSQL şeması ve oyun dengesi v0.4.5 ile aynıdır.
+
+v0.4.7, savaş panelinin sabit sonuç/kontrol düzenini eski widget hiyerarşisine
+bağlayan testi gerçek ekrandaki düşey konuma göre doğrular. Küçük test
+görünümünde kartın altında kalan bağlamsal bildirimin kapatma düğmesi tıklanmadan
+önce görünür alana kaydırılır. Uygulama arayüzü, savaş kuralları ve veritabanı
+şeması değişmez.
+
+## v0.4.x kapsamı
 
 - PostgreSQL bağlantısı, sağlık durumu ve Docker Compose geliştirme ortamı
 - Alembic `20260729_0001` ilk şeması
@@ -118,7 +155,13 @@ korunur.
 - Yalnız maç katılımcılarının erişebildiği asenkron maç/replay
 - Güvenli depolanan Flutter yenileme anahtarı ve otomatik oturum geri yükleme
 - Ana eylem olarak **Kartı Kaydet ve Oyuncu Bul**
-- Kapalı **Bot Antrenmanı** alanında korunan dokuz sabit rakip
+- Ayrı **Antrenman** ekranında korunan dokuz sabit rakip
+- Çevrimiçi ve antrenman içeriklerini birbirinden ayıran ana menü
+- Kariyer hazırlık ekranı ve işlevsel savaş tekrarı ayarları
+- Kart üstünde Can ile role özgü değeri gösteren kompakt bilgi etiketleri
+- Savaş boyunca güncellenen sabit **Sunucu Sonucu** ve sabit oynatma kontrolleri
+- Saydam, renk kodlu ve devre kartına bağlı doğrulama/yerleşim bildirimleri
+- Yalnız kullanılabilir kart portlarını gösteren sade bağlantı görünümü
 
 - Sekiz başlangıç modüllü Flutter arayüzü
 - Ortasında 2×2 pasif çekirdek bulunan 4×4 devre kartı

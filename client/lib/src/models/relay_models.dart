@@ -255,6 +255,33 @@ class ModulePlacement {
   }
 }
 
+Set<RelayDirection> usableBoardPorts(
+  ModulePlacement module,
+  Iterable<RelayDirection> worldPorts,
+) {
+  return worldPorts.where((direction) {
+    if (coreGateDirections[module.cellIndex] == direction) {
+      return true;
+    }
+    final (rowDelta, columnDelta) = switch (direction) {
+      RelayDirection.north => (-1, 0),
+      RelayDirection.east => (0, 1),
+      RelayDirection.south => (1, 0),
+      RelayDirection.west => (0, -1),
+    };
+    final neighborRow = module.row + rowDelta;
+    final neighborColumn = module.column + columnDelta;
+    if (neighborRow < 0 ||
+        neighborRow >= relayBoardSize ||
+        neighborColumn < 0 ||
+        neighborColumn >= relayBoardSize) {
+      return false;
+    }
+    final neighborIndex = neighborRow * relayBoardSize + neighborColumn;
+    return !isCoreCell(neighborIndex);
+  }).toSet();
+}
+
 enum ModuleDragSource { palette, board }
 
 class ModuleDragData {

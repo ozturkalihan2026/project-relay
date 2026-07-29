@@ -132,8 +132,8 @@ class RelayApiTests(unittest.TestCase):
         response = self.client.get("/healthz")
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["version"], "0.4.2")
-        self.assertEqual(response.json()["rules_version"], "0.7")
+        self.assertEqual(response.json()["version"], "0.4.7")
+        self.assertEqual(response.json()["rules_version"], "0.8")
         self.assertEqual(response.json()["storage"], "sqlite")
         self.assertEqual(response.json()["database"], "ok")
 
@@ -189,8 +189,18 @@ class RelayApiTests(unittest.TestCase):
         generator = next(
             module for module in modules if module["kind"] == "generator"
         )
+        battery = next(
+            module for module in modules if module["kind"] == "battery"
+        )
+        amplifier = next(
+            module for module in modules if module["kind"] == "amplifier"
+        )
         self.assertEqual(len(generator["ports"]), 3)
+        self.assertEqual(len(battery["ports"]), 4)
+        self.assertEqual(len(amplifier["ports"]), 4)
         self.assertIn("çekirdeği", generator["description"])
+        self.assertIn("yönsüz enerji kavşağı", battery["description"])
+        self.assertIn("oku hangi komşu modülün", amplifier["description"])
         self.assertEqual(
             {module["kind"] for module in modules},
             {

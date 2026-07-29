@@ -1,5 +1,86 @@
 # Değişiklik Günlüğü
 
+## v0.4.7
+
+- Oynatma kontrolleri sabit **Sunucu Sonucu** alanının hemen altındaki bağımsız
+  sabit bölüm olarak doğrulanır; gerileme testi artık kontrollerin sonuç
+  kutusunun widget çocuğu olmasını beklemez.
+- 800×600 widget testinde devre kartının altında kalan bağlamsal bildirimin
+  kapatma düğmesi tıklanmadan önce görünür alana kaydırılır. Test artık
+  ekrandaki gerçek kullanıcı etkileşimini izler ve boşa tıklama uyarısı üretmez.
+- v0.4.6 arayüzü, tekrar hızları, PostgreSQL şeması ve oyun dengesi değişmedi.
+  API `0.4.7`, istemci `0.4.7+26`, kurallar `0.8` olarak korundu.
+
+## v0.4.6
+
+- Ayarlar denetleyicisindeki desteklenen tekrar hızları `const Set<double>`
+  yerine değişmez `List<double>` olarak tanımlandı. Dart analizörünün
+  `const_set_element_not_primitive_equality` hatası giderildi.
+- `0.25×`, `0.5×`, `1×` ve `2×` seçeneklerinin tamamının kabul edildiğini,
+  desteklenmeyen hızların reddedilmeye devam ettiğini doğrulayan gerileme
+  testleri eklendi.
+- v0.4.5 savaş paneli, bağlamsal uyarı ve port görünümü düzeltmelerinin tamamı
+  korunur. PostgreSQL şeması ve savaş dengesi değişmedi. API `0.4.6`,
+  istemci `0.4.6+25`, kurallar `0.8` olarak korundu.
+
+## v0.4.5
+
+- `ReplayEventFeed` içindeki sabit olay listesi yüksekliği esnek/kaydırılabilir
+  alana dönüştürüldü; 402 px yüksekliğindeki geniş ekran panelinde görülen
+  `RenderFlex overflowed by 12 pixels` taşması giderildi.
+- **Sunucu Sonucu** savaş başından itibaren görünür. Replay sürerken çekirdek
+  canı, kalan modül, oynatılan hasar ve olay sayısı her adımda güncellenir;
+  savaş bitince aynı sabit alan kesin karar tablosuna dönüşür.
+- Sonuç alanına sabit yükseklik ayrıldığı için Duraklat/Devam Et, Yeniden
+  Oynat, Ses, Hız ve **Yeni Oyun** kontrolleri savaş boyunca aynı alt konumda
+  kalır.
+- Yerleşim, doğrulama ve API mesajları okunamayan tam genişlikli alt
+  SnackBar'dan çıkarılıp devre kartının altında saydam, kapatılabilir ve
+  info/başarı/uyarı/hata renkli bağlamsal karta taşındı.
+- Batarya ve Güçlendirici dört yönlü enerji kavşağı olarak kalır; yalnız kart
+  içinde gerçekten kullanılabilecek veya çekirdek kapısına bağlanabilecek port
+  işaretleri çizilir. Kart dışına ve kapısız çekirdek kenarına bakan ölü
+  işaretler hem düzenleyicide hem savaş kartında gizlenir.
+- Güçlendiricinin yön oku sağ üstte sürekli görünür; döndürme düğmesi sol üste
+  taşındı ve okla çakışmaz.
+- PostgreSQL şeması ve savaş dengesi değişmedi. API `0.4.5`, istemci
+  `0.4.5+24`, kurallar `0.8` olarak korundu.
+
+## v0.4.4
+
+- Uygulama ilk açılışta doğrudan kart düzenleyici yerine **Oyna**,
+  **Kariyer** ve **Ayarlar** seçenekli ana menüyü gösterir.
+- **Oyna** altında **Çevrimiçi Savaş** ve **Antrenman** ayrı ekranlar ve ayrı
+  düzenleyici kipleri olarak uygulanmıştır. Çevrimiçi ekranda bot listesi,
+  antrenmanda misafir oyuncu/eşleştirme kartı görünmez.
+- Kariyer, görev sistemi tamamlanana kadar sahte ödül veya ilerleme üretmeyen
+  hazırlık ekranıdır.
+- Ayarlar, yeni savaş tekrarlarının başlangıç sesi ve oynatma hızını belirler;
+  savaş ekranındaki kontroller bu tercihleri güncellemeye devam eder.
+- Kart hücreleri sunucu kataloğundaki gerçek Can değerini ve role özgü ikinci
+  değeri kompakt etiketlerle gösterir: enerji, depo, hasar, kalkan, soğutma,
+  güçlendirme veya onarım.
+- PostgreSQL şeması ve savaş dengesi değişmedi. API `0.4.4`, istemci
+  `0.4.4+23`, kurallar `0.8` olarak korunmuştur.
+
+## v0.4.3
+
+- Batarya ve Güçlendirici dört portlu enerji kavşakları olarak birleştirildi.
+  Çekirdek kapısına yerleştirildiklerinde kenara bakan ölü bir uç nedeniyle
+  işlevsiz kalmaz; halka üzerindeki iki kola da enerji taşıyabilir.
+- Batarya yönsüz çalışmaya devam eder, kullanılmayan enerjiyi 20 birime kadar
+  saklar ve istemcide gereksiz döndürme düğmesi göstermez.
+- Güçlendiricinin oku bağlantı portlarını değil, güçlenecek tek komşu modülü
+  seçer. Etki `1,35×`, ek ısı `1,25×` ve çarpan üst sınırları korunur.
+- Savaş ekranının sağ üstündeki ayrı **Yeni Oyun** eylemi kaldırıldı.
+  **Yeni Oyun**, Duraklat/Devam Et, Yeniden Oynat, Ses ve Hız kontrollerinin
+  hemen altında ortalanmış düğme olarak sonuç alanına taşındı.
+- Çekirdek kapısından iki kolu besleyen Batarya/Güçlendirici yerleşimleri,
+  yalnız okun gösterdiği komşunun güçlenmesi, Bataryanın yönsüz davranışı ve
+  yeni düğme konumu gerileme testlerine alındı.
+- PostgreSQL şeması değişmedi. API sürümü `0.4.3`, istemci sürümü
+  `0.4.3+22`, kurallar sürümü `0.8` oldu.
+
 ## v0.4.2
 
 - PostgreSQL `matches.seed` alanı 32 bit `INTEGER` yerine 64 bit `BIGINT`

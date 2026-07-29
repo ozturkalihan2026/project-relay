@@ -674,7 +674,10 @@ class RelayReplayGame extends FlameGame {
     if (spec == null) {
       return;
     }
-    for (final direction in spec.worldPorts(module.orientation)) {
+    for (final direction in usableBoardPorts(
+      module,
+      spec.worldPorts(module.orientation),
+    )) {
       final point = ReplayCircuitGeometry.modulePortAnchor(
         module,
         direction,

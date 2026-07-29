@@ -9,6 +9,7 @@ void main() {
       var playbackToggles = 0;
       var restarts = 0;
       var soundToggles = 0;
+      var newGames = 0;
       double? selectedSpeed;
 
       await tester.pumpWidget(
@@ -24,6 +25,7 @@ void main() {
                 onRestart: () => restarts++,
                 onToggleSound: () => soundToggles++,
                 onSpeedChanged: (value) => selectedSpeed = value,
+                onNewGame: () => newGames++,
               ),
             ),
           ),
@@ -34,6 +36,7 @@ void main() {
       expect(find.text('Yeniden Oynat'), findsOneWidget);
       expect(find.text('Ses Açık'), findsOneWidget);
       expect(find.text('Hız 1×'), findsOneWidget);
+      expect(find.text('Yeni Oyun'), findsOneWidget);
 
       await tester.tap(
         find.byKey(const ValueKey('replay-playback-button')),
@@ -44,10 +47,24 @@ void main() {
       await tester.tap(
         find.byKey(const ValueKey('replay-sound-button')),
       );
+      await tester.tap(
+        find.byKey(const ValueKey('replay-new-game-button')),
+      );
 
       expect(playbackToggles, 1);
       expect(restarts, 1);
       expect(soundToggles, 1);
+      expect(newGames, 1);
+      expect(
+        tester.getCenter(
+          find.byKey(const ValueKey('replay-new-game-button')),
+        ).dy,
+        greaterThan(
+          tester.getCenter(
+            find.byKey(const ValueKey('replay-playback-button')),
+          ).dy,
+        ),
+      );
 
       await tester.tap(
         find.byKey(const ValueKey('replay-speed-button')),
@@ -76,6 +93,7 @@ void main() {
               onRestart: () {},
               onToggleSound: () {},
               onSpeedChanged: (_) {},
+              onNewGame: () {},
             ),
           ),
         ),
@@ -85,6 +103,7 @@ void main() {
     expect(find.text('Devam Et'), findsOneWidget);
     expect(find.text('Ses Kapalı'), findsOneWidget);
     expect(find.text('Hız 0.5×'), findsOneWidget);
+    expect(find.text('Yeni Oyun'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }

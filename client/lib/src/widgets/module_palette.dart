@@ -177,6 +177,7 @@ class _PaletteTile extends StatelessWidget {
     return MouseRegion(
       cursor: SystemMouseCursors.grab,
       child: Material(
+        key: ValueKey('palette-module-${module.kind.wireValue}'),
         color: selected
             ? color.withValues(alpha: 0.18)
             : RelayColors.surfaceHigh,

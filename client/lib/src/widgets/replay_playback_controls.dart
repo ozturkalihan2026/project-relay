@@ -11,6 +11,7 @@ class ReplayPlaybackControls extends StatelessWidget {
     required this.onRestart,
     required this.onToggleSound,
     required this.onSpeedChanged,
+    required this.onNewGame,
     super.key,
   });
 
@@ -21,6 +22,7 @@ class ReplayPlaybackControls extends StatelessWidget {
   final VoidCallback onRestart;
   final VoidCallback onToggleSound;
   final ValueChanged<double> onSpeedChanged;
+  final VoidCallback onNewGame;
 
   @override
   Widget build(BuildContext context) {
@@ -30,49 +32,72 @@ class ReplayPlaybackControls extends StatelessWidget {
       decoration: const BoxDecoration(
         border: Border(top: BorderSide(color: Color(0xFF28515E))),
       ),
-      child: Center(
-        child: Wrap(
-          alignment: WrapAlignment.center,
-          crossAxisAlignment: WrapCrossAlignment.center,
-          spacing: 6,
-          runSpacing: 6,
-          children: [
-            _ControlButton(
-              key: const ValueKey('replay-playback-button'),
-              icon: playing ? Icons.pause : Icons.play_arrow,
-              label: playing ? 'Duraklat' : 'Devam Et',
-              onPressed: onTogglePlayback,
-            ),
-            _ControlButton(
-              key: const ValueKey('replay-restart-button'),
-              icon: Icons.replay,
-              label: 'Yeniden Oynat',
-              onPressed: onRestart,
-            ),
-            _ControlButton(
-              key: const ValueKey('replay-sound-button'),
-              icon: soundEnabled ? Icons.volume_up : Icons.volume_off,
-              label: soundEnabled ? 'Ses Açık' : 'Ses Kapalı',
-              onPressed: onToggleSound,
-            ),
-            PopupMenuButton<double>(
-              key: const ValueKey('replay-speed-button'),
-              tooltip: 'Oynatma hızını seç',
-              initialValue: speed,
-              onSelected: onSpeedChanged,
-              itemBuilder: (context) => const [
-                PopupMenuItem(value: 0.25, child: Text('0.25×')),
-                PopupMenuItem(value: 0.5, child: Text('0.5×')),
-                PopupMenuItem(value: 1, child: Text('1×')),
-                PopupMenuItem(value: 2, child: Text('2×')),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Center(
+            child: Wrap(
+              alignment: WrapAlignment.center,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 6,
+              runSpacing: 6,
+              children: [
+                _ControlButton(
+                  key: const ValueKey('replay-playback-button'),
+                  icon: playing ? Icons.pause : Icons.play_arrow,
+                  label: playing ? 'Duraklat' : 'Devam Et',
+                  onPressed: onTogglePlayback,
+                ),
+                _ControlButton(
+                  key: const ValueKey('replay-restart-button'),
+                  icon: Icons.replay,
+                  label: 'Yeniden Oynat',
+                  onPressed: onRestart,
+                ),
+                _ControlButton(
+                  key: const ValueKey('replay-sound-button'),
+                  icon: soundEnabled ? Icons.volume_up : Icons.volume_off,
+                  label: soundEnabled ? 'Ses Açık' : 'Ses Kapalı',
+                  onPressed: onToggleSound,
+                ),
+                PopupMenuButton<double>(
+                  key: const ValueKey('replay-speed-button'),
+                  tooltip: 'Oynatma hızını seç',
+                  initialValue: speed,
+                  onSelected: onSpeedChanged,
+                  itemBuilder: (context) => const [
+                    PopupMenuItem(value: 0.25, child: Text('0.25×')),
+                    PopupMenuItem(value: 0.5, child: Text('0.5×')),
+                    PopupMenuItem(value: 1, child: Text('1×')),
+                    PopupMenuItem(value: 2, child: Text('2×')),
+                  ],
+                  child: _ControlSurface(
+                    icon: Icons.speed,
+                    label: 'Hız ${_speedLabel(speed)}',
+                  ),
+                ),
               ],
-              child: _ControlSurface(
-                icon: Icons.speed,
-                label: 'Hız ${_speedLabel(speed)}',
+            ),
+          ),
+          const SizedBox(height: 8),
+          FilledButton.icon(
+            key: const ValueKey('replay-new-game-button'),
+            onPressed: onNewGame,
+            icon: const Icon(Icons.add_circle_outline, size: 17),
+            label: const Text('Yeni Oyun'),
+            style: FilledButton.styleFrom(
+              backgroundColor: RelayColors.cyan,
+              foregroundColor: const Color(0xFF07161C),
+              minimumSize: const Size(150, 36),
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 7),
+              visualDensity: VisualDensity.compact,
+              textStyle: const TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w900,
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

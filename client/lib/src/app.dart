@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'screens/editor_screen.dart';
+import 'screens/main_menu_screen.dart';
 import 'theme/relay_theme.dart';
 
 class RelayApp extends StatelessWidget {
@@ -12,7 +12,7 @@ class RelayApp extends StatelessWidget {
       title: 'Project Relay',
       debugShowCheckedModeBanner: false,
       theme: RelayTheme.dark(),
-      home: const EditorScreen(),
+      home: const MainMenuScreen(),
     );
   }
 }

@@ -3,17 +3,19 @@ import 'dart:math' as math;
 
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../game/event_sound_player.dart';
 import '../game/replay_event_formatter.dart';
 import '../game/replay_game.dart';
 import '../models/relay_models.dart';
+import '../state/app_settings.dart';
 import '../theme/relay_theme.dart';
 import '../widgets/replay_attack_overlay.dart';
 import '../widgets/replay_event_feed.dart';
 import '../widgets/replay_playback_controls.dart';
 
-class ReplayScreen extends StatefulWidget {
+class ReplayScreen extends ConsumerStatefulWidget {
   const ReplayScreen({
     required this.match,
     required this.replay,
@@ -26,10 +28,10 @@ class ReplayScreen extends StatefulWidget {
   final List<ModuleSpec> modules;
 
   @override
-  State<ReplayScreen> createState() => _ReplayScreenState();
+  ConsumerState<ReplayScreen> createState() => _ReplayScreenState();
 }
 
-class _ReplayScreenState extends State<ReplayScreen> {
+class _ReplayScreenState extends ConsumerState<ReplayScreen> {
   late final ValueNotifier<ReplaySnapshot> _snapshot;
   late final ReplayEventFormatter _formatter;
   late final EventSoundPlayer _soundPlayer;
@@ -43,6 +45,9 @@ class _ReplayScreenState extends State<ReplayScreen> {
   @override
   void initState() {
     super.initState();
+    final settings = ref.read(appSettingsProvider);
+    _speed = settings.replaySpeed;
+    _soundEnabled = settings.replaySoundEnabled;
     _formatter = ReplayEventFormatter(widget.match);
     _soundPlayer = EventSoundPlayer(widget.match);
     _moduleSpecs = {
@@ -109,19 +114,6 @@ class _ReplayScreenState extends State<ReplayScreen> {
         MediaQuery.sizeOf(context).width >= 1000;
 
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        toolbarHeight: 48,
-        automaticallyImplyLeading: false,
-        actions: [
-          TextButton.icon(
-            onPressed: _newGame,
-            icon: const Icon(Icons.add_circle_outline),
-            label: const Text('YENİ OYUN'),
-          ),
-          const SizedBox(width: 8),
-        ],
-      ),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 4, 16, 28),
@@ -193,6 +185,8 @@ class _ReplayScreenState extends State<ReplayScreen> {
                                       match: widget.match,
                                       replay: widget.replay,
                                       complete: snapshot.complete,
+                                      currentLeftHp: snapshot.leftHp,
+                                      currentRightHp: snapshot.rightHp,
                                       compact: true,
                                       controls: _playbackControls(),
                                     );
@@ -225,6 +219,8 @@ class _ReplayScreenState extends State<ReplayScreen> {
                     match: widget.match,
                     replay: widget.replay,
                     complete: snapshot.complete,
+                    currentLeftHp: snapshot.leftHp,
+                    currentRightHp: snapshot.rightHp,
                     controls: _playbackControls(),
                   );
                 },
@@ -264,14 +260,20 @@ class _ReplayScreenState extends State<ReplayScreen> {
       onTogglePlayback: _togglePlayback,
       onRestart: _restart,
       onToggleSound: () {
-        setState(() => _soundEnabled = !_soundEnabled);
+        final enabled = !_soundEnabled;
+        ref
+            .read(appSettingsProvider.notifier)
+            .setReplaySoundEnabled(enabled);
+        setState(() => _soundEnabled = enabled);
       },
       onSpeedChanged: (value) {
+        ref.read(appSettingsProvider.notifier).setReplaySpeed(value);
         setState(() {
           _speed = value;
           _game.speed = value;
         });
       },
+      onNewGame: _newGame,
     );
   }
 

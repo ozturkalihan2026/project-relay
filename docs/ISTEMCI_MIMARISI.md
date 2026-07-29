@@ -1,4 +1,4 @@
-# Project Relay v0.4.2 — İstemci Mimarisi
+# Project Relay v0.4.7 — İstemci Mimarisi
 
 ## Katmanlar
 
@@ -6,8 +6,8 @@
 |---|---|---|
 | API | `client/lib/src/api` | HTTP, hata, JWT yenileme ve güvenli oturum saklama |
 | Modeller | `client/lib/src/models` | Oyuncu, oturum, modül, kart, maç ve replay verileri |
-| Durum | `client/lib/src/state` | Riverpod kart düzenleme kuralları |
-| Arayüz | `client/lib/src/screens`, `widgets` | Kart, el kitabı, bot ve canlı olay akışı |
+| Durum | `client/lib/src/state` | Riverpod kart düzenleme ve tekrar tercihi kuralları |
+| Arayüz | `client/lib/src/screens`, `widgets` | Ana menü, kip seçimi, kart, el kitabı ve canlı olay akışı |
 | Oyun | `client/lib/src/game` | Tick gruplama, olay yerelleştirme, ses ve Flame replay |
 
 ## Veri akışı
@@ -17,37 +17,55 @@
 2. API katmanı kısa ömürlü erişim anahtarını yalnız bellekte tutar. Yetkili
    istek `401` alırsa yenileme anahtarını bir kez döndürür ve isteği yineler.
 3. Riverpod katalog sağlayıcısı modül ve bot listesini FastAPI'den alır.
-4. Kart denetleyicisi yalnızca oyuncunun taslak yerleşimini tutar.
-5. İstemci yönlü portları, pasif çekirdeği ve dört çekirdek kapısını önizleme
-   amacıyla çizer.
-6. Doğrulama isteği sunucudan gerçek enerjili kimlikleri alır.
-7. Asenkron eylem taslak kartı `PUT /me/board` ile kaydeder; ardından gövdesiz
+4. Ana menü Oyna, Kariyer ve Ayarlar ekranlarını ayırır. Oyna ekranı
+   çevrimiçi ve antrenman düzenleyici kiplerinden yalnız birini açar.
+5. Kart denetleyicisi yalnızca oyuncunun taslak yerleşimini tutar.
+6. İstemci yönlü portları, pasif çekirdeği ve dört çekirdek kapısını önizleme
+   amacıyla çizer; kart dışına veya kapısız çekirdek kenarına bakan kullanılamaz
+   port işaretlerini göstermez.
+7. Doğrulama isteği sunucudan gerçek enerjili kimlikleri alır.
+8. Asenkron eylem taslak kartı `PUT /me/board` ile kaydeder; ardından gövdesiz
    `POST /matches/async` çağrısıyla sunucu eşleştirmesini başlatır.
-8. Bot antrenmanı eski kart ve bot kimliği isteğini ayrı akışta korur.
-9. Sunucu sonuç, replay adresi ve savaşta kullanılan iki kartı döndürür.
-10. İstemci replay'i ayrıca alır ve checksum eşitliğini kontrol eder.
-11. Replay yanıtındaki durum kareleri her adımın kesin can, ısı, bekleme,
+9. Bot antrenmanı eski kart ve bot kimliği isteğini ayrı ekranda korur.
+10. Sunucu sonuç, replay adresi ve savaşta kullanılan iki kartı döndürür.
+11. İstemci replay'i ayrıca alır ve checksum eşitliğini kontrol eder.
+12. Replay yanıtındaki durum kareleri her adımın kesin can, ısı, bekleme,
    kalkan ve enerji durumunu taşır.
-12. Flame, olayları tick gruplarına ayırıp iki 4×4 kart üzerinde sırayla
+13. Flame, olayları tick gruplarına ayırıp iki 4×4 kart üzerinde sırayla
    görselleştirir; aynı olaylar Türkçe akışa ve modül türüne göre yerel ses
    eşlemesine gider.
 
 ## Yerleşim ve sonuç sunumu
 
 Geniş ekran düzeninde kart görünüm yüksekliğine göre 340–460 px arasında
-uyarlanır. Asenkron PvP kartı ana eylemdir. Dokuz botun ayrı
-`ScrollController` kullanan sabit yükseklikli listesi, varsayılan olarak kapalı
-**Bot Antrenmanı** alanındadır. Seçili modülün döndürme eylemi hücre üzerinde
-gösterilir; modül palete sürüklenerek kaldırılır.
+uyarlanır. Çevrimiçi kipte asenkron PvP kartı ana eylemdir ve bot listesi
+oluşturulmaz. Antrenman kipinde dokuz botun ayrı `ScrollController` kullanan
+sabit yükseklikli listesi gösterilir ve PvP kartı oluşturulmaz. Seçili modülün
+döndürme eylemi hücre üzerinde
+gösterilir; dört portu yönsüz olan Bataryada döndürme eylemi gösterilmez.
+Güçlendiricinin döndürme eylemi sol üstte, yön oku sağ üstte ayrı kalır.
+Modül palete sürüklenerek kaldırılır. Her dolu hücre sunucunun modül
+kataloğundan türetilen Can ve role özgü temel değer etiketlerini gösterir.
+Doğrulama ve yerleşim sonucu kartın hemen altında saydam, renk kodlu ve
+erişilebilir canlı bölge olarak sunulur.
 
 Uygulama çubuğu sunucunun verdiği güvenli misafir adını gösterir. Yenileme
 JWT'si `flutter_secure_storage` ile platformun güvenli anahtar/depolama
 mekanizmasında tutulur; erişim JWT'si kalıcı depoya yazılmaz.
 
-Sunucu sonucundaki `decision` yapısı arayüzde altı ölçütlü tabloya dönüştürülür.
+Sunucu sonucu savaş başından itibaren sabit yükseklikte görünür; replay
+ilerlerken çekirdek canı, kalan modül, oynatılan hasar ve olay sayısını
+günceller. Savaş tamamlanınca aynı alan sunucudaki `decision` yapısını altı
+ölçütlü tabloya dönüştürür.
 İstemci yalnız sunucunun `criterion` değerini vurgular. Savaş durum kareleri
 modül Can ve Isı değişimlerinin önceki kareye göre `+ / −` gösterilmesini
 sağlar. Sıfır bekleme `Hazır`, pozitif bekleme `Doluyor: N` biçiminde yazılır.
+Olay listesi kalan yüksekliği esnek biçimde kullanır. Duraklatma, yeniden
+oynatma, ses ve hız kontrolleri sonuç alanının altında
+gruplanır; **Yeni Oyun** aynı grubun ikinci satırında ortalanır ve ayrı bir
+uygulama çubuğu eylemi olarak tekrarlanmaz.
+Ana menüdeki Ayarlar, yeni tekrarın başlangıç sesi ve hızını Riverpod
+durumunda tutar; tekrar içindeki Ses/Hız kontrolleri aynı tercihi günceller.
 
 ## Güven sınırı
 

@@ -1,7 +1,7 @@
 FROM python:3.12-slim
 
 LABEL org.opencontainers.image.title="Project Relay API"
-LABEL org.opencontainers.image.version="0.4.2"
+LABEL org.opencontainers.image.version="0.4.7"
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1

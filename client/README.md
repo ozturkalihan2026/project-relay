@@ -1,6 +1,6 @@
 # Project Relay Flutter İstemcisi
 
-Bu dizin v0.4.2 kalıcı misafir oturumu, asenkron oyuncu eşleştirmesi,
+Bu dizin v0.4.7 ana menüsü, kalıcı misafir oturumu, asenkron oyuncu eşleştirmesi,
 sürükle-bırak kart düzenleyici, etkileşimli oyun el kitabı ve Flame savaş
 tekrarı uygulamasıdır. Palet modülü boş hücreye yerleşir, dolu
 hücredeki modülü değiştirir. Kart modülü boş hücreye taşınır, dolu hücreyle
@@ -23,13 +23,34 @@ iletimi savaş kartlarında da kullanılır.
 Savaş ekranındaki ayrı **Savaş Tekrarı** başlığı kaldırılmıştır. Duraklatma,
 yeniden oynatma, ses ve hız eylemleri canlı olay akışının altındaki sunucu
 sonucuna bağlanan, ortalanmış ve dar ekranda satıra sarılan düğmelerdir.
+**Yeni Oyun** bu dört düğmenin hemen altındaki ortalanmış eylemdir.
+Sunucu sonucu savaş başından itibaren görünür ve canlı replay değerleriyle
+güncellenir; olay listesi esnerken bu kontrol grubu panelin altında sabit kalır.
 
-Uygulama ilk açılışta sunucudan güvenli adlı misafir oyuncu alır. Yenileme
+Batarya ve Güçlendirici dört portlu enerji kavşağıdır. Batarya yönsüzdür ve
+20 enerji depolar; bu nedenle döndürme düğmesi gösterilmez. Güçlendirici
+enerjiyi bütün bağlı komşulara taşır, fakat yalnız okun gösterdiği tek komşuyu
+güçlendirir.
+Kartın dışına veya kapısız çekirdek alanına bakan kullanılamayan port
+işaretleri çizilmez. Güçlendiricinin yön oku sağ üstte sürekli görünür;
+döndürme düğmesi seçili hücrenin sol üstündedir.
+
+Bağlantı doğrulama, yerleşim ve API hataları ekranın altına yayılan SnackBar
+yerine devre kartının altında saydam ve durum rengine sahip bağlamsal kartta
+gösterilir.
+
+Uygulama **Oyna**, **Kariyer** ve **Ayarlar** seçenekli ana menüyle açılır.
+Oyna altındaki **Çevrimiçi Savaş** yalnız asenkron oyuncu eşleştirmesini,
+**Antrenman** yalnız dokuz sabit rakibi gösterir. Devre hücrelerindeki iki
+kompakt etiket modülün Can değerini ve role özgü temel değerini gösterir;
+tam açıklama ipucunda korunur.
+
+Çevrimiçi ekran ilk açıldığında sunucudan güvenli adlı misafir oyuncu alır. Yenileme
 anahtarı `flutter_secure_storage` ile saklanır; sonraki açılışta aynı oyuncu
 oturumu döndürülür. Ana ekrandaki **Kartı Kaydet ve Oyuncu Bul** eylemi
 geçerli kartı sunucuya kaydeder ve asenkron gerçek oyuncu eşleştirmesini
 başlatır. Uygun yeni oyuncu yoksa sunucu botu kullanılır. Dokuz sabit rakip
-varsayılan kapalı **Bot Antrenmanı** alanında korunur.
+ayrı **Antrenman** ekranında korunur.
 
 ## Hazırlama
 

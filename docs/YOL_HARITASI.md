@@ -25,6 +25,11 @@ dönüştürür.
 | v0.4.0 | Kalıcı misafir hesap ve asenkron PvP temeli | Tamamlandı |
 | v0.4.1 | Flutter UTF-8 oturum testi yaması | Tamamlandı |
 | v0.4.2 | PostgreSQL 63 bit maç tohumu yaması | Tamamlandı |
+| v0.4.3 | Dört portlu destek kavşakları ve savaş eylem düzeni | Tamamlandı |
+| v0.4.4 | Ana menü, ayrık oyun kipleri ve kompakt modül bilgileri | Tamamlandı |
+| v0.4.5 | Sabit savaş sonucu/kontrolleri ve bağlamsal arayüz uyarıları | Tamamlandı |
+| v0.4.6 | Flutter sabit `double` hız listesi analiz uyumluluğu | Tamamlandı |
+| v0.4.7 | Sabit savaş paneli ve kaydırılabilir bildirim widget test yaması | Tamamlandı |
 | v0.5.0 | Derece, haftalık lig ve maç geçmişi | Sıradaki |
 | v0.6.0 | Koşu, mağaza, kit ve geçici yükseltme döngüsü | Planlandı |
 | v0.7.0 | Kapalı alfa, dengeleme ve kötüye kullanım koruması | Planlandı |
@@ -162,6 +167,26 @@ Tamamlanan kararlılık yamaları:
   oturum yenileme testinde bozulmasını engelledi.
 - v0.4.2, 63 bit savaş tohumunu PostgreSQL'de güvenle saklamak için
   `matches.seed` alanını Alembic `20260729_0002` ile `BIGINT` yaptı.
+- v0.4.3, Batarya ile Güçlendiriciyi dört portlu enerji kavşakları olarak
+  birleştirdi. Batarya yönsüz rezerv, Güçlendirici ise okla seçilen tek
+  komşuya yönlü etki rolünü korudu. Savaş ekranındaki **Yeni Oyun** eylemi
+  oynatma kontrollerinin altına taşındı.
+- v0.4.4, açılışı ana menüye taşıdı; Çevrimiçi Savaş ile Antrenmanı ayrı
+  ekranlara böldü. Kariyer kapsamı görünür fakat gerçek görev sistemi
+  v0.6.0'a bırakıldı. Kart hücreleri Can ve role özgü gerçek katalog
+  değerlerini kompakt olarak gösterir.
+- v0.4.5, canlı olay panelindeki taşmayı giderdi; Sunucu Sonucunu savaş
+  boyunca güncellenen sabit alana, oynatma düğmelerini sabit alt bölüme aldı.
+  Doğrulama mesajlarını renk kodlu saydam karta taşıdı. Dört yönlü Batarya ve
+  Güçlendirici kuralları korunurken yalnız kullanılabilir portlar çizilir ve
+  Güçlendiricinin yön oku döndürme eyleminden ayrılır.
+- v0.4.6, Ayarlar denetleyicisindeki sabit `double` kümesini değişmez listeye
+  çevirerek Dart analizörünün `const_set_element_not_primitive_equality`
+  hatasını giderdi. Tekrar hızları ve oynanış değişmedi.
+- v0.4.7, oynatma kontrollerinin Sunucu Sonucu altındaki gerçek konumunu
+  doğrulayan testi widget ağacındaki eski ebeveyn varsayımından ayırdı. Küçük
+  ekran testinde kartın altındaki bildirimin kapatma düğmesi önce görünür alana
+  kaydırılır. Arayüz ve oynanış değişmedi.
 
 v0.4.0'a alınmayacaklar:
 

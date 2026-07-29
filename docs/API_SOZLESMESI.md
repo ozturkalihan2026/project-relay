@@ -1,4 +1,4 @@
-# Project Relay — API Sözleşmesi v0.4.2
+# Project Relay — API Sözleşmesi v0.4.7
 
 Bu sürüm, Flutter/Flame istemcisinin kullandığı kalıcı asenkron PvP
 protokolüdür. Bütün yollar `/api/v1` altında sürümlenir. Etkileşimli Swagger
@@ -128,10 +128,15 @@ Sunucu hedeflemeyi de üç aşamada uygular: önce Jeneratör dışındaki canl�
 modüller, sonra Jeneratör ve en son çekirdek. İstemci hedef sırasını belirlemez;
 yalnız sunucunun ürettiği olayları canlandırır.
 
-Kurallar `0.7` ile Jeneratör adım başına 8 enerji, Kalkan eylem başına 14
+Kurallar `0.8` ile Jeneratör adım başına 8 enerji, Kalkan eylem başına 14
 koruma üretir. Etkisiz destek eylemleri planlanmaz. Kesintisiz enerji
 yetersizliğinin ilk `energy_starved` olayı `detail: "streak_started"` taşır;
 aynı kesinti boyunca yinelenen olay gönderilmez.
+
+Batarya ve Güçlendirici katalogda dört portla döner. Batarya yönsüz enerji
+kavşağı ve 20 birim rezervdir. Güçlendiricinin yön alanı bağlantı noktalarını
+değiştirmez; yalnız okun gösterdiği bağlı komşuya uygulanacak `1,35×` etki ve
+`1,25×` ısı çarpanını seçer.
 
 Dokuz botun her biri için 1–6 modüllük sunucu varyantı bulunur.
 `POST /matches/bot`

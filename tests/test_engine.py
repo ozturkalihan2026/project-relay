@@ -416,7 +416,7 @@ class CircuitBattleEngineTests(unittest.TestCase):
                         frozenset({"GEN", "END"}),
                     )
 
-    def test_relay_modules_carry_energy_in_all_four_orientations(self) -> None:
+    def test_junction_modules_carry_energy_in_all_four_orientations(self) -> None:
         engine = CircuitBattleEngine()
         horizontal = (
             (0, 1, Direction.SOUTH),
@@ -478,12 +478,6 @@ class CircuitBattleEngineTests(unittest.TestCase):
             Direction.WEST: frozenset({Direction.EAST}),
             Direction.NORTH: frozenset({Direction.SOUTH}),
         }
-        expected_relay_ports = {
-            Direction.EAST: frozenset({Direction.WEST, Direction.EAST}),
-            Direction.SOUTH: frozenset({Direction.NORTH, Direction.SOUTH}),
-            Direction.WEST: frozenset({Direction.EAST, Direction.WEST}),
-            Direction.NORTH: frozenset({Direction.SOUTH, Direction.NORTH}),
-        }
         expected_generator_ports = {
             Direction.EAST: frozenset(
                 {Direction.NORTH, Direction.EAST, Direction.SOUTH}
@@ -502,18 +496,16 @@ class CircuitBattleEngineTests(unittest.TestCase):
         for orientation, ports in expected_back_ports.items():
             with self.subTest(kind="laser", orientation=orientation.value):
                 self.assertEqual(world_ports(ModuleKind.LASER, orientation), ports)
-        for orientation in Direction:
-            with self.subTest(kind="battery", orientation=orientation.value):
-                self.assertEqual(
-                    world_ports(ModuleKind.BATTERY, orientation),
-                    frozenset(Direction),
-                )
-        for orientation, ports in expected_relay_ports.items():
-            with self.subTest(kind="amplifier", orientation=orientation.value):
-                self.assertEqual(
-                    world_ports(ModuleKind.AMPLIFIER, orientation),
-                    ports,
-                )
+        for junction_kind in (ModuleKind.BATTERY, ModuleKind.AMPLIFIER):
+            for orientation in Direction:
+                with self.subTest(
+                    kind=junction_kind.value,
+                    orientation=orientation.value,
+                ):
+                    self.assertEqual(
+                        world_ports(junction_kind, orientation),
+                        frozenset(Direction),
+                    )
         for orientation, ports in expected_generator_ports.items():
             with self.subTest(kind="generator", orientation=orientation.value):
                 self.assertEqual(
@@ -600,36 +592,99 @@ class CircuitBattleEngineTests(unittest.TestCase):
         amplified = BoardLayout(
             modules=(
                 generator("A-GEN"),
-                placement("A-AMP", ModuleKind.AMPLIFIER, 0, 2),
-                placement("A-LASER", ModuleKind.LASER, 0, 3),
+                placement(
+                    "A-AMP",
+                    ModuleKind.AMPLIFIER,
+                    1,
+                    3,
+                    Direction.NORTH,
+                ),
+                placement(
+                    "A-LASER-TARGET",
+                    ModuleKind.LASER,
+                    0,
+                    3,
+                    Direction.NORTH,
+                ),
+                placement(
+                    "A-LASER-BRANCH",
+                    ModuleKind.LASER,
+                    2,
+                    3,
+                    Direction.SOUTH,
+                ),
             )
         )
         relayed = BoardLayout(
             modules=(
                 generator("B-GEN"),
-                placement("B-BAT", ModuleKind.BATTERY, 0, 2),
-                placement("B-LASER", ModuleKind.LASER, 0, 3),
+                placement("B-BAT", ModuleKind.BATTERY, 1, 3),
+                placement(
+                    "B-LASER-TARGET",
+                    ModuleKind.LASER,
+                    0,
+                    3,
+                    Direction.NORTH,
+                ),
+                placement(
+                    "B-LASER-BRANCH",
+                    ModuleKind.LASER,
+                    2,
+                    3,
+                    Direction.SOUTH,
+                ),
             )
+        )
+
+        self.assertEqual(
+            engine.powered_module_ids(amplified),
+            frozenset(
+                {
+                    "A-GEN",
+                    "A-AMP",
+                    "A-LASER-TARGET",
+                    "A-LASER-BRANCH",
+                }
+            ),
+        )
+        self.assertEqual(
+            engine.powered_module_ids(relayed),
+            frozenset(
+                {
+                    "B-GEN",
+                    "B-BAT",
+                    "B-LASER-TARGET",
+                    "B-LASER-BRANCH",
+                }
+            ),
         )
 
         amplified_result = engine.simulate(amplified, generator_only("X"), seed=4)
         relayed_result = engine.simulate(relayed, generator_only("X"), seed=4)
-        amplified_laser = next(
+        targeted_laser = next(
             module
             for module in amplified_result.left.modules
-            if module.kind is ModuleKind.LASER
+            if module.module_id == "A-LASER-TARGET"
         )
-        relayed_laser = next(
+        branch_laser = next(
+            module
+            for module in amplified_result.left.modules
+            if module.module_id == "A-LASER-BRANCH"
+        )
+        relayed_lasers = [
             module
             for module in relayed_result.left.modules
             if module.kind is ModuleKind.LASER
-        )
+        ]
 
         self.assertGreater(
             amplified_result.left.total_damage,
             relayed_result.left.total_damage,
         )
-        self.assertGreater(amplified_laser.heat, relayed_laser.heat)
+        self.assertGreater(targeted_laser.heat, branch_laser.heat)
+        self.assertTrue(
+            all(module.heat == relayed_lasers[0].heat for module in relayed_lasers)
+        )
 
     def test_cooler_reduces_heat(self) -> None:
         engine = CircuitBattleEngine(BattleConfig(max_ticks=24))

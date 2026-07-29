@@ -270,6 +270,23 @@ void main() {
       );
     });
 
+    test('dört yönlü Bataryayı gereksiz yere döndürmez', () {
+      final controller = container.read(boardControllerProvider.notifier);
+      controller.dropModule(
+        7,
+        const ModuleDragData.palette(ModuleKind.battery),
+      );
+      final before =
+          container.read(boardControllerProvider).placements[7]!.orientation;
+
+      controller.rotateAt(7);
+
+      expect(
+        container.read(boardControllerProvider).placements[7]?.orientation,
+        before,
+      );
+    });
+
     test('altı modül sınırını korur ve dolu hücre değişimine izin verir', () {
       final controller = container.read(boardControllerProvider.notifier);
       for (final cell in [0, 3, 4, 7]) {

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/relay_models.dart';
 import '../theme/relay_theme.dart';
+import 'module_compact_stats.dart';
 import 'module_visuals.dart';
 
 typedef ModuleDropCallback = void Function(
@@ -93,7 +94,8 @@ class CircuitBoard extends StatelessWidget {
                       onModuleDropped: (data) =>
                           onModuleDropped(index, data),
                       onRotate: placement == null ||
-                              placement.kind == ModuleKind.generator
+                              placement.kind == ModuleKind.generator ||
+                              placement.kind == ModuleKind.battery
                           ? null
                           : () => onRotateModule(index),
                     ),
@@ -146,6 +148,11 @@ class _CircuitCell extends StatelessWidget {
   Widget build(BuildContext context) {
     final module = placement;
     final color = module == null ? RelayColors.muted : moduleColor(module.kind);
+    final compactStats =
+        spec == null ? const <ModuleCompactStat>[] : moduleCompactStats(spec!);
+    final statSemantics = compactStats
+        .map((stat) => stat.fullLabel)
+        .join(', ');
     return DragTarget<ModuleDragData>(
       hitTestBehavior: HitTestBehavior.opaque,
       onWillAcceptWithDetails: (details) =>
@@ -177,13 +184,17 @@ class _CircuitCell extends StatelessWidget {
                         : RelayColors.coral;
 
         final cell = Semantics(
+          key: ValueKey('circuit-cell-$cellIndex'),
           button: true,
           label: module == null
               ? coreGate
                   ? 'Boş çekirdek kapısı, modül bırakılabilir'
                   : 'Boş devre hücresi, modül bırakılabilir'
-              : '${spec?.displayName ?? module.kind.displayName}, '
-                  '${module.orientation.shortLabel} yönü',
+              : module.kind == ModuleKind.battery
+                  ? '${spec?.displayName ?? module.kind.displayName}, '
+                      'dört yönlü bağlantı, $statSemantics'
+                  : '${spec?.displayName ?? module.kind.displayName}, '
+                      '${module.orientation.shortLabel} yönü, $statSemantics',
           child: AnimatedScale(
             scale: dropActive ? 1.035 : 1,
             duration: const Duration(milliseconds: 120),
@@ -266,37 +277,65 @@ class _CircuitCell extends StatelessWidget {
                       : Stack(
                           children: [
                             Center(
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    moduleIcon(module.kind),
-                                    color: color,
-                                    size: 30,
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 4,
+                              child: Transform.translate(
+                                offset: const Offset(0, -6),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      moduleIcon(module.kind),
+                                      color: color,
+                                      size: 26,
                                     ),
-                                    child: Text(
-                                      spec?.displayName ??
-                                          module.kind.displayName,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      textAlign: TextAlign.center,
-                                      style: const TextStyle(
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.w700,
+                                    const SizedBox(height: 2),
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 4,
+                                      ),
+                                      child: Text(
+                                        spec?.displayName ??
+                                            module.kind.displayName,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        textAlign: TextAlign.center,
+                                        style: const TextStyle(
+                                          fontSize: 9,
+                                          fontWeight: FontWeight.w700,
+                                        ),
                                       ),
                                     ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            Positioned(
+                              right: 5,
+                              top: 5,
+                              child: Tooltip(
+                                message: switch (module.kind) {
+                                  ModuleKind.generator =>
+                                    'Jeneratör çekirdeğe dönük kalır',
+                                  ModuleKind.battery =>
+                                    'Dört yönlü kavşak • yalnız '
+                                        'kullanılabilir uçlar gösterilir',
+                                  _ => 'Ön yön: '
+                                      '${module.orientation.displayName}',
+                                },
+                                child: Icon(
+                                  module.kind == ModuleKind.battery
+                                      ? Icons.hub_outlined
+                                      : directionIcon(module.orientation),
+                                  key: ValueKey(
+                                    'module-direction-$cellIndex',
                                   ),
-                                ],
+                                  color: Colors.white70,
+                                  size: 15,
+                                ),
                               ),
                             ),
                             if (selected && onRotate != null)
                               Positioned(
-                                right: 4,
+                                left: 4,
                                 top: 4,
                                 child: SizedBox.square(
                                   dimension: 28,
@@ -313,40 +352,39 @@ class _CircuitCell extends StatelessWidget {
                                     ),
                                   ),
                                 ),
-                              )
-                            else
-                              Positioned(
-                                right: 5,
-                                top: 5,
-                                child: Tooltip(
-                                  message: module.kind == ModuleKind.generator
-                                      ? 'Jeneratör çekirdeğe dönük kalır'
-                                      : 'Ön yön: '
-                                          '${module.orientation.displayName}',
-                                  child: Icon(
-                                    directionIcon(module.orientation),
-                                    color: Colors.white70,
-                                    size: 15,
-                                  ),
-                                ),
                               ),
                             if (spec != null)
                               for (final port
-                                  in spec!.worldPorts(module.orientation))
+                                  in usableBoardPorts(
+                                    module,
+                                    spec!.worldPorts(module.orientation),
+                                  ))
                                 _PortMarker(
                                   direction: port,
                                   energized: powered,
                                 ),
                             if (validationVisible)
                               Positioned(
-                                left: 6,
-                                top: 6,
+                                right: 5,
+                                top: 24,
                                 child: Icon(
                                   powered ? Icons.bolt : Icons.link_off,
                                   color: powered
                                       ? RelayColors.cyan
                                       : RelayColors.coral,
                                   size: 15,
+                                ),
+                              ),
+                            if (compactStats.isNotEmpty && !dropActive)
+                              Positioned(
+                                key: ValueKey(
+                                  'module-stat-badges-${module.id}',
+                                ),
+                                left: 4,
+                                right: 4,
+                                bottom: coreGate ? 15 : 4,
+                                child: _ModuleStatBadges(
+                                  stats: compactStats,
                                 ),
                               ),
                             if (coreGate)
@@ -424,6 +462,54 @@ class _CircuitCell extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+class _ModuleStatBadges extends StatelessWidget {
+  const _ModuleStatBadges({
+    required this.stats,
+  });
+
+  final List<ModuleCompactStat> stats;
+
+  @override
+  Widget build(BuildContext context) {
+    return Tooltip(
+      message: stats.map((stat) => stat.fullLabel).join(' • '),
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (var index = 0; index < stats.length; index++) ...[
+              if (index > 0) const SizedBox(width: 3),
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  color: const Color(0xDD0B1C24),
+                  borderRadius: BorderRadius.circular(5),
+                  border: Border.all(color: const Color(0xFF37616D)),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 4,
+                    vertical: 2,
+                  ),
+                  child: Text(
+                    stats[index].shortLabel,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 7,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 0.2,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
     );
   }
 }

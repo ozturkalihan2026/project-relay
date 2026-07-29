@@ -26,7 +26,6 @@ class ModuleSpec:
 
 ALL_PORTS = frozenset(Direction)
 BACK_PORT = frozenset({Direction.WEST})
-RELAY_PORTS = frozenset({Direction.WEST, Direction.EAST})
 GENERATOR_PORTS = frozenset(
     {
         Direction.NORTH,
@@ -53,8 +52,8 @@ MODULE_SPECS: dict[ModuleKind, ModuleSpec] = {
         kind=ModuleKind.BATTERY,
         display_name="Batarya",
         description=(
-            "Enerjiyi depolar ve dört yöne aktarır; dallanan devrelerde "
-            "rezerv ve kavşak görevi görür."
+            "Dört portlu yönsüz enerji kavşağıdır; enerjiyi dört yöne "
+            "aktarır ve kullanılmayan enerjiyi depolar."
         ),
         max_hp=38,
         ports=ALL_PORTS,
@@ -126,11 +125,11 @@ MODULE_SPECS: dict[ModuleKind, ModuleSpec] = {
         kind=ModuleKind.AMPLIFIER,
         display_name="Güçlendirici",
         description=(
-            "Enerjiyi düz hat üzerinde aktarır ve önündeki modülün etkisini "
-            "artırır; yönü stratejinin parçasıdır."
+            "Dört portlu enerji kavşağıdır; oku hangi komşu modülün etkisini "
+            "ve ısısını artıracağını belirler."
         ),
         max_hp=25,
-        ports=RELAY_PORTS,
+        ports=ALL_PORTS,
         threat=90,
     ),
     ModuleKind.REPAIR: ModuleSpec(

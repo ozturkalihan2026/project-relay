@@ -20,8 +20,8 @@ from .store import (
 )
 
 
-RULES_VERSION = "0.7"
-API_VERSION = "0.4.2"
+RULES_VERSION = "0.8"
+API_VERSION = "0.4.7"
 
 
 class MatchService:
