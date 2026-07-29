@@ -1,0 +1,60 @@
+"""Project Relay deterministic combat engine."""
+
+from .engine import CircuitBattleEngine
+from .enums import Direction, EventType, ModuleKind, Side
+from .models import (
+    BattleConfig,
+    BattleDecision,
+    BattleEvent,
+    BattleResult,
+    BoardLayout,
+    BoardSummary,
+    DecisionMetric,
+    MAX_BOARD_MODULES,
+    ModulePlacement,
+    ModuleSummary,
+    ReplayBoardState,
+    ReplayModuleState,
+    ReplayStateFrame,
+)
+from .replay import compute_replay_checksum
+from .topology import (
+    BOARD_SIZE,
+    CORE_CELLS,
+    CORE_GATE_CELLS,
+    CORE_GATE_DIRECTIONS,
+    PLACEABLE_CELLS,
+    core_direction,
+    is_core_cell,
+    is_core_gate,
+)
+
+__all__ = [
+    "BattleConfig",
+    "BattleDecision",
+    "BattleEvent",
+    "BattleResult",
+    "BoardLayout",
+    "BoardSummary",
+    "DecisionMetric",
+    "BOARD_SIZE",
+    "CORE_CELLS",
+    "CORE_GATE_CELLS",
+    "CORE_GATE_DIRECTIONS",
+    "MAX_BOARD_MODULES",
+    "CircuitBattleEngine",
+    "Direction",
+    "EventType",
+    "ModuleKind",
+    "ModulePlacement",
+    "ModuleSummary",
+    "PLACEABLE_CELLS",
+    "ReplayBoardState",
+    "ReplayModuleState",
+    "ReplayStateFrame",
+    "Side",
+    "core_direction",
+    "compute_replay_checksum",
+    "is_core_cell",
+    "is_core_gate",
+]

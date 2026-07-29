@@ -1,0 +1,90 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:project_relay_client/src/widgets/replay_playback_controls.dart';
+
+void main() {
+  testWidgets(
+    'tekrar kontrolleri ortalanmış düğmeler olarak bütün eylemleri çalıştırır',
+    (tester) async {
+      var playbackToggles = 0;
+      var restarts = 0;
+      var soundToggles = 0;
+      double? selectedSpeed;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SizedBox(
+              width: 440,
+              child: ReplayPlaybackControls(
+                playing: true,
+                soundEnabled: true,
+                speed: 1,
+                onTogglePlayback: () => playbackToggles++,
+                onRestart: () => restarts++,
+                onToggleSound: () => soundToggles++,
+                onSpeedChanged: (value) => selectedSpeed = value,
+              ),
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('Duraklat'), findsOneWidget);
+      expect(find.text('Yeniden Oynat'), findsOneWidget);
+      expect(find.text('Ses Açık'), findsOneWidget);
+      expect(find.text('Hız 1×'), findsOneWidget);
+
+      await tester.tap(
+        find.byKey(const ValueKey('replay-playback-button')),
+      );
+      await tester.tap(
+        find.byKey(const ValueKey('replay-restart-button')),
+      );
+      await tester.tap(
+        find.byKey(const ValueKey('replay-sound-button')),
+      );
+
+      expect(playbackToggles, 1);
+      expect(restarts, 1);
+      expect(soundToggles, 1);
+
+      await tester.tap(
+        find.byKey(const ValueKey('replay-speed-button')),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('2×'));
+      await tester.pumpAndSettle();
+
+      expect(selectedSpeed, 2);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets('dar alanda kontrol düğmeleri taşmadan satıra sarılır',
+      (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SizedBox(
+            width: 230,
+            child: ReplayPlaybackControls(
+              playing: false,
+              soundEnabled: false,
+              speed: 0.5,
+              onTogglePlayback: () {},
+              onRestart: () {},
+              onToggleSound: () {},
+              onSpeedChanged: (_) {},
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('Devam Et'), findsOneWidget);
+    expect(find.text('Ses Kapalı'), findsOneWidget);
+    expect(find.text('Hız 0.5×'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+}
