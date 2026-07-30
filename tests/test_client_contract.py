@@ -23,15 +23,41 @@ class FlutterClientContractTests(unittest.TestCase):
             CLIENT / "lib" / "src" / "widgets" / "game_manual.dart"
         ).read_text(encoding="utf-8")
 
-        self.assertIn("version: 0.4.9+28", pubspec)
-        self.assertIn("${widget.mode.title} • v0.4.9", editor)
-        self.assertIn("ASENKRON DEVRE SAVAŞI • v0.4.9", main_menu)
-        self.assertIn("PROJECT RELAY • v0.4.9", manual)
+        self.assertIn("version: 0.4.13+32", pubspec)
+        self.assertIn("${widget.mode.title} • v0.4.13", editor)
+        self.assertIn("ASENKRON DEVRE SAVAŞI • v0.4.13", main_menu)
+        self.assertIn("PROJECT RELAY • v0.4.13", manual)
         self.assertIn("audioplayers:", pubspec)
         self.assertIn("assets/sounds/", pubspec)
         self.assertIn("flame:", pubspec)
         self.assertIn("flutter_riverpod:", pubspec)
         self.assertIn("flutter_secure_storage:", pubspec)
+
+    def test_module_palette_stack_has_finite_height(self) -> None:
+        palette = (
+            CLIENT / "lib" / "src" / "widgets" / "module_palette.dart"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("height: 74,", palette)
+        self.assertIn("computedTileWidth > 255", palette)
+        self.assertIn("alignment: WrapAlignment.center", palette)
+        self.assertIn("child: Stack(", palette)
+        self.assertNotIn("BoxConstraints(minHeight: 74)", palette)
+
+    def test_replay_labels_and_new_game_action_are_emphasized(self) -> None:
+        replay_game = (
+            CLIENT / "lib" / "src" / "game" / "replay_game.dart"
+        ).read_text(encoding="utf-8")
+        controls = (
+            CLIENT / "lib" / "src" / "widgets" / "replay_playback_controls.dart"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("size: 14,", replay_game)
+        self.assertIn("fontWeight: FontWeight.w900", replay_game)
+        self.assertIn("maxWidth: rect.width", replay_game)
+        self.assertIn("child: const Text('YENİ OYUN')", controls)
+        self.assertIn("fontSize: 14", controls)
+        self.assertIn("letterSpacing: 0.8", controls)
 
     def test_session_api_mocks_encode_turkish_json_as_utf8(self) -> None:
         session_test = (
@@ -244,7 +270,13 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("play-mode-back-button", play_mode)
         self.assertIn("settings-back-button", settings)
         self.assertIn("SAVAŞA BAŞLA", editor)
+        self.assertIn("editor-menu-back-card", editor)
         self.assertIn("editor-menu-back-button", editor)
+        self.assertNotIn("SUNUCU YETKİLİ SAVAŞ", editor)
+        for section_index in ("1", "2", "3", "4"):
+            self.assertIn(f"index: '{section_index}'", editor)
+        for old_index in ("01", "02", "03", "04"):
+            self.assertNotIn(f"index: '{old_index}'", editor)
 
     def test_palette_owns_module_labels_and_stats_while_board_stays_icon_only(
         self,
@@ -259,6 +291,11 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("module.displayName", palette_source)
         self.assertIn("_moduleStatistics(module)", palette_source)
         self.assertIn("palette-module-properties-", palette_source)
+        self.assertIn("final columnCount = constraints.maxWidth >= 720", palette_source)
+        self.assertIn("? 4", palette_source)
+        self.assertIn("textAlign: TextAlign.center", palette_source)
+        self.assertIn("fontSize: 13", palette_source)
+        self.assertIn("size: 24", palette_source)
         self.assertIn("module-icon-${module.id}", board_source)
         self.assertNotIn("module-name-${module.id}", board_source)
         self.assertNotIn("module-stat-badges-${module.id}", board_source)
@@ -362,7 +399,7 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertNotIn("compact-how-to-play-card", manual_source)
         self.assertNotIn("_QuickRule", manual_source)
         self.assertNotIn("_HowToStep", manual_source)
-        self.assertIn("maxWidth: 1120", editor_source)
+        self.assertIn("maxWidth: 1360", editor_source)
         self.assertIn("_drawBoardCore", replay_source)
         self.assertIn("_moduleHasCorePort", replay_source)
         self.assertIn("ReplayCircuitGeometry.modulePortAnchor", replay_source)
@@ -426,6 +463,15 @@ class FlutterClientContractTests(unittest.TestCase):
 
         self.assertIn("match.playerBoard", replay_game)
         self.assertIn("match.opponentBoard", replay_game)
+        self.assertIn("maxBoardExtent = 488", replay_game)
+        self.assertIn("ReplayStageGeometry.leftBoard", replay_game)
+        self.assertIn("ReplayStageGeometry.rightBoard", replay_game)
+        self.assertIn("_drawModuleIcon", replay_game)
+        self.assertNotIn("_moduleCode", replay_game)
+        self.assertIn("height: stageHeight", replay_screen)
+        self.assertIn("clamp(540.0, 620.0)", replay_screen)
+        self.assertIn("maxWidth: 540", replay_screen)
+        self.assertIn("mediaSize.width >= 1500", replay_screen)
         self.assertNotIn("appBar:", replay_screen)
         self.assertIn("onNewGame: _newGame", replay_screen)
         self.assertIn("_togglePlayback", replay_screen)
@@ -460,8 +506,14 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("replay-new-game-button", playback_controls)
         self.assertNotIn("Icons.add_circle_outline", playback_controls)
         self.assertIn("Wrap(", playback_controls)
+        self.assertIn("minimumSize: const Size(220, 40)", playback_controls)
+        controls_test = (
+            CLIENT / "test" / "replay_playback_controls_test.dart"
+        ).read_text(encoding="utf-8")
+        self.assertIn("width: 540", controls_test)
+        self.assertIn("const Size(220, 40)", controls_test)
         self.assertIn("Yeniden Oynat", playback_controls)
-        self.assertIn("Yeni Oyun", playback_controls)
+        self.assertIn("YENİ OYUN", playback_controls)
         self.assertIn("Hız ${_speedLabel(speed)}", playback_controls)
         self.assertNotIn("_ResultDetails", replay_screen)
         self.assertNotIn("class _Metric", replay_screen)

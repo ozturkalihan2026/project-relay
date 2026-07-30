@@ -35,7 +35,14 @@ void main() {
       await tester.tap(find.byKey(const ValueKey('play-mode-online')));
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('ÇEVRİMİÇİ SAVAŞ • v0.4.9'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      final generatorPaletteTile = find.byKey(
+        const ValueKey('palette-module-generator'),
+      );
+      expect(generatorPaletteTile, findsOneWidget);
+      expect(tester.getSize(generatorPaletteTile).height, 74);
+
+      expect(find.textContaining('ÇEVRİMİÇİ SAVAŞ • v0.4.13'), findsOneWidget);
       expect(find.text('DEVREYİ KUR'), findsOneWidget);
       expect(find.text('ASENKRON PvP'), findsOneWidget);
       expect(
@@ -43,9 +50,14 @@ void main() {
         findsOneWidget,
       );
       expect(
+        find.byKey(const ValueKey('editor-menu-back-card')),
+        findsOneWidget,
+      );
+      expect(
         find.byKey(const ValueKey('editor-menu-back-button')),
         findsOneWidget,
       );
+      expect(find.text('SUNUCU YETKİLİ SAVAŞ'), findsNothing);
       expect(
         find.byKey(const ValueKey('guest-session-badge')),
         findsOneWidget,
@@ -87,7 +99,7 @@ void main() {
       await tester.tap(find.byKey(const ValueKey('play-mode-training')));
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('ANTRENMAN • v0.4.9'), findsOneWidget);
+      expect(find.textContaining('ANTRENMAN • v0.4.13'), findsOneWidget);
       expect(find.byKey(const ValueKey('training-panel')), findsOneWidget);
       expect(find.text('ANTRENMAN RAKİPLERİ'), findsOneWidget);
       expect(find.text('SEÇİLİ BOTLA SAVAŞ'), findsOneWidget);

@@ -31,7 +31,7 @@ class ModulePalette extends StatelessWidget {
         );
         return AnimatedContainer(
           duration: const Duration(milliseconds: 140),
-          padding: const EdgeInsets.all(6),
+          padding: const EdgeInsets.all(3),
           decoration: BoxDecoration(
             color: returning
                 ? RelayColors.coral.withValues(alpha: 0.13)
@@ -76,17 +76,36 @@ class ModulePalette extends StatelessWidget {
                       ),
               ),
               if (returning) const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  for (final module in modules)
-                    _PaletteItem(
-                      module: module,
-                      selected: module.kind == selectedKind,
-                      onTap: () => onSelected(module.kind),
-                    ),
-                ],
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  const spacing = 7.0;
+                  const runSpacing = 5.0;
+                  final columnCount = constraints.maxWidth >= 720
+                      ? 4
+                      : constraints.maxWidth >= 520
+                          ? 3
+                          : 2;
+                  final computedTileWidth =
+                      (constraints.maxWidth - spacing * (columnCount - 1)) /
+                          columnCount;
+                  final tileWidth = columnCount == 4 && computedTileWidth > 255
+                      ? 255.0
+                      : computedTileWidth;
+                  return Wrap(
+                    alignment: WrapAlignment.center,
+                    spacing: spacing,
+                    runSpacing: runSpacing,
+                    children: [
+                      for (final module in modules)
+                        _PaletteItem(
+                          module: module,
+                          selected: module.kind == selectedKind,
+                          width: tileWidth,
+                          onTap: () => onSelected(module.kind),
+                        ),
+                    ],
+                  );
+                },
               ),
             ],
           ),
@@ -100,11 +119,13 @@ class _PaletteItem extends StatelessWidget {
   const _PaletteItem({
     required this.module,
     required this.selected,
+    required this.width,
     required this.onTap,
   });
 
   final ModuleSpec module;
   final bool selected;
+  final double width;
   final VoidCallback onTap;
 
   @override
@@ -121,12 +142,14 @@ class _PaletteItem extends StatelessWidget {
           child: _PaletteTile(
             module: module,
             selected: selected,
+            width: width,
             onTap: onTap,
           ),
         ),
         child: _PaletteTile(
           module: module,
           selected: selected,
+          width: width,
           onTap: onTap,
         ),
       ),
@@ -138,11 +161,13 @@ class _PaletteTile extends StatelessWidget {
   const _PaletteTile({
     required this.module,
     required this.selected,
+    required this.width,
     required this.onTap,
   });
 
   final ModuleSpec module;
   final bool selected;
+  final double width;
   final VoidCallback onTap;
 
   @override
@@ -161,9 +186,9 @@ class _PaletteTile extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 160),
-            width: 188,
-            constraints: const BoxConstraints(minHeight: 78),
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+            width: width,
+            height: 74,
+            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 5),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
@@ -171,45 +196,65 @@ class _PaletteTile extends StatelessWidget {
                 width: selected ? 2 : 1,
               ),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+            child: Stack(
               children: [
-                Row(
-                  children: [
-                    Icon(moduleIcon(module.kind), color: color, size: 23),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        module.displayName,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 12.5,
-                          fontWeight: FontWeight.w800,
+                const Positioned(
+                  right: 0,
+                  top: 0,
+                  child: Icon(
+                    Icons.drag_indicator,
+                    color: RelayColors.muted,
+                    size: 17,
+                  ),
+                ),
+                Positioned.fill(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 10),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              moduleIcon(module.kind),
+                              color: color,
+                              size: 24,
+                            ),
+                            const SizedBox(width: 6),
+                            Flexible(
+                              child: Text(
+                                module.displayName,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 4),
-                    const Icon(
-                      Icons.drag_indicator,
-                      color: RelayColors.muted,
-                      size: 17,
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  _moduleStatistics(module),
-                  key: ValueKey(
-                    'palette-module-properties-${module.kind.wireValue}',
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: RelayColors.muted,
-                    fontSize: 10,
-                    height: 1.25,
-                    fontWeight: FontWeight.w700,
+                      const SizedBox(height: 4),
+                      Text(
+                        _moduleStatistics(module),
+                        key: ValueKey(
+                          'palette-module-properties-${module.kind.wireValue}',
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: RelayColors.muted,
+                          fontSize: 9.5,
+                          height: 1.15,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],

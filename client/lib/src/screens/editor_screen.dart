@@ -67,7 +67,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
               ),
             ),
             Text(
-              '${widget.mode.title} • v0.4.9',
+              '${widget.mode.title} • v0.4.13',
               style: const TextStyle(
                 color: RelayColors.muted,
                 fontSize: 10,
@@ -148,7 +148,6 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
         );
         final actionPanel = _ActionPanel(
           mode: widget.mode,
-          rulesVersion: catalogs.rulesVersion,
           state: boardState,
           specs: specs,
           bots: catalogs.bots,
@@ -167,7 +166,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Expanded(flex: 3, child: boardPanel),
-                  const SizedBox(width: 14),
+                  const SizedBox(width: 24),
                   SizedBox(width: 370, child: actionPanel),
                 ],
               )
@@ -184,7 +183,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
           padding: const EdgeInsets.fromLTRB(14, 4, 14, 20),
           child: Center(
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 1120),
+              constraints: const BoxConstraints(maxWidth: 1360),
               child: panels,
             ),
           ),
@@ -397,7 +396,7 @@ class _BoardPanel extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _SectionHeader(
-          index: '01',
+          index: '1',
           title: 'MODÜL SEÇ',
           subtitle: 'Modül adı ve özellikleri burada görünür; devre kartında '
               'yalnız simge kalır.',
@@ -411,7 +410,7 @@ class _BoardPanel extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         _SectionHeader(
-          index: '02',
+          index: '2',
           title: 'DEVREYİ KUR',
           subtitle: '12 çevre hücresini kullanın; Jeneratörü dört çekirdek '
               'kapısından birine yerleştirin.',
@@ -545,7 +544,6 @@ class _EditorNoticeBanner extends StatelessWidget {
 class _ActionPanel extends StatelessWidget {
   const _ActionPanel({
     required this.mode,
-    required this.rulesVersion,
     required this.state,
     required this.specs,
     required this.bots,
@@ -559,7 +557,6 @@ class _ActionPanel extends StatelessWidget {
   });
 
   final EditorMode mode;
-  final String rulesVersion;
   final BoardEditorState state;
   final Map<ModuleKind, ModuleSpec> specs;
   final List<BotDefinition> bots;
@@ -576,54 +573,9 @@ class _ActionPanel extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
-            child: Row(
-              children: [
-                const DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: Color(0x2238E8FF),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Padding(
-                    padding: EdgeInsets.all(7),
-                    child: Icon(
-                      Icons.dns_outlined,
-                      color: RelayColors.cyan,
-                      size: 20,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 9),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'SUNUCU YETKİLİ SAVAŞ',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w800,
-                          fontSize: 12,
-                        ),
-                      ),
-                      Text(
-                        'Kural $rulesVersion • Sonucu telefon belirlemez',
-                        style: const TextStyle(
-                          color: RelayColors.muted,
-                          fontSize: 11,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: 12),
+
         _SectionHeader(
-          index: '03',
+          index: '3',
           title: 'ENERJİYİ KONTROL ET',
           subtitle: 'Sunucu bağlı ve bağlantısız modülleri işaretler.',
         ),
@@ -637,7 +589,7 @@ class _ActionPanel extends StatelessWidget {
         const SizedBox(height: 12),
         if (mode == EditorMode.online) ...[
           const _SectionHeader(
-            index: '04',
+            index: '4',
             title: 'ASENKRON PvP',
             subtitle:
                 'Kartınızı kaydedin; sunucu eşit modüllü gerçek bir oyuncu '
@@ -649,9 +601,11 @@ class _ActionPanel extends StatelessWidget {
             busy: busy,
             onStartAsync: onStartAsync,
           ),
+          const SizedBox(height: 8),
+          _EditorMenuBackCard(busy: busy),
         ] else ...[
           const _SectionHeader(
-            index: '04',
+            index: '4',
             title: 'RAKİBİ SEÇ',
             subtitle:
                 'Dokuz sabit rakipten birini seçip düzeninizi sınayın.',
@@ -729,13 +683,6 @@ class _AsyncMatchCard extends StatelessWidget {
                 busy ? 'RAKİP ARANIYOR' : 'SAVAŞA BAŞLA',
               ),
             ),
-            const SizedBox(height: 8),
-            OutlinedButton.icon(
-              key: const ValueKey('editor-menu-back-button'),
-              onPressed: busy ? null : () => Navigator.of(context).maybePop(),
-              icon: const Icon(Icons.arrow_back),
-              label: const Text('MENÜYE DÖN'),
-            ),
             const SizedBox(height: 6),
             const Text(
               'Kendinizle ve son rakiplerinizle eşleşmezsiniz. Uygun yeni '
@@ -747,6 +694,28 @@ class _AsyncMatchCard extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _EditorMenuBackCard extends StatelessWidget {
+  const _EditorMenuBackCard({required this.busy});
+
+  final bool busy;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      key: const ValueKey('editor-menu-back-card'),
+      child: Padding(
+        padding: const EdgeInsets.all(8),
+        child: OutlinedButton.icon(
+          key: const ValueKey('editor-menu-back-button'),
+          onPressed: busy ? null : () => Navigator.of(context).maybePop(),
+          icon: const Icon(Icons.arrow_back),
+          label: const Text('MENÜYE DÖN'),
         ),
       ),
     );

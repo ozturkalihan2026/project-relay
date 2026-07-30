@@ -10,6 +10,40 @@ import '../widgets/module_visuals.dart';
 import 'replay_event_formatter.dart';
 import 'replay_timeline.dart';
 
+abstract final class ReplayStageGeometry {
+  static const double maxBoardExtent = 488;
+
+  static double boardExtent(ui.Size size) => math.min(
+        maxBoardExtent,
+        math.min(size.width * 0.36, size.height * 0.78),
+      );
+
+  static double sideInset(ui.Size size) => math.max(20.0, size.width * 0.025);
+
+  static double boardTop(ui.Size size, double boardExtent) =>
+      math.max(70.0, (size.height - boardExtent) / 2 - 6);
+
+  static ui.Rect leftBoard(ui.Size size) {
+    final extent = boardExtent(size);
+    return ui.Rect.fromLTWH(
+      sideInset(size),
+      boardTop(size, extent),
+      extent,
+      extent,
+    );
+  }
+
+  static ui.Rect rightBoard(ui.Size size) {
+    final extent = boardExtent(size);
+    return ui.Rect.fromLTWH(
+      size.width - sideInset(size) - extent,
+      boardTop(size, extent),
+      extent,
+      extent,
+    );
+  }
+}
+
 abstract final class ReplayCircuitGeometry {
   static ui.Rect moduleRect(
     ModulePlacement module,
@@ -374,20 +408,9 @@ class RelayReplayGame extends FlameGame {
     );
     _drawCircuitBackground(canvas, width, height);
 
-    final boardSize = math.min(width * 0.36, height * 0.60);
-    final boardTop = height * 0.13;
-    final leftBoard = ui.Rect.fromLTWH(
-      width * 0.055,
-      boardTop,
-      boardSize,
-      boardSize,
-    );
-    final rightBoard = ui.Rect.fromLTWH(
-      width - width * 0.055 - boardSize,
-      boardTop,
-      boardSize,
-      boardSize,
-    );
+    final stageSize = ui.Size(width, height);
+    final leftBoard = ReplayStageGeometry.leftBoard(stageSize);
+    final rightBoard = ReplayStageGeometry.rightBoard(stageSize);
     final leftCore = leftBoard.center;
     final rightCore = rightBoard.center;
 
@@ -539,14 +562,15 @@ class RelayReplayGame extends FlameGame {
         powered: state?.powered ?? false,
         destroyed: destroyed,
       );
-      _drawText(
+      _drawModuleIcon(
         canvas,
-        _moduleCode(module.kind),
-        ui.Offset(cell.center.dx, cell.top + 3),
+        module.kind,
+        ui.Offset(
+          cell.center.dx,
+          cell.top + math.max(18.0, cellSize * 0.20),
+        ),
         color: destroyed ? RelayColors.muted : moduleColorValue,
-        size: math.max(7.0, cellSize * 0.15),
-        centered: true,
-        maxWidth: cell.width - 4,
+        size: math.max(18.0, cellSize * 0.21),
       );
 
       final maximumHp = _moduleMaxHp[module.id] ?? 1;
@@ -645,10 +669,12 @@ class RelayReplayGame extends FlameGame {
     _drawText(
       canvas,
       label,
-      ui.Offset(rect.center.dx, rect.top - 35),
+      ui.Offset(rect.center.dx, rect.top - 37),
       color: color,
-      size: 11,
+      size: 14,
       centered: true,
+      maxWidth: rect.width,
+      fontWeight: FontWeight.w900,
     );
     _drawText(
       canvas,
@@ -1085,16 +1111,35 @@ class RelayReplayGame extends FlameGame {
     return null;
   }
 
-  String _moduleCode(ModuleKind kind) => switch (kind) {
-        ModuleKind.generator => 'JN',
-        ModuleKind.battery => 'BT',
-        ModuleKind.laser => 'LZ',
-        ModuleKind.pulseCannon => 'DT',
-        ModuleKind.shield => 'KL',
-        ModuleKind.cooler => 'SĞ',
-        ModuleKind.amplifier => 'GÇ',
-        ModuleKind.repair => 'ON',
-      };
+
+  void _drawModuleIcon(
+    ui.Canvas canvas,
+    ModuleKind kind,
+    ui.Offset center, {
+    required Color color,
+    required double size,
+  }) {
+    final icon = moduleIcon(kind);
+    final painter = TextPainter(
+      text: TextSpan(
+        text: String.fromCharCode(icon.codePoint),
+        style: TextStyle(
+          color: color,
+          fontSize: size,
+          fontFamily: icon.fontFamily,
+          package: icon.fontPackage,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout();
+    painter.paint(
+      canvas,
+      ui.Offset(
+        center.dx - painter.width / 2,
+        center.dy - painter.height / 2,
+      ),
+    );
+  }
 
   void _drawText(
     ui.Canvas canvas,
@@ -1104,6 +1149,7 @@ class RelayReplayGame extends FlameGame {
     required double size,
     bool centered = false,
     double? maxWidth,
+    FontWeight fontWeight = FontWeight.w700,
   }) {
     final painter = TextPainter(
       text: TextSpan(
@@ -1111,7 +1157,7 @@ class RelayReplayGame extends FlameGame {
         style: TextStyle(
           color: color,
           fontSize: size,
-          fontWeight: FontWeight.w700,
+          fontWeight: fontWeight,
           letterSpacing: 0.4,
         ),
       ),

@@ -1,6 +1,4 @@
 import 'dart:async';
-import 'dart:math' as math;
-
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -110,8 +108,11 @@ class _ReplayScreenState extends ConsumerState<ReplayScreen> {
       'right' => RelayColors.coral,
       _ => RelayColors.amber,
     };
-    final useInlineEventFeed =
-        MediaQuery.sizeOf(context).width >= 1000;
+    final mediaSize = MediaQuery.sizeOf(context);
+    final useInlineEventFeed = mediaSize.width >= 1500;
+    final stageHeight = (mediaSize.height - 130)
+        .clamp(540.0, 620.0)
+        .toDouble();
 
     return Scaffold(
       body: SafeArea(
@@ -147,15 +148,15 @@ class _ReplayScreenState extends ConsumerState<ReplayScreen> {
             Card(
               clipBehavior: Clip.antiAlias,
               child: SizedBox(
-                height: 520,
+                height: stageHeight,
                 child: LayoutBuilder(
                   builder: (context, constraints) {
-                    final boardSize = math.min(
-                      constraints.maxWidth * 0.36,
-                      constraints.maxHeight * 0.60,
+                    final stageSize = Size(
+                      constraints.maxWidth,
+                      constraints.maxHeight,
                     );
-                    final sideInset = constraints.maxWidth * 0.055;
-                    final feedInset = sideInset + boardSize + 18;
+                    final leftBoard = ReplayStageGeometry.leftBoard(stageSize);
+                    final feedInset = leftBoard.right + 14;
                     return Stack(
                       children: [
                         Positioned.fill(
@@ -168,12 +169,12 @@ class _ReplayScreenState extends ConsumerState<ReplayScreen> {
                           Positioned(
                             left: feedInset,
                             right: feedInset,
-                            top: 54,
-                            bottom: 42,
+                            top: 48,
+                            bottom: 24,
                             child: Center(
                               child: ConstrainedBox(
                                 constraints:
-                                    const BoxConstraints(maxWidth: 440),
+                                    const BoxConstraints(maxWidth: 540),
                                 child:
                                     ValueListenableBuilder<ReplaySnapshot>(
                                   valueListenable: _snapshot,

@@ -1,3 +1,56 @@
+## v0.4.13
+
+- Editör modül kartları 82 px'ten 74 px'e indirildi; 4×2 düzen, simge, ad ve
+  sunucu özellikleri korunurken gereksiz dikey alan azaltıldı.
+- Modül paleti dış dolgusu ve kartlar arası boşluk küçük ölçüde sıkılaştırıldı;
+  geniş masaüstü kartları 255 px ile sınırlandırılıp ortalandı. Sonlu `Stack`
+  yüksekliği korunarak Oyna ekranı donma düzeltmesi gerilemedi.
+- Savaş devreleri üzerindeki **SEN** ve rakip adı 11 px'ten 14 px'e çıkarıldı,
+  kalınlaştırıldı ve devre genişliğine sınırlandı.
+- **Yeni Oyun** düğmesi aynı 220×40 px ölçüde bırakıldı; metin **YENİ OYUN**,
+  14 px, kalın ve artırılmış harf aralığıyla yeniden tasarlandı.
+- İstemci sürümü `0.4.13+32` oldu; sunucu kuralları, PostgreSQL şeması, savaş
+  yerleşimi ve oyun dengesi değişmedi.
+
+## v0.4.12
+
+- Savaş devre kartlarının üst sınırı 520 px'ten 488 px'e indirildi; canlı olay
+  akışına daha fazla yatay alan bırakıldı.
+- Savaş sahnesi sabit 680 px yerine ekran yüksekliğine göre 540–620 px arasında
+  hesaplanır; masaüstü savaş görünümü kaydırma gereksinimini azaltır.
+- Canlı olay panelinin üst genişliği 540 px'e çıkarıldı ve sahne iç boşlukları
+  dengelendi; hız kontrolünün aynı satırda kalması için alan genişletildi.
+- Yeni Oyun düğmesi 220×40 px taban ölçüsüne çıkarıldı.
+- Editör modül kartları 92 px'ten 82 px'e, palet satır aralığı 8 px'ten 6 px'e
+  indirildi; 4×2 düzen ve içerik okunabilirliği korundu.
+- İstemci sürümü `0.4.12+31` oldu; sunucu kuralları, PostgreSQL şeması ve oyun
+  dengesi değişmedi.
+
+## v0.4.11
+
+- **Oyna** ekranını kilitleyen modül paleti yerleşim hatası giderildi.
+- Modül seçim kartları 92 px kesin yüksekliğe bağlandı; `Stack` ve
+  `Positioned.fill` artık sonlu genişlik/yükseklik kısıtlarıyla yerleşir.
+- `Cannot hit test a render box with no size` ve `size.isFinite` hata zincirinin
+  kök nedeni ortadan kaldırıldı.
+- Flutter widget testine Oyna → Çevrimiçi Savaş açılışında istisna oluşmadığını
+  ve palet kartının 92 px yüksekliğe sahip olduğunu doğrulayan gerileme kontrolü
+  eklendi.
+- İstemci sürümü `0.4.11+30` oldu; sunucu, PostgreSQL şeması, savaş kuralları ve
+  denge değişmedi.
+
+## v0.4.10
+
+- Editördeki oyuncuya gereksiz **Sunucu Yetkili Savaş** kartı kaldırıldı.
+- Bölüm numaraları 1, 2, 3 ve 4 olarak sadeleştirildi.
+- Sağ işlem sütunu sağa taşındı; modül paleti geniş ekranda 4×2 düzene geçti.
+- Modül simgesi, adı ve özellikleri seçim kartlarında ortalanıp büyütüldü.
+- **Menüye Dön** düğmesi ayrı bir karta taşındı.
+- Savaş devreleri editörle aynı 520 px üst sınıra çıkarıldı.
+- Savaş modüllerinde metin kodları kaldırıldı; gerçek simgeler ve canlı durum
+  değerleri korundu.
+- İstemci sürümü `0.4.10+29` oldu; sunucu kuralları ve denge değişmedi.
+
 # Değişiklik Günlüğü
 
 ## v0.4.9

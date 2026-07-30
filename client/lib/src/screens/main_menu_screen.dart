@@ -76,7 +76,7 @@ class MainMenuScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 22),
                   const Text(
-                    'ASENKRON DEVRE SAVAŞI • v0.4.9',
+                    'ASENKRON DEVRE SAVAŞI • v0.4.13',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       color: RelayColors.muted,

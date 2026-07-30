@@ -32,6 +32,10 @@ dönüştürür.
 | v0.4.7 | Sabit savaş paneli ve kaydırılabilir bildirim widget test yaması | Tamamlandı |
 | v0.4.8 | Ana menü el kitabı, dönüş düğmeleri ve modül etiketi okunabilirliği | Tamamlandı |
 | v0.4.9 | Geniş modül paleti, sade devre hücreleri, savaş başlangıcı ve menü dönüşü | Hazır |
+| v0.4.10 | Kompakt editör, 4×2 modül paleti ve büyük simgeli savaş kartları | Hazır |
+| v0.4.11 | Modül paleti sonlu yükseklik ve Oyna ekranı açılış yaması | Hazır |
+| v0.4.12 | Tek ekran editör/savaş yerleşimi ve orta panel genişliği | Hazır |
+| v0.4.13 | Kompakt modül paleti ve güçlü savaş etiketleri | Hazır |
 | v0.5.0 | Derece, haftalık lig ve maç geçmişi | Sıradaki |
 | v0.6.0 | Koşu, mağaza, kit ve geçici yükseltme döngüsü | Planlandı |
 | v0.7.0 | Kapalı alfa, dengeleme ve kötüye kullanım koruması | Planlandı |

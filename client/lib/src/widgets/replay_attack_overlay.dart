@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+import '../game/replay_game.dart';
 import '../models/relay_models.dart';
 import '../theme/relay_theme.dart';
 
@@ -105,20 +106,8 @@ class _AttackPainter extends CustomPainter {
     if (events.isEmpty || progress >= 1) {
       return;
     }
-    final boardSize = math.min(size.width * 0.36, size.height * 0.60);
-    final boardTop = size.height * 0.13;
-    final leftBoard = Rect.fromLTWH(
-      size.width * 0.055,
-      boardTop,
-      boardSize,
-      boardSize,
-    );
-    final rightBoard = Rect.fromLTWH(
-      size.width - size.width * 0.055 - boardSize,
-      boardTop,
-      boardSize,
-      boardSize,
-    );
+    final leftBoard = ReplayStageGeometry.leftBoard(size);
+    final rightBoard = ReplayStageGeometry.rightBoard(size);
     final leftCore = leftBoard.center;
     final rightCore = rightBoard.center;
 

@@ -16,7 +16,7 @@ void main() {
         MaterialApp(
           home: Scaffold(
             body: SizedBox(
-              width: 440,
+              width: 540,
               child: ReplayPlaybackControls(
                 playing: true,
                 soundEnabled: true,
@@ -36,7 +36,7 @@ void main() {
       expect(find.text('Yeniden Oynat'), findsOneWidget);
       expect(find.text('Ses Açık'), findsOneWidget);
       expect(find.text('Hız 1×'), findsOneWidget);
-      expect(find.text('Yeni Oyun'), findsOneWidget);
+      expect(find.text('YENİ OYUN'), findsOneWidget);
       expect(
         find.descendant(
           of: find.byKey(const ValueKey('replay-new-game-button')),
@@ -71,6 +71,20 @@ void main() {
             find.byKey(const ValueKey('replay-playback-button')),
           ).dy,
         ),
+      );
+      expect(
+        tester.getCenter(
+          find.byKey(const ValueKey('replay-speed-button')),
+        ).dy,
+        tester.getCenter(
+          find.byKey(const ValueKey('replay-playback-button')),
+        ).dy,
+      );
+      expect(
+        tester.getSize(
+          find.byKey(const ValueKey('replay-new-game-button')),
+        ),
+        const Size(220, 40),
       );
 
       await tester.tap(
@@ -110,7 +124,7 @@ void main() {
     expect(find.text('Devam Et'), findsOneWidget);
     expect(find.text('Ses Kapalı'), findsOneWidget);
     expect(find.text('Hız 0.5×'), findsOneWidget);
-    expect(find.text('Yeni Oyun'), findsOneWidget);
+    expect(find.text('YENİ OYUN'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }

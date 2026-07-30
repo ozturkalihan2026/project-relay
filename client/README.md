@@ -1,6 +1,6 @@
 # Project Relay Flutter İstemcisi
 
-Bu dizin v0.4.9 ana menüsü, bağımsız Nasıl Oynanır akışı, kalıcı misafir
+Bu dizin v0.4.13 ana menüsü, bağımsız Nasıl Oynanır akışı, kalıcı misafir
 oturumu, asenkron oyuncu eşleştirmesi,
 sürükle-bırak kart düzenleyici, etkileşimli oyun el kitabı ve Flame savaş
 tekrarı uygulamasıdır. Modül paleti adı ve sunucu özelliklerini doğrudan
@@ -26,7 +26,7 @@ iletimi savaş kartlarında da kullanılır.
 Savaş ekranındaki ayrı **Savaş Tekrarı** başlığı kaldırılmıştır. Duraklatma,
 yeniden oynatma, ses ve hız eylemleri canlı olay akışının altındaki sunucu
 sonucuna bağlanan, ortalanmış ve dar ekranda satıra sarılan düğmelerdir.
-**Yeni Oyun** bu dört düğmenin hemen altındaki ortalanmış eylemdir.
+**YENİ OYUN** bu dört düğmenin hemen altındaki ortalanmış, güçlü ana eylemdir.
 Sunucu sonucu savaş başından itibaren görünür ve canlı replay değerleriyle
 güncellenir; olay listesi esnerken bu kontrol grubu panelin altında sabit kalır.
 
