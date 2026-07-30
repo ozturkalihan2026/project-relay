@@ -132,6 +132,13 @@ class SettingsScreen extends ConsumerWidget {
                       ),
                     ),
                   ),
+                  const SizedBox(height: 22),
+                  OutlinedButton.icon(
+                    key: const ValueKey('settings-back-button'),
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(Icons.arrow_back),
+                    label: const Text('ANA MENÜYE DÖN'),
+                  ),
                 ],
               ),
             ),

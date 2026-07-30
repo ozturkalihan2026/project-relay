@@ -203,6 +203,74 @@ void main() {
     },
   );
 
+  testWidgets(
+    'çekirdek kapısında modül adı özellik etiketlerinin üstünde kalır',
+    (tester) async {
+      const generator = ModulePlacement(
+        id: 'gate-generator',
+        kind: ModuleKind.generator,
+        row: 0,
+        column: 1,
+        orientation: RelayDirection.south,
+      );
+      const spec = ModuleSpec(
+        kind: ModuleKind.generator,
+        displayName: 'Jeneratör',
+        description: 'Enerji üretir.',
+        maxHp: 52,
+        ports: {
+          RelayDirection.north,
+          RelayDirection.east,
+          RelayDirection.south,
+        },
+        energyOutput: 8,
+        batteryCapacity: 0,
+        energyCost: 0,
+        cooldownTicks: 0,
+        heatPerAction: 0,
+        damage: 0,
+        shield: 0,
+        cooling: 0,
+        repair: 0,
+        threat: 60,
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: SizedBox.square(
+              dimension: 400,
+              child: CircuitBoard(
+                placements: const {1: generator},
+                specs: const {ModuleKind.generator: spec},
+                poweredIds: const {'gate-generator'},
+                validationVisible: true,
+                selectedCell: null,
+                onCellTap: (_) {},
+                onModuleDropped: (_, _) {},
+                onRotateModule: (_) {},
+              ),
+            ),
+          ),
+        ),
+      );
+
+      final name = find.byKey(
+        const ValueKey('module-name-gate-generator'),
+      );
+      final stats = find.byKey(
+        const ValueKey('module-stat-badges-gate-generator'),
+      );
+      expect(name, findsOneWidget);
+      expect(stats, findsOneWidget);
+      expect(
+        tester.getBottomLeft(name).dy,
+        lessThanOrEqualTo(tester.getTopLeft(stats).dy),
+      );
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   test('savaş kartında enerji hattı modül portları arasında kalır', () {
     const first = ModulePlacement(
       id: 'first',

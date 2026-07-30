@@ -80,11 +80,9 @@ class ReplayPlaybackControls extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-          FilledButton.icon(
+          FilledButton(
             key: const ValueKey('replay-new-game-button'),
             onPressed: onNewGame,
-            icon: const Icon(Icons.add_circle_outline, size: 17),
-            label: const Text('Yeni Oyun'),
             style: FilledButton.styleFrom(
               backgroundColor: RelayColors.cyan,
               foregroundColor: const Color(0xFF07161C),
@@ -96,6 +94,7 @@ class ReplayPlaybackControls extends StatelessWidget {
                 fontWeight: FontWeight.w900,
               ),
             ),
+            child: const Text('Yeni Oyun'),
           ),
         ],
       ),

@@ -1,8 +1,11 @@
 # Project Relay Flutter İstemcisi
 
-Bu dizin v0.4.7 ana menüsü, kalıcı misafir oturumu, asenkron oyuncu eşleştirmesi,
+Bu dizin v0.4.9 ana menüsü, bağımsız Nasıl Oynanır akışı, kalıcı misafir
+oturumu, asenkron oyuncu eşleştirmesi,
 sürükle-bırak kart düzenleyici, etkileşimli oyun el kitabı ve Flame savaş
-tekrarı uygulamasıdır. Palet modülü boş hücreye yerleşir, dolu
+tekrarı uygulamasıdır. Modül paleti adı ve sunucu özelliklerini doğrudan
+kartlarda gösterir; devre hücreleri yerleşimden sonra yalnız modül simgesini,
+portları ve yön bilgisini taşır. Palet modülü boş hücreye yerleşir, dolu
 hücredeki modülü değiştirir. Kart modülü boş hücreye taşınır, dolu hücreyle
 yer değiştirir veya palete geri bırakılarak kaldırılır. Savaş iki gerçek 4×4
 kart üzerinde, aradaki tam Türkçe olay günlüğü, canlı enerji iletimleri, üst
@@ -33,7 +36,7 @@ enerjiyi bütün bağlı komşulara taşır, fakat yalnız okun gösterdiği tek
 güçlendirir.
 Kartın dışına veya kapısız çekirdek alanına bakan kullanılamayan port
 işaretleri çizilmez. Güçlendiricinin yön oku sağ üstte sürekli görünür;
-döndürme düğmesi seçili hücrenin sol üstündedir.
+döndürülebilen modüllerin döndürme düğmesi sol üstte sürekli görünür.
 
 Bağlantı doğrulama, yerleşim ve API hataları ekranın altına yayılan SnackBar
 yerine devre kartının altında saydam ve durum rengine sahip bağlamsal kartta
@@ -41,13 +44,15 @@ gösterilir.
 
 Uygulama **Oyna**, **Kariyer** ve **Ayarlar** seçenekli ana menüyle açılır.
 Oyna altındaki **Çevrimiçi Savaş** yalnız asenkron oyuncu eşleştirmesini,
-**Antrenman** yalnız dokuz sabit rakibi gösterir. Devre hücrelerindeki iki
-kompakt etiket modülün Can değerini ve role özgü temel değerini gösterir;
-tam açıklama ipucunda korunur.
+**Antrenman** yalnız dokuz sabit rakibi gösterir. Modül adı ile Can ve role
+özgü değerler seçim paletinde görünür; devre hücreleri savaş alanını sade
+tutmak için bu metinleri tekrar etmez.
+Çevrimiçi karttaki ana düğme **Savaşa Başla** olarak görünür; hemen altındaki
+**Menüye Dön** düğmesi bir önceki Oyna menüsüne güvenli dönüş sağlar.
 
 Çevrimiçi ekran ilk açıldığında sunucudan güvenli adlı misafir oyuncu alır. Yenileme
 anahtarı `flutter_secure_storage` ile saklanır; sonraki açılışta aynı oyuncu
-oturumu döndürülür. Ana ekrandaki **Kartı Kaydet ve Oyuncu Bul** eylemi
+oturumu döndürülür. Ana ekrandaki **Savaşa Başla** eylemi
 geçerli kartı sunucuya kaydeder ve asenkron gerçek oyuncu eşleştirmesini
 başlatır. Uygun yeni oyuncu yoksa sunucu botu kullanılır. Dokuz sabit rakip
 ayrı **Antrenman** ekranında korunur.

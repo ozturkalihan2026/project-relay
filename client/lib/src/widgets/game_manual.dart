@@ -5,175 +5,6 @@ import '../theme/relay_theme.dart';
 import 'manual_circuit_demo.dart';
 import 'module_visuals.dart';
 
-class HowToPlayCard extends StatelessWidget {
-  const HowToPlayCard({
-    required this.modules,
-    super.key,
-  });
-
-  final List<ModuleSpec> modules;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      key: const ValueKey('compact-how-to-play-card'),
-      clipBehavior: Clip.antiAlias,
-      child: DecoratedBox(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Color(0xFF112B35),
-              Color(0xFF10242D),
-            ],
-          ),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final intro = const Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: Color(0x2238E8FF),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Padding(
-                      padding: EdgeInsets.all(8),
-                      child: Icon(
-                        Icons.menu_book_outlined,
-                        color: RelayColors.cyan,
-                        size: 20,
-                      ),
-                    ),
-                  ),
-                  SizedBox(width: 10),
-                  Flexible(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'NASIL OYNANIR?',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 1,
-                          ),
-                        ),
-                        Text(
-                          'Yerleştir, portları bağla, doğrula ve savaş.',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            color: RelayColors.muted,
-                            fontSize: 11,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              );
-              const quickRules = [
-                _QuickRule(
-                  icon: Icons.drag_indicator,
-                  label: 'MODÜLÜ YERLEŞTİR',
-                ),
-                _QuickRule(
-                  icon: Icons.electrical_services,
-                  label: 'PORTLARI EŞLEŞTİR',
-                ),
-                _QuickRule(
-                  icon: Icons.sports_mma,
-                  label: 'DOĞRULA VE SAVAŞ',
-                ),
-              ];
-              final openButton = OutlinedButton.icon(
-                onPressed: () => Navigator.of(context).push(
-                  MaterialPageRoute<void>(
-                    builder: (context) =>
-                        GameManualScreen(modules: modules),
-                  ),
-                ),
-                icon: const Icon(Icons.open_in_new, size: 16),
-                label: const Text('OYUN EL KİTABI'),
-              );
-              if (constraints.maxWidth >= 900) {
-                return Row(
-                  children: [
-                    SizedBox(width: 285, child: intro),
-                    const SizedBox(width: 12),
-                    const VerticalDivider(width: 1),
-                    const SizedBox(width: 12),
-                    const Expanded(
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        children: quickRules,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    openButton,
-                  ],
-                );
-              }
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(child: intro),
-                      const SizedBox(width: 10),
-                      openButton,
-                    ],
-                  ),
-                  const SizedBox(height: 9),
-                  const Wrap(
-                    alignment: WrapAlignment.spaceBetween,
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: quickRules,
-                  ),
-                ],
-              );
-            },
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _QuickRule extends StatelessWidget {
-  const _QuickRule({
-    required this.icon,
-    required this.label,
-  });
-
-  final IconData icon;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, color: RelayColors.amber, size: 16),
-        const SizedBox(width: 6),
-        Text(
-          label,
-          style: const TextStyle(
-            color: Color(0xFFBDD0D6),
-            fontSize: 9.5,
-            fontWeight: FontWeight.w900,
-            letterSpacing: 0.35,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
 class GameManualScreen extends StatelessWidget {
   const GameManualScreen({
     required this.modules,
@@ -193,14 +24,14 @@ class GameManualScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'OYUN EL KİTABI',
+              'NASIL OYNANIR',
               style: TextStyle(
                 fontWeight: FontWeight.w900,
                 letterSpacing: 1.1,
               ),
             ),
             Text(
-              'PROJECT RELAY • v0.4.7',
+              'PROJECT RELAY • v0.4.9',
               style: TextStyle(
                 color: RelayColors.muted,
                 fontSize: 10,
@@ -513,7 +344,7 @@ class GameManualScreen extends StatelessWidget {
                     icon: const Icon(Icons.arrow_back),
                     label: const Padding(
                       padding: EdgeInsets.symmetric(vertical: 13),
-                      child: Text('DEVRE LABORATUVARINA DÖN'),
+                      child: Text('ANA MENÜYE DÖN'),
                     ),
                   ),
                 ],

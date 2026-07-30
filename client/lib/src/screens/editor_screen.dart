@@ -8,7 +8,6 @@ import '../models/relay_models.dart';
 import '../state/board_controller.dart';
 import '../theme/relay_theme.dart';
 import '../widgets/circuit_board.dart';
-import '../widgets/game_manual.dart';
 import '../widgets/module_palette.dart';
 import 'replay_screen.dart';
 
@@ -68,7 +67,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
               ),
             ),
             Text(
-              '${widget.mode.title} • v0.4.7',
+              '${widget.mode.title} • v0.4.9',
               style: const TextStyle(
                 color: RelayColors.muted,
                 fontSize: 10,
@@ -122,7 +121,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
         final viewportHeight =
             constraints.maxHeight.isFinite ? constraints.maxHeight : 900.0;
         final boardMaxWidth = wide
-            ? math.min(460.0, math.max(340.0, viewportHeight * 0.44))
+            ? math.min(520.0, math.max(360.0, viewportHeight * 0.50))
             : 560.0;
         final boardPanel = _BoardPanel(
           state: boardState,
@@ -186,14 +185,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
           child: Center(
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 1120),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  HowToPlayCard(modules: catalogs.modules),
-                  const SizedBox(height: 10),
-                  panels,
-                ],
-              ),
+              child: panels,
             ),
           ),
         );
@@ -407,8 +399,8 @@ class _BoardPanel extends StatelessWidget {
         _SectionHeader(
           index: '01',
           title: 'MODÜL SEÇ',
-          subtitle: 'Boş hücreye yerleştirin; dolu hücredeki modülü '
-              'değiştirin.',
+          subtitle: 'Modül adı ve özellikleri burada görünür; devre kartında '
+              'yalnız simge kalır.',
         ),
         const SizedBox(height: 8),
         ModulePalette(
@@ -734,8 +726,15 @@ class _AsyncMatchCard extends StatelessWidget {
                     )
                   : const Icon(Icons.hub),
               label: Text(
-                busy ? 'RAKİP ARANIYOR' : 'KARTI KAYDET VE OYUNCU BUL',
+                busy ? 'RAKİP ARANIYOR' : 'SAVAŞA BAŞLA',
               ),
+            ),
+            const SizedBox(height: 8),
+            OutlinedButton.icon(
+              key: const ValueKey('editor-menu-back-button'),
+              onPressed: busy ? null : () => Navigator.of(context).maybePop(),
+              icon: const Icon(Icons.arrow_back),
+              label: const Text('MENÜYE DÖN'),
             ),
             const SizedBox(height: 6),
             const Text(

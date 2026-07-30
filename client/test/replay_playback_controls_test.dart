@@ -37,6 +37,13 @@ void main() {
       expect(find.text('Ses Açık'), findsOneWidget);
       expect(find.text('Hız 1×'), findsOneWidget);
       expect(find.text('Yeni Oyun'), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byKey(const ValueKey('replay-new-game-button')),
+          matching: find.byIcon(Icons.add_circle_outline),
+        ),
+        findsNothing,
+      );
 
       await tester.tap(
         find.byKey(const ValueKey('replay-playback-button')),

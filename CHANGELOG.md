@@ -1,5 +1,45 @@
 # Değişiklik Günlüğü
 
+## v0.4.9
+
+- **Modül Seç** kartları büyütüldü. Oyuncu modül adıyla birlikte Can, enerji,
+  depo, maliyet, hasar, kalkan, soğutma veya onarım değerlerini doğrudan
+  palet üzerinde görür.
+- Devre kartına yerleştirilen modüllerde ad ve kompakt özellik rozetleri
+  kaldırıldı; hücrede yalnız büyütülmüş modül simgesi, gerçek portlar, yön
+  göstergesi ve gerekli durum işaretleri kaldı.
+- Döndürülebilen modüllerin döndürme düğmesi seçim beklemeden her zaman hücrenin
+  sol üst köşesinde görünür. Jeneratör çekirdeğe kilitli, Batarya yönsüz olduğu
+  için bu iki modülde döndürme düğmesi gösterilmez.
+- Geniş ekran devre kartı üst sınırı 460 px'ten 520 px'e çıkarıldı; küçük
+  ekran uyarlaması korunur.
+- Çevrimiçi eşleşme ana eylemi **Savaşa Başla** olarak sadeleştirildi;
+  kartı kaydetme ve rakip bulma işlemleri aynı sunucu akışında korunur.
+- Ana eşleşme düğmesinin altına bir önceki Oyna menüsüne dönen görünür
+  **Menüye Dön** düğmesi eklendi.
+- Yeni görünüm Flutter ve Python sözleşme testlerine alındı.
+- PostgreSQL şeması, API uçları ve oyun dengesi değişmedi. API `0.4.8`,
+  istemci `0.4.9+28`, kurallar `0.8` olarak korunur.
+
+## v0.4.8
+
+- Ana menüye **Kariyer** ile **Ayarlar** arasına **Nasıl Oynanır** eklendi.
+  Oyun el kitabı modül kataloğunu kendi yükleyen bağımsız menü akışına taşındı;
+  kart düzenleyicinin üstündeki eski kısa yardım alanı kaldırıldı.
+- **Oyna** ve **Ayarlar** ekranlarının altına görünür **Ana Menüye Dön**
+  düğmeleri eklendi. Kariyer ekranındaki mevcut dönüş davranışıyla aynı gezinme
+  sözleşmesi kullanıldı.
+- Çekirdek kapısı hücrelerinde modül adı, kompakt özellik etiketleri ve
+  **Çekirdek Kapısı** yazısı için birbirinden ayrılmış dikey alanlar oluşturuldu.
+  Uzun modül adları ölçeklenerek görünür kalır ve özellik rozetleri adı kapatmaz.
+- Savaş ekranındaki **Yeni Oyun** düğmesinin daire içindeki artı simgesi
+  kaldırıldı; düğmenin konumu ve davranışı değişmedi.
+- Menü sırası, dönüş düğmeleri, el kitabının yeni konumu, çekirdek kapısı
+  okunabilirliği ve simgesiz Yeni Oyun düğmesi Flutter/Python sözleşme
+  testlerine alındı.
+- PostgreSQL şeması ve oyun dengesi değişmedi. API `0.4.8`, istemci
+  `0.4.8+27`, kurallar `0.8` olarak korundu.
+
 ## v0.4.7
 
 - Oynatma kontrolleri sabit **Sunucu Sonucu** alanının hemen altındaki bağımsız

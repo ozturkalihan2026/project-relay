@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../theme/relay_theme.dart';
 import 'career_screen.dart';
+import 'how_to_play_screen.dart';
 import 'play_mode_screen.dart';
 import 'settings_screen.dart';
 
@@ -53,6 +54,17 @@ class MainMenuScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 10),
                   _MenuButton(
+                    key: const ValueKey('main-menu-how-to-play'),
+                    icon: Icons.menu_book_outlined,
+                    title: 'NASIL OYNANIR',
+                    subtitle: 'Kurallar, bağlantılar ve modül rehberi',
+                    onPressed: () => _open(
+                      context,
+                      const HowToPlayScreen(),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  _MenuButton(
                     key: const ValueKey('main-menu-settings'),
                     icon: Icons.tune,
                     title: 'AYARLAR',
@@ -64,7 +76,7 @@ class MainMenuScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 22),
                   const Text(
-                    'ASENKRON DEVRE SAVAŞI • v0.4.7',
+                    'ASENKRON DEVRE SAVAŞI • v0.4.9',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       color: RelayColors.muted,

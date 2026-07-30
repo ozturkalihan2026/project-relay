@@ -153,7 +153,7 @@ def create_app(
         title="Project Relay API",
         version=API_VERSION,
         description=(
-            "Project Relay v0.4.7 kalıcı misafir oturumu, sunucu kartı ve "
+            "Project Relay v0.4.8 kalıcı misafir oturumu, sunucu kartı ve "
             "asenkron oyuncu eşleştirmesi API'si. Bütün savaş sonuçları "
             "deterministik motor tarafından sunucuda hesaplanır."
         ),

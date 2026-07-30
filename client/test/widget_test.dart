@@ -15,6 +15,7 @@ void main() {
       expect(find.byKey(const ValueKey('main-menu-play')), findsOneWidget);
       expect(find.text('OYNA'), findsOneWidget);
       expect(find.text('KARİYER'), findsOneWidget);
+      expect(find.text('NASIL OYNANIR'), findsOneWidget);
       expect(find.text('AYARLAR'), findsOneWidget);
       expect(find.text('DEVREYİ KUR'), findsNothing);
 
@@ -26,15 +27,23 @@ void main() {
         find.byKey(const ValueKey('play-mode-training')),
         findsOneWidget,
       );
+      expect(
+        find.byKey(const ValueKey('play-mode-back-button')),
+        findsOneWidget,
+      );
 
       await tester.tap(find.byKey(const ValueKey('play-mode-online')));
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('ÇEVRİMİÇİ SAVAŞ • v0.4.7'), findsOneWidget);
+      expect(find.textContaining('ÇEVRİMİÇİ SAVAŞ • v0.4.9'), findsOneWidget);
       expect(find.text('DEVREYİ KUR'), findsOneWidget);
       expect(find.text('ASENKRON PvP'), findsOneWidget);
       expect(
-        find.text('KARTI KAYDET VE OYUNCU BUL'),
+        find.text('SAVAŞA BAŞLA'),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey('editor-menu-back-button')),
         findsOneWidget,
       );
       expect(
@@ -43,46 +52,42 @@ void main() {
       );
       expect(find.byKey(const ValueKey('training-panel')), findsNothing);
       expect(
-        find.byKey(const ValueKey('module-stat-badges-P-GEN')),
+        find.byKey(
+          const ValueKey('palette-module-properties-generator'),
+        ),
         findsOneWidget,
       );
       expect(
-        find.byKey(const ValueKey('module-stat-badges-P-LASER')),
+        find.byKey(
+          const ValueKey('palette-module-properties-laser'),
+        ),
         findsOneWidget,
       );
-
-      final compactHelp = find.byKey(
-        const ValueKey('compact-how-to-play-card'),
+      expect(
+        find.byKey(const ValueKey('module-icon-P-GEN')),
+        findsOneWidget,
       );
-      expect(compactHelp, findsOneWidget);
-      expect(tester.getSize(compactHelp).height, lessThan(110));
-
-      await tester.tap(find.text('OYUN EL KİTABI'));
-      await tester.pumpAndSettle();
-
-      expect(find.text('OYUNUN AMACI NEDİR?'), findsOneWidget);
-      expect(find.text('ENERJİ NASIL AKAR?'), findsOneWidget);
-      expect(find.text('KALKAN NASIL ÇALIŞIR?'), findsOneWidget);
-
-      final bottomBack = find.byKey(
-        const ValueKey('manual-bottom-back-button'),
+      expect(
+        find.byKey(const ValueKey('module-icon-P-LASER')),
+        findsOneWidget,
       );
-      expect(bottomBack, findsOneWidget);
-      await tester.ensureVisible(bottomBack);
-      await tester.tap(bottomBack);
-      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('module-name-P-GEN')), findsNothing);
+      expect(find.byTooltip('90° döndür'), findsWidgets);
+      expect(
+        find.byKey(const ValueKey('compact-how-to-play-card')),
+        findsNothing,
+      );
+      expect(find.text('OYUN EL KİTABI'), findsNothing);
 
-      expect(find.textContaining('ÇEVRİMİÇİ SAVAŞ'), findsOneWidget);
-
-      Navigator.of(
-        tester.element(find.byType(Scaffold).first),
-      ).pop();
+      await tester.tap(
+        find.byKey(const ValueKey('editor-menu-back-button')),
+      );
       await tester.pumpAndSettle();
 
       await tester.tap(find.byKey(const ValueKey('play-mode-training')));
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('ANTRENMAN • v0.4.7'), findsOneWidget);
+      expect(find.textContaining('ANTRENMAN • v0.4.9'), findsOneWidget);
       expect(find.byKey(const ValueKey('training-panel')), findsOneWidget);
       expect(find.text('ANTRENMAN RAKİPLERİ'), findsOneWidget);
       expect(find.text('SEÇİLİ BOTLA SAVAŞ'), findsOneWidget);
@@ -94,35 +99,83 @@ void main() {
     },
   );
 
-  testWidgets('kariyer ve ayarlar kendi ekranlarını açar', (tester) async {
-    await _pumpApp(tester);
+  testWidgets(
+    'nasıl oynanır kariyer ile ayarlar arasında açılır',
+    (tester) async {
+      await _pumpApp(tester);
 
-    await tester.tap(find.byKey(const ValueKey('main-menu-career')));
-    await tester.pumpAndSettle();
-    expect(find.text('KARİYER HAZIRLANIYOR'), findsOneWidget);
-    expect(find.text('GÖREVLER'), findsOneWidget);
+      final career = find.byKey(const ValueKey('main-menu-career'));
+      final manual = find.byKey(const ValueKey('main-menu-how-to-play'));
+      final settings = find.byKey(const ValueKey('main-menu-settings'));
+      expect(tester.getCenter(career).dy, lessThan(tester.getCenter(manual).dy));
+      expect(tester.getCenter(manual).dy, lessThan(tester.getCenter(settings).dy));
 
-    await tester.tap(find.byKey(const ValueKey('career-back-button')));
-    await tester.pumpAndSettle();
+      await tester.tap(manual);
+      await tester.pumpAndSettle();
 
-    await tester.tap(find.byKey(const ValueKey('main-menu-settings')));
-    await tester.pumpAndSettle();
-    expect(
-      find.byKey(const ValueKey('settings-replay-sound')),
-      findsOneWidget,
-    );
-    expect(
-      find.byKey(const ValueKey('settings-replay-speed')),
-      findsOneWidget,
-    );
+      expect(find.text('NASIL OYNANIR'), findsOneWidget);
+      expect(find.text('OYUNUN AMACI NEDİR?'), findsOneWidget);
+      expect(find.text('ENERJİ NASIL AKAR?'), findsOneWidget);
+      expect(find.text('KALKAN NASIL ÇALIŞIR?'), findsOneWidget);
 
-    await tester.tap(find.text('2×'));
-    await tester.pumpAndSettle();
-    final segmented = tester.widget<SegmentedButton<double>>(
-      find.byKey(const ValueKey('settings-replay-speed')),
-    );
-    expect(segmented.selected, {2.0});
-  });
+      final bottomBack = find.byKey(
+        const ValueKey('manual-bottom-back-button'),
+      );
+      expect(bottomBack, findsOneWidget);
+      expect(find.text('ANA MENÜYE DÖN'), findsOneWidget);
+      await tester.ensureVisible(bottomBack);
+      await tester.tap(bottomBack);
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const ValueKey('main-menu-play')), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'kariyer oyna ve ayarlar ana menüye görünür düğmeyle döner',
+    (tester) async {
+      await _pumpApp(tester);
+
+      await tester.tap(find.byKey(const ValueKey('main-menu-career')));
+      await tester.pumpAndSettle();
+      expect(find.text('KARİYER HAZIRLANIYOR'), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey('career-back-button')));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const ValueKey('main-menu-play')));
+      await tester.pumpAndSettle();
+      final playBack = find.byKey(const ValueKey('play-mode-back-button'));
+      await tester.ensureVisible(playBack);
+      await tester.tap(playBack);
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const ValueKey('main-menu-settings')));
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const ValueKey('settings-replay-sound')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey('settings-replay-speed')),
+        findsOneWidget,
+      );
+
+      await tester.tap(find.text('2×'));
+      await tester.pumpAndSettle();
+      final segmented = tester.widget<SegmentedButton<double>>(
+        find.byKey(const ValueKey('settings-replay-speed')),
+      );
+      expect(segmented.selected, {2.0});
+
+      final settingsBack = find.byKey(
+        const ValueKey('settings-back-button'),
+      );
+      await tester.ensureVisible(settingsBack);
+      await tester.tap(settingsBack);
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('main-menu-play')), findsOneWidget);
+    },
+  );
 
   testWidgets(
     'yerleşim uyarısı okunabilir bağlamsal kartta gösterilir',

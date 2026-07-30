@@ -1,4 +1,4 @@
-# Project Relay v0.4.7 — İstemci Mimarisi
+# Project Relay v0.4.8 — İstemci Mimarisi
 
 ## Katmanlar
 
@@ -17,7 +17,8 @@
 2. API katmanı kısa ömürlü erişim anahtarını yalnız bellekte tutar. Yetkili
    istek `401` alırsa yenileme anahtarını bir kez döndürür ve isteği yineler.
 3. Riverpod katalog sağlayıcısı modül ve bot listesini FastAPI'den alır.
-4. Ana menü Oyna, Kariyer ve Ayarlar ekranlarını ayırır. Oyna ekranı
+4. Ana menü Oyna, Kariyer, Nasıl Oynanır ve Ayarlar ekranlarını ayırır.
+   Oyun el kitabı modül kataloğunu bağımsız akışta yükler; Oyna ekranı
    çevrimiçi ve antrenman düzenleyici kiplerinden yalnız birini açar.
 5. Kart denetleyicisi yalnızca oyuncunun taslak yerleşimini tutar.
 6. İstemci yönlü portları, pasif çekirdeği ve dört çekirdek kapısını önizleme
@@ -46,6 +47,8 @@ gösterilir; dört portu yönsüz olan Bataryada döndürme eylemi gösterilmez.
 Güçlendiricinin döndürme eylemi sol üstte, yön oku sağ üstte ayrı kalır.
 Modül palete sürüklenerek kaldırılır. Her dolu hücre sunucunun modül
 kataloğundan türetilen Can ve role özgü temel değer etiketlerini gösterir.
+Çekirdek kapısı hücrelerinde ad, özellik rozetleri ve kapı etiketi ayrı dikey
+alanlarda tutulur; uzun adlar hücreye sığacak biçimde ölçeklenir.
 Doğrulama ve yerleşim sonucu kartın hemen altında saydam, renk kodlu ve
 erişilebilir canlı bölge olarak sunulur.
 

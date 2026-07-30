@@ -68,6 +68,13 @@ class PlayModeScreen extends StatelessWidget {
                       EditorMode.training,
                     ),
                   ),
+                  const SizedBox(height: 22),
+                  OutlinedButton.icon(
+                    key: const ValueKey('play-mode-back-button'),
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: const Icon(Icons.arrow_back),
+                    label: const Text('ANA MENÜYE DÖN'),
+                  ),
                 ],
               ),
             ),

@@ -77,8 +77,8 @@ class ModulePalette extends StatelessWidget {
               ),
               if (returning) const SizedBox(height: 8),
               Wrap(
-                spacing: 6,
-                runSpacing: 6,
+                spacing: 8,
+                runSpacing: 8,
                 children: [
                   for (final module in modules)
                     _PaletteItem(
@@ -110,7 +110,7 @@ class _PaletteItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Tooltip(
-      message: '${module.description}\n${_statistics(module)}',
+      message: '${module.description}\n${_moduleStatistics(module)}',
       child: Draggable<ModuleDragData>(
         data: ModuleDragData.palette(module.kind),
         maxSimultaneousDrags: 1,
@@ -131,32 +131,6 @@ class _PaletteItem extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  String _statistics(ModuleSpec spec) {
-    final parts = <String>['Can ${spec.maxHp.toStringAsFixed(0)}'];
-    if (spec.energyOutput > 0) {
-      parts.add('Enerji +${spec.energyOutput.toStringAsFixed(0)}');
-    }
-    if (spec.batteryCapacity > 0) {
-      parts.add('Depo ${spec.batteryCapacity.toStringAsFixed(0)}');
-    }
-    if (spec.energyCost > 0) {
-      parts.add('Maliyet ${spec.energyCost.toStringAsFixed(0)}');
-    }
-    if (spec.damage > 0) {
-      parts.add('Hasar ${spec.damage.toStringAsFixed(0)}');
-    }
-    if (spec.shield > 0) {
-      parts.add('Kalkan ${spec.shield.toStringAsFixed(0)}');
-    }
-    if (spec.cooling > 0) {
-      parts.add('Soğutma ${spec.cooling.toStringAsFixed(0)}');
-    }
-    if (spec.repair > 0) {
-      parts.add('Onarım ${spec.repair.toStringAsFixed(0)}');
-    }
-    return parts.join(' • ');
   }
 }
 
@@ -187,8 +161,9 @@ class _PaletteTile extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 160),
-            width: 128,
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 7),
+            width: 188,
+            constraints: const BoxConstraints(minHeight: 78),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
@@ -196,26 +171,46 @@ class _PaletteTile extends StatelessWidget {
                 width: selected ? 2 : 1,
               ),
             ),
-            child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Icon(moduleIcon(module.kind), color: color, size: 20),
-                const SizedBox(width: 7),
-                Expanded(
-                  child: Text(
-                    module.displayName,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
+                Row(
+                  children: [
+                    Icon(moduleIcon(module.kind), color: color, size: 23),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        module.displayName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
                     ),
-                  ),
+                    const SizedBox(width: 4),
+                    const Icon(
+                      Icons.drag_indicator,
+                      color: RelayColors.muted,
+                      size: 17,
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 4),
-                const Icon(
-                  Icons.drag_indicator,
-                  color: RelayColors.muted,
-                  size: 17,
+                const SizedBox(height: 8),
+                Text(
+                  _moduleStatistics(module),
+                  key: ValueKey(
+                    'palette-module-properties-${module.kind.wireValue}',
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: RelayColors.muted,
+                    fontSize: 10,
+                    height: 1.25,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ],
             ),
@@ -284,4 +279,30 @@ class _DragFeedback extends StatelessWidget {
       ),
     );
   }
+}
+
+String _moduleStatistics(ModuleSpec spec) {
+  final parts = <String>['Can ${spec.maxHp.toStringAsFixed(0)}'];
+  if (spec.energyOutput > 0) {
+    parts.add('Enerji +${spec.energyOutput.toStringAsFixed(0)}');
+  }
+  if (spec.batteryCapacity > 0) {
+    parts.add('Depo ${spec.batteryCapacity.toStringAsFixed(0)}');
+  }
+  if (spec.energyCost > 0) {
+    parts.add('Maliyet ${spec.energyCost.toStringAsFixed(0)}');
+  }
+  if (spec.damage > 0) {
+    parts.add('Hasar ${spec.damage.toStringAsFixed(0)}');
+  }
+  if (spec.shield > 0) {
+    parts.add('Kalkan ${spec.shield.toStringAsFixed(0)}');
+  }
+  if (spec.cooling > 0) {
+    parts.add('Soğutma ${spec.cooling.toStringAsFixed(0)}');
+  }
+  if (spec.repair > 0) {
+    parts.add('Onarım ${spec.repair.toStringAsFixed(0)}');
+  }
+  return parts.join(' • ');
 }

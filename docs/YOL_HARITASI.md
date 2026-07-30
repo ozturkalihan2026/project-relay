@@ -30,6 +30,8 @@ dönüştürür.
 | v0.4.5 | Sabit savaş sonucu/kontrolleri ve bağlamsal arayüz uyarıları | Tamamlandı |
 | v0.4.6 | Flutter sabit `double` hız listesi analiz uyumluluğu | Tamamlandı |
 | v0.4.7 | Sabit savaş paneli ve kaydırılabilir bildirim widget test yaması | Tamamlandı |
+| v0.4.8 | Ana menü el kitabı, dönüş düğmeleri ve modül etiketi okunabilirliği | Tamamlandı |
+| v0.4.9 | Geniş modül paleti, sade devre hücreleri, savaş başlangıcı ve menü dönüşü | Hazır |
 | v0.5.0 | Derece, haftalık lig ve maç geçmişi | Sıradaki |
 | v0.6.0 | Koşu, mağaza, kit ve geçici yükseltme döngüsü | Planlandı |
 | v0.7.0 | Kapalı alfa, dengeleme ve kötüye kullanım koruması | Planlandı |
@@ -187,6 +189,10 @@ Tamamlanan kararlılık yamaları:
   doğrulayan testi widget ağacındaki eski ebeveyn varsayımından ayırdı. Küçük
   ekran testinde kartın altındaki bildirimin kapatma düğmesi önce görünür alana
   kaydırılır. Arayüz ve oynanış değişmedi.
+- v0.4.8, oyun el kitabını ana menüye taşıdı; Oyna ve Ayarlar ekranlarına
+  görünür dönüş eylemleri ekledi. Çekirdek kapısı hücrelerinde modül adı ile
+  özellik rozetlerini ayırdı ve Yeni Oyun artı simgesini kaldırdı. Oyun dengesi
+  ve veri tabanı şeması değişmedi.
 
 v0.4.0'a alınmayacaklar:
 

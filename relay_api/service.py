@@ -21,7 +21,7 @@ from .store import (
 
 
 RULES_VERSION = "0.8"
-API_VERSION = "0.4.7"
+API_VERSION = "0.4.8"
 
 
 class MatchService:

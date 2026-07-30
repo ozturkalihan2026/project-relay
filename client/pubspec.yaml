@@ -1,7 +1,7 @@
 name: project_relay_client
-description: Project Relay v0.4.7 Flutter widget test compatibility client
+description: Project Relay v0.4.9 palette and clean board client
 publish_to: none
-version: 0.4.7+26
+version: 0.4.9+28
 
 environment:
   sdk: ">=3.11.0 <4.0.0"

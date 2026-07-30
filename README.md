@@ -1,8 +1,14 @@
-# Project Relay v0.4.7 — Flutter Widget Test Uyumluluğu
+# Project Relay v0.4.9 — Modül Paleti ve Sade Devre Kartı
 
 Project Relay, oyuncuların 4×4 yönlü devre kartına modüller yerleştirip
 sunucu tarafından hesaplanan asenkron savaşlara katıldığı rekabetçi oyun
 prototipidir.
+
+v0.4.9, modül adı ve özelliklerini büyütülmüş seçim kartlarına taşır. Devre
+kartına yerleşen modüllerde yalnız simge, port, yön ve durum işaretleri kalır;
+döndürülebilen modüllerin kontrolü sol üst köşede sürekli görünür.
+Çevrimiçi düzenleyicide ana eylem **Savaşa Başla** adını taşır ve hemen
+altındaki **Menüye Dön** düğmesi oyuncuyu bir önceki Oyna menüsüne götürür.
 
 v0.1.0 deterministik savaş motorunu, v0.2.0 HTTP savaş API'sini kanıtladı.
 v0.3.0 aynı motor ve API sözleşmesini kullanan ilk Flutter/Flame istemcisini
@@ -138,6 +144,12 @@ bağlayan testi gerçek ekrandaki düşey konuma göre doğrular. Küçük test
 görünümünde kartın altında kalan bağlamsal bildirimin kapatma düğmesi tıklanmadan
 önce görünür alana kaydırılır. Uygulama arayüzü, savaş kuralları ve veritabanı
 şeması değişmez.
+
+v0.4.8, oyun el kitabını düzenleyiciden ana menüdeki bağımsız **Nasıl Oynanır**
+akışına taşır. Oyna ve Ayarlar ekranlarına görünür ana menü dönüş düğmeleri
+eklenir. Çekirdek kapısı hücrelerinde modül adı ve kompakt özellik rozetleri ayrı
+alanlara yerleşir; savaş ekranındaki Yeni Oyun artı simgesi kaldırılır. Oyun
+dengesi, kurallar ve PostgreSQL şeması değişmez.
 
 ## v0.4.x kapsamı
 

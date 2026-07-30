@@ -23,10 +23,10 @@ class FlutterClientContractTests(unittest.TestCase):
             CLIENT / "lib" / "src" / "widgets" / "game_manual.dart"
         ).read_text(encoding="utf-8")
 
-        self.assertIn("version: 0.4.7+26", pubspec)
-        self.assertIn("${widget.mode.title} • v0.4.7", editor)
-        self.assertIn("ASENKRON DEVRE SAVAŞI • v0.4.7", main_menu)
-        self.assertIn("PROJECT RELAY • v0.4.7", manual)
+        self.assertIn("version: 0.4.9+28", pubspec)
+        self.assertIn("${widget.mode.title} • v0.4.9", editor)
+        self.assertIn("ASENKRON DEVRE SAVAŞI • v0.4.9", main_menu)
+        self.assertIn("PROJECT RELAY • v0.4.9", manual)
         self.assertIn("audioplayers:", pubspec)
         self.assertIn("assets/sounds/", pubspec)
         self.assertIn("flame:", pubspec)
@@ -164,7 +164,7 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("/$maxBoardModules MODÜL", editor_source)
         self.assertIn("onBoardModuleReturned", palette_source)
         self.assertIn("BURAYA BIRAK: KARTTAN KALDIR", palette_source)
-        self.assertIn("HowToPlayCard", editor_source)
+        self.assertNotIn("HowToPlayCard", editor_source)
         self.assertIn("OYUNUN AMACI NEDİR?", manual_source)
         self.assertIn("ENERJİ NASIL AKAR?", manual_source)
         self.assertIn("ÖRNEK OYNANIŞ", manual_source)
@@ -174,7 +174,7 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertNotIn("_ProgressStage", manual_source)
         self.assertIn("KALKAN NASIL ÇALIŞIR?", manual_source)
         self.assertIn("manual-bottom-back-button", manual_source)
-        self.assertIn("DEVRE LABORATUVARINA DÖN", manual_source)
+        self.assertIn("ANA MENÜYE DÖN", manual_source)
         for module_name in (
             "Jeneratör",
             "Batarya",
@@ -211,11 +211,25 @@ class FlutterClientContractTests(unittest.TestCase):
         settings = (
             CLIENT / "lib" / "src" / "screens" / "settings_screen.dart"
         ).read_text(encoding="utf-8")
+        how_to_play = (
+            CLIENT / "lib" / "src" / "screens" / "how_to_play_screen.dart"
+        ).read_text(encoding="utf-8")
 
         self.assertIn("home: const MainMenuScreen()", app_source)
         self.assertIn("main-menu-play", main_menu)
         self.assertIn("main-menu-career", main_menu)
+        self.assertIn("main-menu-how-to-play", main_menu)
         self.assertIn("main-menu-settings", main_menu)
+        self.assertLess(
+            main_menu.index("main-menu-career"),
+            main_menu.index("main-menu-how-to-play"),
+        )
+        self.assertLess(
+            main_menu.index("main-menu-how-to-play"),
+            main_menu.index("main-menu-settings"),
+        )
+        self.assertIn("ref.watch(catalogsProvider)", how_to_play)
+        self.assertIn("GameManualScreen(modules: bundle.modules)", how_to_play)
         self.assertNotIn("ÇIKIŞ", main_menu)
         self.assertIn("play-mode-online", play_mode)
         self.assertIn("play-mode-training", play_mode)
@@ -227,37 +241,30 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("KARİYER HAZIRLANIYOR", career)
         self.assertIn("settings-replay-sound", settings)
         self.assertIn("settings-replay-speed", settings)
+        self.assertIn("play-mode-back-button", play_mode)
+        self.assertIn("settings-back-button", settings)
+        self.assertIn("SAVAŞA BAŞLA", editor)
+        self.assertIn("editor-menu-back-button", editor)
 
-    def test_board_shows_compact_server_stat_badges(self) -> None:
+    def test_palette_owns_module_labels_and_stats_while_board_stays_icon_only(
+        self,
+    ) -> None:
+        palette_source = (
+            CLIENT / "lib" / "src" / "widgets" / "module_palette.dart"
+        ).read_text(encoding="utf-8")
         board_source = (
             CLIENT / "lib" / "src" / "widgets" / "circuit_board.dart"
         ).read_text(encoding="utf-8")
-        stats_source = (
-            CLIENT
-            / "lib"
-            / "src"
-            / "widgets"
-            / "module_compact_stats.dart"
-        ).read_text(encoding="utf-8")
-        stats_test = (
-            CLIENT / "test" / "module_compact_stats_test.dart"
-        ).read_text(encoding="utf-8")
 
-        self.assertIn("moduleCompactStats(spec!)", board_source)
-        self.assertIn("module-stat-badges-${module.id}", board_source)
-        self.assertIn("_ModuleStatBadges", board_source)
-        for label in (
-            "E +",
-            "D ",
-            "H ",
-            "K ",
-            "S ",
-            "×1,35",
-            "Onarım +",
-        ):
-            with self.subTest(label=label):
-                self.assertIn(label, stats_source)
-        self.assertIn("sekiz modül", stats_test)
+        self.assertIn("module.displayName", palette_source)
+        self.assertIn("_moduleStatistics(module)", palette_source)
+        self.assertIn("palette-module-properties-", palette_source)
+        self.assertIn("module-icon-${module.id}", board_source)
+        self.assertNotIn("module-name-${module.id}", board_source)
+        self.assertNotIn("module-stat-badges-${module.id}", board_source)
+        self.assertNotIn("_ModuleStatBadges", board_source)
+        self.assertIn("if (onRotate != null)", board_source)
+        self.assertNotIn("if (selected && onRotate != null)", board_source)
 
     def test_module_tooltips_use_server_tactical_descriptions(self) -> None:
         palette_source = (
@@ -268,7 +275,7 @@ class FlutterClientContractTests(unittest.TestCase):
         ).read_text(encoding="utf-8")
 
         self.assertIn("module.description", palette_source)
-        self.assertIn("_statistics(module)", palette_source)
+        self.assertIn("_moduleStatistics(module)", palette_source)
         self.assertNotIn(
             "Boş hücreye yerleştirin veya dolu hücredeki modülü değiştirin.",
             palette_source,
@@ -349,10 +356,11 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("rotate-module-$cellIndex", board_source)
         self.assertNotIn("Icons.delete_outline", editor_source)
         self.assertIn("boardMaxWidth", editor_source)
+        self.assertIn("math.min(520.0", editor_source)
         self.assertIn("bot-picker-scrollbar", editor_source)
         self.assertIn("bot-picker-list", editor_source)
-        self.assertIn("compact-how-to-play-card", manual_source)
-        self.assertIn("_QuickRule", manual_source)
+        self.assertNotIn("compact-how-to-play-card", manual_source)
+        self.assertNotIn("_QuickRule", manual_source)
         self.assertNotIn("_HowToStep", manual_source)
         self.assertIn("maxWidth: 1120", editor_source)
         self.assertIn("_drawBoardCore", replay_source)
@@ -450,6 +458,7 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("replay-sound-button", playback_controls)
         self.assertIn("replay-speed-button", playback_controls)
         self.assertIn("replay-new-game-button", playback_controls)
+        self.assertNotIn("Icons.add_circle_outline", playback_controls)
         self.assertIn("Wrap(", playback_controls)
         self.assertIn("Yeniden Oynat", playback_controls)
         self.assertIn("Yeni Oyun", playback_controls)
@@ -607,7 +616,8 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("FlutterSecureStorage", storage_source)
         self.assertIn("relay.refresh_token", storage_source)
         self.assertIn("ASENKRON PvP", editor_source)
-        self.assertIn("KARTI KAYDET VE OYUNCU BUL", editor_source)
+        self.assertIn("SAVAŞA BAŞLA", editor_source)
+        self.assertIn("editor-menu-back-button", editor_source)
         self.assertIn("ANTRENMAN RAKİPLERİ", editor_source)
         self.assertIn("mode == EditorMode.online", editor_source)
         self.assertIn("guest-session-badge", editor_source)

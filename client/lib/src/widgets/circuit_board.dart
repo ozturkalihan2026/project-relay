@@ -276,35 +276,16 @@ class _CircuitCell extends StatelessWidget {
                         )
                       : Stack(
                           children: [
-                            Center(
-                              child: Transform.translate(
-                                offset: const Offset(0, -6),
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(
-                                      moduleIcon(module.kind),
-                                      color: color,
-                                      size: 26,
-                                    ),
-                                    const SizedBox(height: 2),
-                                    Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 4,
-                                      ),
-                                      child: Text(
-                                        spec?.displayName ??
-                                            module.kind.displayName,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        textAlign: TextAlign.center,
-                                        style: const TextStyle(
-                                          fontSize: 9,
-                                          fontWeight: FontWeight.w700,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
+                            Positioned.fill(
+                              child: Padding(
+                                padding: EdgeInsets.all(coreGate ? 20 : 16),
+                                child: Center(
+                                  child: Icon(
+                                    moduleIcon(module.kind),
+                                    key: ValueKey('module-icon-${module.id}'),
+                                    color: color,
+                                    size: coreGate ? 34 : 44,
+                                  ),
                                 ),
                               ),
                             ),
@@ -333,7 +314,7 @@ class _CircuitCell extends StatelessWidget {
                                 ),
                               ),
                             ),
-                            if (selected && onRotate != null)
+                            if (onRotate != null)
                               Positioned(
                                 left: 4,
                                 top: 4,
@@ -373,18 +354,6 @@ class _CircuitCell extends StatelessWidget {
                                       ? RelayColors.cyan
                                       : RelayColors.coral,
                                   size: 15,
-                                ),
-                              ),
-                            if (compactStats.isNotEmpty && !dropActive)
-                              Positioned(
-                                key: ValueKey(
-                                  'module-stat-badges-${module.id}',
-                                ),
-                                left: 4,
-                                right: 4,
-                                bottom: coreGate ? 15 : 4,
-                                child: _ModuleStatBadges(
-                                  stats: compactStats,
                                 ),
                               ),
                             if (coreGate)
@@ -462,54 +431,6 @@ class _CircuitCell extends StatelessWidget {
           ),
         );
       },
-    );
-  }
-}
-
-class _ModuleStatBadges extends StatelessWidget {
-  const _ModuleStatBadges({
-    required this.stats,
-  });
-
-  final List<ModuleCompactStat> stats;
-
-  @override
-  Widget build(BuildContext context) {
-    return Tooltip(
-      message: stats.map((stat) => stat.fullLabel).join(' • '),
-      child: FittedBox(
-        fit: BoxFit.scaleDown,
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            for (var index = 0; index < stats.length; index++) ...[
-              if (index > 0) const SizedBox(width: 3),
-              DecoratedBox(
-                decoration: BoxDecoration(
-                  color: const Color(0xDD0B1C24),
-                  borderRadius: BorderRadius.circular(5),
-                  border: Border.all(color: const Color(0xFF37616D)),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 4,
-                    vertical: 2,
-                  ),
-                  child: Text(
-                    stats[index].shortLabel,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 7,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 0.2,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ],
-        ),
-      ),
     );
   }
 }
