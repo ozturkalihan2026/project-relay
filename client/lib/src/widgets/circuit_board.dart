@@ -73,9 +73,12 @@ class CircuitBoard extends StatelessWidget {
                 itemCount: 16,
                 itemBuilder: (context, index) {
                   if (isCoreCell(index)) {
-                    return const Padding(
-                      padding: EdgeInsets.all(4),
-                      child: _CoreCellBackdrop(),
+                    return Padding(
+                      padding: const EdgeInsets.all(4),
+                      child: _CoreCellBackdrop(
+                        cellIndex: index,
+                        onTap: () => onCellTap(index),
+                      ),
                     );
                   }
                   final placement = placements[index];
@@ -438,15 +441,34 @@ class _CircuitCell extends StatelessWidget {
 }
 
 class _CoreCellBackdrop extends StatelessWidget {
-  const _CoreCellBackdrop();
+  const _CoreCellBackdrop({
+    required this.cellIndex,
+    required this.onTap,
+  });
+
+  final int cellIndex;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
+    return Semantics(
+      key: ValueKey('circuit-cell-$cellIndex'),
+      button: true,
+      label: 'Pasif çekirdek hücresi',
+      child: Material(
         color: const Color(0xFF0E222B),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: const Color(0x5538E8FF)),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(8),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: const Color(0x5538E8FF)),
+            ),
+            child: const SizedBox.expand(),
+          ),
+        ),
       ),
     );
   }

@@ -292,7 +292,20 @@ void main() {
       expect(find.byKey(const ValueKey('save-controlled-kit')), findsOneWidget);
 
       final back = find.byKey(const ValueKey('collection-menu-back'));
-      await tester.scrollUntilVisible(back, 280);
+      final collectionScrollable = find.descendant(
+        of: find.byKey(const ValueKey('collection-scroll-view')),
+        matching: find.byWidgetPredicate(
+          (widget) =>
+              widget is Scrollable &&
+              widget.axisDirection == AxisDirection.down,
+        ),
+      );
+      expect(collectionScrollable, findsOneWidget);
+      await tester.scrollUntilVisible(
+        back,
+        280,
+        scrollable: collectionScrollable,
+      );
       await tester.tap(back);
       await tester.pumpAndSettle();
       expect(find.byKey(const ValueKey('main-menu-play')), findsOneWidget);

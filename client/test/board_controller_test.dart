@@ -289,12 +289,16 @@ void main() {
 
     test('altı modül sınırını korur ve dolu hücre değişimine izin verir', () {
       final controller = container.read(boardControllerProvider.notifier);
-      for (final cell in [0, 3, 4, 7]) {
+      for (final cell in [0, 3, 4]) {
         controller.dropModule(
           cell,
           const ModuleDragData.palette(ModuleKind.battery),
         );
       }
+      controller.dropModule(
+        7,
+        const ModuleDragData.palette(ModuleKind.cooler),
+      );
 
       expect(container.read(boardControllerProvider).placements.length, 6);
       expect(

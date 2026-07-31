@@ -508,7 +508,7 @@ class _CosmeticCard extends StatelessWidget {
             ),
             const SizedBox(height: 10),
             if (item.equipped)
-              const FilledButton.icon(
+              FilledButton.icon(
                 onPressed: null,
                 icon: Icon(Icons.check_circle_outline),
                 label: Text('KUŞANILDI'),
