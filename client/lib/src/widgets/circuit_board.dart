@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/relay_models.dart';
+import '../theme/cosmetic_visuals.dart';
 import '../theme/relay_theme.dart';
 import 'module_compact_stats.dart';
 import 'module_visuals.dart';
@@ -20,6 +21,7 @@ class CircuitBoard extends StatelessWidget {
     required this.onCellTap,
     required this.onModuleDropped,
     required this.onRotateModule,
+    this.visuals = const EquippedVisuals.defaults(),
     super.key,
   });
 
@@ -31,24 +33,29 @@ class CircuitBoard extends StatelessWidget {
   final ValueChanged<int> onCellTap;
   final ModuleDropCallback onModuleDropped;
   final ValueChanged<int> onRotateModule;
+  final EquippedVisuals visuals;
 
   @override
   Widget build(BuildContext context) {
-    return AspectRatio(
-      aspectRatio: 1,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: const Color(0xFF0B1C24),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: const Color(0xFF2B5969), width: 2),
-          boxShadow: const [
-            BoxShadow(
-              color: Color(0x3338E8FF),
-              blurRadius: 26,
-              spreadRadius: -8,
-            ),
-          ],
-        ),
+    final boardTheme = visuals.board;
+    return CosmeticVisualScope(
+      visuals: visuals,
+      child: AspectRatio(
+        aspectRatio: 1,
+        child: DecoratedBox(
+          key: ValueKey('circuit-board-theme-${boardTheme.id}'),
+          decoration: BoxDecoration(
+            color: boardTheme.background,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: boardTheme.border, width: 2),
+            boxShadow: [
+              BoxShadow(
+                color: boardTheme.core.withValues(alpha: 0.22),
+                blurRadius: 26,
+                spreadRadius: -8,
+              ),
+            ],
+          ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(18),
           child: Stack(
@@ -60,6 +67,7 @@ class CircuitBoard extends StatelessWidget {
                     placements: placements,
                     specs: specs,
                     poweredIds: poweredIds,
+                    visuals: visuals,
                   ),
                 ),
               ),
@@ -116,6 +124,7 @@ class CircuitBoard extends StatelessWidget {
               ),
             ],
           ),
+          ),
         ),
       ),
     );
@@ -149,8 +158,11 @@ class _CircuitCell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final visuals = CosmeticVisualScope.of(context);
     final module = placement;
-    final color = module == null ? RelayColors.muted : moduleColor(module.kind);
+    final color = module == null
+        ? RelayColors.muted
+        : visuals.modules.moduleColorFor(module.kind);
     final compactStats =
         spec == null ? const <ModuleCompactStat>[] : moduleCompactStats(spec!);
     final statSemantics = compactStats
@@ -180,10 +192,10 @@ class _CircuitCell extends StatelessWidget {
                 ? RelayColors.amber
                 : module == null || !validationVisible
                     ? coreGate
-                        ? const Color(0xFF9A7330)
-                        : const Color(0xFF2B5361)
+                        ? visuals.board.gate
+                        : visuals.board.border.withValues(alpha: 0.72)
                     : powered
-                        ? RelayColors.cyan
+                        ? visuals.modules.accent
                         : RelayColors.coral;
 
         final cell = Semantics(
@@ -207,7 +219,7 @@ class _CircuitCell extends StatelessWidget {
               color: dropActive
                   ? RelayColors.cyan.withValues(alpha: 0.16)
                   : module == null
-                      ? const Color(0x99112730)
+                      ? visuals.board.emptyCell
                       : color.withValues(alpha: 0.17),
               borderRadius: BorderRadius.circular(12),
               child: InkWell(
@@ -263,7 +275,7 @@ class _CircuitCell extends StatelessWidget {
                                   children: [
                                     Icon(
                                       moduleIcon(candidate.kind),
-                                      color: moduleColor(candidate.kind),
+                                      color: visuals.modules.moduleColorFor(candidate.kind),
                                       size: 28,
                                     ),
                                     const SizedBox(height: 3),
@@ -451,12 +463,13 @@ class _CoreCellBackdrop extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final visuals = CosmeticVisualScope.of(context);
     return Semantics(
       key: ValueKey('circuit-cell-$cellIndex'),
       button: true,
       label: 'Pasif çekirdek hücresi',
       child: Material(
-        color: const Color(0xFF0E222B),
+        color: visuals.board.cell,
         borderRadius: BorderRadius.circular(8),
         child: InkWell(
           onTap: onTap,
@@ -464,7 +477,9 @@ class _CoreCellBackdrop extends StatelessWidget {
           child: DecoratedBox(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: const Color(0x5538E8FF)),
+              border: Border.all(
+                color: visuals.board.core.withValues(alpha: 0.34),
+              ),
             ),
             child: const SizedBox.expand(),
           ),
@@ -479,31 +494,32 @@ class _CoreHub extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final visuals = CosmeticVisualScope.of(context);
     return DecoratedBox(
       decoration: BoxDecoration(
-        gradient: const RadialGradient(
+        gradient: RadialGradient(
           colors: [
-            Color(0xFF1E5968),
-            Color(0xFF102D37),
-            Color(0xFF091A21),
+            visuals.board.core.withValues(alpha: 0.45),
+            visuals.board.cell,
+            visuals.board.coreSurface,
           ],
         ),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: RelayColors.cyan, width: 2),
-        boxShadow: const [
+        border: Border.all(color: visuals.board.core, width: 2),
+        boxShadow: [
           BoxShadow(
-            color: Color(0x6638E8FF),
+            color: visuals.board.core.withValues(alpha: 0.42),
             blurRadius: 22,
           ),
         ],
       ),
       child: Stack(
         children: [
-          const Center(
+          Center(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.memory, color: RelayColors.cyan, size: 32),
+                Icon(Icons.memory, color: visuals.board.core, size: 32),
                 SizedBox(height: 4),
                 Text(
                   'ÇEKİRDEK',
@@ -533,15 +549,18 @@ class _CoreHub extends StatelessWidget {
           ])
             Align(
               alignment: alignment,
-              child: const DecoratedBox(
+              child: DecoratedBox(
                 decoration: BoxDecoration(
-                  color: RelayColors.amber,
+                  color: visuals.board.gate,
                   shape: BoxShape.circle,
                   boxShadow: [
-                    BoxShadow(color: Color(0x99FFB84A), blurRadius: 8),
+                    BoxShadow(
+                      color: visuals.board.gate.withValues(alpha: 0.6),
+                      blurRadius: 8,
+                    ),
                   ],
                 ),
-                child: SizedBox(width: 10, height: 10),
+                child: const SizedBox(width: 10, height: 10),
               ),
             ),
         ],
@@ -592,13 +611,18 @@ class _PortMarker extends StatelessWidget {
         alignment: Alignment.center,
         child: DecoratedBox(
           decoration: BoxDecoration(
-            color: energized ? RelayColors.cyan : const Color(0xFF7896A0),
+            color: energized
+                ? CosmeticVisualScope.of(context).modules.accent
+                : const Color(0xFF7896A0),
             shape: BoxShape.circle,
             border: Border.all(color: const Color(0xFF07161C), width: 1.5),
             boxShadow: energized
-                ? const [
+                ? [
                     BoxShadow(
-                      color: Color(0x9938E8FF),
+                      color: CosmeticVisualScope.of(context)
+                          .modules
+                          .accent
+                          .withValues(alpha: 0.6),
                       blurRadius: 7,
                     ),
                   ]
@@ -746,18 +770,20 @@ class _CircuitTracePainter extends CustomPainter {
     required this.placements,
     required this.specs,
     required this.poweredIds,
+    required this.visuals,
   });
 
   final Map<int, ModulePlacement> placements;
   final Map<ModuleKind, ModuleSpec> specs;
   final Set<String> poweredIds;
+  final EquippedVisuals visuals;
 
   @override
   void paint(Canvas canvas, Size size) {
     final cellWidth = size.width / 4;
     final cellHeight = size.height / 4;
     final faintPaint = Paint()
-      ..color = const Color(0x222F879D)
+      ..color = visuals.board.grid
       ..strokeWidth = 1;
     for (var index = 1; index < 4; index += 1) {
       canvas
@@ -802,13 +828,13 @@ class _CircuitTracePainter extends CustomPainter {
             poweredIds.contains(neighbor.id);
         final glow = Paint()
           ..color = energized
-              ? RelayColors.cyan.withValues(alpha: 0.28)
-              : const Color(0x553C6976)
+              ? visuals.modules.accent.withValues(alpha: 0.28)
+              : visuals.board.traceMuted.withValues(alpha: 0.34)
           ..strokeWidth = energized ? 12 : 8
           ..strokeCap = StrokeCap.round;
         final trace = Paint()
           ..color =
-              energized ? RelayColors.cyan : const Color(0xFF3C6976)
+              energized ? visuals.modules.accent : visuals.board.traceMuted
           ..strokeWidth = energized ? 4 : 3
           ..strokeCap = StrokeCap.round;
         canvas
@@ -836,13 +862,13 @@ class _CircuitTracePainter extends CustomPainter {
       );
       final energized = poweredIds.contains(module.id);
       final trace = Paint()
-        ..color = energized ? RelayColors.amber : const Color(0xFF705A35)
+        ..color = energized ? visuals.board.gate : visuals.board.traceMuted
         ..strokeWidth = energized ? 4 : 3
         ..strokeCap = StrokeCap.round;
       final glow = Paint()
         ..color = energized
-            ? RelayColors.amber.withValues(alpha: 0.28)
-            : const Color(0x33705A35)
+            ? visuals.board.gate.withValues(alpha: 0.28)
+            : visuals.board.traceMuted.withValues(alpha: 0.20)
         ..strokeWidth = energized ? 12 : 8
         ..strokeCap = StrokeCap.round;
       canvas

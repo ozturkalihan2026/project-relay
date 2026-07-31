@@ -98,7 +98,7 @@ COSMETICS: tuple[CosmeticDefinition, ...] = (
         category="module_skin",
         display_name="Mercan Darbesi",
         description="Saldırı ve bağlantı vurgularına sıcak mercan tonu uygular.",
-        credit_cost=220,
+        credit_cost=350,
         accent_hex="#FF6B6B",
     ),
     CosmeticDefinition(
@@ -106,7 +106,7 @@ COSMETICS: tuple[CosmeticDefinition, ...] = (
         category="module_skin",
         display_name="Nane Akışı",
         description="Modül çerçevelerinde sakin ve yüksek kontrastlı nane vurgusu.",
-        credit_cost=280,
+        credit_cost=500,
         accent_hex="#63F5C7",
     ),
     CosmeticDefinition(
@@ -123,7 +123,7 @@ COSMETICS: tuple[CosmeticDefinition, ...] = (
         category="board_theme",
         display_name="İyon Fırtınası",
         description="Devre kartına mor-mavi iyon alanı görünümü kazandırır.",
-        credit_cost=320,
+        credit_cost=650,
         accent_hex="#8B7CFF",
     ),
     CosmeticDefinition(
@@ -131,7 +131,7 @@ COSMETICS: tuple[CosmeticDefinition, ...] = (
         category="board_theme",
         display_name="Nane Matrisi",
         description="Kablo ve hücre zemininde nane renkli matris vurgusu.",
-        credit_cost=360,
+        credit_cost=800,
         accent_hex="#39DDA5",
     ),
     CosmeticDefinition(
@@ -148,7 +148,7 @@ COSMETICS: tuple[CosmeticDefinition, ...] = (
         category="profile_frame",
         display_name="Dereceli Altın",
         description="Profil alanında altın lig vurgulu premium kozmetik çerçeve.",
-        credit_cost=450,
+        credit_cost=950,
         accent_hex="#FFD166",
     ),
     CosmeticDefinition(
@@ -156,7 +156,7 @@ COSMETICS: tuple[CosmeticDefinition, ...] = (
         category="profile_frame",
         display_name="Boss Çekirdeği",
         description="Kariyer boss devrelerinden esinlenen kırmızı çekirdek çerçevesi.",
-        credit_cost=520,
+        credit_cost=1200,
         accent_hex="#FF4D6D",
     ),
 )

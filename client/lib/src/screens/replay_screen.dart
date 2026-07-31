@@ -4,11 +4,13 @@ import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../api/relay_api.dart';
 import '../game/event_sound_player.dart';
 import '../game/replay_event_formatter.dart';
 import '../game/replay_game.dart';
 import '../models/relay_models.dart';
 import '../state/app_settings.dart';
+import '../theme/cosmetic_visuals.dart';
 import '../theme/relay_theme.dart';
 import '../widgets/relay_notice.dart';
 import '../widgets/replay_attack_overlay.dart';
@@ -24,6 +26,8 @@ class ReplayScreen extends ConsumerStatefulWidget {
     this.primaryActionLabel = 'YENİ OYUN',
     this.primaryActionKey = 'replay-new-game-button',
     this.primaryActionRequiresCompletion = false,
+    this.completionReward,
+    this.completionRewardTitle = 'SAVAŞ ÖDÜLÜ',
     this.onPrimaryAction,
     super.key,
   });
@@ -35,6 +39,8 @@ class ReplayScreen extends ConsumerStatefulWidget {
   final String primaryActionLabel;
   final String primaryActionKey;
   final bool primaryActionRequiresCompletion;
+  final ProgressionReward? completionReward;
+  final String completionRewardTitle;
   final VoidCallback? onPrimaryAction;
 
   @override
@@ -52,6 +58,7 @@ class _ReplayScreenState extends ConsumerState<ReplayScreen> {
   bool _playing = true;
   bool _soundEnabled = true;
   bool _rewardNoticeShown = false;
+  EquippedVisuals _leftVisuals = const EquippedVisuals.defaults();
 
   @override
   void initState() {
@@ -67,6 +74,7 @@ class _ReplayScreenState extends ConsumerState<ReplayScreen> {
     _attackOverlayEvents = ValueNotifier<List<BattleEvent>>(const []);
     _snapshot = ValueNotifier(ReplaySnapshot.initial(widget.match));
     _game = _createGame();
+    unawaited(_loadEquippedVisuals());
   }
 
   RelayReplayGame _createGame() {
@@ -75,11 +83,12 @@ class _ReplayScreenState extends ConsumerState<ReplayScreen> {
       replay: widget.replay,
       moduleSpecs: _moduleSpecs,
       formatter: _formatter,
+      leftVisuals: _leftVisuals,
       onFrame: (snapshot) {
         if (!mounted) return;
         _snapshot.value = snapshot;
         if (snapshot.complete) {
-          _showAsyncRewardNotice();
+          _showCompletionRewardNotice();
         }
       },
       onEvents: (events) {
@@ -102,26 +111,57 @@ class _ReplayScreenState extends ConsumerState<ReplayScreen> {
     )..speed = _speed;
   }
 
-  void _showAsyncRewardNotice() {
-    final reward = widget.match.progressionReward;
-    if (_rewardNoticeShown ||
-        widget.match.source != 'async' ||
-        reward == null) {
+  Future<void> _loadEquippedVisuals() async {
+    try {
+      final collection = await ref.read(collectionProvider.future);
+      final next = EquippedVisuals.fromCollection(collection);
+      if (!mounted ||
+          (next.board.id == _leftVisuals.board.id &&
+              next.modules.id == _leftVisuals.modules.id)) {
+        return;
+      }
+      setState(() {
+        _leftVisuals = next;
+        _snapshot.value = ReplaySnapshot.initial(widget.match);
+        _attackOverlayEvents.value = const [];
+        _game = _createGame();
+      });
+    } catch (_) {
+      // Kozmetik servisi kullanılamazsa savaş varsayılan görünümle devam eder.
+    }
+  }
+
+  void _showCompletionRewardNotice() {
+    final reward = widget.completionReward ??
+        (widget.match.source == 'async'
+            ? widget.match.progressionReward
+            : null);
+    if (_rewardNoticeShown || reward == null) {
       return;
     }
     _rewardNoticeShown = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      final levelText = reward.levelUp
-          ? '\nSEVİYE ${reward.levelAfter} AÇILDI!'
-          : ' • SV ${reward.levelAfter}';
-      RelayNotice.show(
-        context,
-        'SAVAŞ ÖDÜLÜ\n+${reward.xp} XP • '
-        '+${reward.credits} Devre Kredisi$levelText',
-        tone: RelayNoticeTone.success,
-        duration: const Duration(seconds: 6),
-      );
+      if (reward.levelUp) {
+        RelayNotice.showLevelUp(
+          context,
+          level: reward.levelAfter,
+          xp: reward.xp,
+          credits: reward.credits,
+          unlockLabel: levelUnlockLabel(
+            reward.levelAfter,
+            previousLevel: reward.levelBefore,
+          ),
+        );
+      } else {
+        RelayNotice.show(
+          context,
+          '${widget.completionRewardTitle}\n+${reward.xp} XP • '
+          '+${reward.credits} Devre Kredisi • SV ${reward.levelAfter}',
+          tone: RelayNoticeTone.success,
+          duration: const Duration(seconds: 6),
+        );
+      }
     });
   }
 
@@ -256,6 +296,7 @@ class _ReplayScreenState extends ConsumerState<ReplayScreen> {
                           child: ReplayAttackOverlay(
                             events: _attackOverlayEvents,
                             match: widget.match,
+                            leftVisuals: _leftVisuals,
                           ),
                         ),
                       ],

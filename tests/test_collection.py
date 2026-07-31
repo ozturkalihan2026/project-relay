@@ -49,6 +49,24 @@ class CollectionServiceTests(unittest.TestCase):
         self.assertEqual(len(starters), 3)
         self.assertTrue(all(item.owned and item.equipped for item in starters))
 
+    def test_paid_catalog_has_sustainable_credit_sink(self) -> None:
+        snapshot = self.service.snapshot("player-a")
+        paid = [item for item in snapshot.cosmetics if item.credit_cost > 0]
+
+        self.assertEqual(len(paid), 6)
+        self.assertEqual(sum(item.credit_cost for item in paid), 4_450)
+        self.assertEqual(
+            {item.cosmetic_id: item.credit_cost for item in paid},
+            {
+                "module_coral_pulse": 350,
+                "module_mint_flux": 500,
+                "board_ion_storm": 650,
+                "board_mint_matrix": 800,
+                "frame_ranked_gold": 950,
+                "frame_boss_core": 1_200,
+            },
+        )
+
     def test_purchase_deducts_credits_and_equips_cosmetic(self) -> None:
         with self.database.session() as session:
             session.add(
@@ -67,7 +85,7 @@ class CollectionServiceTests(unittest.TestCase):
 
         snapshot = self.service.purchase("player-a", "module_coral_pulse")
 
-        self.assertEqual(snapshot.credits, 280)
+        self.assertEqual(snapshot.credits, 150)
         item = next(
             item
             for item in snapshot.cosmetics

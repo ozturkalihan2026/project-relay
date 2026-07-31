@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../api/relay_api.dart';
 import '../models/relay_models.dart';
 import '../state/board_controller.dart';
+import '../theme/cosmetic_visuals.dart';
 import '../theme/relay_theme.dart';
 import '../widgets/circuit_board.dart';
 import '../widgets/module_palette.dart';
@@ -43,6 +44,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
   bool _busy = false;
   bool _loadingBoard = false;
   final ScrollController _editorScrollController = ScrollController();
+  EquippedVisuals _visuals = const EquippedVisuals.defaults();
 
   @override
   void initState() {
@@ -116,6 +118,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
       final api = ref.read(relayApiProvider);
       final controller = ref.read(boardControllerProvider.notifier);
       final collection = await ref.read(collectionProvider.future);
+      _visuals = EquippedVisuals.fromCollection(collection);
       controller.applyKit(collection.kit);
       final SavedBoard? saved = switch (widget.mode) {
         EditorMode.career => await api.fetchCareerBoard(),
@@ -161,6 +164,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
           specs: specs,
           modules: catalogs.modules,
           boardMaxWidth: boardMaxWidth,
+          visuals: _visuals,
           onPaletteSelected: controller.selectPalette,
           onBoardModuleReturned: _returnModuleToPalette,
           onCellTap: _tapCell,
@@ -422,6 +426,7 @@ class _BoardPanel extends StatelessWidget {
     required this.specs,
     required this.modules,
     required this.boardMaxWidth,
+    required this.visuals,
     required this.onPaletteSelected,
     required this.onBoardModuleReturned,
     required this.onCellTap,
@@ -434,6 +439,7 @@ class _BoardPanel extends StatelessWidget {
   final Map<ModuleKind, ModuleSpec> specs;
   final List<ModuleSpec> modules;
   final double boardMaxWidth;
+  final EquippedVisuals visuals;
   final ValueChanged<ModuleKind> onPaletteSelected;
   final ValueChanged<ModuleDragData> onBoardModuleReturned;
   final ValueChanged<int> onCellTap;
@@ -503,6 +509,7 @@ class _BoardPanel extends StatelessWidget {
               onCellTap: onCellTap,
               onModuleDropped: onModuleDropped,
               onRotateModule: onRotateModule,
+              visuals: visuals,
             ),
           ),
         ),

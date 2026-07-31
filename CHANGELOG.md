@@ -1,3 +1,19 @@
+## v0.6.2 rev1 — Görsel kozmetikler, dengeli ekonomi ve seviye kutlaması
+
+- Kuşanılan devre kartı temaları editör ve oyuncunun savaş kartına uygulandı.
+- Modül kaplamaları modül/port vurgularına ve saldırı darbelerinin rengine bağlandı.
+- Profil çerçeveleri üst oyuncu bilgi çubuğunun çerçeve, parıltı ve avatarını değiştirir.
+- Güçlendirici Ustalığı, kalıcı güçle karışmaması için **Boss Güçlendirici
+  Kademeleri** olarak açıklandı; K2/K3/K4/K5 eşikleri 10/20/30/40'tır.
+- İlk beş seviye korunurken üst seviye XP eğrisi uzun vadeli ilerleme için
+  yavaşlatıldı. Savaş, günlük görev, başarım ve kariyer ödülleri yeniden dengelendi.
+- Ücretli kozmetik kataloğunun toplam maliyeti 4.450 Devre Kredisine çıkarıldı.
+- Asenkron savaş, görev/başarım ve tamamlanan kariyer koşusunda seviye atlanırsa
+  yeni seviye ile kilit açılımını gösteren merkezî kutlama rozeti eklendi.
+- Daha önce yerel Flutter doğrulamasında bulunan v0.6.2 const, kontrollü kit ve
+  widget kaydırma gerileme düzeltmeleri tam pakete işlendi.
+- İstemci `0.6.2+40`; API şeması `0.6.2`, savaş kuralları `0.8` olarak korundu.
+
 ## v0.6.2 — Koleksiyon ve kontrollü sekizli kit
 
 - Ana menüye ayrı **Koleksiyon** ekranı eklendi.

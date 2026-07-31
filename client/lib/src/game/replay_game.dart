@@ -5,6 +5,7 @@ import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 
 import '../models/relay_models.dart';
+import '../theme/cosmetic_visuals.dart';
 import '../theme/relay_theme.dart';
 import '../widgets/module_visuals.dart';
 import 'replay_event_formatter.dart';
@@ -146,6 +147,8 @@ class RelayReplayGame extends FlameGame {
     required this.formatter,
     required this.onFrame,
     required this.onEvents,
+    this.leftVisuals = const EquippedVisuals.defaults(),
+    this.rightVisuals = const EquippedVisuals.defaults(),
   })  : _cursor = ReplayPlaybackCursor(replay.events),
         _leftHp = match.result.left.coreMaxHp,
         _rightHp = match.result.right.coreMaxHp {
@@ -182,6 +185,8 @@ class RelayReplayGame extends FlameGame {
   final ReplayEventFormatter formatter;
   final ValueChanged<ReplaySnapshot> onFrame;
   final ValueChanged<List<BattleEvent>> onEvents;
+  final EquippedVisuals leftVisuals;
+  final EquippedVisuals rightVisuals;
   final ReplayPlaybackCursor _cursor;
   final List<_VisualPulse> _pulses = [];
   final Map<String, double> _leftModuleHp = {};
@@ -257,7 +262,14 @@ class RelayReplayGame extends FlameGame {
       if (stateFrame == null) {
         _applyEventState(event);
       }
-      _pulses.add(_VisualPulse.fromEvent(event));
+      _pulses.add(
+        _VisualPulse.fromEvent(
+          event,
+          attackColor: event.side == 'left'
+              ? leftVisuals.modules.attack
+              : rightVisuals.modules.attack,
+        ),
+      );
       _lastEventData = event;
       _lastEvent = formatter.eventLabel(event);
       _processedEventCount += 1;
@@ -422,8 +434,9 @@ class RelayReplayGame extends FlameGame {
       states: _leftModuleStates,
       deltas: _leftModuleDeltas,
       boardState: _leftBoardState,
-      color: RelayColors.cyan,
+      color: leftVisuals.board.core,
       label: 'SEN',
+      visuals: leftVisuals,
       coreHp: _leftHp,
       coreMaxHp: match.result.left.coreMaxHp,
     );
@@ -437,6 +450,7 @@ class RelayReplayGame extends FlameGame {
       boardState: _rightBoardState,
       color: RelayColors.coral,
       label: match.opponent.displayName.toUpperCase(),
+      visuals: rightVisuals,
       coreHp: _rightHp,
       coreMaxHp: match.result.right.coreMaxHp,
     );
@@ -485,13 +499,14 @@ class RelayReplayGame extends FlameGame {
     required BoardReplayState boardState,
     required Color color,
     required String label,
+    required EquippedVisuals visuals,
     required double coreHp,
     required double coreMaxHp,
   }) {
     final cellSize = rect.width / 4;
     canvas.drawRRect(
       ui.RRect.fromRectAndRadius(rect, const ui.Radius.circular(10)),
-      Paint()..color = const Color(0xDD0B1C24),
+      Paint()..color = visuals.board.background.withValues(alpha: 0.94),
     );
     for (var row = 0; row < 4; row += 1) {
       for (var column = 0; column < 4; column += 1) {
@@ -504,13 +519,13 @@ class RelayReplayGame extends FlameGame {
         canvas.drawRRect(
           ui.RRect.fromRectAndRadius(cell, const ui.Radius.circular(5)),
           Paint()
-            ..color = const Color(0xFF112730)
+            ..color = visuals.board.cell
             ..style = PaintingStyle.fill,
         );
         canvas.drawRRect(
           ui.RRect.fromRectAndRadius(cell, const ui.Radius.circular(5)),
           Paint()
-            ..color = const Color(0xFF31515C)
+            ..color = visuals.board.border.withValues(alpha: 0.78)
             ..style = PaintingStyle.stroke
             ..strokeWidth = 1,
         );
@@ -522,6 +537,7 @@ class RelayReplayGame extends FlameGame {
       rect: rect,
       board: board,
       states: states,
+      visuals: visuals,
     );
 
     _drawBoardCore(
@@ -530,11 +546,12 @@ class RelayReplayGame extends FlameGame {
       color: color,
       hp: coreHp,
       maxHp: coreMaxHp,
+      visuals: visuals,
     );
 
     for (final module in board.modules) {
       final cell = ReplayCircuitGeometry.moduleRect(module, rect);
-      final moduleColorValue = moduleColor(module.kind);
+      final moduleColorValue = visuals.modules.moduleColorFor(module.kind);
       final state = states[module.id];
       final delta = deltas[module.id] ?? const _ModuleDelta();
       final currentHp = hp[module.id] ?? state?.hp ?? 0;
@@ -561,6 +578,7 @@ class RelayReplayGame extends FlameGame {
         module: module,
         powered: state?.powered ?? false,
         destroyed: destroyed,
+        visuals: visuals,
       );
       _drawModuleIcon(
         canvas,
@@ -695,6 +713,7 @@ class RelayReplayGame extends FlameGame {
     required ModulePlacement module,
     required bool powered,
     required bool destroyed,
+    required EquippedVisuals visuals,
   }) {
     final spec = moduleSpecs[module.kind];
     if (spec == null) {
@@ -722,7 +741,7 @@ class RelayReplayGame extends FlameGame {
             ..color = destroyed
                 ? RelayColors.muted.withValues(alpha: 0.45)
                 : powered
-                    ? RelayColors.amber
+                    ? visuals.modules.accent
                     : RelayColors.muted,
         );
     }
@@ -733,6 +752,7 @@ class RelayReplayGame extends FlameGame {
     required ui.Rect rect,
     required BoardDraft board,
     required Map<String, ModuleReplayState> states,
+    required EquippedVisuals visuals,
   }) {
     final powered = board.modules
         .where(
@@ -811,7 +831,7 @@ class RelayReplayGame extends FlameGame {
           from,
           to,
           Paint()
-            ..color = RelayColors.amber.withValues(alpha: 0.24)
+            ..color = visuals.board.trace.withValues(alpha: 0.24)
             ..strokeWidth = 2
             ..strokeCap = StrokeCap.round,
         );
@@ -819,13 +839,13 @@ class RelayReplayGame extends FlameGame {
           pulse,
           6,
           Paint()
-            ..color = RelayColors.amber.withValues(alpha: 0.16 * glow),
+            ..color = visuals.board.trace.withValues(alpha: 0.16 * glow),
         );
         canvas.drawCircle(
           pulse,
           2.6,
           Paint()
-            ..color = RelayColors.amber.withValues(alpha: 0.94 * glow),
+            ..color = visuals.board.trace.withValues(alpha: 0.94 * glow),
         );
         linkIndex += 1;
       }
@@ -852,19 +872,19 @@ class RelayReplayGame extends FlameGame {
         from,
         to,
         Paint()
-          ..color = RelayColors.amber.withValues(alpha: 0.30)
+          ..color = visuals.board.gate.withValues(alpha: 0.30)
           ..strokeWidth = 2.4
           ..strokeCap = StrokeCap.round,
       );
       canvas.drawCircle(
         pulse,
         5.5,
-        Paint()..color = RelayColors.amber.withValues(alpha: 0.18),
+        Paint()..color = visuals.board.gate.withValues(alpha: 0.18),
       );
       canvas.drawCircle(
         pulse,
         2.5,
-        Paint()..color = RelayColors.amber.withValues(alpha: 0.96),
+        Paint()..color = visuals.board.gate.withValues(alpha: 0.96),
       );
       linkIndex += 1;
     }
@@ -962,6 +982,7 @@ class RelayReplayGame extends FlameGame {
     required Color color,
     required double hp,
     required double maxHp,
+    required EquippedVisuals visuals,
   }) {
     final cellSize = rect.width / 4;
     final coreRect = ReplayCircuitGeometry.coreRect(rect);
@@ -970,7 +991,7 @@ class RelayReplayGame extends FlameGame {
     canvas
       ..drawRRect(
         ui.RRect.fromRectAndRadius(coreRect, const ui.Radius.circular(12)),
-        Paint()..color = const Color(0xF20A2028),
+        Paint()..color = visuals.board.coreSurface,
       )
       ..drawRRect(
         ui.RRect.fromRectAndRadius(coreRect, const ui.Radius.circular(12)),
@@ -1013,7 +1034,7 @@ class RelayReplayGame extends FlameGame {
         ..drawCircle(
           point,
           3.2,
-          Paint()..color = RelayColors.amber,
+          Paint()..color = visuals.board.gate,
         );
     }
     _drawText(
@@ -1187,11 +1208,14 @@ class _VisualPulse {
     required this.isBeam,
   });
 
-  factory _VisualPulse.fromEvent(BattleEvent event) {
+  factory _VisualPulse.fromEvent(
+    BattleEvent event, {
+    required Color attackColor,
+  }) {
     return _VisualPulse(
       event: event,
       color: switch (event.type) {
-        'attack' || 'core_damage' => RelayColors.coral,
+        'attack' || 'core_damage' => attackColor,
         'shield' || 'shield_absorb' => const Color(0xFF74A7FF),
         'cool' => RelayColors.cyan,
         'repair' || 'recovered' => RelayColors.mint,

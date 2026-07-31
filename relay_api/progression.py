@@ -24,9 +24,9 @@ from .store import StoredMatch
 Outcome = Literal["win", "draw", "loss"]
 
 MATCH_REWARDS: dict[Outcome, tuple[int, int]] = {
-    "win": (50, 30),
-    "draw": (35, 20),
-    "loss": (25, 12),
+    "win": (32, 14),
+    "draw": (24, 9),
+    "loss": (16, 5),
 }
 
 
@@ -48,8 +48,8 @@ DAILY_MISSIONS: tuple[DailyMissionDefinition, ...] = (
         description="Bir asenkron devre savaşını tamamla.",
         metric="matches_completed",
         target=1,
-        reward_xp=30,
-        reward_credits=25,
+        reward_xp=15,
+        reward_credits=8,
     ),
     DailyMissionDefinition(
         mission_id="steady_current",
@@ -57,8 +57,8 @@ DAILY_MISSIONS: tuple[DailyMissionDefinition, ...] = (
         description="Üç asenkron devre savaşını tamamla.",
         metric="matches_completed",
         target=3,
-        reward_xp=70,
-        reward_credits=60,
+        reward_xp=35,
+        reward_credits=18,
     ),
     DailyMissionDefinition(
         mission_id="victory_pulse",
@@ -66,8 +66,8 @@ DAILY_MISSIONS: tuple[DailyMissionDefinition, ...] = (
         description="Bir asenkron devre savaşı kazan.",
         metric="wins",
         target=1,
-        reward_xp=50,
-        reward_credits=40,
+        reward_xp=25,
+        reward_credits=12,
     ),
 )
 
@@ -90,8 +90,8 @@ ACHIEVEMENTS: tuple[AchievementDefinition, ...] = (
         description="İlk asenkron savaşını tamamla.",
         metric="matches_completed",
         target=1,
-        reward_xp=100,
-        reward_credits=50,
+        reward_xp=45,
+        reward_credits=20,
     ),
     AchievementDefinition(
         achievement_id="first_victory",
@@ -99,8 +99,8 @@ ACHIEVEMENTS: tuple[AchievementDefinition, ...] = (
         description="İlk asenkron zaferini kazan.",
         metric="wins",
         target=1,
-        reward_xp=100,
-        reward_credits=75,
+        reward_xp=55,
+        reward_credits=25,
     ),
     AchievementDefinition(
         achievement_id="circuit_veteran",
@@ -108,8 +108,8 @@ ACHIEVEMENTS: tuple[AchievementDefinition, ...] = (
         description="On asenkron savaşı tamamla.",
         metric="matches_completed",
         target=10,
-        reward_xp=250,
-        reward_credits=150,
+        reward_xp=120,
+        reward_credits=60,
     ),
     AchievementDefinition(
         achievement_id="level_five",
@@ -117,8 +117,8 @@ ACHIEVEMENTS: tuple[AchievementDefinition, ...] = (
         description="Oyuncu seviyesini 5'e çıkar.",
         metric="level",
         target=5,
-        reward_xp=250,
-        reward_credits=200,
+        reward_xp=150,
+        reward_credits=80,
     ),
     AchievementDefinition(
         achievement_id="rating_1100",
@@ -126,8 +126,8 @@ ACHIEVEMENTS: tuple[AchievementDefinition, ...] = (
         description="Derece puanını 1100'e çıkar.",
         metric="rating",
         target=1100,
-        reward_xp=300,
-        reward_credits=250,
+        reward_xp=180,
+        reward_credits=100,
     ),
 )
 
@@ -283,7 +283,13 @@ class ProgressionSnapshot:
 def xp_required_for_level(level: int) -> int:
     if level < 1:
         raise ValueError("Seviye 1 veya daha büyük olmalıdır.")
-    return 100 + ((level - 1) * 25)
+    # İlk beş seviye mevcut oyuncuların erken ilerlemesini korur. Sonrasında
+    # gereksinim kademeli olarak hızlanır; böylece üst kademeler birkaç oturumda
+    # tüketilmez ve kariyer/kozmetik ekonomisi uzun ömürlü kalır.
+    if level <= 5:
+        return 100 + ((level - 1) * 25)
+    distance = level - 5
+    return 200 + (35 * distance) + (2 * distance * distance)
 
 
 def level_progress(total_xp: int) -> tuple[int, int, int]:
@@ -531,8 +537,8 @@ class ProgressionService:
             if session.get(PlayerRecord, player_id) is None:
                 raise LookupError("Ödüllendirilecek oyuncu bulunamadı.")
             record = self._progression_record(session, player_id, now)
-            xp = max(0, wins) * 30 + (150 if completed else 0)
-            credits = max(0, wins) * 18 + (100 if completed else 0)
+            xp = max(0, wins) * 20 + (100 if completed else 0)
+            credits = max(0, wins) * 10 + (60 if completed else 0)
             result_label = "tamamlandı" if completed else "sona erdi"
             grant = self._apply_reward(
                 session,

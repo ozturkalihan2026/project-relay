@@ -43,6 +43,8 @@ class CareerBattleScreen extends StatelessWidget {
         primaryActionLabel: _primaryActionLabel,
         primaryActionKey: 'career-battle-primary-action',
         primaryActionRequiresCompletion: true,
+        completionReward: outcome.run.reward,
+        completionRewardTitle: 'KARİYER ÖDÜLÜ',
         onPrimaryAction: () => Navigator.of(context).pop(),
       ),
     );

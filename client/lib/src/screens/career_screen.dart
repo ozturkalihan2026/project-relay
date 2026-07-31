@@ -108,10 +108,34 @@ class _CareerScreenState extends ConsumerState<CareerScreen> {
                     ),
                     const SizedBox(height: 12),
                     _SectionCard(
-                      title: 'GÜÇLENDİRİCİ USTALIĞI',
+                      title: 'BOSS GÜÇLENDİRİCİ KADEMELERİ',
                       icon: Icons.bolt_outlined,
                       child: Column(
                         children: [
+                          Container(
+                            width: double.infinity,
+                            margin: const EdgeInsets.only(bottom: 12),
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: RelayColors.amber.withValues(alpha: 0.08),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: RelayColors.amber.withValues(alpha: 0.38),
+                              ),
+                            ),
+                            child: const Text(
+                              'Bu kademeler modüllere kalıcı güç vermez. '
+                              'Yalnız kariyer koşusunda, boss savaşı öncesinde '
+                              'Devre Kredisiyle alınan geçici güçlendiricinin '
+                              'etkisini belirler. K2/K3/K4/K5 sırasıyla '
+                              '10, 20, 30 ve 40. seviyelerde açılır.',
+                              style: TextStyle(
+                                color: RelayColors.muted,
+                                fontSize: 11,
+                                height: 1.4,
+                              ),
+                            ),
+                          ),
                           for (final booster in snapshot.boosters)
                             _BoosterRow(booster: booster),
                         ],
@@ -312,12 +336,24 @@ class _CareerScreenState extends ConsumerState<CareerScreen> {
       ref.invalidate(progressionProvider);
       await ref.read(progressionProvider.future);
       if (mounted) {
-        final levelText = reward.levelUp ? ' • SEVİYE ${reward.levelAfter}!' : '';
-        RelayNotice.show(
-          context,
-          '+${reward.xp} XP • +${reward.credits} Devre Kredisi$levelText',
-          tone: RelayNoticeTone.success,
-        );
+        if (reward.levelUp) {
+          RelayNotice.showLevelUp(
+            context,
+            level: reward.levelAfter,
+            xp: reward.xp,
+            credits: reward.credits,
+            unlockLabel: levelUnlockLabel(
+              reward.levelAfter,
+              previousLevel: reward.levelBefore,
+            ),
+          );
+        } else {
+          RelayNotice.show(
+            context,
+            '+${reward.xp} XP • +${reward.credits} Devre Kredisi',
+            tone: RelayNoticeTone.success,
+          );
+        }
       }
     } catch (error) {
       _showError('Ödül alınamadı: $error');
@@ -870,6 +906,17 @@ class _ProgressCard extends StatelessWidget {
                 fontWeight: FontWeight.w700,
               ),
             ),
+            const SizedBox(height: 7),
+            const Text(
+              'Seviye kariyer koşusunu bitirmez. Yeni seviyeler profil '
+              'rozetlerini ve 10/20/30/40 eşiklerinde yalnız boss öncesi '
+              'geçici güçlendirici kademelerini açar.',
+              style: TextStyle(
+                color: RelayColors.muted,
+                fontSize: 10,
+                height: 1.35,
+              ),
+            ),
           ],
         ),
       ),
@@ -1076,12 +1123,35 @@ class _BoosterRow extends StatelessWidget {
               ],
             ),
           ),
-          Text(
-            'K${booster.tier}',
-            style: const TextStyle(
-              color: RelayColors.cyan,
-              fontWeight: FontWeight.w900,
-            ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                'K${booster.tier}',
+                style: const TextStyle(
+                  color: RelayColors.cyan,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              if (booster.nextTierLevel != null)
+                Text(
+                  'K${booster.tier + 1}: SV ${booster.nextTierLevel}',
+                  style: const TextStyle(
+                    color: RelayColors.muted,
+                    fontSize: 8.5,
+                    fontWeight: FontWeight.w700,
+                  ),
+                )
+              else
+                const Text(
+                  'MAKS.',
+                  style: TextStyle(
+                    color: RelayColors.mint,
+                    fontSize: 8.5,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+            ],
           ),
         ],
       ),

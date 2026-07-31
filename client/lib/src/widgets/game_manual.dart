@@ -304,8 +304,11 @@ class GameManualScreen extends StatelessWidget {
                       ),
                       _ManualParagraph(
                         text: 'Satın alınan içerikler kalıcı koleksiyona eklenir. '
-                            'Aynı kategoride tek kozmetik kuşanılır; yeni seçim '
-                            'savaş dengesini ve sunucu kurallarını değiştirmez.',
+                            'Kuşanılan devre kartı teması kurulum ekranında ve '
+                            'savaş tekrarındaki sizin kartınızda görünür. Modül '
+                            'kaplaması modül vurgularını ve saldırı darbelerinin '
+                            'rengini, profil çerçevesi üst oyuncu bilgi alanını '
+                            'değiştirir. Hiçbiri savaş dengesini değiştirmez.',
                       ),
                     ],
                   ),
@@ -344,10 +347,37 @@ class GameManualScreen extends StatelessWidget {
                             'alabilir veya satın almadan ilerleyebilirsiniz.',
                       ),
                       _ManualParagraph(
+                        text: 'Boss Güçlendirici Kademeleri kalıcı modül gücü '
+                            'değildir. K1 başlangıçtır; K2, K3, K4 ve K5 sırasıyla '
+                            '10, 20, 30 ve 40. seviyelerde açılır ve yalnız boss '
+                            'öncesinde satın alınan geçici etkinin miktarını belirler.',
+                      ),
+                      _ManualParagraph(
                         text: 'Koşu tamamlandığında, kaybedildiğinde veya '
                             'bırakıldığında geçici güçlendirici sıfırlanır. '
                             'Kariyer güçlendirmeleri normal ya da dereceli PvP '
                             'savaşlarına taşınmaz.',
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  const _ManualSection(
+                    icon: Icons.insights_outlined,
+                    title: 'SEVİYE VE EKONOMİ',
+                    subtitle: 'Erken öğrenme hızlı, uzun vadeli ilerleme kontrollü',
+                    children: [
+                      _ManualParagraph(
+                        text: 'İlk beş seviye öğretici tempoyu korur. Sonraki '
+                            'seviyelerde gereken XP kademeli olarak yükselir; '
+                            'seviye 40 son boss güçlendirici kademesini açar ama '
+                            'kariyer modu burada bitmez ve koşular tekrar oynanır.',
+                      ),
+                      _ManualParagraph(
+                        text: 'Devre Kredisi asenkron savaşlar, günlük görevler, '
+                            'başarımlar ve kariyer koşularından kazanılır. Boss '
+                            'güçlendiricileri kredi harcar; kozmetik fiyatları da '
+                            'koleksiyonun birkaç oturumda tükenmemesi için '
+                            'uzun vadeli hedef olarak ayarlanmıştır.',
                       ),
                     ],
                   ),
@@ -364,7 +394,9 @@ class GameManualScreen extends StatelessWidget {
                             'kalır ve kısa süre sonra otomatik kapanır. '
                             'Asenkron PvP savaşının XP ve Devre Kredisi ödülü '
                             'de savaş ekranının altına eklenmez; aynı ortak '
-                            'bildirim kutusunda gösterilir.',
+                            'bildirim kutusunda gösterilir. Seviye atlandığında '
+                            'yeni seviye, kazanılan XP/Kredi ve açılan kademe ayrı '
+                            'bir kutlama rozetiyle görünür.',
                       ),
                     ],
                   ),

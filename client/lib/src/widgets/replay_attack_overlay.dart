@@ -5,17 +5,22 @@ import 'package:flutter/material.dart';
 
 import '../game/replay_game.dart';
 import '../models/relay_models.dart';
+import '../theme/cosmetic_visuals.dart';
 import '../theme/relay_theme.dart';
 
 class ReplayAttackOverlay extends StatefulWidget {
   const ReplayAttackOverlay({
     required this.events,
     required this.match,
+    this.leftVisuals = const EquippedVisuals.defaults(),
+    this.rightVisuals = const EquippedVisuals.defaults(),
     super.key,
   });
 
   final ValueListenable<List<BattleEvent>> events;
   final MatchResponse match;
+  final EquippedVisuals leftVisuals;
+  final EquippedVisuals rightVisuals;
 
   @override
   State<ReplayAttackOverlay> createState() => _ReplayAttackOverlayState();
@@ -82,6 +87,8 @@ class _ReplayAttackOverlayState extends State<ReplayAttackOverlay>
               events: _events,
               match: widget.match,
               progress: Curves.easeOut.transform(_controller.value),
+              leftVisuals: widget.leftVisuals,
+              rightVisuals: widget.rightVisuals,
             ),
           );
         },
@@ -95,11 +102,15 @@ class _AttackPainter extends CustomPainter {
     required this.events,
     required this.match,
     required this.progress,
+    required this.leftVisuals,
+    required this.rightVisuals,
   });
 
   final List<BattleEvent> events;
   final MatchResponse match;
   final double progress;
+  final EquippedVisuals leftVisuals;
+  final EquippedVisuals rightVisuals;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -145,9 +156,10 @@ class _AttackPainter extends CustomPainter {
         : _modulePoint(event.targetId, targetBoard, targetRect) ??
             targetRect.center;
     final fade = (1 - progress).clamp(0.0, 1.0).toDouble();
+    final sideVisuals = event.side == 'left' ? leftVisuals : rightVisuals;
     final color = event.type == 'shield_absorb'
         ? const Color(0xFF74A7FF)
-        : RelayColors.coral;
+        : sideVisuals.modules.attack;
     final head = Offset.lerp(from, to, progress)!;
     final tail = Offset.lerp(
       from,
@@ -202,6 +214,8 @@ class _AttackPainter extends CustomPainter {
   bool shouldRepaint(covariant _AttackPainter oldDelegate) {
     return oldDelegate.events != events ||
         oldDelegate.progress != progress ||
-        oldDelegate.match != match;
+        oldDelegate.match != match ||
+        oldDelegate.leftVisuals.modules.id != leftVisuals.modules.id ||
+        oldDelegate.rightVisuals.modules.id != rightVisuals.modules.id;
   }
 }

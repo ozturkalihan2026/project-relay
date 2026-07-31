@@ -40,6 +40,7 @@ dönüştürür.
 | v0.6.0 | XP, seviye, görev, başarım ve güçlendirici ustalığı temeli | Hazır |
 | v0.6.1 | Kariyer koşusu, tam ön izleme, ayrı kariyer kartı/savaş akışı ve boss mağazası | Hazır |
 | v0.6.2 | Kozmetik mağaza, koleksiyon ve sekizli kit | Hazır |
+| v0.6.2 rev1 | Görsel kozmetikler, ekonomi dengesi ve seviye kutlaması | Hazır |
 | v0.7.0 | Sezon, kapalı alfa ve kötüye kullanım koruması | Planlandı |
 | v0.8.0 | Sosyal yapı, klan temeli ve kapalı gelir altyapısı | Planlandı |
 | v1.0.0 | Android ve web açık beta | Hedef |

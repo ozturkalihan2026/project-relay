@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../api/relay_api.dart';
 import '../models/relay_models.dart';
+import '../theme/cosmetic_visuals.dart';
 import '../theme/relay_theme.dart';
 
 class PlayerStatusBar extends ConsumerWidget {
@@ -19,6 +20,15 @@ class PlayerStatusBar extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final session = ref.watch(guestSessionProvider);
     final progression = ref.watch(progressionProvider);
+    final collection = ref.watch(collectionProvider);
+    final profileFrame = collection.when(
+      data: (snapshot) => ProfileFrameVisualTheme.fromId(
+        snapshot.equippedProfileFrameId,
+      ),
+      loading: () => const ProfileFrameVisualTheme.circuitBasic(),
+      error: (error, stackTrace) =>
+          const ProfileFrameVisualTheme.circuitBasic(),
+    );
     final screenWidth = MediaQuery.sizeOf(context).width;
     final dense = compact && screenWidth < 720;
     final width = dense
@@ -39,26 +49,31 @@ class PlayerStatusBar extends ConsumerWidget {
             profile: snapshot.profile,
             compact: compact,
             dense: dense,
+            frame: profileFrame,
           ),
           loading: () => _PlayerStatusLoading(
             displayName: guest.player.displayName,
             compact: compact,
             dense: dense,
+            frame: profileFrame,
           ),
           error: (error, stackTrace) => _PlayerStatusError(
             displayName: guest.player.displayName,
             compact: compact,
             dense: dense,
+            frame: profileFrame,
             onRetry: () => ref.invalidate(progressionProvider),
           ),
         ),
         loading: () => _PlayerStatusLoading(
           compact: compact,
           dense: dense,
+          frame: profileFrame,
         ),
         error: (error, stackTrace) => _PlayerStatusError(
           compact: compact,
           dense: dense,
+          frame: profileFrame,
           onRetry: () {
             ref.invalidate(guestSessionProvider);
             ref.invalidate(progressionProvider);
@@ -75,21 +90,24 @@ class _PlayerStatusContent extends StatelessWidget {
     required this.profile,
     required this.compact,
     required this.dense,
+    required this.frame,
   });
 
   final String displayName;
   final PlayerProgression profile;
   final bool compact;
   final bool dense;
+  final ProfileFrameVisualTheme frame;
 
   @override
   Widget build(BuildContext context) {
     return _StatusShell(
       compact: compact,
+      frame: frame,
       child: Row(
         children: [
           if (!dense) ...[
-            _PlayerAvatar(compact: compact),
+            _PlayerAvatar(compact: compact, frame: frame),
             SizedBox(width: compact ? 7 : 9),
           ],
           Expanded(
@@ -213,21 +231,24 @@ class _PlayerStatusLoading extends StatelessWidget {
   const _PlayerStatusLoading({
     required this.compact,
     required this.dense,
+    required this.frame,
     this.displayName,
   });
 
   final bool compact;
   final bool dense;
+  final ProfileFrameVisualTheme frame;
   final String? displayName;
 
   @override
   Widget build(BuildContext context) {
     return _StatusShell(
       compact: compact,
+      frame: frame,
       child: Row(
         children: [
           if (!dense) ...[
-            _PlayerAvatar(compact: compact),
+            _PlayerAvatar(compact: compact, frame: frame),
             const SizedBox(width: 8),
           ],
           Expanded(
@@ -262,12 +283,14 @@ class _PlayerStatusError extends StatelessWidget {
   const _PlayerStatusError({
     required this.compact,
     required this.dense,
+    required this.frame,
     required this.onRetry,
     this.displayName,
   });
 
   final bool compact;
   final bool dense;
+  final ProfileFrameVisualTheme frame;
   final VoidCallback onRetry;
   final String? displayName;
 
@@ -275,6 +298,7 @@ class _PlayerStatusError extends StatelessWidget {
   Widget build(BuildContext context) {
     return _StatusShell(
       compact: compact,
+      frame: frame,
       error: true,
       child: Row(
         children: [
@@ -317,28 +341,35 @@ class _StatusShell extends StatelessWidget {
   const _StatusShell({
     required this.compact,
     required this.child,
+    required this.frame,
     this.error = false,
   });
 
   final bool compact;
   final Widget child;
+  final ProfileFrameVisualTheme frame;
   final bool error;
 
   @override
   Widget build(BuildContext context) {
     final borderColor = error
         ? RelayColors.coral.withValues(alpha: 0.55)
-        : RelayColors.cyan.withValues(alpha: 0.42);
+        : frame.accent.withValues(alpha: 0.62);
     return DecoratedBox(
       decoration: BoxDecoration(
         color: RelayColors.surface.withValues(alpha: 0.96),
         borderRadius: BorderRadius.circular(compact ? 13 : 15),
         border: Border.all(color: borderColor),
-        boxShadow: const [
-          BoxShadow(
+        boxShadow: [
+          const BoxShadow(
             color: Color(0x22000000),
             blurRadius: 12,
             offset: Offset(0, 4),
+          ),
+          BoxShadow(
+            color: frame.glow,
+            blurRadius: 16,
+            spreadRadius: -4,
           ),
         ],
       ),
@@ -354,22 +385,27 @@ class _StatusShell extends StatelessWidget {
 }
 
 class _PlayerAvatar extends StatelessWidget {
-  const _PlayerAvatar({required this.compact});
+  const _PlayerAvatar({
+    required this.compact,
+    required this.frame,
+  });
 
   final bool compact;
+  final ProfileFrameVisualTheme frame;
 
   @override
   Widget build(BuildContext context) {
     return DecoratedBox(
-      decoration: const BoxDecoration(
-        color: Color(0x2238E8FF),
+      decoration: BoxDecoration(
+        color: frame.glow,
         shape: BoxShape.circle,
+        border: Border.all(color: frame.accent.withValues(alpha: 0.7)),
       ),
       child: Padding(
         padding: EdgeInsets.all(compact ? 7 : 8),
         child: Icon(
-          Icons.person_outline,
-          color: RelayColors.cyan,
+          frame.icon,
+          color: frame.accent,
           size: compact ? 17 : 19,
         ),
       ),

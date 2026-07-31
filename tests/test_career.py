@@ -222,8 +222,8 @@ class CareerRunServiceTests(unittest.TestCase):
         run = career.battle("player-a").run
         self.assertEqual(run.status, "completed")
         self.assertEqual(run.wins, 5)
-        self.assertEqual(run.reward.xp, 300)
-        self.assertEqual(run.reward.credits, 190)
+        self.assertEqual(run.reward.xp, 200)
+        self.assertEqual(run.reward.credits, 110)
         self.assertEqual(
             progression.career_reward("player-a", run.run_id),
             run.reward,
@@ -234,7 +234,7 @@ class CareerRunServiceTests(unittest.TestCase):
         )
         self.assertEqual(
             progression.snapshot("player-a").profile.credits,
-            315,
+            235,
         )
         restarted = career.start("player-a")
         self.assertEqual(restarted.status, "active")
@@ -308,8 +308,8 @@ class CareerRunServiceTests(unittest.TestCase):
         repaired = career.current("player-a")
 
         self.assertEqual(repaired.status, "failed")
-        self.assertEqual(repaired.reward.xp, 60)
-        self.assertEqual(repaired.reward.credits, 36)
+        self.assertEqual(repaired.reward.xp, 40)
+        self.assertEqual(repaired.reward.credits, 20)
         self.assertEqual(
             progression.career_reward("player-a", "run-repair"),
             repaired.reward,

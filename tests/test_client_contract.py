@@ -23,7 +23,7 @@ class FlutterClientContractTests(unittest.TestCase):
             CLIENT / "lib" / "src" / "widgets" / "game_manual.dart"
         ).read_text(encoding="utf-8")
 
-        self.assertIn("version: 0.6.2+39", pubspec)
+        self.assertIn("version: 0.6.2+40", pubspec)
         self.assertIn("${widget.mode.title} • v0.6.2", editor)
         self.assertIn("KİT, KOLEKSİYON VE DEVRE SAVAŞI • v0.6.2", main_menu)
         self.assertIn("PROJECT RELAY • v0.6.2", manual)
@@ -514,7 +514,7 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("ref.watch(progressionProvider)", career)
         self.assertIn("OYUNCU SEVİYESİ", career)
         self.assertIn("GÜNLÜK GÖREVLER", career)
-        self.assertIn("GÜÇLENDİRİCİ USTALIĞI", career)
+        self.assertIn("BOSS GÜÇLENDİRİCİ KADEMELERİ", career)
         self.assertIn("BAŞARIMLAR", career)
         self.assertIn("claimDailyMission", career)
         self.assertIn("claimAchievement", career)
@@ -940,7 +940,8 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("primaryActionRequiresCompletion: true", career_battle)
         self.assertIn("primaryActionLabel", controls)
         self.assertIn("primaryActionEnabled", controls)
-        self.assertIn("widget.match.source != 'async'", replay)
+        self.assertIn("widget.match.source == 'async'", replay)
+        self.assertIn("widget.completionReward", replay)
         self.assertIn("SAVAŞ ÖDÜLÜ", replay)
         self.assertIn("RelayNotice.show", replay)
         self.assertNotIn("match-progression-reward", replay)
@@ -1065,6 +1066,62 @@ class FlutterClientContractTests(unittest.TestCase):
         ).read_text(encoding="utf-8")
         self.assertIn('"laser.wav": _laser()', generator)
         self.assertIn('"shield_absorb.wav": _shield_impact()', generator)
+
+    def test_equipped_cosmetics_drive_editor_replay_and_profile_visuals(self) -> None:
+        visuals = (
+            CLIENT / "lib" / "src" / "theme" / "cosmetic_visuals.dart"
+        ).read_text(encoding="utf-8")
+        editor = (
+            CLIENT / "lib" / "src" / "screens" / "editor_screen.dart"
+        ).read_text(encoding="utf-8")
+        board = (
+            CLIENT / "lib" / "src" / "widgets" / "circuit_board.dart"
+        ).read_text(encoding="utf-8")
+        replay_screen = (
+            CLIENT / "lib" / "src" / "screens" / "replay_screen.dart"
+        ).read_text(encoding="utf-8")
+        replay_game = (
+            CLIENT / "lib" / "src" / "game" / "replay_game.dart"
+        ).read_text(encoding="utf-8")
+        attack_overlay = (
+            CLIENT / "lib" / "src" / "widgets" / "replay_attack_overlay.dart"
+        ).read_text(encoding="utf-8")
+        player_status = (
+            CLIENT / "lib" / "src" / "widgets" / "player_status_bar.dart"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("class EquippedVisuals", visuals)
+        self.assertIn("board_ion_storm", visuals)
+        self.assertIn("board_mint_matrix", visuals)
+        self.assertIn("module_coral_pulse", visuals)
+        self.assertIn("module_mint_flux", visuals)
+        self.assertIn("frame_ranked_gold", visuals)
+        self.assertIn("frame_boss_core", visuals)
+        self.assertIn("EquippedVisuals.fromCollection(collection)", editor)
+        self.assertIn("visuals: _visuals", editor)
+        self.assertIn("circuit-board-theme-", board)
+        self.assertIn("leftVisuals: _leftVisuals", replay_screen)
+        self.assertIn("leftVisuals.modules.attack", replay_game)
+        self.assertIn("sideVisuals.modules.attack", attack_overlay)
+        self.assertIn("ProfileFrameVisualTheme.fromId", player_status)
+
+    def test_level_up_celebration_and_boss_tier_explanation_are_visible(self) -> None:
+        notice = (
+            CLIENT / "lib" / "src" / "widgets" / "relay_notice.dart"
+        ).read_text(encoding="utf-8")
+        career = (
+            CLIENT / "lib" / "src" / "screens" / "career_screen.dart"
+        ).read_text(encoding="utf-8")
+        career_battle = (
+            CLIENT / "lib" / "src" / "screens" / "career_battle_screen.dart"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("relay-level-up-badge", notice)
+        self.assertIn("SEVİYE ATLADIN", notice)
+        self.assertIn("BOSS GÜÇLENDİRİCİ KADEMESİ K2 AÇILDI", notice)
+        self.assertIn("BOSS GÜÇLENDİRİCİ KADEMELERİ", career)
+        self.assertIn("modüllere kalıcı güç vermez", career)
+        self.assertIn("completionReward: outcome.run.reward", career_battle)
 
     def test_known_flutter_analyzer_findings_are_fixed(self) -> None:
         replay_source = (

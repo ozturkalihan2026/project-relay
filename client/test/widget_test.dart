@@ -202,7 +202,7 @@ void main() {
       expect(find.text('BEŞ SAVAŞLIK KARİYER KOŞUSU'), findsOneWidget);
       expect(find.text('KOŞUYU BAŞLAT'), findsOneWidget);
       expect(find.text('GÜNLÜK GÖREVLER'), findsOneWidget);
-      final boosterMasteryTitle = find.text('GÜÇLENDİRİCİ USTALIĞI');
+      final boosterMasteryTitle = find.text('BOSS GÜÇLENDİRİCİ KADEMELERİ');
       await tester.scrollUntilVisible(boosterMasteryTitle, 220);
       await tester.pumpAndSettle();
       expect(boosterMasteryTitle, findsOneWidget);

@@ -114,9 +114,33 @@ class ProgressionServiceTests(unittest.TestCase):
     def test_level_curve_increases_required_xp(self) -> None:
         self.assertEqual(xp_required_for_level(1), 100)
         self.assertEqual(xp_required_for_level(2), 125)
+        self.assertEqual(xp_required_for_level(6), 237)
+        self.assertEqual(xp_required_for_level(10), 425)
         self.assertEqual(level_progress(99), (1, 99, 100))
         self.assertEqual(level_progress(100), (2, 0, 125))
         self.assertEqual(level_progress(225), (3, 0, 150))
+
+    def test_long_term_curve_slows_late_levels_without_changing_first_five(self) -> None:
+        self.assertEqual(
+            sum(xp_required_for_level(level) for level in range(1, 5)),
+            550,
+        )
+        self.assertEqual(
+            sum(xp_required_for_level(level) for level in range(1, 10)),
+            1_960,
+        )
+        self.assertEqual(
+            sum(xp_required_for_level(level) for level in range(1, 20)),
+            9_255,
+        )
+        self.assertEqual(
+            sum(xp_required_for_level(level) for level in range(1, 40)),
+            55_745,
+        )
+        self.assertEqual(
+            sum(xp_required_for_level(level) for level in range(1, 50)),
+            102_940,
+        )
 
     def test_initial_snapshot_exposes_goals_and_temporary_boosters(self) -> None:
         snapshot = self.service.snapshot("player-a")
@@ -137,11 +161,11 @@ class ProgressionServiceTests(unittest.TestCase):
 
         self.assertEqual(first, second)
         assert first is not None
-        self.assertEqual(first.xp, 50)
-        self.assertEqual(first.credits, 30)
+        self.assertEqual(first.xp, 32)
+        self.assertEqual(first.credits, 14)
         snapshot = self.service.snapshot("player-a")
-        self.assertEqual(snapshot.profile.total_xp, 50)
-        self.assertEqual(snapshot.profile.credits, 30)
+        self.assertEqual(snapshot.profile.total_xp, 32)
+        self.assertEqual(snapshot.profile.credits, 14)
         self.assertEqual(snapshot.profile.matches_completed, 1)
         self.assertEqual(snapshot.profile.wins, 1)
         missions = {item.mission_id: item for item in snapshot.daily_missions}
@@ -166,10 +190,10 @@ class ProgressionServiceTests(unittest.TestCase):
         )
 
         self.assertEqual(first, second)
-        self.assertEqual(first.xp, 30)
+        self.assertEqual(first.xp, 15)
         snapshot = self.service.snapshot("player-a")
-        self.assertEqual(snapshot.profile.total_xp, 80)
-        self.assertEqual(snapshot.profile.credits, 55)
+        self.assertEqual(snapshot.profile.total_xp, 47)
+        self.assertEqual(snapshot.profile.credits, 22)
         mission = next(
             item
             for item in snapshot.daily_missions

@@ -98,4 +98,12 @@ gösterir. Kitte tam bir Jeneratör bulunur; diğer türler en fazla üç kez
 seçilebilir. Kartta en fazla altı modül kullanıldığı için kalan iki kit yuvası
 rakibe göre yedek seçenektir. Editör paleti her türde kalan adedi gösterir.
 Modül kaplamaları, kart temaları ve profil çerçeveleri Devre Kredisiyle alınır;
-mağaza kalıcı savaş gücü satmaz. İstemci sürümü `0.6.2+39`dur.
+mağaza kalıcı savaş gücü satmaz. İstemci sürümü `0.6.2+40`tır.
+
+
+## v0.6.2 rev1 görsel ve ilerleme revizyonu
+
+Kuşanılan kart teması `CircuitBoard` ve oyuncunun replay kartında; modül kaplaması
+modül/port/atak renklerinde; profil çerçevesi `PlayerStatusBar` üzerinde görünür.
+Seviye atlama `RelayNotice.showLevelUp` ile merkezî kutlama rozeti üretir. Boss
+güçlendirici kademeleri kalıcı modül gücü değildir.
