@@ -135,6 +135,7 @@ class _FakeSoundChannel implements EventSoundChannel {
 MatchResponse _match() {
   return MatchResponse.fromJson({
     'match_id': 'match-1',
+    'created_at': '2026-07-31T09:00:00+00:00',
     'opponent': {
       'bot_id': 'shield_wall',
       'display_name': 'Kalkan Duvarı',

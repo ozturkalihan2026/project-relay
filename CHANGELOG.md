@@ -1,4 +1,23 @@
+## v0.5.0 rev4 — Kesin 220×40 Yeni Oyun Düğmesi
+
+- Tekrar ekranındaki **YENİ OYUN** düğmesi dış `SizedBox` ile kesin olarak
+  220×40 px ölçüsüne sabitlendi.
+- `VisualDensity.compact` nedeniyle minimum genişliğin 220 px'ten 212 px'e
+  düşmesi engellendi.
+- Piksel merkezi testi toleranslı kalırken düğme boyutu testi kesin 220×40
+  kabul kriterini doğrulamaya devam eder.
+- v0.4.9–v0.4.13 toplu regresyon sözleşmesine gerçek render ölçüsü koruması
+  eklendi.
+
 ## v0.5.0
+
+## v0.5.0 test hotfix rev3
+
+- Replay kontrol hizalama testi, `FittedBox` dönüşümünün ürettiği makine
+  hassasiyetindeki `double` farklarına karşı `closeTo(..., 0.001)` kullanır.
+- v0.4.9–v0.4.13 arayüz kararları tek bir toplu regresyon sözleşmesine alındı.
+- Üretim davranışı, oyun dengesi, API ve veritabanı şeması değiştirilmedi.
+
 
 - Gerçek oyuncu asenkron maçlarına 1000 başlangıç puanlı, K=32 ELO benzeri
   derece sistemi eklendi. Kazanç/kayıp iki oyuncu arasında korunur ve maç
@@ -19,6 +38,19 @@
   `match_rating_changes` tabloları eklendi.
 - API `0.5.0`, istemci `0.5.0+33`, kurallar `0.8` oldu. Savaş motoru ve denge
   değerleri değişmedi.
+- Flutter analizinde `career_screen.dart` içindeki kullanılmayan hata yığını
+  parametresi Dart joker parametresi `_` ile değiştirildi;
+  `no_leading_underscores_for_local_identifiers` uyarısı giderildi.
+- Yerel Flutter kabul testlerinde eski maç fixture'larına zorunlu `created_at`
+  alanı eklendi; ses ve replay testlerindeki zincirleme `Null` dönüşüm hataları
+  giderildi.
+- Çekirdek kapısı widget testi, v0.4.9'dan beri geçerli olan “kartta yalnız
+  simge” sözleşmesine uyarlandı; kaldırılmış modül adı/özellik rozetlerini artık
+  beklemiyor.
+- Tekrar kontrolleri 500 px ve üzerindeki alanda tek satırda tutuldu; dar alanda
+  mevcut satıra sarılma davranışı korundu.
+- Widget testleri kaydırılabilir editör ve Kariyer ekranlarında görünmeyen
+  düğme/bölümlere dokunmadan önce kaydırma yapacak şekilde sağlamlaştırıldı.
 
 ## v0.4.13
 

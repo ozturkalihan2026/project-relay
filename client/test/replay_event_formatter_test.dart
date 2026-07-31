@@ -393,6 +393,7 @@ ReplayResponse _replay(List<BattleEvent> events) {
 MatchResponse _match() {
   return MatchResponse.fromJson({
     'match_id': 'match-1',
+    'created_at': '2026-07-31T09:00:00+00:00',
     'opponent': {
       'bot_id': 'starter_laser',
       'display_name': 'Kıvılcım',
@@ -500,6 +501,8 @@ MatchResponse _timeoutMatch() {
   final payload = _match();
   return MatchResponse.fromJson({
     'match_id': payload.id,
+    'created_at': payload.createdAt.toIso8601String(),
+    'source': payload.source,
     'opponent': {
       'bot_id': payload.opponent.id,
       'display_name': payload.opponent.displayName,

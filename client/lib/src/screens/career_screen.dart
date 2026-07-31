@@ -33,7 +33,7 @@ class _CareerScreenState extends ConsumerState<CareerScreen> {
       body: SafeArea(
         child: career.when(
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (error, _stack) => _CareerError(
+          error: (error, _) => _CareerError(
             message: error.toString(),
             onRetry: () => ref.invalidate(careerProvider),
           ),

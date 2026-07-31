@@ -91,9 +91,12 @@ void main() {
       );
       expect(find.text('OYUN EL KİTABI'), findsNothing);
 
-      await tester.tap(
-        find.byKey(const ValueKey('editor-menu-back-button')),
+      final editorBack = find.byKey(
+        const ValueKey('editor-menu-back-button'),
       );
+      await tester.ensureVisible(editorBack);
+      await tester.pumpAndSettle();
+      await tester.tap(editorBack);
       await tester.pumpAndSettle();
 
       await tester.tap(find.byKey(const ValueKey('play-mode-training')));
@@ -152,8 +155,14 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('DERECE PUANI'), findsOneWidget);
       expect(find.text('HAFTALIK LİG'), findsOneWidget);
-      expect(find.text('SON MAÇLAR'), findsOneWidget);
-      await tester.tap(find.byKey(const ValueKey('career-back-button')));
+      final recentMatchesTitle = find.text('SON MAÇLAR');
+      await tester.scrollUntilVisible(recentMatchesTitle, 220);
+      await tester.pumpAndSettle();
+      expect(recentMatchesTitle, findsOneWidget);
+      final careerBack = find.byKey(const ValueKey('career-back-button'));
+      await tester.scrollUntilVisible(careerBack, 180);
+      await tester.pumpAndSettle();
+      await tester.tap(careerBack);
       await tester.pumpAndSettle();
 
       await tester.tap(find.byKey(const ValueKey('main-menu-play')));

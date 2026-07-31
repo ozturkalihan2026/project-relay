@@ -72,13 +72,15 @@ void main() {
           ).dy,
         ),
       );
+      final speedButtonCenterY = tester.getCenter(
+        find.byKey(const ValueKey('replay-speed-button')),
+      ).dy;
+      final playbackButtonCenterY = tester.getCenter(
+        find.byKey(const ValueKey('replay-playback-button')),
+      ).dy;
       expect(
-        tester.getCenter(
-          find.byKey(const ValueKey('replay-speed-button')),
-        ).dy,
-        tester.getCenter(
-          find.byKey(const ValueKey('replay-playback-button')),
-        ).dy,
+        speedButtonCenterY,
+        closeTo(playbackButtonCenterY, 0.001),
       );
       expect(
         tester.getSize(

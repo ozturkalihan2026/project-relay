@@ -59,6 +59,120 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("fontSize: 14", controls)
         self.assertIn("letterSpacing: 0.8", controls)
 
+    def test_v049_to_v0413_ui_regression_contract_is_preserved(self) -> None:
+        palette = (
+            CLIENT / "lib" / "src" / "widgets" / "module_palette.dart"
+        ).read_text(encoding="utf-8")
+        board = (
+            CLIENT / "lib" / "src" / "widgets" / "circuit_board.dart"
+        ).read_text(encoding="utf-8")
+        editor = (
+            CLIENT / "lib" / "src" / "screens" / "editor_screen.dart"
+        ).read_text(encoding="utf-8")
+        replay_game = (
+            CLIENT / "lib" / "src" / "game" / "replay_game.dart"
+        ).read_text(encoding="utf-8")
+        replay_screen = (
+            CLIENT / "lib" / "src" / "screens" / "replay_screen.dart"
+        ).read_text(encoding="utf-8")
+        controls = (
+            CLIENT / "lib" / "src" / "widgets" / "replay_playback_controls.dart"
+        ).read_text(encoding="utf-8")
+        controls_test = (
+            CLIENT / "test" / "replay_playback_controls_test.dart"
+        ).read_text(encoding="utf-8")
+
+        # v0.4.9: bilgi palete taşınır, devre kartı simge-only kalır.
+        self.assertIn("palette-module-properties-${module.kind.wireValue}", palette)
+        self.assertIn("module-icon-${module.id}", board)
+        self.assertNotIn("module-name-${module.id}", board)
+        self.assertNotIn("module-stat-badges-${module.id}", board)
+        self.assertIn("tooltip: '90° döndür'", board)
+        self.assertIn("'ÇEKİRDEK KAPISI'", board)
+
+        # v0.4.10: geniş editör, ayrı geri kartı ve sade sunucu sunumu.
+        self.assertIn("BoxConstraints(maxWidth: 1360)", editor)
+        self.assertIn("math.min(520.0", editor)
+        self.assertIn("'SAVAŞA BAŞLA'", editor)
+        self.assertIn("editor-menu-back-card", editor)
+        self.assertNotIn("SUNUCU YETKİLİ SAVAŞ", editor)
+
+        # v0.4.11 + v0.4.13: sonlu Stack ve 74 px / 255 px palet.
+        self.assertIn("height: 74,", palette)
+        self.assertIn("child: Stack(", palette)
+        self.assertIn("computedTileWidth > 255", palette)
+        self.assertIn("alignment: WrapAlignment.center", palette)
+
+        # v0.4.12 + v0.4.13: tek ekran savaş geometrisi ve güçlü etiketler.
+        self.assertIn("maxBoardExtent = 488", replay_game)
+        self.assertIn("clamp(540.0, 620.0)", replay_screen)
+        self.assertIn("leftBoard.right + 14", replay_screen)
+        self.assertIn("BoxConstraints(maxWidth: 540)", replay_screen)
+        self.assertIn("size: 14,", replay_game)
+        self.assertIn("fontWeight: FontWeight.w900", replay_game)
+        self.assertIn("width: 220,", controls)
+        self.assertIn("height: 40,", controls)
+        self.assertIn("minimumSize: Size.zero", controls)
+        self.assertIn("tapTargetSize: MaterialTapTargetSize.shrinkWrap", controls)
+        self.assertNotIn("minimumSize: const Size(220, 40)", controls)
+        self.assertIn("child: const Text('YENİ OYUN')", controls)
+        self.assertNotIn("Icons.add_circle_outline", controls)
+
+        # FittedBox dönüşümleri piksel merkezlerinde makine hassasiyeti farkı yaratabilir.
+        self.assertIn("closeTo(playbackButtonCenterY, 0.001)", controls_test)
+
+        # VisualDensity.compact minimum genişliği 8 px küçültebildiği için
+        # 220×40 ölçü dış SizedBox ile kesin olarak korunur.
+        self.assertIn("width: 220,", controls)
+        self.assertIn("height: 40,", controls)
+        self.assertIn("minimumSize: Size.zero", controls)
+        self.assertIn("tapTargetSize: MaterialTapTargetSize.shrinkWrap", controls)
+        self.assertNotIn("minimumSize: const Size(220, 40)", controls)
+
+    def test_flutter_regression_fixtures_follow_v050_contract(self) -> None:
+        controls = (
+            CLIENT
+            / "lib"
+            / "src"
+            / "widgets"
+            / "replay_playback_controls.dart"
+        ).read_text(encoding="utf-8")
+        sound_test = (
+            CLIENT / "test" / "event_sound_player_test.dart"
+        ).read_text(encoding="utf-8")
+        formatter_test = (
+            CLIENT / "test" / "replay_event_formatter_test.dart"
+        ).read_text(encoding="utf-8")
+        geometry_test = (
+            CLIENT / "test" / "circuit_trace_geometry_test.dart"
+        ).read_text(encoding="utf-8")
+        widget_test = (
+            CLIENT / "test" / "widget_test.dart"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("'created_at':", sound_test)
+        self.assertGreaterEqual(formatter_test.count("'created_at':"), 2)
+        self.assertIn(
+            "çekirdek kapısındaki yerleşik modül yalnız simgeyle gösterilir",
+            geometry_test,
+        )
+        self.assertNotIn(
+            "çekirdek kapısında modül adı özellik etiketlerinin üstünde kalır",
+            geometry_test,
+        )
+        self.assertIn("LayoutBuilder(", controls)
+        self.assertIn("constraints.maxWidth >= 500", controls)
+        self.assertIn("fit: BoxFit.scaleDown", controls)
+        self.assertIn("await tester.ensureVisible(editorBack);", widget_test)
+        self.assertIn(
+            "await tester.scrollUntilVisible(recentMatchesTitle, 220);",
+            widget_test,
+        )
+        self.assertIn(
+            "await tester.scrollUntilVisible(careerBack, 180);",
+            widget_test,
+        )
+
     def test_session_api_mocks_encode_turkish_json_as_utf8(self) -> None:
         session_test = (
             CLIENT / "test" / "session_api_test.dart"
@@ -271,6 +385,8 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("HAFTALIK LİG", career)
         self.assertIn("SON MAÇLAR", career)
         self.assertIn("api.fetchReplay(matchId)", career)
+        self.assertIn("error: (error, _) => _CareerError(", career)
+        self.assertNotIn("error: (error, _stack)", career)
         self.assertIn("settings-replay-sound", settings)
         self.assertIn("settings-replay-speed", settings)
         self.assertIn("play-mode-back-button", play_mode)
@@ -512,7 +628,17 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("replay-new-game-button", playback_controls)
         self.assertNotIn("Icons.add_circle_outline", playback_controls)
         self.assertIn("Wrap(", playback_controls)
-        self.assertIn("minimumSize: const Size(220, 40)", playback_controls)
+        self.assertIn("width: 220,", playback_controls)
+        self.assertIn("height: 40,", playback_controls)
+        self.assertIn("minimumSize: Size.zero", playback_controls)
+        self.assertIn(
+            "tapTargetSize: MaterialTapTargetSize.shrinkWrap",
+            playback_controls,
+        )
+        self.assertNotIn(
+            "minimumSize: const Size(220, 40)",
+            playback_controls,
+        )
         controls_test = (
             CLIENT / "test" / "replay_playback_controls_test.dart"
         ).read_text(encoding="utf-8")

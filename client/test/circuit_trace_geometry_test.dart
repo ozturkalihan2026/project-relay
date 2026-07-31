@@ -204,7 +204,7 @@ void main() {
   );
 
   testWidgets(
-    'çekirdek kapısında modül adı özellik etiketlerinin üstünde kalır',
+    'çekirdek kapısındaki yerleşik modül yalnız simgeyle gösterilir',
     (tester) async {
       const generator = ModulePlacement(
         id: 'gate-generator',
@@ -255,18 +255,19 @@ void main() {
         ),
       );
 
-      final name = find.byKey(
-        const ValueKey('module-name-gate-generator'),
-      );
-      final stats = find.byKey(
-        const ValueKey('module-stat-badges-gate-generator'),
-      );
-      expect(name, findsOneWidget);
-      expect(stats, findsOneWidget);
       expect(
-        tester.getBottomLeft(name).dy,
-        lessThanOrEqualTo(tester.getTopLeft(stats).dy),
+        find.byKey(const ValueKey('module-icon-gate-generator')),
+        findsOneWidget,
       );
+      expect(
+        find.byKey(const ValueKey('module-name-gate-generator')),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const ValueKey('module-stat-badges-gate-generator')),
+        findsNothing,
+      );
+      expect(find.text('ÇEKİRDEK KAPISI'), findsOneWidget);
       expect(tester.takeException(), isNull);
     },
   );

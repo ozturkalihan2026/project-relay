@@ -35,13 +35,9 @@ class ReplayPlaybackControls extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Center(
-            child: Wrap(
-              alignment: WrapAlignment.center,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              spacing: 6,
-              runSpacing: 6,
-              children: [
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final controls = <Widget>[
                 _ControlButton(
                   key: const ValueKey('replay-playback-button'),
                   icon: playing ? Icons.pause : Icons.play_arrow,
@@ -64,6 +60,7 @@ class ReplayPlaybackControls extends StatelessWidget {
                   key: const ValueKey('replay-speed-button'),
                   tooltip: 'Oynatma hızını seç',
                   initialValue: speed,
+                  padding: EdgeInsets.zero,
                   onSelected: onSpeedChanged,
                   itemBuilder: (context) => const [
                     PopupMenuItem(value: 0.25, child: Text('0.25×')),
@@ -76,26 +73,56 @@ class ReplayPlaybackControls extends StatelessWidget {
                     label: 'Hız ${_speedLabel(speed)}',
                   ),
                 ),
-              ],
-            ),
+              ];
+
+              if (constraints.maxWidth >= 500) {
+                return FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      for (var index = 0;
+                          index < controls.length;
+                          index++) ...[
+                        if (index > 0) const SizedBox(width: 6),
+                        controls[index],
+                      ],
+                    ],
+                  ),
+                );
+              }
+
+              return Wrap(
+                alignment: WrapAlignment.center,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 6,
+                runSpacing: 6,
+                children: controls,
+              );
+            },
           ),
           const SizedBox(height: 8),
-          FilledButton(
-            key: const ValueKey('replay-new-game-button'),
-            onPressed: onNewGame,
-            style: FilledButton.styleFrom(
-              backgroundColor: RelayColors.cyan,
-              foregroundColor: const Color(0xFF07161C),
-              minimumSize: const Size(220, 40),
-              padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 9),
-              visualDensity: VisualDensity.compact,
-              textStyle: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w900,
-                letterSpacing: 0.8,
+          SizedBox(
+            width: 220,
+            height: 40,
+            child: FilledButton(
+              key: const ValueKey('replay-new-game-button'),
+              onPressed: onNewGame,
+              style: FilledButton.styleFrom(
+                backgroundColor: RelayColors.cyan,
+                foregroundColor: const Color(0xFF07161C),
+                minimumSize: Size.zero,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 26, vertical: 9),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                textStyle: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 0.8,
+                ),
               ),
+              child: const Text('YENİ OYUN'),
             ),
-            child: const Text('YENİ OYUN'),
           ),
         ],
       ),
