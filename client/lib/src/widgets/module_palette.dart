@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import '../models/relay_models.dart';
@@ -31,7 +33,7 @@ class ModulePalette extends StatelessWidget {
         );
         return AnimatedContainer(
           duration: const Duration(milliseconds: 140),
-          padding: const EdgeInsets.all(3),
+          padding: const EdgeInsets.all(2),
           decoration: BoxDecoration(
             color: returning
                 ? RelayColors.coral.withValues(alpha: 0.13)
@@ -78,8 +80,8 @@ class ModulePalette extends StatelessWidget {
               if (returning) const SizedBox(height: 8),
               LayoutBuilder(
                 builder: (context, constraints) {
-                  const spacing = 7.0;
-                  const runSpacing = 5.0;
+                  const spacing = 5.0;
+                  const runSpacing = 4.0;
                   final columnCount = constraints.maxWidth >= 720
                       ? 4
                       : constraints.maxWidth >= 520
@@ -88,9 +90,11 @@ class ModulePalette extends StatelessWidget {
                   final computedTileWidth =
                       (constraints.maxWidth - spacing * (columnCount - 1)) /
                           columnCount;
-                  final tileWidth = columnCount == 4 && computedTileWidth > 255
-                      ? 255.0
-                      : computedTileWidth;
+                  final compactTileWidth =
+                      math.max(0.0, computedTileWidth - 6.0);
+                  final tileWidth = columnCount == 4
+                      ? math.min(235.0, compactTileWidth)
+                      : compactTileWidth;
                   return Wrap(
                     alignment: WrapAlignment.center,
                     spacing: spacing,
@@ -187,8 +191,8 @@ class _PaletteTile extends StatelessWidget {
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 160),
             width: width,
-            height: 74,
-            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 5),
+            height: 66,
+            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 3),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
@@ -213,7 +217,7 @@ class _PaletteTile extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 10),
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
@@ -238,7 +242,7 @@ class _PaletteTile extends StatelessWidget {
                           ],
                         ),
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 3),
                       Text(
                         _moduleStatistics(module),
                         key: ValueKey(

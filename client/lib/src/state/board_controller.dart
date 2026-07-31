@@ -85,6 +85,28 @@ class BoardController extends Notifier<BoardEditorState> {
   @override
   BoardEditorState build() => BoardEditorState.initial();
 
+  void loadSavedBoard(SavedBoard saved) {
+    final placements = <int, ModulePlacement>{
+      for (final module in saved.board.modules) module.cellIndex: module,
+    };
+    int? selectedCell;
+    for (final module in placements.values) {
+      if (module.kind != ModuleKind.generator) {
+        selectedCell = module.cellIndex;
+        break;
+      }
+    }
+    state = BoardEditorState(
+      placements: placements,
+      selectedCell: selectedCell,
+      validation: BoardValidation(
+        valid: true,
+        poweredIds: saved.poweredIds,
+        unpoweredIds: saved.unpoweredIds,
+      ),
+    );
+  }
+
   void selectPalette(ModuleKind kind) {
     state = state.copyWith(
       selectedKind: kind,

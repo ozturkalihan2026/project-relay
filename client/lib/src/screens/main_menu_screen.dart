@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 
 import '../theme/relay_theme.dart';
+import '../widgets/player_status_bar.dart';
 import 'career_screen.dart';
 import 'how_to_play_screen.dart';
 import 'play_mode_screen.dart';
 import 'settings_screen.dart';
+import 'statistics_screen.dart';
 
 class MainMenuScreen extends StatelessWidget {
   const MainMenuScreen({super.key});
@@ -13,82 +15,107 @@ class MainMenuScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(20),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 520),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const _RelayMark(),
-                  const SizedBox(height: 34),
-                  FilledButton.icon(
-                    key: const ValueKey('main-menu-play'),
-                    onPressed: () => _open(
-                      context,
-                      const PlayModeScreen(),
-                    ),
-                    icon: const Icon(Icons.sports_esports),
-                    label: const Text('OYNA'),
-                    style: FilledButton.styleFrom(
-                      minimumSize: const Size.fromHeight(58),
-                      textStyle: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 1.4,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  _MenuButton(
-                    key: const ValueKey('main-menu-career'),
-                    icon: Icons.route_outlined,
-                    title: 'KARİYER',
-                    subtitle: 'Derece, haftalık lig ve maç geçmişi',
-                    onPressed: () => _open(
-                      context,
-                      const CareerScreen(),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  _MenuButton(
-                    key: const ValueKey('main-menu-how-to-play'),
-                    icon: Icons.menu_book_outlined,
-                    title: 'NASIL OYNANIR',
-                    subtitle: 'Kurallar, bağlantılar ve modül rehberi',
-                    onPressed: () => _open(
-                      context,
-                      const HowToPlayScreen(),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  _MenuButton(
-                    key: const ValueKey('main-menu-settings'),
-                    icon: Icons.tune,
-                    title: 'AYARLAR',
-                    subtitle: 'Tekrar sesi ve oynatma hızı',
-                    onPressed: () => _open(
-                      context,
-                      const SettingsScreen(),
-                    ),
-                  ),
-                  const SizedBox(height: 22),
-                  const Text(
-                    'ASENKRON DEVRE SAVAŞI • v0.5.0',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: RelayColors.muted,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 1.1,
-                    ),
-                  ),
-                ],
+        child: Column(
+          children: [
+            const Padding(
+              padding: EdgeInsets.fromLTRB(16, 10, 16, 0),
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: PlayerStatusBar(),
               ),
             ),
-          ),
+            Expanded(
+              child: Center(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(20),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 520),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const _RelayMark(),
+                        const SizedBox(height: 34),
+                        FilledButton.icon(
+                          key: const ValueKey('main-menu-play'),
+                          onPressed: () => _open(
+                            context,
+                            const PlayModeScreen(),
+                          ),
+                          icon: const Icon(Icons.sports_esports),
+                          label: const Text('OYNA'),
+                          style: FilledButton.styleFrom(
+                            minimumSize: const Size.fromHeight(58),
+                            textStyle: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 1.4,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        _MenuButton(
+                          key: const ValueKey('main-menu-career'),
+                          icon: Icons.route_outlined,
+                          title: 'KARİYER',
+                          subtitle:
+                              'Seviye, görevler, başarımlar ve güçlendiriciler',
+                          onPressed: () => _open(
+                            context,
+                            const CareerScreen(),
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        _MenuButton(
+                          key: const ValueKey('main-menu-statistics'),
+                          icon: Icons.analytics_outlined,
+                          title: 'İSTATİSTİKLER',
+                          subtitle: 'Derece, haftalık lig ve maç geçmişi',
+                          onPressed: () => _open(
+                            context,
+                            const StatisticsScreen(),
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        _MenuButton(
+                          key: const ValueKey('main-menu-how-to-play'),
+                          icon: Icons.menu_book_outlined,
+                          title: 'NASIL OYNANIR',
+                          subtitle: 'Kurallar, bağlantılar ve modül rehberi',
+                          onPressed: () => _open(
+                            context,
+                            const HowToPlayScreen(),
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        _MenuButton(
+                          key: const ValueKey('main-menu-settings'),
+                          icon: Icons.tune,
+                          title: 'AYARLAR',
+                          subtitle: 'Tekrar sesi ve oynatma hızı',
+                          onPressed: () => _open(
+                            context,
+                            const SettingsScreen(),
+                          ),
+                        ),
+                        const SizedBox(height: 22),
+                        const Text(
+                          'KARİYER VE DEVRE SAVAŞI • v0.6.1',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: RelayColors.muted,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 1.1,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

@@ -36,6 +36,11 @@ class MigrationTests(unittest.TestCase):
         self.assertIn("CREATE TABLE player_ratings", sql)
         self.assertIn("CREATE TABLE league_entries", sql)
         self.assertIn("CREATE TABLE match_rating_changes", sql)
+        self.assertIn("CREATE TABLE player_progression", sql)
+        self.assertIn("CREATE TABLE reward_grants", sql)
+        self.assertIn("CREATE TABLE daily_missions", sql)
+        self.assertIn("CREATE TABLE player_achievements", sql)
+        self.assertIn("CREATE TABLE career_runs", sql)
 
     def test_initial_migration_creates_and_downgrades_online_schema(
         self,
@@ -69,6 +74,11 @@ class MigrationTests(unittest.TestCase):
                     "player_ratings",
                     "league_entries",
                     "match_rating_changes",
+                    "player_progression",
+                    "reward_grants",
+                    "daily_missions",
+                    "player_achievements",
+                    "career_runs",
                 },
             )
             engine.dispose()

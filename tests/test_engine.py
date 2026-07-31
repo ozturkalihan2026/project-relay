@@ -4,6 +4,7 @@ import unittest
 
 from relay_engine import (
     BattleConfig,
+    BattleModifiers,
     BoardLayout,
     CircuitBattleEngine,
     Direction,
@@ -60,6 +61,43 @@ class CircuitBattleEngineTests(unittest.TestCase):
 
         self.assertEqual(first.to_dict(), second.to_dict())
         self.assertEqual(first.replay_checksum, second.replay_checksum)
+
+
+    def test_run_local_modifiers_change_only_selected_side_and_replay(self) -> None:
+        engine = CircuitBattleEngine(BattleConfig(max_ticks=1))
+        left = simple_laser_board("BOOST")
+        right = generator_only("BASE")
+
+        baseline = engine.simulate(left, right, seed=11)
+        modified = engine.simulate(
+            left,
+            right,
+            seed=11,
+            left_modifiers=BattleModifiers(
+                generator_output_multiplier=1.5,
+                initial_shield=12,
+                module_hp_bonus=7,
+                initial_energy_reserve=5,
+                reserve_capacity_bonus=5,
+            ),
+        )
+
+        base_left = baseline.state_frames[0].left
+        boosted_left = modified.state_frames[0].left
+        boosted_right = modified.state_frames[0].right
+        base_laser = next(
+            item for item in base_left.modules if item.module_id == "BOOST-LASER"
+        )
+        boosted_laser = next(
+            item for item in boosted_left.modules if item.module_id == "BOOST-LASER"
+        )
+
+        self.assertEqual(boosted_left.shield, 12)
+        self.assertEqual(boosted_left.energy_reserve, 5)
+        self.assertEqual(boosted_left.energy_output, base_left.energy_output * 1.5)
+        self.assertEqual(boosted_laser.max_hp, base_laser.max_hp + 7)
+        self.assertEqual(boosted_right.shield, 0)
+        self.assertEqual(boosted_right.energy_reserve, 0)
 
     def test_connected_module_is_powered_and_attacks(self) -> None:
         engine = CircuitBattleEngine(BattleConfig(max_ticks=5))

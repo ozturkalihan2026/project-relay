@@ -1,3 +1,38 @@
+## v0.6.1 — Kariyer koşusu ve tam rakip devre ön izlemesi
+
+- Beş bağlantılı kariyer savaşı ve son aşamada bölüm sonu devresi eklendi.
+- Savaş öncesi ön izleme ile gerçek savaş rakibinin aynı devre olması sunucu
+  tarafında garanti edildi.
+- Kariyer editörü ile oyuncu ön izlemeye göre karşı devresini kaydedebilir.
+- İlk dört zaferden sonra üç geçici güçlendiriciden birini seçme akışı eklendi.
+- Koşu içi jeneratör, başlangıç kalkanı, modül Canı ve enerji rezervi etkileri
+  savaş motoruna taraf bazlı `BattleModifiers` olarak eklendi.
+- Koşu sonucu XP/Devre Kredisi ödülü `run_id` ile idempotent hâle getirildi.
+- `career_runs` tablosunu ekleyen Alembic `20260731_0005` geçişi eklendi.
+- API `0.6.1`, istemci `0.6.1+36`; savaş kuralları `0.8` ve rekabetçi temel
+  modül dengesi değişmedi.
+
+## v0.6.0 UI rev1 — Kompakt editör ve oyuncu bilgi çubuğu
+
+- Modül seçim kartları 74 px'ten 66 px'e indirildi; kart genişliği ve boşlukları
+  sıkılaştırıldı. Modül adı, özellik yazısı ve simge boyutları değişmedi.
+- Antrenman ekranında **Seçili Botla Savaş** alanının altına çevrimiçi kiptekiyle
+  aynı ayrı **Menüye Dön** kartı eklendi.
+- Ana menü, Oyna, Kariyer, İstatistikler ve her iki editör kipinde oyuncu adı,
+  seviye, XP ilerlemesi ve Devre Kredisi gösteren ortak üst bilgi çubuğu eklendi.
+- İstemci yapı numarası `0.6.0+35` oldu. Sunucu API'si, PostgreSQL şeması,
+  savaş kuralları ve oyun dengesi değişmedi.
+
+## v0.6.0 — İlerleme Temeli
+
+- Kariyer ve İstatistikler ekranları ayrıldı.
+- XP, seviye, Devre Kredisi ve tek seferlik maç ödülleri eklendi.
+- Üç günlük görev, beş başarım ve ödül talep akışı eklendi.
+- Oyuncu seviyesine bağlı geçici güçlendirici ustalık kademeleri eklendi.
+- Replay sonuna XP/Kredi/seviye artışı kartı eklendi.
+- Alembic `20260731_0004` ilerleme şeması eklendi.
+- Kurallar `0.8`, derece sistemi ve temel modül dengesi değişmedi.
+
 ## v0.5.0 rev4 — Kesin 220×40 Yeni Oyun Düğmesi
 
 - Tekrar ekranındaki **YENİ OYUN** düğmesi dış `SizedBox` ile kesin olarak

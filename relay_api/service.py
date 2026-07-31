@@ -6,6 +6,7 @@ from collections.abc import Callable
 from datetime import UTC, datetime
 
 from relay_engine import (
+    BattleModifiers,
     BoardLayout,
     CircuitBattleEngine,
     compute_replay_checksum,
@@ -21,7 +22,7 @@ from .store import (
 
 
 RULES_VERSION = "0.8"
-API_VERSION = "0.5.0"
+API_VERSION = "0.6.1"
 
 
 class MatchService:
@@ -74,6 +75,8 @@ class MatchService:
         source: str,
         requester_player_id: str | None = None,
         opponent_player_id: str | None = None,
+        player_modifiers: BattleModifiers | None = None,
+        opponent_modifiers: BattleModifiers | None = None,
     ) -> StoredMatch:
         player_board.validate(self.engine.config.board_size)
         opponent_board.validate(self.engine.config.board_size)
@@ -87,6 +90,8 @@ class MatchService:
             player_board,
             opponent_board,
             seed=seed,
+            left_modifiers=player_modifiers,
+            right_modifiers=opponent_modifiers,
         )
         match = StoredMatch(
             match_id=self.id_source(),

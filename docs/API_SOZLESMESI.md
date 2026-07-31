@@ -1,4 +1,4 @@
-# Project Relay — API Sözleşmesi v0.5.0
+# Project Relay — API Sözleşmesi v0.6.1
 
 Bu sürüm, Flutter/Flame istemcisinin kullandığı kalıcı asenkron PvP
 protokolüdür. Bütün yollar `/api/v1` altında sürümlenir. Etkileşimli Swagger
@@ -216,10 +216,9 @@ maç hataları aynı üst sözleşmeyi kullanır:
 - PostgreSQL şeması Alembic ile yönetilir; API kendiliğinden tablo oluşturmaz.
 - CORS yalnızca `localhost` ve `127.0.0.1` üzerindeki HTTP/HTTPS geliştirme
   origin'lerine izin verir.
-- Serbest oyuncu adı, parola, sohbet, ELO, haftalık lig ve oyuncuya dönük maç
-  geçmişi uç noktası yoktur.
-- Eşleştirme aynı modül sayısını zorunlu tutar; v0.5.0'a kadar derece aralığı
-  kullanmaz.
+- Serbest oyuncu adı, parola, sohbet, canlı 1v1 ve klan uç noktaları yoktur.
+- Eşleştirme aynı modül sayısını zorunlu tutar; mevcut sürüm derece aralığını
+  henüz eşleştirme filtresi olarak kullanmaz.
 - Tekrar özeti bütün olay akışından hesaplanır; dijital imza değildir.
 - `rules_version` savaş kurallarının, API `version` ise HTTP paketinin sürümüdür.
 
@@ -247,3 +246,97 @@ beraberlikte `rating_before` ile `rating_after` eşit ve `rating_delta` sıfırd
 `GET /api/v1/me/career`, genel profil, haftalık lig girdisi, liderlik tablosu,
 son maçlar ve o haftanın insan/bot eşleşme oranını birlikte döndürür.
 `GET /api/v1/me/matches` `limit` (1–50) ve `offset` parametreleriyle sayfalanır.
+
+## v0.6.0 ilerleme yanıtları
+
+`GET /api/v1/me/statistics`, v0.5.0 derece/lig/geçmiş yanıtının yeni adıdır.
+`GET /api/v1/me/career` geriye uyumluluk için aynı yanıtı vermeye devam eder.
+
+`GET /api/v1/me/progression` aşağıdaki grupları döndürür:
+
+- `profile`: toplam XP, seviye içi XP, sonraki seviye gereksinimi ve Devre Kredisi
+- `daily_missions`: günlük ilerleme, tamamlanma ve ödül durumu
+- `achievements`: kalıcı başarım ilerlemesi ve ödül durumu
+- `boosters`: seviye ile açılan, yalnız koşu içinde geçerli geçici kademe bilgisi
+
+İki gerçek oyunculu veya bot yedekli asenkron maç yanıtı aktif istek sahibi için
+`progression_reward` taşır. Doğrudan antrenman maçında bu alan `null` olur.
+
+```json
+{
+  "progression_reward": {
+    "source_type": "match",
+    "source_id": "match-id",
+    "reason": "Asenkron savaş: win",
+    "xp": 50,
+    "credits": 30,
+    "level_before": 1,
+    "level_after": 1,
+    "level_up": false,
+    "total_xp_after": 50,
+    "credits_after": 30,
+    "granted_at": "2026-07-31T09:00:00+00:00"
+  }
+}
+```
+
+Ödül alma uçları:
+
+- `POST /api/v1/me/daily-missions/{mission_id}/claim`
+- `POST /api/v1/me/achievements/{achievement_id}/claim`
+
+Her ödül kaynağı oyuncu, kaynak türü ve kaynak kimliğiyle benzersizdir. Aynı
+isteğin yinelenmesi ikinci kez XP veya Devre Kredisi eklemez.
+
+
+
+## v0.6.1 kariyer koşusu yanıtları
+
+Bütün kariyer uçları erişim belirteci ister.
+
+- `GET /api/v1/me/career-run`: son/aktif koşu durumu ve mevcut rakip ön izlemesi
+- `POST /api/v1/me/career-run/start`: kayıtlı kartla temiz koşu başlatır
+- `POST /api/v1/me/career-run/booster`: sunulan üç seçenekten birini seçer
+- `POST /api/v1/me/career-run/battle`: mevcut aşamayı hesaplar, maç ve yeni koşu
+  durumunu birlikte döndürür
+- `POST /api/v1/me/career-run/abandon`: koşuyu bırakır ve geçici etkileri kapatır
+
+Aktif durum örneği:
+
+```json
+{
+  "run_id": "run-id",
+  "status": "active",
+  "stage_index": 0,
+  "total_stages": 5,
+  "wins": 0,
+  "selected_boosters": [],
+  "offered_boosters": [],
+  "opponent": {
+    "stage_number": 1,
+    "total_stages": 5,
+    "title": "İlk Temas",
+    "briefing": "Lazer hattını okuyup temel karşı devreyi kur.",
+    "is_boss": false,
+    "opponent_id": "starter_laser",
+    "display_name": "Başlangıç Lazeri",
+    "description": "...",
+    "board": {"name": "...", "modules": []}
+  },
+  "last_match_id": null,
+  "reward": null,
+  "board_required": false,
+  "can_battle": true,
+  "can_choose_booster": false,
+  "started_at": "2026-07-31T12:00:00+00:00",
+  "ended_at": null
+}
+```
+
+`opponent.board`, aynı aşamadaki `career-run/battle` çağrısında sunucunun
+kullanacağı rakip kartın tam karşılığıdır. İstemci rakip kartı, aşama sonucu,
+güçlendirici etkisi veya ödül hesaplayamaz.
+
+Zaferden sonra durum `awaiting_booster` olur ve `offered_boosters` tam üç öğe
+taşır. Terminal durumda `completed`, `failed` veya `abandoned` döner; ödül varsa
+`reward` alanı v0.6.0 `RewardGrantResponse` sözleşmesini kullanır.

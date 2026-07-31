@@ -37,9 +37,11 @@ dönüştürür.
 | v0.4.12 | Tek ekran editör/savaş yerleşimi ve orta panel genişliği | Hazır |
 | v0.4.13 | Kompakt modül paleti ve güçlü savaş etiketleri | Hazır |
 | v0.5.0 | Derece, haftalık lig ve maç geçmişi | Hazır |
-| v0.6.0 | Koşu, mağaza, kit ve geçici yükseltme döngüsü | Sıradaki |
-| v0.7.0 | Kapalı alfa, dengeleme ve kötüye kullanım koruması | Planlandı |
-| v0.8.0 | Kozmetik/ödüllü reklam için kapalı gelir altyapısı | Planlandı |
+| v0.6.0 | XP, seviye, görev, başarım ve güçlendirici ustalığı temeli | Hazır |
+| v0.6.1 | Kariyer koşusu, tam rakip ön izlemesi ve geçici güçlendiriciler | Hazır |
+| v0.6.2 | Kozmetik mağaza, koleksiyon ve sekizli kit | Planlandı |
+| v0.7.0 | Sezon, kapalı alfa ve kötüye kullanım koruması | Planlandı |
+| v0.8.0 | Sosyal yapı, klan temeli ve kapalı gelir altyapısı | Planlandı |
 | v1.0.0 | Android ve web açık beta | Hedef |
 
 ## Şimdiye kadar yapılanlar
@@ -206,42 +208,50 @@ v0.4.0'a alınmayacaklar:
 - mağaza, reklam ve satın alma
 - klan veya canlı 1v1
 
-## v0.5.0 — Sıradaki paket
+## v0.5.0 — Hazır rekabet temeli
 
-Kalıcı asenkron akış kanıtlandığı için sıradaki amaç rekabet sonucunu görünür
-ve sürdürülebilir hâle getirmektir:
+- Sunucu yetkili ELO benzeri derece
+- Haftalık lig, liderlik tablosu ve maç geçmişi
+- Katılımcı perspektifinden replay ve checksum doğrulaması
+- Bot/antrenman sonuçlarında sıfır derece etkisi
 
-1. başlangıç derecesi ve sunucu yetkili ELO benzeri puan
-2. eşleştirmede derece aralığı ve bot sonucunun dereceyi etkilememesi
-3. haftalık lig bölümleri
-4. oyuncuya dönük maç geçmişi
-5. kalıcı replay listesinden tekrar izleme
-6. sezon/hafta sınırı ve güvenli puan güncelleme işlemi
-7. eşleştirme bulunurluğu ile rakip tekrar oranı ölçümleri
+## v0.6.0 — Hazır ilerleme temeli
 
-v0.5.0'da da mağaza, reklam, satın alma, sohbet, klan, canlı 1v1 veya
-kalıcı ham güç artışı bulunmayacaktır.
+1. Kariyer ile İstatistikler ekranlarının ayrılması
+2. sunucu yetkili XP, oyuncu seviyesi ve Devre Kredisi
+3. maç başına tek seferlik ödül kaydı
+4. günlük görevlerin gün bazında ilerlemesi ve ödül talebi
+5. kalıcı başarımlar ve tek seferlik başarım ödülleri
+6. seviye 1–50 aralığında güçlendirici ustalık kademeleri
+7. maç sonunda görünür XP/Kredi/seviye artışı özeti
+8. kalıcı modül gücüne dokunmayan adalet koruması
+
+Güçlendirici ustalığı temel modül değerlerini değiştirmez. Seviye 10, 20, 30
+ve 40 eşiklerinde yalnız kariyer koşusunda sunulan geçici güçlendiricilerin
+etkisi artar; koşu bittiğinde bütün etkiler sıfırlanır.
+
+## v0.6.1 — Hazır kariyer koşusu ve karşı-devre hazırlığı
+
+- Beş bağlantılı savaş ve beşinci aşamada bölüm sonu devresi
+- Savaşta kullanılacak rakip kartın tam devre ön izlemesi
+- Ön izlemeye göre kartı kaydeden ayrı kariyer editörü
+- İlk dört zafer sonrası üç geçici güçlendiriciden birini seçme
+- Seviye kademesini yalnız koşu içi güçlendirici etkisine uygulama
+- Beraberlik/mağlubiyette başarısızlık, tamamlanma ve bütün etkilerin sıfırlanması
+- `run_id` ile tek seferlik XP ve Devre Kredisi ödülü
+- Alembic `20260731_0005` ile sunucu yetkili koşu kalıcılığı
+
+## v0.6.2 — Planlanan mağaza ve koleksiyon
+
+- Devre kartı, çekirdek, modül çerçevesi ve profil kozmetikleri
+- Devre Kredisi ile açık ve öngörülebilir satın alma
+- Kontrollü sekizli kit ve koleksiyon görünümü
+- Dereceli savaşta ücretli veya kalıcı ham güç bulunmaması
 
 ## Değişmeyen karar kapıları
 
-- Sunucu dışında hiçbir taraf maç sonucuna karar veremez.
+- Sunucu dışında hiçbir taraf maç sonucuna veya ödüle karar veremez.
 - Kalıcı ilerleme rekabetçi ham güç vermez.
-- İlk asenkron PvP kanıtlanmadan lig ve gelir katmanı eklenmez.
-- Redis ancak PostgreSQL tabanlı akış ölçüldükten sonra değerlendirilir.
-- Canlı 1v1, asenkron model dengelenmeden geliştirilmez.
-
-
-## v0.5.0 — Hazır derece ve haftalık lig temeli
-
-- Gerçek oyuncuya karşı asenkron maçlarda sunucu yetkili ELO benzeri derece
-- Kesin beraberlikte sıfır derece değişimi; haftalık 1 puan
-- Galibiyette haftalık 3 puan, mağlubiyette 0 puan
-- Bot ve antrenman maçlarında sıfır derece etkisi
-- Maç başına tek seferlik ve yeniden denemeye dayanıklı derece kaydı
-- ISO haftasına bağlı lig sıralaması ve liderlik tablosu
-- Katılımcı açısından maç/replay görünümü ve checksum doğrulaması
-- Flutter Kariyer ekranında gerçek derece, lig ve maç geçmişi
-- Değişmeden korunan kurallar `0.8`, modül dengesi ve kalıcı güç adaleti
-
-Sonraki sürüm v0.6.0, bu rekabet temelini bozmadan koşu, mağaza, kontrollü
-sekizli kit ve yalnız koşu içinde geçerli yükseltme döngüsünü kuracaktır.
+- Güçlendiriciler yalnız kariyer koşusunda geçicidir ve koşu sonunda sıfırlanır.
+- Gerçek para, enerji kısıtı veya reklam; oyun döngüsü ölçülmeden eklenmez.
+- Canlı 1v1, asenkron model ve kariyer döngüsü dengelenmeden geliştirilmez.

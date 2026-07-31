@@ -13,8 +13,14 @@ void main() {
 
       expect(find.text('PROJECT RELAY'), findsOneWidget);
       expect(find.byKey(const ValueKey('main-menu-play')), findsOneWidget);
+      expect(find.byKey(const ValueKey('player-status-bar')), findsOneWidget);
+      expect(find.byKey(const ValueKey('player-status-name')), findsOneWidget);
+      expect(find.byKey(const ValueKey('player-status-level')), findsOneWidget);
+      expect(find.byKey(const ValueKey('player-status-credits')), findsOneWidget);
+      expect(find.byKey(const ValueKey('player-status-xp')), findsOneWidget);
       expect(find.text('OYNA'), findsOneWidget);
       expect(find.text('KARİYER'), findsOneWidget);
+      expect(find.text('İSTATİSTİKLER'), findsOneWidget);
       expect(find.text('NASIL OYNANIR'), findsOneWidget);
       expect(find.text('AYARLAR'), findsOneWidget);
       expect(find.text('DEVREYİ KUR'), findsNothing);
@@ -40,9 +46,9 @@ void main() {
         const ValueKey('palette-module-generator'),
       );
       expect(generatorPaletteTile, findsOneWidget);
-      expect(tester.getSize(generatorPaletteTile).height, 74);
+      expect(tester.getSize(generatorPaletteTile).height, 66);
 
-      expect(find.textContaining('ÇEVRİMİÇİ SAVAŞ • v0.5.0'), findsOneWidget);
+      expect(find.textContaining('ÇEVRİMİÇİ SAVAŞ • v0.6.1'), findsOneWidget);
       expect(find.text('DEVREYİ KUR'), findsOneWidget);
       expect(find.text('ASENKRON PvP'), findsOneWidget);
       expect(
@@ -59,8 +65,12 @@ void main() {
       );
       expect(find.text('SUNUCU YETKİLİ SAVAŞ'), findsNothing);
       expect(
-        find.byKey(const ValueKey('guest-session-badge')),
+        find.byKey(const ValueKey('player-status-bar')),
         findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey('guest-session-badge')),
+        findsNothing,
       );
       expect(find.byKey(const ValueKey('training-panel')), findsNothing);
       expect(
@@ -102,11 +112,23 @@ void main() {
       await tester.tap(find.byKey(const ValueKey('play-mode-training')));
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('ANTRENMAN • v0.5.0'), findsOneWidget);
+      expect(find.textContaining('ANTRENMAN • v0.6.1'), findsOneWidget);
       expect(find.byKey(const ValueKey('training-panel')), findsOneWidget);
       expect(find.text('ANTRENMAN RAKİPLERİ'), findsOneWidget);
       expect(find.text('SEÇİLİ BOTLA SAVAŞ'), findsOneWidget);
       expect(find.byKey(const ValueKey('async-pvp-card')), findsNothing);
+      expect(
+        find.byKey(const ValueKey('editor-menu-back-card')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey('editor-menu-back-button')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey('player-status-bar')),
+        findsOneWidget,
+      );
       expect(
         find.byKey(const ValueKey('guest-session-badge')),
         findsNothing,
@@ -115,16 +137,28 @@ void main() {
   );
 
   testWidgets(
-    'nasıl oynanır kariyer ile ayarlar arasında açılır',
+    'nasıl oynanır istatistikler ile ayarlar arasında açılır',
     (tester) async {
       await _pumpApp(tester);
 
       final career = find.byKey(const ValueKey('main-menu-career'));
+      final statistics = find.byKey(
+        const ValueKey('main-menu-statistics'),
+      );
       final manual = find.byKey(const ValueKey('main-menu-how-to-play'));
       final settings = find.byKey(const ValueKey('main-menu-settings'));
-      expect(tester.getCenter(career).dy, lessThan(tester.getCenter(manual).dy));
+      expect(
+        tester.getCenter(career).dy,
+        lessThan(tester.getCenter(statistics).dy),
+      );
+      expect(
+        tester.getCenter(statistics).dy,
+        lessThan(tester.getCenter(manual).dy),
+      );
       expect(tester.getCenter(manual).dy, lessThan(tester.getCenter(settings).dy));
 
+      await tester.ensureVisible(manual);
+      await tester.pumpAndSettle();
       await tester.tap(manual);
       await tester.pumpAndSettle();
 
@@ -147,11 +181,32 @@ void main() {
   );
 
   testWidgets(
-    'kariyer oyna ve ayarlar ana menüye görünür düğmeyle döner',
+    'kariyer istatistikler oyna ve ayarlar ana menüye döner',
     (tester) async {
       await _pumpApp(tester);
 
       await tester.tap(find.byKey(const ValueKey('main-menu-career')));
+      await tester.pumpAndSettle();
+      expect(find.text('OYUNCU SEVİYESİ'), findsOneWidget);
+      expect(find.text('BEŞ SAVAŞLIK KARİYER KOŞUSU'), findsOneWidget);
+      expect(find.text('KOŞUYU BAŞLAT'), findsOneWidget);
+      expect(find.text('GÜNLÜK GÖREVLER'), findsOneWidget);
+      final boosterMasteryTitle = find.text('GÜÇLENDİRİCİ USTALIĞI');
+      await tester.scrollUntilVisible(boosterMasteryTitle, 220);
+      await tester.pumpAndSettle();
+      expect(boosterMasteryTitle, findsOneWidget);
+      final careerBack = find.byKey(const ValueKey('career-back-button'));
+      await tester.scrollUntilVisible(careerBack, 220);
+      await tester.pumpAndSettle();
+      await tester.tap(careerBack);
+      await tester.pumpAndSettle();
+
+      final statisticsMenu = find.byKey(
+        const ValueKey('main-menu-statistics'),
+      );
+      await tester.ensureVisible(statisticsMenu);
+      await tester.pumpAndSettle();
+      await tester.tap(statisticsMenu);
       await tester.pumpAndSettle();
       expect(find.text('DERECE PUANI'), findsOneWidget);
       expect(find.text('HAFTALIK LİG'), findsOneWidget);
@@ -159,10 +214,12 @@ void main() {
       await tester.scrollUntilVisible(recentMatchesTitle, 220);
       await tester.pumpAndSettle();
       expect(recentMatchesTitle, findsOneWidget);
-      final careerBack = find.byKey(const ValueKey('career-back-button'));
-      await tester.scrollUntilVisible(careerBack, 180);
+      final statisticsBack = find.byKey(
+        const ValueKey('statistics-back-button'),
+      );
+      await tester.scrollUntilVisible(statisticsBack, 180);
       await tester.pumpAndSettle();
-      await tester.tap(careerBack);
+      await tester.tap(statisticsBack);
       await tester.pumpAndSettle();
 
       await tester.tap(find.byKey(const ValueKey('main-menu-play')));
@@ -172,7 +229,10 @@ void main() {
       await tester.tap(playBack);
       await tester.pumpAndSettle();
 
-      await tester.tap(find.byKey(const ValueKey('main-menu-settings')));
+      final settingsMenu = find.byKey(const ValueKey('main-menu-settings'));
+      await tester.ensureVisible(settingsMenu);
+      await tester.pumpAndSettle();
+      await tester.tap(settingsMenu);
       await tester.pumpAndSettle();
       expect(
         find.byKey(const ValueKey('settings-replay-sound')),
@@ -259,7 +319,7 @@ Future<void> _pumpApp(WidgetTester tester) async {
             ],
           ),
         ),
-        careerProvider.overrideWith(
+        statisticsProvider.overrideWith(
           (ref) async => CareerSnapshot(
             profile: const RatingProfile(
               playerId: 'player-test',
@@ -302,6 +362,81 @@ Future<void> _pumpApp(WidgetTester tester) async {
               botFallbacks: 0,
               humanOpponentRate: 1,
             ),
+          ),
+        ),
+        progressionProvider.overrideWith(
+          (ref) async => ProgressionSnapshot(
+            dayKey: '2026-07-31',
+            profile: const PlayerProgression(
+              playerId: 'player-test',
+              totalXp: 50,
+              level: 1,
+              xpIntoLevel: 50,
+              xpForNextLevel: 100,
+              credits: 30,
+              matchesCompleted: 1,
+              wins: 1,
+              draws: 0,
+              losses: 0,
+            ),
+            dailyMissions: const [
+              DailyMission(
+                id: 'first_signal',
+                title: 'İlk Sinyal',
+                description: 'Bir asenkron devre savaşını tamamla.',
+                progress: 1,
+                target: 1,
+                completed: true,
+                claimed: false,
+                rewardXp: 30,
+                rewardCredits: 25,
+              ),
+            ],
+            achievements: const [
+              PlayerAchievement(
+                id: 'first_battle',
+                title: 'Devreye Giriş',
+                description: 'İlk asenkron savaşını tamamla.',
+                progress: 1,
+                target: 1,
+                unlocked: true,
+                claimed: false,
+                rewardXp: 100,
+                rewardCredits: 50,
+              ),
+            ],
+            boosters: const [
+              BoosterMastery(
+                id: 'overcharge',
+                displayName: 'Aşırı Şarj',
+                description: 'Koşu içinde geçici üretim artışı.',
+                unlockLevel: 1,
+                unlocked: true,
+                tier: 1,
+                effectValue: 5,
+                effectLabel: 'Jeneratör üretimi +%5',
+                nextTierLevel: 10,
+              ),
+            ],
+          ),
+        ),
+        careerRunProvider.overrideWith(
+          (ref) async => const CareerRunSnapshot(
+            runId: null,
+            status: 'idle',
+            stageIndex: 0,
+            totalStages: 5,
+            wins: 0,
+            selectedBoosters: [],
+            offeredBoosters: [],
+            opponent: null,
+            lastMatchId: null,
+            reward: null,
+            boardRequired: false,
+            canBattle: false,
+            canChooseBooster: false,
+            startedAt: null,
+            endedAt: null,
           ),
         ),
         guestSessionProvider.overrideWith(

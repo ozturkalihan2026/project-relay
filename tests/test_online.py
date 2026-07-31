@@ -179,6 +179,8 @@ class OnlineApiTests(unittest.TestCase):
         career = self.client.get("/api/v1/me/career")
         history = self.client.get("/api/v1/me/matches")
         league = self.client.get("/api/v1/league/current")
+        progression = self.client.get("/api/v1/me/progression")
+        statistics = self.client.get("/api/v1/me/statistics")
 
         self.assertEqual(profile.status_code, 401)
         self.assertEqual(save.status_code, 401)
@@ -186,6 +188,8 @@ class OnlineApiTests(unittest.TestCase):
         self.assertEqual(career.status_code, 401)
         self.assertEqual(history.status_code, 401)
         self.assertEqual(league.status_code, 401)
+        self.assertEqual(progression.status_code, 401)
+        self.assertEqual(statistics.status_code, 401)
         self.assertEqual(
             match.json()["code"],
             "authorization_required",
@@ -254,6 +258,9 @@ class OnlineApiTests(unittest.TestCase):
             len(payload["opponent_board"]["modules"]),
         )
         self.assertIsNotNone(payload["rating_change"])
+        self.assertIsNotNone(payload["progression_reward"])
+        self.assertGreater(payload["progression_reward"]["xp"], 0)
+        self.assertGreater(payload["progression_reward"]["credits"], 0)
         self.assertIn(
             payload["rating_change"]["outcome"],
             {"win", "draw", "loss"},
@@ -270,13 +277,80 @@ class OnlineApiTests(unittest.TestCase):
             "/api/v1/league/current",
             headers=self._authorization(first),
         )
+        progression = self.client.get(
+            "/api/v1/me/progression",
+            headers=self._authorization(first),
+        )
+        statistics = self.client.get(
+            "/api/v1/me/statistics",
+            headers=self._authorization(first),
+        )
         self.assertEqual(career.status_code, 200, career.text)
         self.assertEqual(history.status_code, 200, history.text)
         self.assertEqual(league.status_code, 200, league.text)
+        self.assertEqual(progression.status_code, 200, progression.text)
+        self.assertEqual(statistics.status_code, 200, statistics.text)
         self.assertEqual(career.json()["profile"]["rated_matches"], 1)
         self.assertEqual(history.json()["total"], 1)
         self.assertTrue(history.json()["items"][0]["rated"])
         self.assertGreaterEqual(league.json()["league"]["position"], 1)
+        self.assertEqual(progression.json()["profile"]["matches_completed"], 1)
+        self.assertEqual(len(progression.json()["daily_missions"]), 3)
+        self.assertEqual(statistics.json()["profile"]["rated_matches"], 1)
+
+    def test_progression_reward_daily_claim_and_achievement_are_idempotent(
+        self,
+    ) -> None:
+        first = self._guest()
+        second = self._guest()
+        self._save_board(first)
+        self._save_board(second)
+        headers = self._authorization(first)
+
+        created = self.client.post(
+            "/api/v1/matches/async",
+            headers=headers,
+        )
+        self.assertEqual(created.status_code, 201, created.text)
+        reward = created.json()["progression_reward"]
+        self.assertGreater(reward["xp"], 0)
+        self.assertGreater(reward["credits"], 0)
+
+        snapshot = self.client.get(
+            "/api/v1/me/progression",
+            headers=headers,
+        )
+        self.assertEqual(snapshot.status_code, 200, snapshot.text)
+        first_signal = next(
+            mission
+            for mission in snapshot.json()["daily_missions"]
+            if mission["mission_id"] == "first_signal"
+        )
+        self.assertTrue(first_signal["completed"])
+        self.assertFalse(first_signal["claimed"])
+
+        claimed = self.client.post(
+            "/api/v1/me/daily-missions/first_signal/claim",
+            headers=headers,
+        )
+        claimed_again = self.client.post(
+            "/api/v1/me/daily-missions/first_signal/claim",
+            headers=headers,
+        )
+        self.assertEqual(claimed.status_code, 200, claimed.text)
+        self.assertEqual(claimed.json(), claimed_again.json())
+
+        achievement = self.client.post(
+            "/api/v1/me/achievements/first_battle/claim",
+            headers=headers,
+        )
+        locked = self.client.post(
+            "/api/v1/me/achievements/circuit_veteran/claim",
+            headers=headers,
+        )
+        self.assertEqual(achievement.status_code, 200, achievement.text)
+        self.assertEqual(locked.status_code, 409, locked.text)
+        self.assertEqual(locked.json()["code"], "achievement_locked")
 
     def test_recent_opponent_is_not_repeated_and_bot_is_safe_fallback(
         self,
@@ -310,6 +384,7 @@ class OnlineApiTests(unittest.TestCase):
         )
         self.assertIsNotNone(first_match.json()["rating_change"])
         self.assertIsNone(second_match.json()["rating_change"])
+        self.assertIsNotNone(second_match.json()["progression_reward"])
         career = self.client.get(
             "/api/v1/me/career",
             headers=headers,

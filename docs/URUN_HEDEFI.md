@@ -53,6 +53,15 @@ Oyuncunun telefonu hasar, puan veya kazanan bildiremez.
 Oyunun ilk adalet kuralı şudur: en pahalı veya en yüksek seviyeli parçaya sahip
 olmak değil, doğru yerleşim ve karşı strateji kazanmalıdır.
 
+## Karşı strateji için bilgi ilkesi
+
+- Kariyer ve öğretici bot savaşlarında oyuncu, savaşta gerçekten kullanılacak
+  rakip devreyi başlamadan önce tam olarak görür ve kartını buna göre düzenler.
+- Rekabetçi PvP'de iki taraf da kartını kilitlemeden rakip bilgisi açılmaz.
+  Gelecekte uygulanacak keşif sistemi tam kopya yerine kısmi bilgi ve sınırlı
+  yeniden düzenleme hakkı vermelidir.
+- Ön izleme bilgi avantajı tek tarafa veya son karar veren oyuncuya verilmez.
+
 ## İlerleme ve adalet
 
 - Her oyuncu aynı sekiz temel modülle başlar.
@@ -61,7 +70,8 @@ olmak değil, doğru yerleşim ve karşı strateji kazanmalıdır.
   seçeneklerdir.
 - Oyuncu açtığı modüllerden kontrollü bir sekizli kit hazırlar.
 - Yükseltmeler yalnızca mevcut koşuda geçerlidir ve yeni koşuda sıfırlanır.
-- Örnek koşu hedefi 5 galibiyet veya 3 yenilgidir.
+- Oyuncu seviyesi yükseldikçe geçici güçlendiricilerin daha faydalı kademeleri açılır; bu gelişim dereceli savaşa taşınmaz.
+- Kariyer koşusu beş bağlantılı savaştır; beraberlik veya mağlubiyet koşuyu bitirir.
 - Aynı modüllerin aynı düzenle savaşması gerçek beraberlikle bitebilir.
 - Dereceli maçta bütün oyuncular aynı güç kurallarına tabidir.
 

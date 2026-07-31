@@ -306,6 +306,19 @@ void main() {
           ],
         },
       },
+      'progression_reward': {
+        'source_type': 'match',
+        'source_id': 'match-1',
+        'reason': 'Asenkron savaş: win',
+        'xp': 50,
+        'credits': 30,
+        'level_before': 1,
+        'level_after': 1,
+        'level_up': false,
+        'total_xp_after': 50,
+        'credits_after': 30,
+        'granted_at': '2026-07-31T09:00:00+00:00',
+      },
       'rating_change': {
         'outcome': 'win',
         'rating_before': 1000,
@@ -331,7 +344,73 @@ void main() {
     expect(match.result.decision.metrics.single.leftValue, 0.833333);
     expect(match.source, 'async');
     expect(match.ratingChange?.ratingDelta, 16);
+    expect(match.progressionReward?.xp, 50);
+    expect(match.progressionReward?.credits, 30);
     expect(match.createdAt, DateTime.parse('2026-07-31T09:00:00+00:00'));
+  });
+
+  test('ilerleme görev başarım ve geçici güçlendiricileri ayrıştırır', () {
+    final progression = ProgressionSnapshot.fromJson({
+      'day_key': '2026-07-31',
+      'profile': {
+        'player_id': 'player-1',
+        'total_xp': 50,
+        'level': 1,
+        'xp_into_level': 50,
+        'xp_for_next_level': 100,
+        'credits': 30,
+        'matches_completed': 1,
+        'wins': 1,
+        'draws': 0,
+        'losses': 0,
+      },
+      'daily_missions': [
+        {
+          'mission_id': 'first_signal',
+          'title': 'İlk Sinyal',
+          'description': 'Bir savaş tamamla.',
+          'progress': 1,
+          'target': 1,
+          'completed': true,
+          'claimed': false,
+          'reward_xp': 30,
+          'reward_credits': 25,
+        },
+      ],
+      'achievements': [
+        {
+          'achievement_id': 'first_battle',
+          'title': 'Devreye Giriş',
+          'description': 'İlk savaşını tamamla.',
+          'progress': 1,
+          'target': 1,
+          'unlocked': true,
+          'claimed': false,
+          'reward_xp': 100,
+          'reward_credits': 50,
+        },
+      ],
+      'boosters': [
+        {
+          'booster_id': 'overcharge',
+          'display_name': 'Aşırı Şarj',
+          'description': 'Koşu içinde geçici etki.',
+          'unlock_level': 1,
+          'unlocked': true,
+          'tier': 1,
+          'effect_value': 5,
+          'effect_label': 'Jeneratör üretimi +%5',
+          'next_tier_level': 10,
+        },
+      ],
+    });
+
+    expect(progression.profile.level, 1);
+    expect(progression.profile.levelProgress, 0.5);
+    expect(progression.dailyMissions.single.completed, isTrue);
+    expect(progression.achievements.single.unlocked, isTrue);
+    expect(progression.boosters.single.tier, 1);
+    expect(progression.boosters.single.description, contains('geçici'));
   });
 
   test('derece haftalık lig ve maç geçmişini ayrıştırır', () {

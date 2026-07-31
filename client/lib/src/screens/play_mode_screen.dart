@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/relay_theme.dart';
+import '../widgets/player_status_bar.dart';
 import 'editor_screen.dart';
 
 class PlayModeScreen extends StatelessWidget {
@@ -18,6 +19,10 @@ class PlayModeScreen extends StatelessWidget {
             letterSpacing: 1.5,
           ),
         ),
+        actions: const [
+          Center(child: PlayerStatusBar(compact: true)),
+          SizedBox(width: 8),
+        ],
       ),
       body: SafeArea(
         child: Center(

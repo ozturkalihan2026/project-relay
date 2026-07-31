@@ -23,10 +23,10 @@ class FlutterClientContractTests(unittest.TestCase):
             CLIENT / "lib" / "src" / "widgets" / "game_manual.dart"
         ).read_text(encoding="utf-8")
 
-        self.assertIn("version: 0.5.0+33", pubspec)
-        self.assertIn("${widget.mode.title} • v0.5.0", editor)
-        self.assertIn("ASENKRON DEVRE SAVAŞI • v0.5.0", main_menu)
-        self.assertIn("PROJECT RELAY • v0.5.0", manual)
+        self.assertIn("version: 0.6.1+36", pubspec)
+        self.assertIn("${widget.mode.title} • v0.6.1", editor)
+        self.assertIn("KARİYER VE DEVRE SAVAŞI • v0.6.1", main_menu)
+        self.assertIn("PROJECT RELAY • v0.6.1", manual)
         self.assertIn("audioplayers:", pubspec)
         self.assertIn("assets/sounds/", pubspec)
         self.assertIn("flame:", pubspec)
@@ -38,8 +38,8 @@ class FlutterClientContractTests(unittest.TestCase):
             CLIENT / "lib" / "src" / "widgets" / "module_palette.dart"
         ).read_text(encoding="utf-8")
 
-        self.assertIn("height: 74,", palette)
-        self.assertIn("computedTileWidth > 255", palette)
+        self.assertIn("height: 66,", palette)
+        self.assertIn("math.min(235.0, compactTileWidth)", palette)
         self.assertIn("alignment: WrapAlignment.center", palette)
         self.assertIn("child: Stack(", palette)
         self.assertNotIn("BoxConstraints(minHeight: 74)", palette)
@@ -97,10 +97,10 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("editor-menu-back-card", editor)
         self.assertNotIn("SUNUCU YETKİLİ SAVAŞ", editor)
 
-        # v0.4.11 + v0.4.13: sonlu Stack ve 74 px / 255 px palet.
-        self.assertIn("height: 74,", palette)
+        # v0.4.11 + v0.4.13: sonlu Stack; v0.6.0 UI rev1 kompakt palet.
+        self.assertIn("height: 66,", palette)
         self.assertIn("child: Stack(", palette)
-        self.assertIn("computedTileWidth > 255", palette)
+        self.assertIn("math.min(235.0, compactTileWidth)", palette)
         self.assertIn("alignment: WrapAlignment.center", palette)
 
         # v0.4.12 + v0.4.13: tek ekran savaş geometrisi ve güçlü etiketler.
@@ -169,9 +169,67 @@ class FlutterClientContractTests(unittest.TestCase):
             widget_test,
         )
         self.assertIn(
-            "await tester.scrollUntilVisible(careerBack, 180);",
+            "await tester.scrollUntilVisible(careerBack, 220);",
             widget_test,
         )
+
+    def test_v060_progression_foundation_is_visible_and_temporary(self) -> None:
+        api = (
+            CLIENT / "lib" / "src" / "api" / "relay_api.dart"
+        ).read_text(encoding="utf-8")
+        models = (
+            CLIENT / "lib" / "src" / "models" / "relay_models.dart"
+        ).read_text(encoding="utf-8")
+        career = (
+            CLIENT / "lib" / "src" / "screens" / "career_screen.dart"
+        ).read_text(encoding="utf-8")
+        replay = (
+            CLIENT / "lib" / "src" / "screens" / "replay_screen.dart"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("progressionProvider", api)
+        self.assertIn("/api/v1/me/progression", api)
+        self.assertIn("claimDailyMission", api)
+        self.assertIn("claimAchievement", api)
+        self.assertIn("class ProgressionSnapshot", models)
+        self.assertIn("class BoosterMastery", models)
+        self.assertIn("class ProgressionReward", models)
+        self.assertIn("class CareerRunSnapshot", models)
+        self.assertIn("class CareerOpponentPreview", models)
+        self.assertIn("careerRunProvider", api)
+        self.assertIn("TAM DEVRE ÖN İZLEMESİ", career)
+        self.assertIn("DEVREMİ DÜZENLE", career)
+        self.assertIn("GEÇİCİ GÜÇLENDİRİCİNİ SEÇ", career)
+        self.assertIn("koşu bittiğinde tamamen sıfırlanır", career)
+        self.assertIn("match-progression-reward", replay)
+
+    def test_v060_ui_revision_keeps_progression_visible_and_editor_compact(self) -> None:
+        status = (
+            CLIENT / "lib" / "src" / "widgets" / "player_status_bar.dart"
+        ).read_text(encoding="utf-8")
+        palette = (
+            CLIENT / "lib" / "src" / "widgets" / "module_palette.dart"
+        ).read_text(encoding="utf-8")
+        editor = (
+            CLIENT / "lib" / "src" / "screens" / "editor_screen.dart"
+        ).read_text(encoding="utf-8")
+        board_controller = (
+            CLIENT / "lib" / "src" / "state" / "board_controller.dart"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("guestSessionProvider", status)
+        self.assertIn("progressionProvider", status)
+        self.assertIn("player-status-name", status)
+        self.assertIn("player-status-level", status)
+        self.assertIn("player-status-credits", status)
+        self.assertIn("player-status-xp", status)
+        self.assertIn("DEVRE KREDİSİ", status)
+        self.assertIn("height: 66,", palette)
+        self.assertIn("fontSize: 13", palette)
+        self.assertIn("fontSize: 9.5", palette)
+        self.assertIn("size: 24", palette)
+        self.assertGreaterEqual(editor.count("_EditorMenuBackCard(busy: busy)"), 3)
+        self.assertIn("void loadSavedBoard(SavedBoard saved)", board_controller)
 
     def test_session_api_mocks_encode_turkish_json_as_utf8(self) -> None:
         session_test = (
@@ -261,9 +319,18 @@ class FlutterClientContractTests(unittest.TestCase):
             "/api/v1/matches/bot",
             "/api/v1/auth/guest",
             "/api/v1/auth/refresh",
+            "/api/v1/me",
             "/api/v1/me/board",
             "/api/v1/matches/async",
-            "/api/v1/me/career",
+            "/api/v1/me/statistics",
+            "/api/v1/me/progression",
+            "/api/v1/me/career-run",
+            "/api/v1/me/career-run/start",
+            "/api/v1/me/career-run/booster",
+            "/api/v1/me/career-run/battle",
+            "/api/v1/me/career-run/abandon",
+            "/daily-missions/",
+            "/achievements/",
             "/api/v1/me/matches",
             "/replay",
         ):
@@ -350,6 +417,9 @@ class FlutterClientContractTests(unittest.TestCase):
         career = (
             CLIENT / "lib" / "src" / "screens" / "career_screen.dart"
         ).read_text(encoding="utf-8")
+        statistics = (
+            CLIENT / "lib" / "src" / "screens" / "statistics_screen.dart"
+        ).read_text(encoding="utf-8")
         settings = (
             CLIENT / "lib" / "src" / "screens" / "settings_screen.dart"
         ).read_text(encoding="utf-8")
@@ -360,10 +430,15 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("home: const MainMenuScreen()", app_source)
         self.assertIn("main-menu-play", main_menu)
         self.assertIn("main-menu-career", main_menu)
+        self.assertIn("main-menu-statistics", main_menu)
         self.assertIn("main-menu-how-to-play", main_menu)
         self.assertIn("main-menu-settings", main_menu)
         self.assertLess(
             main_menu.index("main-menu-career"),
+            main_menu.index("main-menu-statistics"),
+        )
+        self.assertLess(
+            main_menu.index("main-menu-statistics"),
             main_menu.index("main-menu-how-to-play"),
         )
         self.assertLess(
@@ -377,16 +452,27 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("play-mode-training", play_mode)
         self.assertIn("EditorMode.online", play_mode)
         self.assertIn("EditorMode.training", play_mode)
+        self.assertIn("EditorMode.career", editor)
+        self.assertIn("fetchCurrentBoard", editor)
+        self.assertIn("loadSavedBoard", editor)
         self.assertIn("mode == EditorMode.online", editor)
+        self.assertIn("mode == EditorMode.career", editor)
         self.assertIn("training-panel", editor)
         self.assertIn("async-pvp-card", editor)
-        self.assertIn("ref.watch(careerProvider)", career)
-        self.assertIn("DERECE PUANI", career)
-        self.assertIn("HAFTALIK LİG", career)
-        self.assertIn("SON MAÇLAR", career)
-        self.assertIn("api.fetchReplay(matchId)", career)
-        self.assertIn("error: (error, _) => _CareerError(", career)
-        self.assertNotIn("error: (error, _stack)", career)
+        self.assertIn("ref.watch(progressionProvider)", career)
+        self.assertIn("OYUNCU SEVİYESİ", career)
+        self.assertIn("GÜNLÜK GÖREVLER", career)
+        self.assertIn("GÜÇLENDİRİCİ USTALIĞI", career)
+        self.assertIn("BAŞARIMLAR", career)
+        self.assertIn("claimDailyMission", career)
+        self.assertIn("claimAchievement", career)
+        self.assertIn("ref.watch(statisticsProvider)", statistics)
+        self.assertIn("DERECE PUANI", statistics)
+        self.assertIn("HAFTALIK LİG", statistics)
+        self.assertIn("SON MAÇLAR", statistics)
+        self.assertIn("api.fetchReplay(matchId)", statistics)
+        self.assertIn("error: (error, _) => _CareerError(", statistics)
+        self.assertNotIn("error: (error, _stack)", statistics)
         self.assertIn("settings-replay-sound", settings)
         self.assertIn("settings-replay-speed", settings)
         self.assertIn("play-mode-back-button", play_mode)
@@ -804,7 +890,7 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("editor-menu-back-button", editor_source)
         self.assertIn("ANTRENMAN RAKİPLERİ", editor_source)
         self.assertIn("mode == EditorMode.online", editor_source)
-        self.assertIn("guest-session-badge", editor_source)
+        self.assertIn("PlayerStatusBar(compact: true)", editor_source)
         self.assertIn("süresi dolan erişim", session_test)
 
     def test_combat_sounds_are_distinct_local_waveforms(self) -> None:

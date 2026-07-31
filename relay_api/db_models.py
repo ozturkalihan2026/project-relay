@@ -284,3 +284,182 @@ class MatchRatingRecord(Base):
             "week_key",
         ),
     )
+
+class PlayerProgressionRecord(Base):
+    __tablename__ = "player_progression"
+
+    player_id: Mapped[str] = mapped_column(
+        ForeignKey("players.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    total_xp: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    credits: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    matches_completed: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        default=0,
+    )
+    wins: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    draws: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    losses: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+    )
+
+
+class RewardGrantRecord(Base):
+    __tablename__ = "reward_grants"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True)
+    player_id: Mapped[str] = mapped_column(
+        ForeignKey("players.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    source_type: Mapped[str] = mapped_column(String(24), nullable=False)
+    source_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    reason: Mapped[str] = mapped_column(String(120), nullable=False)
+    xp: Mapped[int] = mapped_column(Integer, nullable=False)
+    credits: Mapped[int] = mapped_column(Integer, nullable=False)
+    level_before: Mapped[int] = mapped_column(Integer, nullable=False)
+    level_after: Mapped[int] = mapped_column(Integer, nullable=False)
+    total_xp_after: Mapped[int] = mapped_column(Integer, nullable=False)
+    credits_after: Mapped[int] = mapped_column(Integer, nullable=False)
+    granted_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+    )
+
+    __table_args__ = (
+        UniqueConstraint(
+            "player_id",
+            "source_type",
+            "source_id",
+            name="uq_reward_grants_source",
+        ),
+        Index("ix_reward_grants_player_time", "player_id", "granted_at"),
+    )
+
+
+class DailyMissionRecord(Base):
+    __tablename__ = "daily_missions"
+
+    day_key: Mapped[str] = mapped_column(String(10), nullable=False)
+    player_id: Mapped[str] = mapped_column(
+        ForeignKey("players.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    mission_id: Mapped[str] = mapped_column(String(40), nullable=False)
+    progress: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    target: Mapped[int] = mapped_column(Integer, nullable=False)
+    completed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+    claimed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+    )
+
+    __table_args__ = (
+        PrimaryKeyConstraint(
+            "day_key",
+            "player_id",
+            "mission_id",
+            name="pk_daily_missions",
+        ),
+        Index("ix_daily_missions_player_day", "player_id", "day_key"),
+    )
+
+
+class PlayerAchievementRecord(Base):
+    __tablename__ = "player_achievements"
+
+    player_id: Mapped[str] = mapped_column(
+        ForeignKey("players.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    achievement_id: Mapped[str] = mapped_column(String(40), nullable=False)
+    progress: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    target: Mapped[int] = mapped_column(Integer, nullable=False)
+    unlocked_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+    claimed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+    )
+
+    __table_args__ = (
+        PrimaryKeyConstraint(
+            "player_id",
+            "achievement_id",
+            name="pk_player_achievements",
+        ),
+    )
+
+
+
+class CareerRunRecord(Base):
+    __tablename__ = "career_runs"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True)
+    player_id: Mapped[str] = mapped_column(
+        ForeignKey("players.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    status: Mapped[str] = mapped_column(String(24), nullable=False)
+    stage_index: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    wins: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    selected_boosters: Mapped[list[str]] = mapped_column(
+        JSON,
+        nullable=False,
+        default=list,
+    )
+    offered_boosters: Mapped[list[str]] = mapped_column(
+        JSON,
+        nullable=False,
+        default=list,
+    )
+    last_match_id: Mapped[str | None] = mapped_column(
+        ForeignKey("matches.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    started_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+    )
+    ended_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+
+    __table_args__ = (
+        Index("ix_career_runs_player_time", "player_id", "started_at"),
+        Index("ix_career_runs_player_status", "player_id", "status"),
+    )

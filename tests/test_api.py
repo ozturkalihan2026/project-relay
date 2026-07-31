@@ -132,10 +132,51 @@ class RelayApiTests(unittest.TestCase):
         response = self.client.get("/healthz")
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["version"], "0.5.0")
+        self.assertEqual(response.json()["version"], "0.6.1")
         self.assertEqual(response.json()["rules_version"], "0.8")
         self.assertEqual(response.json()["storage"], "sqlite")
         self.assertEqual(response.json()["database"], "ok")
+
+    def test_career_run_api_exposes_authoritative_full_preview(self) -> None:
+        guest_response = self.client.post("/api/v1/auth/guest")
+        self.assertEqual(guest_response.status_code, 201, guest_response.text)
+        guest = guest_response.json()
+        headers = {
+            "Authorization": f"Bearer {guest['tokens']['access_token']}"
+        }
+
+        idle = self.client.get("/api/v1/me/career-run", headers=headers)
+        self.assertEqual(idle.status_code, 200, idle.text)
+        self.assertEqual(idle.json()["status"], "idle")
+        self.assertTrue(idle.json()["board_required"])
+
+        saved = self.client.put(
+            "/api/v1/me/board",
+            headers=headers,
+            json=player_board(),
+        )
+        self.assertEqual(saved.status_code, 200, saved.text)
+
+        started = self.client.post(
+            "/api/v1/me/career-run/start", headers=headers
+        )
+        self.assertEqual(started.status_code, 200, started.text)
+        payload = started.json()
+        self.assertEqual(payload["status"], "active")
+        self.assertEqual(payload["total_stages"], 5)
+        self.assertEqual(payload["opponent"]["stage_number"], 1)
+        self.assertEqual(
+            len(payload["opponent"]["board"]["modules"]),
+            len(player_board()["modules"]),
+        )
+        self.assertTrue(payload["can_battle"])
+
+        refreshed = self.client.get("/api/v1/me/career-run", headers=headers)
+        self.assertEqual(refreshed.status_code, 200, refreshed.text)
+        self.assertEqual(
+            refreshed.json()["opponent"]["board"],
+            payload["opponent"]["board"],
+        )
 
     def test_match_result_explains_server_decision_metrics(self) -> None:
         payload = self._create_match()

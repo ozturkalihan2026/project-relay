@@ -4,6 +4,7 @@ from .engine import CircuitBattleEngine
 from .enums import Direction, EventType, ModuleKind, Side
 from .models import (
     BattleConfig,
+    BattleModifiers,
     BattleDecision,
     BattleEvent,
     BattleResult,
@@ -31,6 +32,7 @@ from .topology import (
 
 __all__ = [
     "BattleConfig",
+    "BattleModifiers",
     "BattleDecision",
     "BattleEvent",
     "BattleResult",

@@ -7,6 +7,7 @@ from .catalog import get_spec, world_ports
 from .enums import Direction, EventType, ModuleKind, Side
 from .models import (
     BattleConfig,
+    BattleModifiers,
     BattleDecision,
     BattleEvent,
     BattleResult,
@@ -48,6 +49,8 @@ class _BoardState:
     core_hp: float
     shield: float = 0.0
     energy_reserve: float = 0.0
+    reserve_capacity_bonus: float = 0.0
+    generator_output_multiplier: float = 1.0
     energy_spent: float = 0.0
     total_damage: float = 0.0
 
@@ -75,13 +78,19 @@ class CircuitBattleEngine:
         right_layout: BoardLayout,
         *,
         seed: int = 1,
+        left_modifiers: BattleModifiers | None = None,
+        right_modifiers: BattleModifiers | None = None,
     ) -> BattleResult:
         left_layout.validate(self.config.board_size)
         right_layout.validate(self.config.board_size)
 
         states = {
-            Side.LEFT: self._create_state(left_layout),
-            Side.RIGHT: self._create_state(right_layout),
+            Side.LEFT: self._create_state(
+                left_layout, left_modifiers or BattleModifiers()
+            ),
+            Side.RIGHT: self._create_state(
+                right_layout, right_modifiers or BattleModifiers()
+            ),
         }
         events: list[BattleEvent] = []
         state_frames = [self._snapshot_frame(0, states)]
@@ -139,14 +148,24 @@ class CircuitBattleEngine:
     def powered_module_ids(self, layout: BoardLayout) -> frozenset[str]:
         """Public helper used by a future editor to preview live connections."""
         layout.validate(self.config.board_size)
-        state = self._create_state(layout)
+        state = self._create_state(layout, BattleModifiers())
         powered = self._powered_positions(state)
         return frozenset(state.modules[position].placement.module_id for position in powered)
 
-    def _create_state(self, layout: BoardLayout) -> _BoardState:
+    def _create_state(
+        self,
+        layout: BoardLayout,
+        modifiers: BattleModifiers | None = None,
+    ) -> _BoardState:
+        modifiers = modifiers or BattleModifiers()
         modules: dict[tuple[int, int], _ModuleState] = {}
         for placement in layout.modules:
-            max_hp = module_max_hp(placement)
+            hp_bonus = (
+                modifiers.module_hp_bonus
+                if placement.kind is not ModuleKind.GENERATOR
+                else 0.0
+            )
+            max_hp = module_max_hp(placement) + hp_bonus
             modules[placement.position] = _ModuleState(
                 placement=placement,
                 hp=max_hp,
@@ -156,6 +175,10 @@ class CircuitBattleEngine:
             layout=layout,
             modules=modules,
             core_hp=self.config.core_hp,
+            shield=min(self.config.max_board_shield, modifiers.initial_shield),
+            energy_reserve=max(0.0, modifiers.initial_energy_reserve),
+            reserve_capacity_bonus=max(0.0, modifiers.reserve_capacity_bonus),
+            generator_output_multiplier=max(1.0, modifiers.generator_output_multiplier),
         )
 
     def _plan_tick(
@@ -196,11 +219,17 @@ class CircuitBattleEngine:
             for position in powered
             if own.modules[position].alive
         )
+        battery_capacity += own.reserve_capacity_bonus
         own.energy_reserve = min(own.energy_reserve, battery_capacity)
         available_energy = sum(
             scaled_value(
                 get_spec(own.modules[position].placement.kind).energy_output,
                 own.modules[position].placement.level,
+            )
+            * (
+                own.generator_output_multiplier
+                if own.modules[position].placement.kind is ModuleKind.GENERATOR
+                else 1.0
             )
             for position in powered
             if own.modules[position].alive
@@ -812,6 +841,11 @@ class CircuitBattleEngine:
             scaled_value(
                 get_spec(board.modules[position].placement.kind).energy_output,
                 board.modules[position].placement.level,
+            )
+            * (
+                board.generator_output_multiplier
+                if board.modules[position].placement.kind is ModuleKind.GENERATOR
+                else 1.0
             )
             for position in powered
             if board.modules[position].alive

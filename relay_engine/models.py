@@ -106,6 +106,17 @@ class BoardLayout:
 
 
 @dataclass(frozen=True, slots=True)
+class BattleModifiers:
+    """Run-local combat modifiers. Never persisted as competitive power."""
+
+    generator_output_multiplier: float = 1.0
+    initial_shield: float = 0.0
+    module_hp_bonus: float = 0.0
+    initial_energy_reserve: float = 0.0
+    reserve_capacity_bonus: float = 0.0
+
+
+@dataclass(frozen=True, slots=True)
 class BattleConfig:
     board_size: int = BOARD_SIZE
     core_hp: float = 120

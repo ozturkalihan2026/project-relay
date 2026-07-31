@@ -9,16 +9,19 @@ import '../state/board_controller.dart';
 import '../theme/relay_theme.dart';
 import '../widgets/circuit_board.dart';
 import '../widgets/module_palette.dart';
+import '../widgets/player_status_bar.dart';
 import 'replay_screen.dart';
 
 enum EditorMode {
   online,
-  training;
+  training,
+  career;
 
   String get title => switch (this) {
         EditorMode.online => 'ÇEVRİMİÇİ SAVAŞ',
         EditorMode.training => 'ANTRENMAN',
-  };
+        EditorMode.career => 'KARİYER DEVRESİ',
+      };
 }
 
 enum _EditorNoticeTone { info, success, warning, error }
@@ -45,14 +48,21 @@ class EditorScreen extends ConsumerStatefulWidget {
 class _EditorScreenState extends ConsumerState<EditorScreen> {
   String _selectedBotId = 'starter_laser';
   bool _busy = false;
+  bool _loadingCareerBoard = false;
   _EditorNotice? _notice;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.mode == EditorMode.career) {
+      _loadingCareerBoard = true;
+      Future<void>.microtask(_loadCareerBoard);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final catalogs = ref.watch(catalogsProvider);
-    final guestSession = widget.mode == EditorMode.online
-        ? ref.watch(guestSessionProvider)
-        : const AsyncValue<GuestSession>.loading();
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.transparent,
@@ -67,7 +77,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
               ),
             ),
             Text(
-              '${widget.mode.title} • v0.5.0',
+              '${widget.mode.title} • v0.6.1',
               style: const TextStyle(
                 color: RelayColors.muted,
                 fontSize: 10,
@@ -77,13 +87,8 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
           ],
         ),
         actions: [
-          if (widget.mode == EditorMode.online) ...[
-            _SessionBadge(
-              session: guestSession,
-              onRetry: () => ref.invalidate(guestSessionProvider),
-            ),
-            const SizedBox(width: 6),
-          ],
+          const Center(child: PlayerStatusBar(compact: true)),
+          const SizedBox(width: 6),
           IconButton(
             tooltip: 'Katalogları yenile',
             onPressed: () => ref.invalidate(catalogsProvider),
@@ -94,7 +99,9 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
       ),
       body: SafeArea(
         child: catalogs.when(
-          data: _buildEditor,
+          data: (bundle) => _loadingCareerBoard
+              ? const _LoadingPanel()
+              : _buildEditor(bundle),
           loading: () => const _LoadingPanel(),
           error: (error, stackTrace) => _ConnectionError(
             error: error,
@@ -105,9 +112,27 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
     );
   }
 
+  Future<void> _loadCareerBoard() async {
+    try {
+      await ref.read(guestSessionProvider.future);
+      final saved = await ref.read(relayApiProvider).fetchCurrentBoard();
+      if (saved != null) {
+        ref.read(boardControllerProvider.notifier).loadSavedBoard(saved);
+      }
+    } on RelayApiException catch (error) {
+      _showError(error.message);
+    } catch (error) {
+      _showError('Kayıtlı kariyer devresi yüklenemedi: $error');
+    } finally {
+      if (mounted) {
+        setState(() => _loadingCareerBoard = false);
+      }
+    }
+  }
+
   Widget _buildEditor(CatalogBundle catalogs) {
     final boardState = ref.watch(boardControllerProvider);
-    final guestSession = widget.mode == EditorMode.online
+    final guestSession = widget.mode != EditorMode.training
         ? ref.watch(guestSessionProvider)
         : const AsyncValue<GuestSession>.loading();
     final controller = ref.read(boardControllerProvider.notifier);
@@ -159,6 +184,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
           },
           onValidate: _validateBoard,
           onStartAsync: _startAsyncMatch,
+          onSaveCareer: _saveCareerBoard,
           onStartBot: _startBotMatch,
         );
         final panels = wide
@@ -279,10 +305,40 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
       await api.saveBoard(state.board);
       final match = await api.createAsyncMatch();
       await _openReplay(api, match);
+      ref.invalidate(progressionProvider);
+      ref.invalidate(statisticsProvider);
     } on RelayApiException catch (error) {
       _showError(error.message);
     } catch (error) {
       _showError('Asenkron savaş başlatılamadı: $error');
+    } finally {
+      if (mounted) {
+        setState(() => _busy = false);
+      }
+    }
+  }
+
+  Future<void> _saveCareerBoard() async {
+    if (_busy) {
+      return;
+    }
+    setState(() => _busy = true);
+    try {
+      final api = ref.read(relayApiProvider);
+      final state = ref.read(boardControllerProvider);
+      final validation = await api.validateBoard(state.board);
+      ref
+          .read(boardControllerProvider.notifier)
+          .applyValidation(validation);
+      await api.saveBoard(state.board);
+      ref.invalidate(careerRunProvider);
+      if (mounted) {
+        Navigator.of(context).pop(true);
+      }
+    } on RelayApiException catch (error) {
+      _showError(error.message);
+    } catch (error) {
+      _showError('Kariyer devresi kaydedilemedi: $error');
     } finally {
       if (mounted) {
         setState(() => _busy = false);
@@ -553,6 +609,7 @@ class _ActionPanel extends StatelessWidget {
     required this.onBotSelected,
     required this.onValidate,
     required this.onStartAsync,
+    required this.onSaveCareer,
     required this.onStartBot,
   });
 
@@ -566,6 +623,7 @@ class _ActionPanel extends StatelessWidget {
   final ValueChanged<String> onBotSelected;
   final VoidCallback onValidate;
   final VoidCallback onStartAsync;
+  final VoidCallback onSaveCareer;
   final VoidCallback onStartBot;
 
   @override
@@ -603,6 +661,21 @@ class _ActionPanel extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           _EditorMenuBackCard(busy: busy),
+        ] else if (mode == EditorMode.career) ...[
+          const _SectionHeader(
+            index: '4',
+            title: 'KARŞI DEVREYİ HAZIRLA',
+            subtitle:
+                'Rakip ön izlemesine göre devrenizi kaydedin ve kariyere dönün.',
+          ),
+          const SizedBox(height: 7),
+          _CareerSaveCard(
+            session: session,
+            busy: busy,
+            onSave: onSaveCareer,
+          ),
+          const SizedBox(height: 8),
+          _EditorMenuBackCard(busy: busy),
         ] else ...[
           const _SectionHeader(
             index: '4',
@@ -619,6 +692,8 @@ class _ActionPanel extends StatelessWidget {
             onBotSelected: onBotSelected,
             onStartBot: onStartBot,
           ),
+          const SizedBox(height: 8),
+          _EditorMenuBackCard(busy: busy),
         ],
       ],
     );
@@ -692,6 +767,50 @@ class _AsyncMatchCard extends StatelessWidget {
                 color: RelayColors.muted,
                 fontSize: 10,
               ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CareerSaveCard extends StatelessWidget {
+  const _CareerSaveCard({
+    required this.session,
+    required this.busy,
+    required this.onSave,
+  });
+
+  final AsyncValue<GuestSession> session;
+  final bool busy;
+  final VoidCallback onSave;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      key: const ValueKey('career-save-card'),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Text(
+              'Bu düzen kaydedildiğinde kariyer ekranındaki tam rakip '
+              'ön izlemesi güncellenir. Savaş yalnız kaydedilen devreyle başlar.',
+              style: TextStyle(color: RelayColors.muted, fontSize: 10),
+            ),
+            const SizedBox(height: 9),
+            FilledButton.icon(
+              key: const ValueKey('career-save-button'),
+              onPressed: busy || !session.hasValue ? null : onSave,
+              icon: busy
+                  ? const SizedBox.square(
+                      dimension: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.save_outlined),
+              label: Text(busy ? 'KAYDEDİLİYOR' : 'KAYDET VE KARİYERE DÖN'),
             ),
           ],
         ),
@@ -1095,76 +1214,6 @@ class _SectionHeader extends StatelessWidget {
         ),
         ?trailing,
       ],
-    );
-  }
-}
-
-class _SessionBadge extends StatelessWidget {
-  const _SessionBadge({
-    required this.session,
-    required this.onRetry,
-  });
-
-  final AsyncValue<GuestSession> session;
-  final VoidCallback onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    final compact = MediaQuery.sizeOf(context).width < 680;
-    return session.when(
-      data: (value) => Tooltip(
-        message: 'Kalıcı misafir: ${value.player.displayName}',
-        child: Container(
-          key: const ValueKey('guest-session-badge'),
-          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
-          decoration: BoxDecoration(
-            color: RelayColors.mint.withValues(alpha: 0.10),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: RelayColors.mint.withValues(alpha: 0.45),
-            ),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(
-                Icons.cloud_done_outlined,
-                color: RelayColors.mint,
-                size: 17,
-              ),
-              if (!compact) ...[
-                const SizedBox(width: 6),
-                ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 125),
-                  child: Text(
-                    value.player.displayName,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: RelayColors.mint,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                ),
-              ],
-            ],
-          ),
-        ),
-      ),
-      loading: () => const SizedBox(
-        key: ValueKey('guest-session-loading'),
-        width: 24,
-        height: 24,
-        child: CircularProgressIndicator(strokeWidth: 2),
-      ),
-      error: (error, stackTrace) => IconButton(
-        tooltip: 'Misafir oturumunu yeniden dene',
-        onPressed: onRetry,
-        icon: const Icon(
-          Icons.cloud_off_outlined,
-          color: RelayColors.coral,
-        ),
-      ),
     );
   }
 }

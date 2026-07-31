@@ -226,6 +226,7 @@ class MatchResponse(ApiModel):
     result: BattleSummaryResponse
     replay: ReplayMetadataResponse
     rating_change: RatingChangeResponse | None = None
+    progression_reward: RewardGrantResponse | None = None
 
 
 class BattleEventResponse(ApiModel):
@@ -359,7 +360,130 @@ class CurrentLeagueResponse(ApiModel):
     leaderboard: list[LeagueStandingResponse]
 
 
+class ProgressionProfileResponse(ApiModel):
+    player_id: str
+    total_xp: int
+    level: int
+    xp_into_level: int
+    xp_for_next_level: int
+    credits: int
+    matches_completed: int
+    wins: int
+    draws: int
+    losses: int
+
+
+class DailyMissionResponse(ApiModel):
+    mission_id: str
+    title: str
+    description: str
+    progress: int
+    target: int
+    completed: bool
+    claimed: bool
+    reward_xp: int
+    reward_credits: int
+
+
+class AchievementResponse(ApiModel):
+    achievement_id: str
+    title: str
+    description: str
+    progress: int
+    target: int
+    unlocked: bool
+    claimed: bool
+    reward_xp: int
+    reward_credits: int
+
+
+class BoosterMasteryResponse(ApiModel):
+    booster_id: str
+    display_name: str
+    description: str
+    unlock_level: int
+    unlocked: bool
+    tier: int
+    effect_value: int
+    effect_label: str
+    next_tier_level: int | None
+
+
+class RewardGrantResponse(ApiModel):
+    source_type: str
+    source_id: str
+    reason: str
+    xp: int
+    credits: int
+    level_before: int
+    level_after: int
+    level_up: bool
+    total_xp_after: int
+    credits_after: int
+    granted_at: str
+
+
+class ProgressionResponse(ApiModel):
+    day_key: str
+    profile: ProgressionProfileResponse
+    daily_missions: list[DailyMissionResponse]
+    achievements: list[AchievementResponse]
+    boosters: list[BoosterMasteryResponse]
+
+
+class ClaimRewardResponse(ApiModel):
+    reward: RewardGrantResponse
+
+
 class ErrorResponse(ApiModel):
     code: str
     message: str
     details: list[dict[str, Any]] | None = None
+
+
+class CareerBoosterChoiceResponse(ApiModel):
+    booster_id: str
+    display_name: str
+    description: str
+    tier: int
+    effect_value: int
+    effect_label: str
+
+
+class CareerOpponentPreviewResponse(ApiModel):
+    stage_number: int
+    total_stages: int
+    title: str
+    briefing: str
+    is_boss: bool
+    opponent_id: str
+    display_name: str
+    description: str
+    board: BoardPayload
+
+
+class CareerRunResponse(ApiModel):
+    run_id: str | None
+    status: str
+    stage_index: int
+    total_stages: int
+    wins: int
+    selected_boosters: list[CareerBoosterChoiceResponse]
+    offered_boosters: list[CareerBoosterChoiceResponse]
+    opponent: CareerOpponentPreviewResponse | None
+    last_match_id: str | None
+    reward: RewardGrantResponse | None
+    board_required: bool
+    can_battle: bool
+    can_choose_booster: bool
+    started_at: str | None
+    ended_at: str | None
+
+
+class CareerBoosterSelectionRequest(ApiModel):
+    booster_id: str = Field(min_length=1, max_length=40)
+
+
+class CareerBattleResponse(ApiModel):
+    match: MatchResponse
+    run: CareerRunResponse

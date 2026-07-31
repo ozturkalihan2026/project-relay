@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "project-relay-server"
-version = "0.5.0"
-description = "Project Relay ranked asynchronous PvP API with weekly league and match history"
+version = "0.6.1"
+description = "Project Relay v0.6.1 asynchronous circuit battle API with career runs and opponent preview"
 requires-python = ">=3.11"
 dependencies = [
     "fastapi>=0.140,<1",

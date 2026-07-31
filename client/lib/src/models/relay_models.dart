@@ -679,11 +679,13 @@ class MatchResponse {
     required this.replayChecksum,
     required this.replayEventCount,
     this.ratingChange,
+    this.progressionReward,
   });
 
   factory MatchResponse.fromJson(Map<String, dynamic> json) {
     final replay = json['replay'] as Map<String, dynamic>;
     final ratingPayload = json['rating_change'];
+    final progressionPayload = json['progression_reward'];
     return MatchResponse(
       id: json['match_id'] as String,
       createdAt: DateTime.parse(json['created_at'] as String),
@@ -703,6 +705,9 @@ class MatchResponse {
       ratingChange: ratingPayload is Map<String, dynamic>
           ? RatingChange.fromJson(ratingPayload)
           : null,
+      progressionReward: progressionPayload is Map<String, dynamic>
+          ? ProgressionReward.fromJson(progressionPayload)
+          : null,
     );
   }
 
@@ -716,6 +721,7 @@ class MatchResponse {
   final String replayChecksum;
   final int replayEventCount;
   final RatingChange? ratingChange;
+  final ProgressionReward? progressionReward;
 }
 
 
@@ -1141,4 +1147,416 @@ class CatalogBundle {
   final String rulesVersion;
   final List<ModuleSpec> modules;
   final List<BotDefinition> bots;
+}
+
+class ProgressionReward {
+  const ProgressionReward({
+    required this.sourceType,
+    required this.sourceId,
+    required this.reason,
+    required this.xp,
+    required this.credits,
+    required this.levelBefore,
+    required this.levelAfter,
+    required this.levelUp,
+    required this.totalXpAfter,
+    required this.creditsAfter,
+    required this.grantedAt,
+  });
+
+  factory ProgressionReward.fromJson(Map<String, dynamic> json) {
+    return ProgressionReward(
+      sourceType: json['source_type'] as String,
+      sourceId: json['source_id'] as String,
+      reason: json['reason'] as String,
+      xp: json['xp'] as int,
+      credits: json['credits'] as int,
+      levelBefore: json['level_before'] as int,
+      levelAfter: json['level_after'] as int,
+      levelUp: json['level_up'] as bool,
+      totalXpAfter: json['total_xp_after'] as int,
+      creditsAfter: json['credits_after'] as int,
+      grantedAt: DateTime.parse(json['granted_at'] as String),
+    );
+  }
+
+  final String sourceType;
+  final String sourceId;
+  final String reason;
+  final int xp;
+  final int credits;
+  final int levelBefore;
+  final int levelAfter;
+  final bool levelUp;
+  final int totalXpAfter;
+  final int creditsAfter;
+  final DateTime grantedAt;
+}
+
+class PlayerProgression {
+  const PlayerProgression({
+    required this.playerId,
+    required this.totalXp,
+    required this.level,
+    required this.xpIntoLevel,
+    required this.xpForNextLevel,
+    required this.credits,
+    required this.matchesCompleted,
+    required this.wins,
+    required this.draws,
+    required this.losses,
+  });
+
+  factory PlayerProgression.fromJson(Map<String, dynamic> json) {
+    return PlayerProgression(
+      playerId: json['player_id'] as String,
+      totalXp: json['total_xp'] as int,
+      level: json['level'] as int,
+      xpIntoLevel: json['xp_into_level'] as int,
+      xpForNextLevel: json['xp_for_next_level'] as int,
+      credits: json['credits'] as int,
+      matchesCompleted: json['matches_completed'] as int,
+      wins: json['wins'] as int,
+      draws: json['draws'] as int,
+      losses: json['losses'] as int,
+    );
+  }
+
+  double get levelProgress => xpForNextLevel == 0
+      ? 1
+      : (xpIntoLevel / xpForNextLevel).clamp(0, 1).toDouble();
+
+  final String playerId;
+  final int totalXp;
+  final int level;
+  final int xpIntoLevel;
+  final int xpForNextLevel;
+  final int credits;
+  final int matchesCompleted;
+  final int wins;
+  final int draws;
+  final int losses;
+}
+
+class DailyMission {
+  const DailyMission({
+    required this.id,
+    required this.title,
+    required this.description,
+    required this.progress,
+    required this.target,
+    required this.completed,
+    required this.claimed,
+    required this.rewardXp,
+    required this.rewardCredits,
+  });
+
+  factory DailyMission.fromJson(Map<String, dynamic> json) {
+    return DailyMission(
+      id: json['mission_id'] as String,
+      title: json['title'] as String,
+      description: json['description'] as String,
+      progress: json['progress'] as int,
+      target: json['target'] as int,
+      completed: json['completed'] as bool,
+      claimed: json['claimed'] as bool,
+      rewardXp: json['reward_xp'] as int,
+      rewardCredits: json['reward_credits'] as int,
+    );
+  }
+
+  double get progressRatio => target == 0
+      ? 1
+      : (progress / target).clamp(0, 1).toDouble();
+
+  final String id;
+  final String title;
+  final String description;
+  final int progress;
+  final int target;
+  final bool completed;
+  final bool claimed;
+  final int rewardXp;
+  final int rewardCredits;
+}
+
+class PlayerAchievement {
+  const PlayerAchievement({
+    required this.id,
+    required this.title,
+    required this.description,
+    required this.progress,
+    required this.target,
+    required this.unlocked,
+    required this.claimed,
+    required this.rewardXp,
+    required this.rewardCredits,
+  });
+
+  factory PlayerAchievement.fromJson(Map<String, dynamic> json) {
+    return PlayerAchievement(
+      id: json['achievement_id'] as String,
+      title: json['title'] as String,
+      description: json['description'] as String,
+      progress: json['progress'] as int,
+      target: json['target'] as int,
+      unlocked: json['unlocked'] as bool,
+      claimed: json['claimed'] as bool,
+      rewardXp: json['reward_xp'] as int,
+      rewardCredits: json['reward_credits'] as int,
+    );
+  }
+
+  double get progressRatio => target == 0
+      ? 1
+      : (progress / target).clamp(0, 1).toDouble();
+
+  final String id;
+  final String title;
+  final String description;
+  final int progress;
+  final int target;
+  final bool unlocked;
+  final bool claimed;
+  final int rewardXp;
+  final int rewardCredits;
+}
+
+class BoosterMastery {
+  const BoosterMastery({
+    required this.id,
+    required this.displayName,
+    required this.description,
+    required this.unlockLevel,
+    required this.unlocked,
+    required this.tier,
+    required this.effectValue,
+    required this.effectLabel,
+    required this.nextTierLevel,
+  });
+
+  factory BoosterMastery.fromJson(Map<String, dynamic> json) {
+    return BoosterMastery(
+      id: json['booster_id'] as String,
+      displayName: json['display_name'] as String,
+      description: json['description'] as String,
+      unlockLevel: json['unlock_level'] as int,
+      unlocked: json['unlocked'] as bool,
+      tier: json['tier'] as int,
+      effectValue: json['effect_value'] as int,
+      effectLabel: json['effect_label'] as String,
+      nextTierLevel: json['next_tier_level'] as int?,
+    );
+  }
+
+  final String id;
+  final String displayName;
+  final String description;
+  final int unlockLevel;
+  final bool unlocked;
+  final int tier;
+  final int effectValue;
+  final String effectLabel;
+  final int? nextTierLevel;
+}
+
+class ProgressionSnapshot {
+  const ProgressionSnapshot({
+    required this.dayKey,
+    required this.profile,
+    required this.dailyMissions,
+    required this.achievements,
+    required this.boosters,
+  });
+
+  factory ProgressionSnapshot.fromJson(Map<String, dynamic> json) {
+    return ProgressionSnapshot(
+      dayKey: json['day_key'] as String,
+      profile: PlayerProgression.fromJson(
+        json['profile'] as Map<String, dynamic>,
+      ),
+      dailyMissions: (json['daily_missions'] as List<dynamic>)
+          .map((item) => DailyMission.fromJson(item as Map<String, dynamic>))
+          .toList(growable: false),
+      achievements: (json['achievements'] as List<dynamic>)
+          .map(
+            (item) => PlayerAchievement.fromJson(
+              item as Map<String, dynamic>,
+            ),
+          )
+          .toList(growable: false),
+      boosters: (json['boosters'] as List<dynamic>)
+          .map((item) => BoosterMastery.fromJson(item as Map<String, dynamic>))
+          .toList(growable: false),
+    );
+  }
+
+  final String dayKey;
+  final PlayerProgression profile;
+  final List<DailyMission> dailyMissions;
+  final List<PlayerAchievement> achievements;
+  final List<BoosterMastery> boosters;
+}
+
+
+class CareerBoosterChoice {
+  const CareerBoosterChoice({
+    required this.id,
+    required this.displayName,
+    required this.description,
+    required this.tier,
+    required this.effectValue,
+    required this.effectLabel,
+  });
+
+  factory CareerBoosterChoice.fromJson(Map<String, dynamic> json) {
+    return CareerBoosterChoice(
+      id: json['booster_id'] as String,
+      displayName: json['display_name'] as String,
+      description: json['description'] as String,
+      tier: json['tier'] as int,
+      effectValue: json['effect_value'] as int,
+      effectLabel: json['effect_label'] as String,
+    );
+  }
+
+  final String id;
+  final String displayName;
+  final String description;
+  final int tier;
+  final int effectValue;
+  final String effectLabel;
+}
+
+class CareerOpponentPreview {
+  const CareerOpponentPreview({
+    required this.stageNumber,
+    required this.totalStages,
+    required this.title,
+    required this.briefing,
+    required this.isBoss,
+    required this.opponentId,
+    required this.displayName,
+    required this.description,
+    required this.board,
+  });
+
+  factory CareerOpponentPreview.fromJson(Map<String, dynamic> json) {
+    return CareerOpponentPreview(
+      stageNumber: json['stage_number'] as int,
+      totalStages: json['total_stages'] as int,
+      title: json['title'] as String,
+      briefing: json['briefing'] as String,
+      isBoss: json['is_boss'] as bool,
+      opponentId: json['opponent_id'] as String,
+      displayName: json['display_name'] as String,
+      description: json['description'] as String,
+      board: BoardDraft.fromJson(json['board'] as Map<String, dynamic>),
+    );
+  }
+
+  final int stageNumber;
+  final int totalStages;
+  final String title;
+  final String briefing;
+  final bool isBoss;
+  final String opponentId;
+  final String displayName;
+  final String description;
+  final BoardDraft board;
+}
+
+class CareerRunSnapshot {
+  const CareerRunSnapshot({
+    required this.runId,
+    required this.status,
+    required this.stageIndex,
+    required this.totalStages,
+    required this.wins,
+    required this.selectedBoosters,
+    required this.offeredBoosters,
+    required this.opponent,
+    required this.lastMatchId,
+    required this.reward,
+    required this.boardRequired,
+    required this.canBattle,
+    required this.canChooseBooster,
+    required this.startedAt,
+    required this.endedAt,
+  });
+
+  factory CareerRunSnapshot.fromJson(Map<String, dynamic> json) {
+    final opponentPayload = json['opponent'];
+    final rewardPayload = json['reward'];
+    return CareerRunSnapshot(
+      runId: json['run_id'] as String?,
+      status: json['status'] as String,
+      stageIndex: json['stage_index'] as int,
+      totalStages: json['total_stages'] as int,
+      wins: json['wins'] as int,
+      selectedBoosters: (json['selected_boosters'] as List<dynamic>)
+          .map(
+            (item) => CareerBoosterChoice.fromJson(
+              item as Map<String, dynamic>,
+            ),
+          )
+          .toList(growable: false),
+      offeredBoosters: (json['offered_boosters'] as List<dynamic>)
+          .map(
+            (item) => CareerBoosterChoice.fromJson(
+              item as Map<String, dynamic>,
+            ),
+          )
+          .toList(growable: false),
+      opponent: opponentPayload is Map<String, dynamic>
+          ? CareerOpponentPreview.fromJson(opponentPayload)
+          : null,
+      lastMatchId: json['last_match_id'] as String?,
+      reward: rewardPayload is Map<String, dynamic>
+          ? ProgressionReward.fromJson(rewardPayload)
+          : null,
+      boardRequired: json['board_required'] as bool,
+      canBattle: json['can_battle'] as bool,
+      canChooseBooster: json['can_choose_booster'] as bool,
+      startedAt: json['started_at'] == null
+          ? null
+          : DateTime.parse(json['started_at'] as String),
+      endedAt: json['ended_at'] == null
+          ? null
+          : DateTime.parse(json['ended_at'] as String),
+    );
+  }
+
+  final String? runId;
+  final String status;
+  final int stageIndex;
+  final int totalStages;
+  final int wins;
+  final List<CareerBoosterChoice> selectedBoosters;
+  final List<CareerBoosterChoice> offeredBoosters;
+  final CareerOpponentPreview? opponent;
+  final String? lastMatchId;
+  final ProgressionReward? reward;
+  final bool boardRequired;
+  final bool canBattle;
+  final bool canChooseBooster;
+  final DateTime? startedAt;
+  final DateTime? endedAt;
+
+  bool get isTerminal =>
+      status == 'completed' || status == 'failed' || status == 'abandoned';
+}
+
+class CareerBattleResponse {
+  const CareerBattleResponse({required this.match, required this.run});
+
+  factory CareerBattleResponse.fromJson(Map<String, dynamic> json) {
+    return CareerBattleResponse(
+      match: MatchResponse.fromJson(json['match'] as Map<String, dynamic>),
+      run: CareerRunSnapshot.fromJson(json['run'] as Map<String, dynamic>),
+    );
+  }
+
+  final MatchResponse match;
+  final CareerRunSnapshot run;
 }

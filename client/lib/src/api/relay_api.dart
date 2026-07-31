@@ -38,9 +38,21 @@ final catalogsProvider = FutureProvider<CatalogBundle>((ref) {
   return ref.watch(relayApiProvider).fetchCatalogs();
 });
 
-final careerProvider = FutureProvider<CareerSnapshot>((ref) async {
+final statisticsProvider = FutureProvider<CareerSnapshot>((ref) async {
   await ref.watch(guestSessionProvider.future);
-  return ref.watch(relayApiProvider).fetchCareer();
+  return ref.watch(relayApiProvider).fetchStatistics();
+});
+
+final careerProvider = statisticsProvider;
+
+final progressionProvider = FutureProvider<ProgressionSnapshot>((ref) async {
+  await ref.watch(guestSessionProvider.future);
+  return ref.watch(relayApiProvider).fetchProgression();
+});
+
+final careerRunProvider = FutureProvider<CareerRunSnapshot>((ref) async {
+  await ref.watch(guestSessionProvider.future);
+  return ref.watch(relayApiProvider).fetchCareerRun();
 });
 
 class RelayApi {
@@ -112,6 +124,17 @@ class RelayApi {
     );
   }
 
+  Future<SavedBoard?> fetchCurrentBoard() async {
+    final payload = await _get(
+      '/api/v1/me',
+      authorized: true,
+    );
+    final boardPayload = payload['board'];
+    return boardPayload is Map<String, dynamic>
+        ? SavedBoard.fromJson(boardPayload)
+        : null;
+  }
+
   Future<BoardValidation> validateBoard(BoardDraft board) async {
     final payload = await _post(
       '/api/v1/boards/validate',
@@ -157,16 +180,100 @@ class RelayApi {
     return MatchResponse.fromJson(payload);
   }
 
-  Future<CareerSnapshot> fetchCareer({
+  Future<CareerSnapshot> fetchStatistics({
     int historyLimit = 10,
     int leaderboardLimit = 20,
   }) async {
     final payload = await _get(
-      '/api/v1/me/career?history_limit=$historyLimit'
+      '/api/v1/me/statistics?history_limit=$historyLimit'
       '&leaderboard_limit=$leaderboardLimit',
       authorized: true,
     );
     return CareerSnapshot.fromJson(payload);
+  }
+
+  Future<CareerSnapshot> fetchCareer({
+    int historyLimit = 10,
+    int leaderboardLimit = 20,
+  }) {
+    return fetchStatistics(
+      historyLimit: historyLimit,
+      leaderboardLimit: leaderboardLimit,
+    );
+  }
+
+  Future<ProgressionSnapshot> fetchProgression() async {
+    final payload = await _get(
+      '/api/v1/me/progression',
+      authorized: true,
+    );
+    return ProgressionSnapshot.fromJson(payload);
+  }
+
+  Future<CareerRunSnapshot> fetchCareerRun() async {
+    final payload = await _get(
+      '/api/v1/me/career-run',
+      authorized: true,
+    );
+    return CareerRunSnapshot.fromJson(payload);
+  }
+
+  Future<CareerRunSnapshot> startCareerRun() async {
+    final payload = await _post(
+      '/api/v1/me/career-run/start',
+      const {},
+      authorized: true,
+    );
+    return CareerRunSnapshot.fromJson(payload);
+  }
+
+  Future<CareerRunSnapshot> chooseCareerBooster(String boosterId) async {
+    final payload = await _post(
+      '/api/v1/me/career-run/booster',
+      {'booster_id': boosterId},
+      authorized: true,
+    );
+    return CareerRunSnapshot.fromJson(payload);
+  }
+
+  Future<CareerBattleResponse> battleCareerRun() async {
+    final payload = await _post(
+      '/api/v1/me/career-run/battle',
+      const {},
+      authorized: true,
+    );
+    return CareerBattleResponse.fromJson(payload);
+  }
+
+  Future<CareerRunSnapshot> abandonCareerRun() async {
+    final payload = await _post(
+      '/api/v1/me/career-run/abandon',
+      const {},
+      authorized: true,
+    );
+    return CareerRunSnapshot.fromJson(payload);
+  }
+
+  Future<ProgressionReward> claimDailyMission(String missionId) async {
+    final payload = await _post(
+      '/api/v1/me/daily-missions/$missionId/claim',
+      const {},
+      authorized: true,
+    );
+    return ProgressionReward.fromJson(
+      payload['reward'] as Map<String, dynamic>,
+    );
+  }
+
+  Future<ProgressionReward> claimAchievement(String achievementId) async {
+    final payload = await _post(
+      '/api/v1/me/achievements/$achievementId/claim',
+      const {},
+      authorized: true,
+    );
+    return ProgressionReward.fromJson(
+      payload['reward'] as Map<String, dynamic>,
+    );
   }
 
   Future<MatchHistoryPage> fetchMatchHistory({

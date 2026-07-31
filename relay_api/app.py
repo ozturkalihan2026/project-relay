@@ -30,16 +30,31 @@ from .competitive import (
     MatchHistoryPage,
     MatchRatingChange,
 )
+from .career import (
+    CareerRunError,
+    CareerRunService,
+    CareerRunSnapshot,
+)
 from .config import Settings
 from .database import Database
 from .db_models import PlayerRecord
 from .online import OnlinePlayError, OnlinePlayService, SavedBoard
+from .progression import (
+    ProgressionError,
+    ProgressionService,
+    ProgressionSnapshot,
+    RewardGrant,
+)
 from .schemas import (
     BoardPayload,
     BoardValidationResponse,
     BotListResponse,
     BotResponse,
+    CareerBattleResponse,
+    CareerBoosterSelectionRequest,
     CareerResponse,
+    CareerRunResponse,
+    ClaimRewardResponse,
     CreateBotMatchRequest,
     CurrentLeagueResponse,
     CurrentPlayerResponse,
@@ -48,6 +63,7 @@ from .schemas import (
     HealthResponse,
     MatchHistoryResponse,
     MatchResponse,
+    ProgressionResponse,
     ModuleCatalogResponse,
     ModuleSpecResponse,
     RefreshSessionRequest,
@@ -144,6 +160,7 @@ def _match_payload(
     match: StoredMatch,
     *,
     rating_change: MatchRatingChange | None = None,
+    progression_reward: RewardGrant | None = None,
     viewer_player_id: str | None = None,
     opponent_override: dict[str, str] | None = None,
 ) -> dict[str, Any]:
@@ -192,6 +209,88 @@ def _match_payload(
             "path": f"/api/v1/matches/{match.match_id}/replay",
         },
         "rating_change": rating_payload,
+        "progression_reward": (
+            _reward_payload(progression_reward)
+            if progression_reward is not None
+            else None
+        ),
+    }
+
+
+def _reward_payload(reward: RewardGrant) -> dict[str, Any]:
+    return {
+        "source_type": reward.source_type,
+        "source_id": reward.source_id,
+        "reason": reward.reason,
+        "xp": reward.xp,
+        "credits": reward.credits,
+        "level_before": reward.level_before,
+        "level_after": reward.level_after,
+        "level_up": reward.level_up,
+        "total_xp_after": reward.total_xp_after,
+        "credits_after": reward.credits_after,
+        "granted_at": reward.granted_at.isoformat(),
+    }
+
+
+def _progression_payload(snapshot: ProgressionSnapshot) -> dict[str, Any]:
+    profile = snapshot.profile
+    return {
+        "day_key": snapshot.day_key,
+        "profile": {
+            "player_id": profile.player_id,
+            "total_xp": profile.total_xp,
+            "level": profile.level,
+            "xp_into_level": profile.xp_into_level,
+            "xp_for_next_level": profile.xp_for_next_level,
+            "credits": profile.credits,
+            "matches_completed": profile.matches_completed,
+            "wins": profile.wins,
+            "draws": profile.draws,
+            "losses": profile.losses,
+        },
+        "daily_missions": [
+            {
+                "mission_id": item.mission_id,
+                "title": item.title,
+                "description": item.description,
+                "progress": item.progress,
+                "target": item.target,
+                "completed": item.completed,
+                "claimed": item.claimed,
+                "reward_xp": item.reward_xp,
+                "reward_credits": item.reward_credits,
+            }
+            for item in snapshot.daily_missions
+        ],
+        "achievements": [
+            {
+                "achievement_id": item.achievement_id,
+                "title": item.title,
+                "description": item.description,
+                "progress": item.progress,
+                "target": item.target,
+                "unlocked": item.unlocked,
+                "claimed": item.claimed,
+                "reward_xp": item.reward_xp,
+                "reward_credits": item.reward_credits,
+            }
+            for item in snapshot.achievements
+        ],
+        "boosters": [
+            {
+                "booster_id": item.booster_id,
+                "display_name": item.display_name,
+                "description": item.description,
+                "unlock_level": item.unlock_level,
+                "unlocked": item.unlocked,
+                "tier": item.tier,
+                "effect_value": item.effect_value,
+                "effect_label": item.effect_label,
+                "next_tier_level": item.next_tier_level,
+            }
+            for item in snapshot.boosters
+        ],
     }
 
 
@@ -268,6 +367,66 @@ def _career_payload(snapshot: CareerSnapshot) -> dict[str, Any]:
     }
 
 
+def _career_run_payload(snapshot: CareerRunSnapshot) -> dict[str, Any]:
+    def booster_payload(item):
+        return {
+            "booster_id": item.booster_id,
+            "display_name": item.display_name,
+            "description": item.description,
+            "tier": item.tier,
+            "effect_value": item.effect_value,
+            "effect_label": item.effect_label,
+        }
+
+    opponent = None
+    if snapshot.opponent is not None:
+        item = snapshot.opponent
+        opponent = {
+            "stage_number": item.stage_number,
+            "total_stages": item.total_stages,
+            "title": item.title,
+            "briefing": item.briefing,
+            "is_boss": item.is_boss,
+            "opponent_id": item.opponent_id,
+            "display_name": item.display_name,
+            "description": item.description,
+            "board": item.board.to_dict(),
+        }
+    return {
+        "run_id": snapshot.run_id,
+        "status": snapshot.status,
+        "stage_index": snapshot.stage_index,
+        "total_stages": snapshot.total_stages,
+        "wins": snapshot.wins,
+        "selected_boosters": [
+            booster_payload(item) for item in snapshot.selected_boosters
+        ],
+        "offered_boosters": [
+            booster_payload(item) for item in snapshot.offered_boosters
+        ],
+        "opponent": opponent,
+        "last_match_id": snapshot.last_match_id,
+        "reward": (
+            _reward_payload(snapshot.reward)
+            if snapshot.reward is not None
+            else None
+        ),
+        "board_required": snapshot.board_required,
+        "can_battle": snapshot.can_battle,
+        "can_choose_booster": snapshot.can_choose_booster,
+        "started_at": (
+            snapshot.started_at.isoformat()
+            if snapshot.started_at is not None
+            else None
+        ),
+        "ended_at": (
+            snapshot.ended_at.isoformat()
+            if snapshot.ended_at is not None
+            else None
+        ),
+    }
+
+
 def _history_payload(page: MatchHistoryPage) -> dict[str, Any]:
     return {
         "items": [_history_item_payload(item) for item in page.items],
@@ -321,6 +480,8 @@ def create_app(
     auth_service: AuthService | None = None,
     online_service: OnlinePlayService | None = None,
     competitive_service: CompetitiveService | None = None,
+    progression_service: ProgressionService | None = None,
+    career_service: CareerRunService | None = None,
 ) -> FastAPI:
     resolved_settings = settings or Settings.from_environment()
     resolved_database = database or Database(
@@ -341,15 +502,24 @@ def create_app(
     resolved_competitive = competitive_service or CompetitiveService(
         resolved_database
     )
+    resolved_progression = progression_service or ProgressionService(
+        resolved_database
+    )
+    resolved_career = career_service or CareerRunService(
+        resolved_database,
+        match_service,
+        resolved_online,
+        resolved_progression,
+    )
     bearer = HTTPBearer(auto_error=False)
 
     application = FastAPI(
         title="Project Relay API",
         version=API_VERSION,
         description=(
-            "Project Relay v0.5.0 dereceli asenkron rekabet API'si. "
-            "ELO benzeri derece, haftalık lig ve maç geçmişi sunucuda "
-            "hesaplanır; savaş sonuçları deterministik ve sunucu yetkilidir."
+            "Project Relay v0.6.1 kariyer ve rekabet API'si. "
+            "Beş savaşlık kariyer koşusu, tam rakip ön izlemesi, geçici "
+            "güçlendiriciler ve bütün ödüller sunucuda hesaplanır."
         ),
     )
     application.add_middleware(
@@ -364,6 +534,8 @@ def create_app(
     application.state.auth_service = resolved_auth
     application.state.online_service = resolved_online
     application.state.competitive_service = resolved_competitive
+    application.state.progression_service = resolved_progression
+    application.state.career_service = resolved_career
 
     def current_player(
         credentials: HTTPAuthorizationCredentials | None = Depends(bearer),
@@ -474,6 +646,30 @@ def create_app(
     async def online_error_handler(
         _request: Request,
         exc: OnlinePlayError,
+    ) -> JSONResponse:
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={
+                "code": exc.code,
+                "message": exc.message,
+                "details": None,
+            },
+        )
+
+    @application.exception_handler(ProgressionError)
+    async def progression_error_handler(
+        _request: Request,
+        exc: ProgressionError,
+    ) -> JSONResponse:
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={"code": exc.code, "message": exc.message},
+        )
+
+    @application.exception_handler(CareerRunError)
+    async def career_error_handler(
+        _request: Request,
+        exc: CareerRunError,
     ) -> JSONResponse:
         return JSONResponse(
             status_code=exc.status_code,
@@ -608,6 +804,140 @@ def create_app(
                 leaderboard_limit=leaderboard_limit,
             )
         )
+
+    @application.get(
+        "/api/v1/me/statistics",
+        response_model=CareerResponse,
+        responses={401: {"model": ErrorResponse}},
+        tags=["competitive"],
+    )
+    def get_statistics(
+        history_limit: int = Query(default=10, ge=1, le=50),
+        leaderboard_limit: int = Query(default=20, ge=1, le=100),
+        player: PlayerView = Depends(current_player),
+    ) -> dict[str, Any]:
+        return _career_payload(
+            resolved_competitive.career(
+                player.player_id,
+                history_limit=history_limit,
+                leaderboard_limit=leaderboard_limit,
+            )
+        )
+
+    @application.get(
+        "/api/v1/me/progression",
+        response_model=ProgressionResponse,
+        responses={401: {"model": ErrorResponse}},
+        tags=["progression"],
+    )
+    def get_progression(
+        player: PlayerView = Depends(current_player),
+    ) -> dict[str, Any]:
+        return _progression_payload(
+            resolved_progression.snapshot(player.player_id)
+        )
+
+    @application.post(
+        "/api/v1/me/daily-missions/{mission_id}/claim",
+        response_model=ClaimRewardResponse,
+        responses={401: {"model": ErrorResponse}, 409: {"model": ErrorResponse}},
+        tags=["progression"],
+    )
+    def claim_daily_mission(
+        mission_id: str,
+        player: PlayerView = Depends(current_player),
+    ) -> dict[str, Any]:
+        return {
+            "reward": _reward_payload(
+                resolved_progression.claim_daily_mission(
+                    player.player_id, mission_id
+                )
+            )
+        }
+
+    @application.post(
+        "/api/v1/me/achievements/{achievement_id}/claim",
+        response_model=ClaimRewardResponse,
+        responses={401: {"model": ErrorResponse}, 409: {"model": ErrorResponse}},
+        tags=["progression"],
+    )
+    def claim_achievement(
+        achievement_id: str,
+        player: PlayerView = Depends(current_player),
+    ) -> dict[str, Any]:
+        return {
+            "reward": _reward_payload(
+                resolved_progression.claim_achievement(
+                    player.player_id, achievement_id
+                )
+            )
+        }
+
+    @application.get(
+        "/api/v1/me/career-run",
+        response_model=CareerRunResponse,
+        responses={401: {"model": ErrorResponse}},
+        tags=["career"],
+    )
+    def get_career_run(
+        player: PlayerView = Depends(current_player),
+    ) -> dict[str, Any]:
+        return _career_run_payload(resolved_career.current(player.player_id))
+
+    @application.post(
+        "/api/v1/me/career-run/start",
+        response_model=CareerRunResponse,
+        responses={401: {"model": ErrorResponse}, 409: {"model": ErrorResponse}},
+        tags=["career"],
+    )
+    def start_career_run(
+        player: PlayerView = Depends(current_player),
+    ) -> dict[str, Any]:
+        return _career_run_payload(resolved_career.start(player.player_id))
+
+    @application.post(
+        "/api/v1/me/career-run/booster",
+        response_model=CareerRunResponse,
+        responses={401: {"model": ErrorResponse}, 409: {"model": ErrorResponse}},
+        tags=["career"],
+    )
+    def choose_career_booster(
+        request: CareerBoosterSelectionRequest,
+        player: PlayerView = Depends(current_player),
+    ) -> dict[str, Any]:
+        return _career_run_payload(
+            resolved_career.select_booster(
+                player.player_id, request.booster_id
+            )
+        )
+
+    @application.post(
+        "/api/v1/me/career-run/battle",
+        response_model=CareerBattleResponse,
+        responses={401: {"model": ErrorResponse}, 409: {"model": ErrorResponse}},
+        tags=["career"],
+    )
+    def battle_career_run(
+        player: PlayerView = Depends(current_player),
+    ) -> dict[str, Any]:
+        outcome = resolved_career.battle(player.player_id)
+        return {
+            "match": _match_payload(
+                outcome.match, viewer_player_id=player.player_id
+            ),
+            "run": _career_run_payload(outcome.run),
+        }
+
+    @application.post(
+        "/api/v1/me/career-run/abandon",
+        response_model=CareerRunResponse,
+        responses={401: {"model": ErrorResponse}, 404: {"model": ErrorResponse}},
+        tags=["career"],
+    )
+    def abandon_career_run(
+        player: PlayerView = Depends(current_player),
+    ) -> dict[str, Any]:
+        return _career_run_payload(resolved_career.abandon(player.player_id))
 
     @application.get(
         "/api/v1/me/matches",
@@ -754,9 +1084,11 @@ def create_app(
     ) -> dict[str, Any]:
         match = resolved_online.create_async_match(player.player_id)
         rating_change = resolved_competitive.apply_match(match)
+        progression_reward = resolved_progression.apply_match(match)
         return _match_payload(
             match,
             rating_change=rating_change,
+            progression_reward=progression_reward,
             viewer_player_id=player.player_id,
         )
 
@@ -778,6 +1110,11 @@ def create_app(
         return _match_payload(
             match,
             rating_change=resolved_competitive.get_match_rating(match_id),
+            progression_reward=(
+                resolved_progression.match_reward(match_id, viewer_player_id)
+                if viewer_player_id is not None
+                else None
+            ),
             viewer_player_id=viewer_player_id,
             opponent_override=opponent_for_viewer(
                 match,

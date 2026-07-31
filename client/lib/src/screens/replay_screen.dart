@@ -208,6 +208,20 @@ class _ReplayScreenState extends ConsumerState<ReplayScreen> {
                 ),
               ),
             ),
+            if (widget.match.progressionReward != null) ...[
+              const SizedBox(height: 12),
+              ValueListenableBuilder<ReplaySnapshot>(
+                valueListenable: _snapshot,
+                builder: (context, snapshot, child) {
+                  if (!snapshot.complete) {
+                    return const SizedBox.shrink();
+                  }
+                  return _ProgressionRewardCard(
+                    reward: widget.match.progressionReward!,
+                  );
+                },
+              ),
+            ],
             if (!useInlineEventFeed) ...[
               const SizedBox(height: 16),
               ValueListenableBuilder<ReplaySnapshot>(
@@ -282,3 +296,66 @@ class _ReplayScreenState extends ConsumerState<ReplayScreen> {
     Navigator.of(context).pop();
   }
 }
+
+class _ProgressionRewardCard extends StatelessWidget {
+  const _ProgressionRewardCard({required this.reward});
+
+  final ProgressionReward reward;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 540),
+        child: Card(
+          key: const ValueKey('match-progression-reward'),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.auto_awesome,
+                  color: RelayColors.amber,
+                  size: 30,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        reward.levelUp
+                            ? 'SEVİYE ${reward.levelAfter} AÇILDI!'
+                            : 'SAVAŞ ÖDÜLÜ',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 0.8,
+                        ),
+                      ),
+                      Text(
+                        '+${reward.xp} XP • '
+                        '+${reward.credits} Devre Kredisi',
+                        style: const TextStyle(
+                          color: RelayColors.cyan,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Text(
+                  'SV ${reward.levelAfter}',
+                  style: const TextStyle(
+                    color: RelayColors.amber,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
