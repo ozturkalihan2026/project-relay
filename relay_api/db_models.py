@@ -11,6 +11,7 @@ from sqlalchemy import (
     Index,
     Integer,
     JSON,
+    PrimaryKeyConstraint,
     String,
     UniqueConstraint,
 )
@@ -157,5 +158,129 @@ class MatchRecord(Base):
             "ix_matches_opponent_created",
             "opponent_player_id",
             "created_at",
+        ),
+    )
+
+
+class PlayerRatingRecord(Base):
+    __tablename__ = "player_ratings"
+
+    player_id: Mapped[str] = mapped_column(
+        ForeignKey("players.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    rating: Mapped[int] = mapped_column(Integer, nullable=False, default=1000)
+    peak_rating: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        default=1000,
+    )
+    rated_matches: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        default=0,
+    )
+    wins: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    draws: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    losses: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+    )
+
+
+class LeagueEntryRecord(Base):
+    __tablename__ = "league_entries"
+
+    week_key: Mapped[str] = mapped_column(String(8), nullable=False)
+    player_id: Mapped[str] = mapped_column(
+        ForeignKey("players.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    rating_at_start: Mapped[int] = mapped_column(Integer, nullable=False)
+    rating_current: Mapped[int] = mapped_column(Integer, nullable=False)
+    points: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    wins: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    draws: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    losses: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+    )
+
+    __table_args__ = (
+        PrimaryKeyConstraint(
+            "week_key",
+            "player_id",
+            name="pk_league_entries",
+        ),
+        Index(
+            "ix_league_entries_leaderboard",
+            "week_key",
+            "points",
+            "wins",
+            "rating_current",
+        ),
+    )
+
+
+class MatchRatingRecord(Base):
+    __tablename__ = "match_rating_changes"
+
+    match_id: Mapped[str] = mapped_column(
+        ForeignKey("matches.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    week_key: Mapped[str] = mapped_column(String(8), nullable=False)
+    requester_player_id: Mapped[str] = mapped_column(
+        ForeignKey("players.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    opponent_player_id: Mapped[str] = mapped_column(
+        ForeignKey("players.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    outcome: Mapped[str] = mapped_column(String(8), nullable=False)
+    requester_rating_before: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+    )
+    requester_rating_after: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+    )
+    requester_delta: Mapped[int] = mapped_column(Integer, nullable=False)
+    opponent_rating_before: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+    )
+    opponent_rating_after: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+    )
+    opponent_delta: Mapped[int] = mapped_column(Integer, nullable=False)
+    applied_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+    )
+
+    __table_args__ = (
+        Index(
+            "ix_match_rating_requester_week",
+            "requester_player_id",
+            "week_key",
+        ),
+        Index(
+            "ix_match_rating_opponent_week",
+            "opponent_player_id",
+            "week_key",
         ),
     )

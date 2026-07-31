@@ -208,6 +208,14 @@ class MatchOpponentResponse(ApiModel):
     description: str
 
 
+class RatingChangeResponse(ApiModel):
+    outcome: str
+    rating_before: int
+    rating_after: int
+    rating_delta: int
+    week_key: str
+
+
 class MatchResponse(ApiModel):
     match_id: str
     created_at: str
@@ -217,6 +225,7 @@ class MatchResponse(ApiModel):
     opponent_board: BoardPayload
     result: BattleSummaryResponse
     replay: ReplayMetadataResponse
+    rating_change: RatingChangeResponse | None = None
 
 
 class BattleEventResponse(ApiModel):
@@ -273,6 +282,81 @@ class VerifyReplayResponse(ApiModel):
     valid: bool
     supplied_checksum: str
     actual_checksum: str
+
+
+class RatingProfileResponse(ApiModel):
+    player_id: str
+    rating: int
+    peak_rating: int
+    rated_matches: int
+    wins: int
+    draws: int
+    losses: int
+    win_rate: float
+
+
+class LeagueEntryResponse(ApiModel):
+    week_key: str
+    starts_at: str
+    ends_at: str
+    points: int
+    wins: int
+    draws: int
+    losses: int
+    position: int
+    participant_count: int
+
+
+class LeagueStandingResponse(ApiModel):
+    position: int
+    player_id: str
+    display_name: str
+    points: int
+    wins: int
+    draws: int
+    losses: int
+    rating: int
+    is_current_player: bool
+
+
+class MatchHistoryItemResponse(ApiModel):
+    match_id: str
+    created_at: str
+    opponent_kind: str
+    opponent_name: str
+    outcome: str
+    rated: bool
+    rating_delta: int
+    rating_after: int | None
+    reason: str
+    replay_path: str
+
+
+class MatchmakingMetricsResponse(ApiModel):
+    searches: int
+    human_opponents: int
+    bot_fallbacks: int
+    human_opponent_rate: float
+
+
+class CareerResponse(ApiModel):
+    profile: RatingProfileResponse
+    league: LeagueEntryResponse
+    leaderboard: list[LeagueStandingResponse]
+    recent_matches: list[MatchHistoryItemResponse]
+    matchmaking: MatchmakingMetricsResponse
+
+
+class MatchHistoryResponse(ApiModel):
+    items: list[MatchHistoryItemResponse]
+    total: int
+    limit: int
+    offset: int
+
+
+class CurrentLeagueResponse(ApiModel):
+    league: LeagueEntryResponse
+    leaderboard: list[LeagueStandingResponse]
 
 
 class ErrorResponse(ApiModel):

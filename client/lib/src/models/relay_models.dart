@@ -641,9 +641,36 @@ class MatchOpponent {
   bool get isPlayer => kind == 'player';
 }
 
+class RatingChange {
+  const RatingChange({
+    required this.outcome,
+    required this.ratingBefore,
+    required this.ratingAfter,
+    required this.ratingDelta,
+    required this.weekKey,
+  });
+
+  factory RatingChange.fromJson(Map<String, dynamic> json) {
+    return RatingChange(
+      outcome: json['outcome'] as String,
+      ratingBefore: json['rating_before'] as int,
+      ratingAfter: json['rating_after'] as int,
+      ratingDelta: json['rating_delta'] as int,
+      weekKey: json['week_key'] as String,
+    );
+  }
+
+  final String outcome;
+  final int ratingBefore;
+  final int ratingAfter;
+  final int ratingDelta;
+  final String weekKey;
+}
+
 class MatchResponse {
   const MatchResponse({
     required this.id,
+    required this.createdAt,
     required this.source,
     required this.opponent,
     required this.playerBoard,
@@ -651,12 +678,15 @@ class MatchResponse {
     required this.result,
     required this.replayChecksum,
     required this.replayEventCount,
+    this.ratingChange,
   });
 
   factory MatchResponse.fromJson(Map<String, dynamic> json) {
     final replay = json['replay'] as Map<String, dynamic>;
+    final ratingPayload = json['rating_change'];
     return MatchResponse(
       id: json['match_id'] as String,
+      createdAt: DateTime.parse(json['created_at'] as String),
       source: json['source'] as String? ?? 'bot',
       opponent: MatchOpponent.fromJson(
         json['opponent'] as Map<String, dynamic>,
@@ -670,10 +700,14 @@ class MatchResponse {
       result: MatchResult.fromJson(json['result'] as Map<String, dynamic>),
       replayChecksum: replay['checksum'] as String,
       replayEventCount: replay['event_count'] as int,
+      ratingChange: ratingPayload is Map<String, dynamic>
+          ? RatingChange.fromJson(ratingPayload)
+          : null,
     );
   }
 
   final String id;
+  final DateTime createdAt;
   final String source;
   final MatchOpponent opponent;
   final BoardDraft playerBoard;
@@ -681,7 +715,9 @@ class MatchResponse {
   final MatchResult result;
   final String replayChecksum;
   final int replayEventCount;
+  final RatingChange? ratingChange;
 }
+
 
 class BattleEvent {
   const BattleEvent({
@@ -857,6 +893,242 @@ class ReplayResponse {
     }
     return nearest;
   }
+}
+
+class RatingProfile {
+  const RatingProfile({
+    required this.playerId,
+    required this.rating,
+    required this.peakRating,
+    required this.ratedMatches,
+    required this.wins,
+    required this.draws,
+    required this.losses,
+    required this.winRate,
+  });
+
+  factory RatingProfile.fromJson(Map<String, dynamic> json) {
+    return RatingProfile(
+      playerId: json['player_id'] as String,
+      rating: json['rating'] as int,
+      peakRating: json['peak_rating'] as int,
+      ratedMatches: json['rated_matches'] as int,
+      wins: json['wins'] as int,
+      draws: json['draws'] as int,
+      losses: json['losses'] as int,
+      winRate: (json['win_rate'] as num).toDouble(),
+    );
+  }
+
+  final String playerId;
+  final int rating;
+  final int peakRating;
+  final int ratedMatches;
+  final int wins;
+  final int draws;
+  final int losses;
+  final double winRate;
+}
+
+class LeagueEntry {
+  const LeagueEntry({
+    required this.weekKey,
+    required this.startsAt,
+    required this.endsAt,
+    required this.points,
+    required this.wins,
+    required this.draws,
+    required this.losses,
+    required this.position,
+    required this.participantCount,
+  });
+
+  factory LeagueEntry.fromJson(Map<String, dynamic> json) {
+    return LeagueEntry(
+      weekKey: json['week_key'] as String,
+      startsAt: DateTime.parse(json['starts_at'] as String),
+      endsAt: DateTime.parse(json['ends_at'] as String),
+      points: json['points'] as int,
+      wins: json['wins'] as int,
+      draws: json['draws'] as int,
+      losses: json['losses'] as int,
+      position: json['position'] as int,
+      participantCount: json['participant_count'] as int,
+    );
+  }
+
+  final String weekKey;
+  final DateTime startsAt;
+  final DateTime endsAt;
+  final int points;
+  final int wins;
+  final int draws;
+  final int losses;
+  final int position;
+  final int participantCount;
+}
+
+class LeagueStanding {
+  const LeagueStanding({
+    required this.position,
+    required this.playerId,
+    required this.displayName,
+    required this.points,
+    required this.wins,
+    required this.draws,
+    required this.losses,
+    required this.rating,
+    required this.isCurrentPlayer,
+  });
+
+  factory LeagueStanding.fromJson(Map<String, dynamic> json) {
+    return LeagueStanding(
+      position: json['position'] as int,
+      playerId: json['player_id'] as String,
+      displayName: json['display_name'] as String,
+      points: json['points'] as int,
+      wins: json['wins'] as int,
+      draws: json['draws'] as int,
+      losses: json['losses'] as int,
+      rating: json['rating'] as int,
+      isCurrentPlayer: json['is_current_player'] as bool,
+    );
+  }
+
+  final int position;
+  final String playerId;
+  final String displayName;
+  final int points;
+  final int wins;
+  final int draws;
+  final int losses;
+  final int rating;
+  final bool isCurrentPlayer;
+}
+
+class MatchHistoryItem {
+  const MatchHistoryItem({
+    required this.matchId,
+    required this.createdAt,
+    required this.opponentKind,
+    required this.opponentName,
+    required this.outcome,
+    required this.rated,
+    required this.ratingDelta,
+    required this.ratingAfter,
+    required this.reason,
+    required this.replayPath,
+  });
+
+  factory MatchHistoryItem.fromJson(Map<String, dynamic> json) {
+    return MatchHistoryItem(
+      matchId: json['match_id'] as String,
+      createdAt: DateTime.parse(json['created_at'] as String),
+      opponentKind: json['opponent_kind'] as String,
+      opponentName: json['opponent_name'] as String,
+      outcome: json['outcome'] as String,
+      rated: json['rated'] as bool,
+      ratingDelta: json['rating_delta'] as int,
+      ratingAfter: json['rating_after'] as int?,
+      reason: json['reason'] as String,
+      replayPath: json['replay_path'] as String,
+    );
+  }
+
+  final String matchId;
+  final DateTime createdAt;
+  final String opponentKind;
+  final String opponentName;
+  final String outcome;
+  final bool rated;
+  final int ratingDelta;
+  final int? ratingAfter;
+  final String reason;
+  final String replayPath;
+}
+
+class MatchmakingMetrics {
+  const MatchmakingMetrics({
+    required this.searches,
+    required this.humanOpponents,
+    required this.botFallbacks,
+    required this.humanOpponentRate,
+  });
+
+  factory MatchmakingMetrics.fromJson(Map<String, dynamic> json) {
+    return MatchmakingMetrics(
+      searches: json['searches'] as int,
+      humanOpponents: json['human_opponents'] as int,
+      botFallbacks: json['bot_fallbacks'] as int,
+      humanOpponentRate: (json['human_opponent_rate'] as num).toDouble(),
+    );
+  }
+
+  final int searches;
+  final int humanOpponents;
+  final int botFallbacks;
+  final double humanOpponentRate;
+}
+
+class CareerSnapshot {
+  const CareerSnapshot({
+    required this.profile,
+    required this.league,
+    required this.leaderboard,
+    required this.recentMatches,
+    required this.matchmaking,
+  });
+
+  factory CareerSnapshot.fromJson(Map<String, dynamic> json) {
+    return CareerSnapshot(
+      profile: RatingProfile.fromJson(
+        json['profile'] as Map<String, dynamic>,
+      ),
+      league: LeagueEntry.fromJson(
+        json['league'] as Map<String, dynamic>,
+      ),
+      leaderboard: (json['leaderboard'] as List<dynamic>)
+          .map((item) => LeagueStanding.fromJson(item as Map<String, dynamic>))
+          .toList(growable: false),
+      recentMatches: (json['recent_matches'] as List<dynamic>)
+          .map((item) => MatchHistoryItem.fromJson(item as Map<String, dynamic>))
+          .toList(growable: false),
+      matchmaking: MatchmakingMetrics.fromJson(
+        json['matchmaking'] as Map<String, dynamic>,
+      ),
+    );
+  }
+
+  final RatingProfile profile;
+  final LeagueEntry league;
+  final List<LeagueStanding> leaderboard;
+  final List<MatchHistoryItem> recentMatches;
+  final MatchmakingMetrics matchmaking;
+}
+
+class MatchHistoryPage {
+  const MatchHistoryPage({
+    required this.items,
+    required this.total,
+    required this.limit,
+    required this.offset,
+  });
+
+  factory MatchHistoryPage.fromJson(Map<String, dynamic> json) {
+    return MatchHistoryPage(
+      items: (json['items'] as List<dynamic>)
+          .map((item) => MatchHistoryItem.fromJson(item as Map<String, dynamic>))
+          .toList(growable: false),
+      total: json['total'] as int,
+      limit: json['limit'] as int,
+      offset: json['offset'] as int,
+    );
+  }
+
+  final List<MatchHistoryItem> items;
+  final int total;
+  final int limit;
+  final int offset;
 }
 
 class CatalogBundle {

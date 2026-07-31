@@ -33,6 +33,9 @@ class MigrationTests(unittest.TestCase):
         self.assertIn("CREATE TABLE matches", sql)
         self.assertIn("JSON", sql)
         self.assertIn("ALTER COLUMN seed TYPE BIGINT", sql)
+        self.assertIn("CREATE TABLE player_ratings", sql)
+        self.assertIn("CREATE TABLE league_entries", sql)
+        self.assertIn("CREATE TABLE match_rating_changes", sql)
 
     def test_initial_migration_creates_and_downgrades_online_schema(
         self,
@@ -63,6 +66,9 @@ class MigrationTests(unittest.TestCase):
                     "matches",
                     "players",
                     "refresh_sessions",
+                    "player_ratings",
+                    "league_entries",
+                    "match_rating_changes",
                 },
             )
             engine.dispose()

@@ -1,7 +1,7 @@
 # Project Relay Flutter İstemcisi
 
-Bu dizin v0.4.13 ana menüsü, bağımsız Nasıl Oynanır akışı, kalıcı misafir
-oturumu, asenkron oyuncu eşleştirmesi,
+Bu dizin v0.5.0 ana menüsü, bağımsız Nasıl Oynanır akışı, kalıcı misafir
+oturumu, dereceli asenkron oyuncu eşleştirmesi, haftalık lig ve maç geçmişi,
 sürükle-bırak kart düzenleyici, etkileşimli oyun el kitabı ve Flame savaş
 tekrarı uygulamasıdır. Modül paleti adı ve sunucu özelliklerini doğrudan
 kartlarda gösterir; devre hücreleri yerleşimden sonra yalnız modül simgesini,
@@ -42,7 +42,7 @@ Bağlantı doğrulama, yerleşim ve API hataları ekranın altına yayılan Snac
 yerine devre kartının altında saydam ve durum rengine sahip bağlamsal kartta
 gösterilir.
 
-Uygulama **Oyna**, **Kariyer** ve **Ayarlar** seçenekli ana menüyle açılır.
+Uygulama **Oyna**, **Kariyer**, **Nasıl Oynanır** ve **Ayarlar** seçenekli ana menüyle açılır. Kariyer gerçek dereceyi, haftalık ligi, liderlik tablosunu ve replay açılabilen maç geçmişini gösterir.
 Oyna altındaki **Çevrimiçi Savaş** yalnız asenkron oyuncu eşleştirmesini,
 **Antrenman** yalnız dokuz sabit rakibi gösterir. Modül adı ile Can ve role
 özgü değerler seçim paletinde görünür; devre hücreleri savaş alanını sade

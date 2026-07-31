@@ -1,4 +1,4 @@
-# Project Relay — API Sözleşmesi v0.4.8
+# Project Relay — API Sözleşmesi v0.5.0
 
 Bu sürüm, Flutter/Flame istemcisinin kullandığı kalıcı asenkron PvP
 protokolüdür. Bütün yollar `/api/v1` altında sürümlenir. Etkileşimli Swagger
@@ -12,6 +12,9 @@ belgesi servis çalışırken `/docs` adresindedir.
 | `POST` | `/api/v1/auth/guest` | Güvenli adlı kalıcı misafir oluşturma |
 | `POST` | `/api/v1/auth/refresh` | Yenileme JWT'sini döndürme |
 | `GET` | `/api/v1/me` | Oyuncu ve kayıtlı kartı okuma |
+| `GET` | `/api/v1/me/career` | Derece, haftalık lig ve son maçlar |
+| `GET` | `/api/v1/me/matches` | Sayfalı maç geçmişi |
+| `GET` | `/api/v1/league/current` | Güncel haftalık lig ve liderlik tablosu |
 | `PUT` | `/api/v1/me/board` | Geçerli oyuncu kartını ekleme/güncelleme |
 | `GET` | `/api/v1/modules` | Sekiz başlangıç modülünün sunucu kataloğu |
 | `GET` | `/api/v1/bots` | Kullanılabilir sabit bot düzenleri |
@@ -219,3 +222,28 @@ maç hataları aynı üst sözleşmeyi kullanır:
   kullanmaz.
 - Tekrar özeti bütün olay akışından hesaplanır; dijital imza değildir.
 - `rules_version` savaş kurallarının, API `version` ise HTTP paketinin sürümüdür.
+
+
+## v0.5.0 rekabet yanıtları
+
+İki gerçek oyunculu asenkron maç yanıtı katılımcının bakış açısından şu alanı
+taşır:
+
+```json
+{
+  "rating_change": {
+    "outcome": "win",
+    "rating_before": 1000,
+    "rating_after": 1016,
+    "rating_delta": 16,
+    "week_key": "2026-W31"
+  }
+}
+```
+
+Bot dönüşünde ve antrenmanda `rating_change` değeri `null` olur. Kesin
+beraberlikte `rating_before` ile `rating_after` eşit ve `rating_delta` sıfırdır.
+
+`GET /api/v1/me/career`, genel profil, haftalık lig girdisi, liderlik tablosu,
+son maçlar ve o haftanın insan/bot eşleşme oranını birlikte döndürür.
+`GET /api/v1/me/matches` `limit` (1–50) ve `offset` parametreleriyle sayfalanır.

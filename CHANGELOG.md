@@ -1,3 +1,25 @@
+## v0.5.0
+
+- Gerçek oyuncu asenkron maçlarına 1000 başlangıç puanlı, K=32 ELO benzeri
+  derece sistemi eklendi. Kazanç/kayıp iki oyuncu arasında korunur ve maç
+  sonucu `match_id` ile yalnız bir kez işlenir.
+- Kesin beraberlik dereceyi değiştirmez; iki oyuncunun beraberlik kaydını ve
+  haftalık 1 puanını işler. Galibiyet 3 haftalık puan, mağlubiyet 0 puan verir.
+- Bot antrenmanı ile gerçek rakip bulunamadığındaki güvenli bot dönüşü derecesiz
+  kalır; satın alınabilir veya kalıcı ham güç artışı eklenmedi.
+- Haftalık ISO lig tablosu, oyuncu sırası, katılımcı sayısı ve gerçek oyuncu
+  eşleşme oranı sunucu tarafında hesaplanır.
+- `/api/v1/me/career`, `/api/v1/me/matches` ve `/api/v1/league/current`
+  uçları eklendi. Maç yanıtı katılımcıya göre `rating_change` taşır.
+- Rakip kartı kullanılan oyuncu maç ve replay'i kendi perspektifinden açar;
+  kartlar, sonuç tarafları, olaylar, durum kareleri ve checksum birlikte çevrilir.
+- Flutter Kariyer ekranı gerçek derece, haftalık lig, liderlik tablosu, rakip
+  bulunurluğu ve tekrar açılabilir maç geçmişine dönüştürüldü.
+- Alembic `20260731_0003` ile `player_ratings`, `league_entries` ve
+  `match_rating_changes` tabloları eklendi.
+- API `0.5.0`, istemci `0.5.0+33`, kurallar `0.8` oldu. Savaş motoru ve denge
+  değerleri değişmedi.
+
 ## v0.4.13
 
 - Editör modül kartları 82 px'ten 74 px'e indirildi; 4×2 düzen, simge, ad ve

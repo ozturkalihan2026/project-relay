@@ -46,7 +46,7 @@ class MainMenuScreen extends StatelessWidget {
                     key: const ValueKey('main-menu-career'),
                     icon: Icons.route_outlined,
                     title: 'KARİYER',
-                    subtitle: 'Görevler ve ilerleme yolu',
+                    subtitle: 'Derece, haftalık lig ve maç geçmişi',
                     onPressed: () => _open(
                       context,
                       const CareerScreen(),
@@ -76,7 +76,7 @@ class MainMenuScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 22),
                   const Text(
-                    'ASENKRON DEVRE SAVAŞI • v0.4.13',
+                    'ASENKRON DEVRE SAVAŞI • v0.5.0',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       color: RelayColors.muted,

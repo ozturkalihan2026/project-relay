@@ -36,8 +36,8 @@ dönüştürür.
 | v0.4.11 | Modül paleti sonlu yükseklik ve Oyna ekranı açılış yaması | Hazır |
 | v0.4.12 | Tek ekran editör/savaş yerleşimi ve orta panel genişliği | Hazır |
 | v0.4.13 | Kompakt modül paleti ve güçlü savaş etiketleri | Hazır |
-| v0.5.0 | Derece, haftalık lig ve maç geçmişi | Sıradaki |
-| v0.6.0 | Koşu, mağaza, kit ve geçici yükseltme döngüsü | Planlandı |
+| v0.5.0 | Derece, haftalık lig ve maç geçmişi | Hazır |
+| v0.6.0 | Koşu, mağaza, kit ve geçici yükseltme döngüsü | Sıradaki |
 | v0.7.0 | Kapalı alfa, dengeleme ve kötüye kullanım koruması | Planlandı |
 | v0.8.0 | Kozmetik/ödüllü reklam için kapalı gelir altyapısı | Planlandı |
 | v1.0.0 | Android ve web açık beta | Hedef |
@@ -229,3 +229,19 @@ kalıcı ham güç artışı bulunmayacaktır.
 - İlk asenkron PvP kanıtlanmadan lig ve gelir katmanı eklenmez.
 - Redis ancak PostgreSQL tabanlı akış ölçüldükten sonra değerlendirilir.
 - Canlı 1v1, asenkron model dengelenmeden geliştirilmez.
+
+
+## v0.5.0 — Hazır derece ve haftalık lig temeli
+
+- Gerçek oyuncuya karşı asenkron maçlarda sunucu yetkili ELO benzeri derece
+- Kesin beraberlikte sıfır derece değişimi; haftalık 1 puan
+- Galibiyette haftalık 3 puan, mağlubiyette 0 puan
+- Bot ve antrenman maçlarında sıfır derece etkisi
+- Maç başına tek seferlik ve yeniden denemeye dayanıklı derece kaydı
+- ISO haftasına bağlı lig sıralaması ve liderlik tablosu
+- Katılımcı açısından maç/replay görünümü ve checksum doğrulaması
+- Flutter Kariyer ekranında gerçek derece, lig ve maç geçmişi
+- Değişmeden korunan kurallar `0.8`, modül dengesi ve kalıcı güç adaleti
+
+Sonraki sürüm v0.6.0, bu rekabet temelini bozmadan koşu, mağaza, kontrollü
+sekizli kit ve yalnız koşu içinde geçerli yükseltme döngüsünü kuracaktır.

@@ -219,6 +219,8 @@ void main() {
   test('maç ve replay yanıtlarını istemci modellerine dönüştürür', () {
     final match = MatchResponse.fromJson({
       'match_id': 'match-1',
+      'created_at': '2026-07-31T09:00:00+00:00',
+      'source': 'async',
       'opponent': {
         'bot_id': 'starter_laser',
         'display_name': 'Kıvılcım',
@@ -304,6 +306,13 @@ void main() {
           ],
         },
       },
+      'rating_change': {
+        'outcome': 'win',
+        'rating_before': 1000,
+        'rating_after': 1016,
+        'rating_delta': 16,
+        'week_key': '2026-W31',
+      },
       'replay': {
         'checksum': List.filled(64, 'a').join(),
         'event_count': 4,
@@ -320,6 +329,74 @@ void main() {
     expect(match.result.left.modules.single.maxHp, 52);
     expect(match.result.decision.criterion, 'core_destroyed');
     expect(match.result.decision.metrics.single.leftValue, 0.833333);
+    expect(match.source, 'async');
+    expect(match.ratingChange?.ratingDelta, 16);
+    expect(match.createdAt, DateTime.parse('2026-07-31T09:00:00+00:00'));
+  });
+
+  test('derece haftalık lig ve maç geçmişini ayrıştırır', () {
+    final career = CareerSnapshot.fromJson({
+      'profile': {
+        'player_id': 'player-1',
+        'rating': 1016,
+        'peak_rating': 1016,
+        'rated_matches': 1,
+        'wins': 1,
+        'draws': 0,
+        'losses': 0,
+        'win_rate': 1.0,
+      },
+      'league': {
+        'week_key': '2026-W31',
+        'starts_at': '2026-07-27T00:00:00+00:00',
+        'ends_at': '2026-08-03T00:00:00+00:00',
+        'points': 3,
+        'wins': 1,
+        'draws': 0,
+        'losses': 0,
+        'position': 1,
+        'participant_count': 2,
+      },
+      'leaderboard': [
+        {
+          'position': 1,
+          'player_id': 'player-1',
+          'display_name': 'MaviRole-2026',
+          'points': 3,
+          'wins': 1,
+          'draws': 0,
+          'losses': 0,
+          'rating': 1016,
+          'is_current_player': true,
+        },
+      ],
+      'recent_matches': [
+        {
+          'match_id': 'match-1',
+          'created_at': '2026-07-31T09:00:00+00:00',
+          'opponent_kind': 'player',
+          'opponent_name': 'BakirAkım-2027',
+          'outcome': 'win',
+          'rated': true,
+          'rating_delta': 16,
+          'rating_after': 1016,
+          'reason': 'core_destroyed',
+          'replay_path': '/api/v1/matches/match-1/replay',
+        },
+      ],
+      'matchmaking': {
+        'searches': 1,
+        'human_opponents': 1,
+        'bot_fallbacks': 0,
+        'human_opponent_rate': 1.0,
+      },
+    });
+
+    expect(career.profile.rating, 1016);
+    expect(career.league.points, 3);
+    expect(career.leaderboard.single.isCurrentPlayer, isTrue);
+    expect(career.recentMatches.single.ratingDelta, 16);
+    expect(career.matchmaking.humanOpponentRate, 1);
   });
 
   test('savaş durum karelerini can enerji ve ısıyla ayrıştırır', () {

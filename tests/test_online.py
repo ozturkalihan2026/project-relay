@@ -176,10 +176,16 @@ class OnlineApiTests(unittest.TestCase):
             json=player_board(),
         )
         match = self.client.post("/api/v1/matches/async")
+        career = self.client.get("/api/v1/me/career")
+        history = self.client.get("/api/v1/me/matches")
+        league = self.client.get("/api/v1/league/current")
 
         self.assertEqual(profile.status_code, 401)
         self.assertEqual(save.status_code, 401)
         self.assertEqual(match.status_code, 401)
+        self.assertEqual(career.status_code, 401)
+        self.assertEqual(history.status_code, 401)
+        self.assertEqual(league.status_code, 401)
         self.assertEqual(
             match.json()["code"],
             "authorization_required",
@@ -247,6 +253,30 @@ class OnlineApiTests(unittest.TestCase):
             len(payload["player_board"]["modules"]),
             len(payload["opponent_board"]["modules"]),
         )
+        self.assertIsNotNone(payload["rating_change"])
+        self.assertIn(
+            payload["rating_change"]["outcome"],
+            {"win", "draw", "loss"},
+        )
+        career = self.client.get(
+            "/api/v1/me/career",
+            headers=self._authorization(first),
+        )
+        history = self.client.get(
+            "/api/v1/me/matches",
+            headers=self._authorization(first),
+        )
+        league = self.client.get(
+            "/api/v1/league/current",
+            headers=self._authorization(first),
+        )
+        self.assertEqual(career.status_code, 200, career.text)
+        self.assertEqual(history.status_code, 200, history.text)
+        self.assertEqual(league.status_code, 200, league.text)
+        self.assertEqual(career.json()["profile"]["rated_matches"], 1)
+        self.assertEqual(history.json()["total"], 1)
+        self.assertTrue(history.json()["items"][0]["rated"])
+        self.assertGreaterEqual(league.json()["league"]["position"], 1)
 
     def test_recent_opponent_is_not_repeated_and_bot_is_safe_fallback(
         self,
@@ -278,6 +308,16 @@ class OnlineApiTests(unittest.TestCase):
             "yeni oyuncu",
             second_match.json()["opponent"]["description"],
         )
+        self.assertIsNotNone(first_match.json()["rating_change"])
+        self.assertIsNone(second_match.json()["rating_change"])
+        career = self.client.get(
+            "/api/v1/me/career",
+            headers=headers,
+        ).json()
+        self.assertEqual(career["profile"]["rated_matches"], 1)
+        self.assertEqual(career["matchmaking"]["searches"], 2)
+        self.assertEqual(career["matchmaking"]["human_opponents"], 1)
+        self.assertEqual(career["matchmaking"]["bot_fallbacks"], 1)
 
     def test_postgresql_sized_seed_is_persisted_for_async_match(self) -> None:
         guest = self._guest()
@@ -360,7 +400,9 @@ class OnlineApiTests(unittest.TestCase):
         second = self._guest()
         stranger = self._guest()
         self._save_board(first)
-        self._save_board(second)
+        second_board = player_board()
+        second_board["name"] = "İkinci Oyuncu Devresi"
+        self._save_board(second, second_board)
         created = self.client.post(
             "/api/v1/matches/async",
             headers=self._authorization(first),
@@ -372,6 +414,10 @@ class OnlineApiTests(unittest.TestCase):
             path,
             headers=self._authorization(second),
         )
+        participant_match = self.client.get(
+            f"/api/v1/matches/{created['match_id']}",
+            headers=self._authorization(second),
+        )
         denied = self.client.get(
             path,
             headers=self._authorization(stranger),
@@ -379,5 +425,21 @@ class OnlineApiTests(unittest.TestCase):
 
         self.assertEqual(anonymous.status_code, 401)
         self.assertEqual(participant.status_code, 200, participant.text)
+        self.assertEqual(
+            participant_match.json()["player_board"]["name"],
+            "İkinci Oyuncu Devresi",
+        )
+        self.assertEqual(
+            participant_match.json()["opponent"]["opponent_id"],
+            first["player"]["player_id"],
+        )
+        self.assertEqual(
+            participant_match.json()["replay"]["checksum"],
+            participant.json()["checksum"],
+        )
+        self.assertEqual(
+            participant.json()["checksum"],
+            compute_replay_checksum(participant.json()["events"]),
+        )
         self.assertEqual(denied.status_code, 403)
         self.assertEqual(denied.json()["code"], "match_access_denied")

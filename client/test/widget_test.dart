@@ -42,7 +42,7 @@ void main() {
       expect(generatorPaletteTile, findsOneWidget);
       expect(tester.getSize(generatorPaletteTile).height, 74);
 
-      expect(find.textContaining('ÇEVRİMİÇİ SAVAŞ • v0.4.13'), findsOneWidget);
+      expect(find.textContaining('ÇEVRİMİÇİ SAVAŞ • v0.5.0'), findsOneWidget);
       expect(find.text('DEVREYİ KUR'), findsOneWidget);
       expect(find.text('ASENKRON PvP'), findsOneWidget);
       expect(
@@ -99,7 +99,7 @@ void main() {
       await tester.tap(find.byKey(const ValueKey('play-mode-training')));
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('ANTRENMAN • v0.4.13'), findsOneWidget);
+      expect(find.textContaining('ANTRENMAN • v0.5.0'), findsOneWidget);
       expect(find.byKey(const ValueKey('training-panel')), findsOneWidget);
       expect(find.text('ANTRENMAN RAKİPLERİ'), findsOneWidget);
       expect(find.text('SEÇİLİ BOTLA SAVAŞ'), findsOneWidget);
@@ -150,7 +150,9 @@ void main() {
 
       await tester.tap(find.byKey(const ValueKey('main-menu-career')));
       await tester.pumpAndSettle();
-      expect(find.text('KARİYER HAZIRLANIYOR'), findsOneWidget);
+      expect(find.text('DERECE PUANI'), findsOneWidget);
+      expect(find.text('HAFTALIK LİG'), findsOneWidget);
+      expect(find.text('SON MAÇLAR'), findsOneWidget);
       await tester.tap(find.byKey(const ValueKey('career-back-button')));
       await tester.pumpAndSettle();
 
@@ -246,6 +248,51 @@ Future<void> _pumpApp(WidgetTester tester) async {
                 availableModuleCounts: [2],
               ),
             ],
+          ),
+        ),
+        careerProvider.overrideWith(
+          (ref) async => CareerSnapshot(
+            profile: const RatingProfile(
+              playerId: 'player-test',
+              rating: 1016,
+              peakRating: 1016,
+              ratedMatches: 1,
+              wins: 1,
+              draws: 0,
+              losses: 0,
+              winRate: 1,
+            ),
+            league: LeagueEntry(
+              weekKey: '2026-W31',
+              startsAt: DateTime.utc(2026, 7, 27),
+              endsAt: DateTime.utc(2026, 8, 3),
+              points: 3,
+              wins: 1,
+              draws: 0,
+              losses: 0,
+              position: 1,
+              participantCount: 2,
+            ),
+            leaderboard: const [
+              LeagueStanding(
+                position: 1,
+                playerId: 'player-test',
+                displayName: 'MaviRole-2026',
+                points: 3,
+                wins: 1,
+                draws: 0,
+                losses: 0,
+                rating: 1016,
+                isCurrentPlayer: true,
+              ),
+            ],
+            recentMatches: const [],
+            matchmaking: const MatchmakingMetrics(
+              searches: 1,
+              humanOpponents: 1,
+              botFallbacks: 0,
+              humanOpponentRate: 1,
+            ),
           ),
         ),
         guestSessionProvider.overrideWith(

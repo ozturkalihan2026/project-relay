@@ -5,6 +5,7 @@ from typing import Any
 from fastapi import (
     Depends,
     FastAPI,
+    Query,
     Request,
     status,
 )
@@ -15,23 +16,37 @@ from fastapi.responses import JSONResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.exc import SQLAlchemyError
 
+from relay_engine import compute_replay_checksum
 from relay_engine.catalog import MODULE_SPECS
 
 from .auth import AuthError, AuthService, GuestSession, PlayerView
 from .bots import BotDefinition, BotNotFoundError
+from .competitive import (
+    CareerSnapshot,
+    CompetitiveService,
+    LeagueEntry,
+    LeagueStanding,
+    MatchHistoryItem,
+    MatchHistoryPage,
+    MatchRatingChange,
+)
 from .config import Settings
 from .database import Database
+from .db_models import PlayerRecord
 from .online import OnlinePlayError, OnlinePlayService, SavedBoard
 from .schemas import (
     BoardPayload,
     BoardValidationResponse,
     BotListResponse,
     BotResponse,
+    CareerResponse,
     CreateBotMatchRequest,
+    CurrentLeagueResponse,
     CurrentPlayerResponse,
     ErrorResponse,
     GuestSessionResponse,
     HealthResponse,
+    MatchHistoryResponse,
     MatchResponse,
     ModuleCatalogResponse,
     ModuleSpecResponse,
@@ -59,31 +74,206 @@ def _bot_payload(bot: BotDefinition) -> dict[str, Any]:
     }
 
 
-def _match_payload(match: StoredMatch) -> dict[str, Any]:
+def _swap_side(value: str | None) -> str | None:
+    if value == "left":
+        return "right"
+    if value == "right":
+        return "left"
+    return value
+
+
+def _perspective_result(
+    match: StoredMatch,
+    *,
+    reverse: bool,
+) -> dict[str, Any]:
     result = {
         key: value
         for key, value in match.result.items()
         if key not in {"events", "state_frames"}
     }
-    events = match.result.get("events", [])
+    if not reverse:
+        return result
+    result["winner"] = _swap_side(result.get("winner"))
+    result["left"], result["right"] = result["right"], result["left"]
+    decision = dict(result.get("decision", {}))
+    decision["metrics"] = [
+        {
+            **metric,
+            "left_value": metric.get("right_value"),
+            "right_value": metric.get("left_value"),
+        }
+        for metric in decision.get("metrics", [])
+    ]
+    result["decision"] = decision
+    return result
+
+
+def _perspective_events(
+    match: StoredMatch,
+    *,
+    reverse: bool,
+) -> list[dict[str, Any]]:
+    events = [dict(event) for event in match.result.get("events", [])]
+    if not reverse:
+        return events
+    for event in events:
+        event["side"] = _swap_side(str(event.get("side")))
+    return events
+
+
+def _perspective_frames(
+    match: StoredMatch,
+    *,
+    reverse: bool,
+) -> list[dict[str, Any]]:
+    frames = [dict(frame) for frame in match.result.get("state_frames", [])]
+    if not reverse:
+        return frames
+    return [
+        {
+            **frame,
+            "left": frame["right"],
+            "right": frame["left"],
+        }
+        for frame in frames
+    ]
+
+
+def _match_payload(
+    match: StoredMatch,
+    *,
+    rating_change: MatchRatingChange | None = None,
+    viewer_player_id: str | None = None,
+    opponent_override: dict[str, str] | None = None,
+) -> dict[str, Any]:
+    reverse = (
+        viewer_player_id is not None
+        and viewer_player_id == match.opponent_player_id
+    )
+    result = _perspective_result(match, reverse=reverse)
+    events = _perspective_events(match, reverse=reverse)
+    checksum = (
+        compute_replay_checksum(events)
+        if reverse
+        else str(match.result["replay_checksum"])
+    )
+    rating_payload = None
+    if rating_change is not None and viewer_player_id is not None:
+        rating_payload = {
+            **rating_change.perspective(viewer_player_id),
+            "week_key": rating_change.week_key,
+        }
+    opponent = opponent_override or {
+        "kind": match.opponent.kind,
+        "opponent_id": match.opponent.opponent_id,
+        "display_name": match.opponent.display_name,
+        "description": match.opponent.description,
+    }
     return {
         "match_id": match.match_id,
         "created_at": match.created_at.isoformat(),
         "source": match.source,
-        "opponent": {
-            "kind": match.opponent.kind,
-            "opponent_id": match.opponent.opponent_id,
-            "display_name": match.opponent.display_name,
-            "description": match.opponent.description,
-        },
-        "player_board": match.player_board.to_dict(),
-        "opponent_board": match.opponent_board.to_dict(),
+        "opponent": opponent,
+        "player_board": (
+            match.opponent_board.to_dict()
+            if reverse
+            else match.player_board.to_dict()
+        ),
+        "opponent_board": (
+            match.player_board.to_dict()
+            if reverse
+            else match.opponent_board.to_dict()
+        ),
         "result": result,
         "replay": {
-            "checksum": match.result["replay_checksum"],
+            "checksum": checksum,
             "event_count": len(events),
             "path": f"/api/v1/matches/{match.match_id}/replay",
         },
+        "rating_change": rating_payload,
+    }
+
+
+def _league_payload(entry: LeagueEntry) -> dict[str, Any]:
+    return {
+        "week_key": entry.week_key,
+        "starts_at": entry.starts_at.isoformat(),
+        "ends_at": entry.ends_at.isoformat(),
+        "points": entry.points,
+        "wins": entry.wins,
+        "draws": entry.draws,
+        "losses": entry.losses,
+        "position": entry.position,
+        "participant_count": entry.participant_count,
+    }
+
+
+def _standing_payload(standing: LeagueStanding) -> dict[str, Any]:
+    return {
+        "position": standing.position,
+        "player_id": standing.player_id,
+        "display_name": standing.display_name,
+        "points": standing.points,
+        "wins": standing.wins,
+        "draws": standing.draws,
+        "losses": standing.losses,
+        "rating": standing.rating,
+        "is_current_player": standing.is_current_player,
+    }
+
+
+def _history_item_payload(item: MatchHistoryItem) -> dict[str, Any]:
+    return {
+        "match_id": item.match_id,
+        "created_at": item.created_at.isoformat(),
+        "opponent_kind": item.opponent_kind,
+        "opponent_name": item.opponent_name,
+        "outcome": item.outcome,
+        "rated": item.rated,
+        "rating_delta": item.rating_delta,
+        "rating_after": item.rating_after,
+        "reason": item.reason,
+        "replay_path": item.replay_path,
+    }
+
+
+def _career_payload(snapshot: CareerSnapshot) -> dict[str, Any]:
+    profile = snapshot.profile
+    metrics = snapshot.matchmaking
+    return {
+        "profile": {
+            "player_id": profile.player_id,
+            "rating": profile.rating,
+            "peak_rating": profile.peak_rating,
+            "rated_matches": profile.rated_matches,
+            "wins": profile.wins,
+            "draws": profile.draws,
+            "losses": profile.losses,
+            "win_rate": profile.win_rate,
+        },
+        "league": _league_payload(snapshot.league),
+        "leaderboard": [
+            _standing_payload(standing) for standing in snapshot.leaderboard
+        ],
+        "recent_matches": [
+            _history_item_payload(item) for item in snapshot.recent_matches
+        ],
+        "matchmaking": {
+            "searches": metrics.searches,
+            "human_opponents": metrics.human_opponents,
+            "bot_fallbacks": metrics.bot_fallbacks,
+            "human_opponent_rate": metrics.human_opponent_rate,
+        },
+    }
+
+
+def _history_payload(page: MatchHistoryPage) -> dict[str, Any]:
+    return {
+        "items": [_history_item_payload(item) for item in page.items],
+        "total": page.total,
+        "limit": page.limit,
+        "offset": page.offset,
     }
 
 
@@ -130,6 +320,7 @@ def create_app(
     database: Database | None = None,
     auth_service: AuthService | None = None,
     online_service: OnlinePlayService | None = None,
+    competitive_service: CompetitiveService | None = None,
 ) -> FastAPI:
     resolved_settings = settings or Settings.from_environment()
     resolved_database = database or Database(
@@ -147,15 +338,18 @@ def create_app(
         match_service,
         resolved_settings,
     )
+    resolved_competitive = competitive_service or CompetitiveService(
+        resolved_database
+    )
     bearer = HTTPBearer(auto_error=False)
 
     application = FastAPI(
         title="Project Relay API",
         version=API_VERSION,
         description=(
-            "Project Relay v0.4.8 kalıcı misafir oturumu, sunucu kartı ve "
-            "asenkron oyuncu eşleştirmesi API'si. Bütün savaş sonuçları "
-            "deterministik motor tarafından sunucuda hesaplanır."
+            "Project Relay v0.5.0 dereceli asenkron rekabet API'si. "
+            "ELO benzeri derece, haftalık lig ve maç geçmişi sunucuda "
+            "hesaplanır; savaş sonuçları deterministik ve sunucu yetkilidir."
         ),
     )
     application.add_middleware(
@@ -169,6 +363,7 @@ def create_app(
     application.state.database = resolved_database
     application.state.auth_service = resolved_auth
     application.state.online_service = resolved_online
+    application.state.competitive_service = resolved_competitive
 
     def current_player(
         credentials: HTTPAuthorizationCredentials | None = Depends(bearer),
@@ -183,7 +378,7 @@ def create_app(
     def authorized_match(
         match_id: str,
         credentials: HTTPAuthorizationCredentials | None,
-    ) -> StoredMatch:
+    ) -> tuple[StoredMatch, str | None]:
         match = match_service.get_match(match_id)
         allowed_players = {
             value
@@ -194,7 +389,7 @@ def create_app(
             if value is not None
         }
         if not allowed_players:
-            return match
+            return match, None
         if credentials is None:
             raise AuthError(
                 "authorization_required",
@@ -207,7 +402,31 @@ def create_app(
                 "Bu maç başka bir oyuncuya aittir.",
                 status_code=403,
             )
-        return match
+        return match, player.player_id
+
+    def opponent_for_viewer(
+        match: StoredMatch,
+        viewer_player_id: str | None,
+    ) -> dict[str, str] | None:
+        if (
+            viewer_player_id is None
+            or viewer_player_id != match.opponent_player_id
+            or match.requester_player_id is None
+        ):
+            return None
+        with resolved_database.session() as session:
+            requester = session.get(PlayerRecord, match.requester_player_id)
+            display_name = (
+                requester.display_name
+                if requester is not None
+                else "Bilinmeyen Oyuncu"
+            )
+        return {
+            "kind": "player",
+            "opponent_id": match.requester_player_id,
+            "display_name": display_name,
+            "description": "Kayıtlı gerçek oyuncu devresi.",
+        }
 
     @application.exception_handler(RequestValidationError)
     async def request_validation_handler(
@@ -371,6 +590,65 @@ def create_app(
             ),
         }
 
+    @application.get(
+        "/api/v1/me/career",
+        response_model=CareerResponse,
+        responses={401: {"model": ErrorResponse}},
+        tags=["competitive"],
+    )
+    def get_career(
+        history_limit: int = Query(default=10, ge=1, le=50),
+        leaderboard_limit: int = Query(default=20, ge=1, le=100),
+        player: PlayerView = Depends(current_player),
+    ) -> dict[str, Any]:
+        return _career_payload(
+            resolved_competitive.career(
+                player.player_id,
+                history_limit=history_limit,
+                leaderboard_limit=leaderboard_limit,
+            )
+        )
+
+    @application.get(
+        "/api/v1/me/matches",
+        response_model=MatchHistoryResponse,
+        responses={401: {"model": ErrorResponse}},
+        tags=["competitive"],
+    )
+    def get_match_history(
+        limit: int = Query(default=20, ge=1, le=50),
+        offset: int = Query(default=0, ge=0),
+        player: PlayerView = Depends(current_player),
+    ) -> dict[str, Any]:
+        return _history_payload(
+            resolved_competitive.match_history(
+                player.player_id,
+                limit=limit,
+                offset=offset,
+            )
+        )
+
+    @application.get(
+        "/api/v1/league/current",
+        response_model=CurrentLeagueResponse,
+        responses={401: {"model": ErrorResponse}},
+        tags=["competitive"],
+    )
+    def get_current_league(
+        limit: int = Query(default=50, ge=1, le=100),
+        player: PlayerView = Depends(current_player),
+    ) -> dict[str, Any]:
+        league, leaderboard = resolved_competitive.current_league(
+            player.player_id,
+            limit=limit,
+        )
+        return {
+            "league": _league_payload(league),
+            "leaderboard": [
+                _standing_payload(standing) for standing in leaderboard
+            ],
+        }
+
     @application.put(
         "/api/v1/me/board",
         response_model=SavedBoardResponse,
@@ -474,8 +752,12 @@ def create_app(
     def create_async_match(
         player: PlayerView = Depends(current_player),
     ) -> dict[str, Any]:
+        match = resolved_online.create_async_match(player.player_id)
+        rating_change = resolved_competitive.apply_match(match)
         return _match_payload(
-            resolved_online.create_async_match(player.player_id)
+            match,
+            rating_change=rating_change,
+            viewer_player_id=player.player_id,
         )
 
     @application.get(
@@ -492,7 +774,16 @@ def create_app(
         match_id: str,
         credentials: HTTPAuthorizationCredentials | None = Depends(bearer),
     ) -> dict[str, Any]:
-        return _match_payload(authorized_match(match_id, credentials))
+        match, viewer_player_id = authorized_match(match_id, credentials)
+        return _match_payload(
+            match,
+            rating_change=resolved_competitive.get_match_rating(match_id),
+            viewer_player_id=viewer_player_id,
+            opponent_override=opponent_for_viewer(
+                match,
+                viewer_player_id,
+            ),
+        )
 
     @application.get(
         "/api/v1/matches/{match_id}/replay",
@@ -509,14 +800,23 @@ def create_app(
         match_id: str,
         credentials: HTTPAuthorizationCredentials | None = Depends(bearer),
     ) -> dict[str, Any]:
-        match = authorized_match(match_id, credentials)
+        match, viewer_player_id = authorized_match(match_id, credentials)
+        reverse = (
+            viewer_player_id is not None
+            and viewer_player_id == match.opponent_player_id
+        )
+        events = _perspective_events(match, reverse=reverse)
         return {
             "match_id": match.match_id,
             "rules_version": RULES_VERSION,
             "seed": match.result["seed"],
-            "checksum": match.result["replay_checksum"],
-            "events": match.result.get("events", []),
-            "state_frames": match.result.get("state_frames", []),
+            "checksum": (
+                compute_replay_checksum(events)
+                if reverse
+                else match.result["replay_checksum"]
+            ),
+            "events": events,
+            "state_frames": _perspective_frames(match, reverse=reverse),
         }
 
     @application.post(
@@ -534,11 +834,23 @@ def create_app(
         request: VerifyReplayRequest,
         credentials: HTTPAuthorizationCredentials | None = Depends(bearer),
     ) -> dict[str, Any]:
-        authorized_match(request.match_id, credentials)
-        valid, actual = match_service.verify_replay(
+        match, viewer_player_id = authorized_match(
             request.match_id,
-            request.checksum,
+            credentials,
         )
+        if (
+            viewer_player_id is not None
+            and viewer_player_id == match.opponent_player_id
+        ):
+            actual = compute_replay_checksum(
+                _perspective_events(match, reverse=True)
+            )
+            valid = actual == request.checksum
+        else:
+            valid, actual = match_service.verify_replay(
+                request.match_id,
+                request.checksum,
+            )
         return {
             "match_id": request.match_id,
             "valid": valid,

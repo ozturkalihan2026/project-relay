@@ -38,6 +38,11 @@ final catalogsProvider = FutureProvider<CatalogBundle>((ref) {
   return ref.watch(relayApiProvider).fetchCatalogs();
 });
 
+final careerProvider = FutureProvider<CareerSnapshot>((ref) async {
+  await ref.watch(guestSessionProvider.future);
+  return ref.watch(relayApiProvider).fetchCareer();
+});
+
 class RelayApi {
   RelayApi({
     required String baseUrl,
@@ -142,6 +147,37 @@ class RelayApi {
       'bot_id': botId,
     });
     return MatchResponse.fromJson(payload);
+  }
+
+  Future<MatchResponse> fetchMatch(String matchId) async {
+    final payload = await _get(
+      '/api/v1/matches/$matchId',
+      authorized: true,
+    );
+    return MatchResponse.fromJson(payload);
+  }
+
+  Future<CareerSnapshot> fetchCareer({
+    int historyLimit = 10,
+    int leaderboardLimit = 20,
+  }) async {
+    final payload = await _get(
+      '/api/v1/me/career?history_limit=$historyLimit'
+      '&leaderboard_limit=$leaderboardLimit',
+      authorized: true,
+    );
+    return CareerSnapshot.fromJson(payload);
+  }
+
+  Future<MatchHistoryPage> fetchMatchHistory({
+    int limit = 20,
+    int offset = 0,
+  }) async {
+    final payload = await _get(
+      '/api/v1/me/matches?limit=$limit&offset=$offset',
+      authorized: true,
+    );
+    return MatchHistoryPage.fromJson(payload);
   }
 
   Future<ReplayResponse> fetchReplay(String matchId) async {

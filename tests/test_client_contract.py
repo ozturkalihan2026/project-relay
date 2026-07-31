@@ -23,10 +23,10 @@ class FlutterClientContractTests(unittest.TestCase):
             CLIENT / "lib" / "src" / "widgets" / "game_manual.dart"
         ).read_text(encoding="utf-8")
 
-        self.assertIn("version: 0.4.13+32", pubspec)
-        self.assertIn("${widget.mode.title} • v0.4.13", editor)
-        self.assertIn("ASENKRON DEVRE SAVAŞI • v0.4.13", main_menu)
-        self.assertIn("PROJECT RELAY • v0.4.13", manual)
+        self.assertIn("version: 0.5.0+33", pubspec)
+        self.assertIn("${widget.mode.title} • v0.5.0", editor)
+        self.assertIn("ASENKRON DEVRE SAVAŞI • v0.5.0", main_menu)
+        self.assertIn("PROJECT RELAY • v0.5.0", manual)
         self.assertIn("audioplayers:", pubspec)
         self.assertIn("assets/sounds/", pubspec)
         self.assertIn("flame:", pubspec)
@@ -149,6 +149,8 @@ class FlutterClientContractTests(unittest.TestCase):
             "/api/v1/auth/refresh",
             "/api/v1/me/board",
             "/api/v1/matches/async",
+            "/api/v1/me/career",
+            "/api/v1/me/matches",
             "/replay",
         ):
             with self.subTest(path=path):
@@ -264,7 +266,11 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("mode == EditorMode.online", editor)
         self.assertIn("training-panel", editor)
         self.assertIn("async-pvp-card", editor)
-        self.assertIn("KARİYER HAZIRLANIYOR", career)
+        self.assertIn("ref.watch(careerProvider)", career)
+        self.assertIn("DERECE PUANI", career)
+        self.assertIn("HAFTALIK LİG", career)
+        self.assertIn("SON MAÇLAR", career)
+        self.assertIn("api.fetchReplay(matchId)", career)
         self.assertIn("settings-replay-sound", settings)
         self.assertIn("settings-replay-speed", settings)
         self.assertIn("play-mode-back-button", play_mode)
@@ -643,7 +649,7 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("class ModuleReplayState", models)
         self.assertIn("json['state_frames']", models)
         self.assertIn("replay.stateAt(frame.tick)", replay_game)
-        self.assertIn('"state_frames": match.result.get(', api_app)
+        self.assertIn('"state_frames": _perspective_frames(', api_app)
 
     def test_guest_session_and_async_pvp_are_visible_and_persistent(
         self,

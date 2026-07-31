@@ -1,4 +1,4 @@
-# Project Relay v0.4.8 — İstemci Mimarisi
+# Project Relay v0.5.0 — İstemci Mimarisi
 
 ## Katmanlar
 
