@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import hashlib
+import json
 import uuid
 from collections import Counter
 from collections.abc import Callable
@@ -12,8 +14,13 @@ from relay_engine import BattleModifiers, BoardLayout
 
 from .bots import get_bot
 from .database import Database
-from .db_models import CareerRunRecord, PlayerRecord
-from .online import OnlinePlayService
+from .db_models import (
+    CareerBoardRecord,
+    CareerRunRecord,
+    PlayerProgressionRecord,
+    PlayerRecord,
+)
+from .online import OnlinePlayService, SavedBoard
 from .progression import (
     BoosterMastery,
     ProgressionService,
@@ -70,13 +77,17 @@ CAREER_STAGES: tuple[CareerStageDefinition, ...] = (
     ),
 )
 
-# Her zaferden sonra üç seçenek sunulur. Seçimler koşu içinde üst üste binebilir.
-_BOOSTER_OFFERS: tuple[tuple[str, str, str], ...] = (
-    ("overcharge", "reinforced_shield", "reserve_cell"),
-    ("emergency_repair", "overcharge", "reinforced_shield"),
-    ("reserve_cell", "emergency_repair", "overcharge"),
-    ("reinforced_shield", "reserve_cell", "emergency_repair"),
+# Güçlendirici mağazası yalnız dördüncü zaferden sonra, boss öncesinde açılır.
+_BOSS_BOOSTER_OFFERS: tuple[str, str, str] = (
+    "overcharge",
+    "reinforced_shield",
+    "reserve_cell",
 )
+_SKIP_BOOSTER_ID = "none"
+
+
+def _booster_credit_cost(tier: int) -> int:
+    return 75 + max(0, tier - 1) * 25
 
 
 class CareerRunError(Exception):
@@ -101,6 +112,7 @@ class CareerBoosterChoice:
     tier: int
     effect_value: int
     effect_label: str
+    credit_cost: int
 
 
 @dataclass(frozen=True, slots=True)
@@ -171,6 +183,81 @@ class CareerRunService:
         self.clock = clock or (lambda: datetime.now(UTC))
         self.id_source = id_source or (lambda: uuid.uuid4().hex)
 
+    def save_board(self, player_id: str, board: BoardLayout) -> SavedBoard:
+        """Save the independent career circuit without touching async PvP."""
+        board.validate(self.match_service.engine.config.board_size)
+        now = self.clock()
+        payload = board.to_dict()
+        fingerprint = hashlib.sha256(
+            json.dumps(
+                payload,
+                ensure_ascii=False,
+                sort_keys=True,
+                separators=(",", ":"),
+            ).encode("utf-8")
+        ).hexdigest()
+        with self.database.session() as session:
+            if session.get(PlayerRecord, player_id) is None:
+                raise CareerRunError(
+                    "player_not_found",
+                    "Oyuncu bulunamadı.",
+                    status_code=404,
+                )
+            record = session.scalar(
+                select(CareerBoardRecord).where(
+                    CareerBoardRecord.player_id == player_id
+                )
+            )
+            if record is None:
+                record = CareerBoardRecord(
+                    id=self.id_source(),
+                    player_id=player_id,
+                    name=board.name,
+                    modules=payload["modules"],
+                    fingerprint=fingerprint,
+                    module_count=len(board.modules),
+                    created_at=now,
+                    updated_at=now,
+                )
+                session.add(record)
+            else:
+                record.name = board.name
+                record.modules = payload["modules"]
+                record.fingerprint = fingerprint
+                record.module_count = len(board.modules)
+                record.updated_at = now
+            session.flush()
+            return self._saved_career_board(record)
+
+    def get_board(
+        self,
+        player_id: str,
+        *,
+        clone_online_if_missing: bool = True,
+    ) -> SavedBoard | None:
+        with self.database.session() as session:
+            record = session.scalar(
+                select(CareerBoardRecord).where(
+                    CareerBoardRecord.player_id == player_id
+                )
+            )
+            if record is not None:
+                return self._saved_career_board(record)
+        if not clone_online_if_missing:
+            return None
+        online_board = self.online_service.get_board(player_id)
+        if online_board is None:
+            return None
+        # Existing v0.6.1 players start with a one-time copy. Later edits are
+        # fully independent, so career changes never overwrite async PvP.
+        return self.save_board(
+            player_id,
+            BoardLayout(
+                name="Kariyer Devresi",
+                modules=online_board.board.modules,
+            ),
+        )
+
     def current(self, player_id: str) -> CareerRunSnapshot:
         with self.database.session() as session:
             if session.get(PlayerRecord, player_id) is None:
@@ -190,7 +277,7 @@ class CareerRunService:
         return self._snapshot(player_id, record)
 
     def start(self, player_id: str) -> CareerRunSnapshot:
-        board = self.online_service.get_board(player_id)
+        board = self.get_board(player_id)
         if board is None:
             raise CareerRunError(
                 "board_required",
@@ -245,22 +332,48 @@ class CareerRunService:
         booster_id: str,
     ) -> CareerRunSnapshot:
         now = self.clock()
+        profile = self.progression_service.snapshot(player_id).profile
+        masteries = {
+            item.booster_id: item
+            for item in self.progression_service.booster_masteries(profile.level)
+        }
+        if booster_id != _SKIP_BOOSTER_ID and booster_id not in masteries:
+            raise CareerRunError(
+                "booster_not_found",
+                "Seçilen güçlendirici bulunamadı.",
+                status_code=404,
+            )
         with self.database.session() as session:
             record = self._active_record(session, player_id, lock=True)
             if record.status != "awaiting_booster":
                 raise CareerRunError(
                     "booster_not_expected",
-                    "Bu aşamada güçlendirici seçimi yapılamaz.",
+                    "Güçlendirici mağazası yalnız boss savaşından önce açılır.",
                 )
             offered = list(record.offered_boosters or [])
-            if booster_id not in offered:
+            if booster_id != _SKIP_BOOSTER_ID and booster_id not in offered:
                 raise CareerRunError(
                     "booster_not_offered",
-                    "Seçilen güçlendirici bu turdaki üç seçenek arasında yok.",
+                    "Seçilen güçlendirici boss öncesi seçenekler arasında yok.",
                 )
-            selected = list(record.selected_boosters or [])
-            selected.append(booster_id)
-            record.selected_boosters = selected
+            if booster_id != _SKIP_BOOSTER_ID:
+                mastery = masteries[booster_id]
+                cost = _booster_credit_cost(mastery.tier)
+                progression = session.scalar(
+                    select(PlayerProgressionRecord)
+                    .where(PlayerProgressionRecord.player_id == player_id)
+                    .with_for_update()
+                )
+                if progression is None or progression.credits < cost:
+                    raise CareerRunError(
+                        "insufficient_credits",
+                        f"Bu güçlendirici için {cost} Devre Kredisi gerekiyor.",
+                    )
+                progression.credits -= cost
+                progression.updated_at = now
+                selected = list(record.selected_boosters or [])
+                selected.append(booster_id)
+                record.selected_boosters = selected
             record.offered_boosters = []
             record.status = "active"
             record.updated_at = now
@@ -268,7 +381,7 @@ class CareerRunService:
         return self._snapshot(player_id, record)
 
     def battle(self, player_id: str) -> CareerBattleResult:
-        board = self.online_service.get_board(player_id)
+        board = self.get_board(player_id)
         if board is None:
             raise CareerRunError(
                 "board_required",
@@ -279,7 +392,7 @@ class CareerRunService:
             if record.status != "active":
                 raise CareerRunError(
                     "booster_selection_required",
-                    "Sonraki savaştan önce sunulan güçlendiricilerden birini seçin.",
+                    "Boss savaşından önce güçlendirici seçin veya güçlendiricisiz ilerleyin.",
                 )
             stage_index = record.stage_index
             selected_boosters = list(record.selected_boosters or [])
@@ -342,11 +455,12 @@ class CareerRunService:
                     record.offered_boosters = []
                     record.ended_at = now
                     terminal_completed = True
-                else:
+                elif record.stage_index == TOTAL_STAGES - 1:
                     record.status = "awaiting_booster"
-                    record.offered_boosters = list(
-                        _BOOSTER_OFFERS[record.stage_index - 1]
-                    )
+                    record.offered_boosters = list(_BOSS_BOOSTER_OFFERS)
+                else:
+                    record.status = "active"
+                    record.offered_boosters = []
             else:
                 record.status = "failed"
                 record.offered_boosters = []
@@ -411,7 +525,7 @@ class CareerRunService:
             opponent=None,
             last_match_id=None,
             reward=None,
-            board_required=self.online_service.get_board(player_id) is None,
+            board_required=self.get_board(player_id) is None,
             started_at=None,
             ended_at=None,
         )
@@ -436,7 +550,7 @@ class CareerRunService:
             for booster_id in list(record.offered_boosters or [])
             if booster_id in masteries
         )
-        saved_board = self.online_service.get_board(player_id)
+        saved_board = self.get_board(player_id)
         opponent = None
         if (
             record.status == "active"
@@ -531,6 +645,17 @@ class CareerRunService:
             tier=mastery.tier,
             effect_value=mastery.effect_value,
             effect_label=mastery.effect_label,
+            credit_cost=_booster_credit_cost(mastery.tier),
+        )
+
+    @staticmethod
+    def _saved_career_board(record: CareerBoardRecord) -> SavedBoard:
+        return SavedBoard(
+            board_id=record.id,
+            player_id=record.player_id,
+            board=OnlinePlayService._board_from_record(record),
+            fingerprint=record.fingerprint,
+            updated_at=CareerRunService._as_utc(record.updated_at),
         )
 
     @staticmethod

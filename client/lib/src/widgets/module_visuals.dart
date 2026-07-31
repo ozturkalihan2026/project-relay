@@ -31,3 +31,34 @@ IconData directionIcon(RelayDirection direction) => switch (direction) {
       RelayDirection.south => Icons.arrow_downward,
       RelayDirection.west => Icons.arrow_back,
     };
+
+bool usesConnectionDirectionArrow(ModuleKind kind) => switch (kind) {
+      ModuleKind.laser ||
+      ModuleKind.pulseCannon ||
+      ModuleKind.shield ||
+      ModuleKind.cooler ||
+      ModuleKind.repair => true,
+      _ => false,
+    };
+
+RelayDirection moduleDisplayDirection(
+  ModuleKind kind,
+  RelayDirection orientation,
+) {
+  return usesConnectionDirectionArrow(kind) ? orientation.opposite : orientation;
+}
+
+String moduleDirectionTooltip(
+  ModuleKind kind,
+  RelayDirection orientation,
+) {
+  final direction = moduleDisplayDirection(kind, orientation);
+  return switch (kind) {
+    ModuleKind.generator => 'Jeneratör çekirdeğe dönük kalır',
+    ModuleKind.battery =>
+      'Dört yönlü kavşak • yalnız kullanılabilir uçlar gösterilir',
+    ModuleKind.amplifier => 'Etki yönü: ${direction.displayName}',
+    _ => 'Enerji bağlantısı: ${direction.displayName}',
+  };
+}
+

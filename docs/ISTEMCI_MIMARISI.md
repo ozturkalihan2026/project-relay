@@ -1,4 +1,4 @@
-# Project Relay v0.5.0 — İstemci Mimarisi
+# Project Relay v0.6.2 — İstemci Mimarisi
 
 ## Katmanlar
 
@@ -17,10 +17,14 @@
 2. API katmanı kısa ömürlü erişim anahtarını yalnız bellekte tutar. Yetkili
    istek `401` alırsa yenileme anahtarını bir kez döndürür ve isteği yineler.
 3. Riverpod katalog sağlayıcısı modül ve bot listesini FastAPI'den alır.
-4. Ana menü Oyna, Kariyer, Nasıl Oynanır ve Ayarlar ekranlarını ayırır.
+4. Ana menü Oyna, Kariyer, Koleksiyon, İstatistikler, Nasıl Oynanır ve
+   Ayarlar ekranlarını ayırır.
    Oyun el kitabı modül kataloğunu bağımsız akışta yükler; Oyna ekranı
    çevrimiçi ve antrenman düzenleyici kiplerinden yalnız birini açar.
-5. Kart denetleyicisi yalnızca oyuncunun taslak yerleşimini tutar.
+5. Koleksiyon sağlayıcısı aktif sekizli kiti, Devre Kredisini, sahip olunan
+   kozmetikleri ve kuşanılanları sunucudan alır.
+6. Kart denetleyicisi oyuncunun taslak yerleşimiyle birlikte aktif kit limitlerini
+   tutar; palet her modül türünde kalan adedi gösterir.
 6. İstemci yönlü portları, pasif çekirdeği ve dört çekirdek kapısını önizleme
    amacıyla çizer; kart dışına veya kapısız çekirdek kenarına bakan kullanılamaz
    port işaretlerini göstermez.
@@ -35,6 +39,11 @@
 13. Flame, olayları tick gruplarına ayırıp iki 4×4 kart üzerinde sırayla
    görselleştirir; aynı olaylar Türkçe akışa ve modül türüne göre yerel ses
    eşlemesine gider.
+14. Normal/antrenman/Asenkron PvP ve kariyer savaşları aynı replay motorunu
+   kullanır; `CareerBattleScreen` yalnız kariyere özgü sonuç yönlendirmesini
+   ayrı tutar.
+15. Asenkron PvP ilerleme ödülü replay tamamlanınca `RelayNotice` ile ekran
+   ortasında gösterilir; sayfa akışına ayrı ödül kartı eklenmez.
 
 ## Yerleşim ve sonuç sunumu
 
@@ -65,8 +74,10 @@ modül Can ve Isı değişimlerinin önceki kareye göre `+ / −` gösterilmesi
 sağlar. Sıfır bekleme `Hazır`, pozitif bekleme `Doluyor: N` biçiminde yazılır.
 Olay listesi kalan yüksekliği esnek biçimde kullanır. Duraklatma, yeniden
 oynatma, ses ve hız kontrolleri sonuç alanının altında
-gruplanır; **Yeni Oyun** aynı grubun ikinci satırında ortalanır ve ayrı bir
-uygulama çubuğu eylemi olarak tekrarlanmaz.
+gruplanır. Normal ve antrenman akışında **Yeni Oyun** aynı grubun ikinci
+satırında ortalanır. Kariyer savaşında aynı alan sonuç kesinleşene kadar
+pasif kalır; ardından koşu durumuna göre **Sonraki Savaş**, **Boss
+Hazırlığına Geç**, **Koşuyu Tamamla** veya **Kariyer Sonucuna Dön** olur.
 Ana menüdeki Ayarlar, yeni tekrarın başlangıç sesi ve hızını Riverpod
 durumunda tutar; tekrar içindeki Ses/Hız kontrolleri aynı tercihi günceller.
 
@@ -88,3 +99,12 @@ FastAPI ve deterministik Python motorudur:
 - modüller → Jeneratör → çekirdek hedef sırası,
 - kazanan ve eşitlik bozma,
 - replay olayları ve checksum.
+
+
+## v0.6.2 koleksiyon akışı
+
+Koleksiyon ekranı `collectionProvider` ile tek sunucu anlık görüntüsü kullanır.
+Kit kaydı ve kozmetik eylemlerinden sonra koleksiyon ile ilerleme sağlayıcıları
+yenilenir. Editör açılırken aktif kit yüklenir; çevrimiçi, kariyer ve antrenman
+paletleri aynı kalan-adet kuralına bağlanır. Sunucuya kaydedilen kartlar istemci
+kısıtından bağımsız olarak aktif kit karşısında tekrar denetlenir.

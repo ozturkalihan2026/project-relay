@@ -7,12 +7,25 @@ final boardControllerProvider =
 
 const maxBoardModules = 6;
 
+const defaultEditorKitLimits = <ModuleKind, int>{
+  ModuleKind.generator: 1,
+  ModuleKind.battery: 3,
+  ModuleKind.laser: 3,
+  ModuleKind.pulseCannon: 3,
+  ModuleKind.shield: 3,
+  ModuleKind.cooler: 3,
+  ModuleKind.amplifier: 3,
+  ModuleKind.repair: 3,
+};
+
 class BoardEditorState {
   const BoardEditorState({
     required this.placements,
     this.selectedKind,
     this.selectedCell,
     this.validation,
+    this.kitName = 'Serbest Kit',
+    this.kitLimits = defaultEditorKitLimits,
   });
 
   factory BoardEditorState.initial() {
@@ -40,6 +53,16 @@ class BoardEditorState {
   final ModuleKind? selectedKind;
   final int? selectedCell;
   final BoardValidation? validation;
+  final String kitName;
+  final Map<ModuleKind, int> kitLimits;
+
+  int placedCount(ModuleKind kind) =>
+      placements.values.where((item) => item.kind == kind).length;
+
+  int remainingFor(ModuleKind kind) {
+    final remaining = (kitLimits[kind] ?? 0) - placedCount(kind);
+    return remaining < 0 ? 0 : remaining;
+  }
 
   ModulePlacement? get selectedPlacement {
     final cell = selectedCell;
@@ -69,6 +92,8 @@ class BoardEditorState {
     bool clearSelectedCell = false,
     BoardValidation? validation,
     bool clearValidation = false,
+    String? kitName,
+    Map<ModuleKind, int>? kitLimits,
   }) {
     return BoardEditorState(
       placements: placements ?? this.placements,
@@ -77,6 +102,8 @@ class BoardEditorState {
       selectedCell:
           clearSelectedCell ? null : selectedCell ?? this.selectedCell,
       validation: clearValidation ? null : validation ?? this.validation,
+      kitName: kitName ?? this.kitName,
+      kitLimits: kitLimits ?? this.kitLimits,
     );
   }
 }
@@ -99,11 +126,26 @@ class BoardController extends Notifier<BoardEditorState> {
     state = BoardEditorState(
       placements: placements,
       selectedCell: selectedCell,
+      kitName: state.kitName,
+      kitLimits: state.kitLimits,
       validation: BoardValidation(
         valid: true,
         poweredIds: saved.poweredIds,
         unpoweredIds: saved.unpoweredIds,
       ),
+    );
+  }
+
+  void applyKit(ControlledKit kit) {
+    final limits = <ModuleKind, int>{};
+    for (final kind in kit.moduleKinds) {
+      limits[kind] = (limits[kind] ?? 0) + 1;
+    }
+    state = state.copyWith(
+      kitName: kit.name,
+      kitLimits: limits,
+      clearSelectedKind: true,
+      clearValidation: true,
     );
   }
 
@@ -230,6 +272,17 @@ class BoardController extends Notifier<BoardEditorState> {
   }
 
   void _writePaletteModule(int cellIndex, ModuleKind kind) {
+    final existing = state.placements[cellIndex];
+    final usedWithoutTarget = state.placements.values
+        .where((placement) => placement.cellIndex != cellIndex)
+        .where((placement) => placement.kind == kind)
+        .length;
+    final allowed = state.kitLimits[kind] ?? 0;
+    if (usedWithoutTarget >= allowed && existing?.kind != kind) {
+      throw StateError(
+        '${kind.displayName} için aktif sekizli kitte boş yuva kalmadı.',
+      );
+    }
     if (!state.placements.containsKey(cellIndex) &&
         state.placements.length >= maxBoardModules) {
       throw StateError(
@@ -360,6 +413,10 @@ class BoardController extends Notifier<BoardEditorState> {
   }
 
   void reset() {
-    state = BoardEditorState.initial();
+    final fresh = BoardEditorState.initial();
+    state = fresh.copyWith(
+      kitName: state.kitName,
+      kitLimits: state.kitLimits,
+    );
   }
 }

@@ -101,6 +101,39 @@ void main() {
     },
   );
 
+  testWidgets('kariyer birincil eylemi sonuçtan önce devre dışıdır',
+      (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SizedBox(
+            width: 540,
+            child: ReplayPlaybackControls(
+              playing: true,
+              soundEnabled: true,
+              speed: 1,
+              onTogglePlayback: () {},
+              onRestart: () {},
+              onToggleSound: () {},
+              onSpeedChanged: (_) {},
+              onNewGame: () {},
+              primaryActionLabel: 'SONRAKİ SAVAŞ',
+              primaryActionKey: 'career-battle-primary-action',
+              primaryActionEnabled: false,
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(find.text('SONRAKİ SAVAŞ'), findsOneWidget);
+    final action = tester.widget<FilledButton>(
+      find.byKey(const ValueKey('career-battle-primary-action')),
+    );
+    expect(action.onPressed, isNull);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('dar alanda kontrol düğmeleri taşmadan satıra sarılır',
       (tester) async {
     await tester.pumpWidget(

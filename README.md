@@ -1,32 +1,30 @@
-# Project Relay v0.6.1 — Kariyer Koşusu ve Rakip Ön İzlemesi
+# Project Relay v0.6.2 — Koleksiyon ve Kontrollü Kit
 
 Project Relay, merkezî çekirdek çevresine en fazla altı modül yerleştirilen,
-sunucu yetkili asenkron devre savaşıdır. v0.6.1, v0.6.0 ilerleme temelini
-beş aşamalı oynanabilir kariyer koşusuna dönüştürür.
+sunucu yetkili asenkron devre savaşıdır. v0.6.2, kariyer ve rekabet temelinin
+üzerine güç satmayan koleksiyon ekonomisi ile sekiz yuvalı hazırlık kitini ekler.
 
-## v0.6.1 odak noktası
+## v0.6.2 odak noktası
 
-- Kariyer koşusu beş bağlantılı savaştan oluşur; beşinci aşama bölüm sonu
-  devresidir.
-- Oyuncu, her savaştan önce sunucunun gerçekten kullanacağı rakip devreyi tam
-  yerleşim ve yönleriyle görür.
-- **Devremi Düzenle** eylemi özel kariyer editörünü açar; oyuncu karşı
-  kombinasyonunu kaydedip aynı aşamaya döner.
-- İlk dört zaferden sonra üç geçici güçlendiriciden biri seçilir. Etkiler yalnız
-  aktif koşuda çalışır ve koşu sonunda sıfırlanır.
-- Beraberlik veya mağlubiyet koşuyu bitirir. Sonuç, XP ve Devre Kredisi ödülü
-  sunucu tarafından ve yalnız bir kez işlenir.
-- `career_runs` tablosu Alembic `20260731_0005` ile eklendi.
-- API `0.6.1`, istemci `0.6.1+36`, savaş kuralları `0.8`dir.
+- Ana menüde ayrı **Koleksiyon** ekranı
+- Tam bir Jeneratör içeren, sekiz modüllük kontrollü kit
+- Savaş kartında altı aktif modül ve rakibe göre iki yedek kit seçeneği
+- Editör paletlerinde aktif kitte kalan modül adetleri
+- Çevrimiçi ve Kariyer kartlarını sunucuda kit sınırına göre doğrulama
+- Modül kaplaması, devre kartı teması ve profil çerçevesi koleksiyonu
+- Devre Kredisiyle çalışan, kalıcı savaş gücü satmayan kozmetik mağaza
+- Kalıcı sahiplik ve kuşanma için `player_cosmetics` ile `player_loadouts`
+- Alembic `20260731_0007`
+- API `0.6.2`, Flutter istemcisi `0.6.2+39`, savaş kuralları `0.8`
 
-Ayrıntılı karar ve kabul ölçütleri:
-[docs/V0.6.1_KARIYER_KOSUSU_VE_RAKIP_ONIZLEME.md](docs/V0.6.1_KARIYER_KOSUSU_VE_RAKIP_ONIZLEME.md)
+Ayrıntılı kararlar ve kabul ölçütleri:
+[docs/V0.6.2_KOLEKSIYON_VE_KONTROLLU_KIT.md](docs/V0.6.2_KOLEKSIYON_VE_KONTROLLU_KIT.md)
 
 ## Sonraki adım
 
-v0.6.2; kozmetik mağaza, koleksiyon görünümü ve kontrollü sekizli kit sistemini
-ekleyecek. Rekabetçi PvP için kısmi keşif ve sınırlı yeniden düzenleme ayrıca
-ölçülüp planlanacaktır.
+v0.7.0; sezon ilerlemesi, kapalı alfa ölçümleri, denge telemetrisi ve kötüye
+kullanım korumasına odaklanacaktır. Rekabetçi PvP için kısmi keşif ve sınırlı
+yeniden düzenleme de bu ölçüm aşamasında değerlendirilecektir.
 
 ## Çalıştırma
 

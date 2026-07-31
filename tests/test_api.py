@@ -132,7 +132,7 @@ class RelayApiTests(unittest.TestCase):
         response = self.client.get("/healthz")
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["version"], "0.6.1")
+        self.assertEqual(response.json()["version"], "0.6.2")
         self.assertEqual(response.json()["rules_version"], "0.8")
         self.assertEqual(response.json()["storage"], "sqlite")
         self.assertEqual(response.json()["database"], "ok")
@@ -151,11 +151,20 @@ class RelayApiTests(unittest.TestCase):
         self.assertTrue(idle.json()["board_required"])
 
         saved = self.client.put(
-            "/api/v1/me/board",
+            "/api/v1/me/career-board",
             headers=headers,
             json=player_board(),
         )
         self.assertEqual(saved.status_code, 200, saved.text)
+        self.assertEqual(saved.json()["board"]["name"], player_board()["name"])
+
+        profile = self.client.get("/api/v1/me", headers=headers)
+        self.assertEqual(profile.status_code, 200, profile.text)
+        self.assertIsNone(profile.json()["board"])
+        career_board = self.client.get(
+            "/api/v1/me/career-board", headers=headers
+        )
+        self.assertEqual(career_board.status_code, 200, career_board.text)
 
         started = self.client.post(
             "/api/v1/me/career-run/start", headers=headers
@@ -176,6 +185,90 @@ class RelayApiTests(unittest.TestCase):
         self.assertEqual(
             refreshed.json()["opponent"]["board"],
             payload["opponent"]["board"],
+        )
+
+
+    def test_collection_api_exposes_starters_and_saves_controlled_kit(self) -> None:
+        guest_response = self.client.post("/api/v1/auth/guest")
+        self.assertEqual(guest_response.status_code, 201, guest_response.text)
+        guest = guest_response.json()
+        headers = {
+            "Authorization": f"Bearer {guest['tokens']['access_token']}"
+        }
+
+        collection = self.client.get(
+            "/api/v1/me/collection",
+            headers=headers,
+        )
+        self.assertEqual(collection.status_code, 200, collection.text)
+        payload = collection.json()
+        self.assertEqual(len(payload["kit"]["module_kinds"]), 8)
+        self.assertEqual(
+            payload["kit"]["module_kinds"].count("generator"),
+            1,
+        )
+        self.assertEqual(
+            len([item for item in payload["cosmetics"] if item["owned"]]),
+            3,
+        )
+
+        saved = self.client.put(
+            "/api/v1/me/kit",
+            headers=headers,
+            json={
+                "name": "Savunma Sekizlisi",
+                "module_kinds": [
+                    "generator",
+                    "battery",
+                    "laser",
+                    "shield",
+                    "shield",
+                    "cooler",
+                    "amplifier",
+                    "repair",
+                ],
+            },
+        )
+        self.assertEqual(saved.status_code, 200, saved.text)
+        self.assertEqual(saved.json()["kit"]["name"], "Savunma Sekizlisi")
+
+        rejected = self.client.put(
+            "/api/v1/me/board",
+            headers=headers,
+            json={
+                "name": "Kit Dışı Devre",
+                "modules": [
+                    {
+                        "module_id": "G",
+                        "kind": "generator",
+                        "row": 0,
+                        "column": 1,
+                        "orientation": "south",
+                        "level": 1,
+                    },
+                    {
+                        "module_id": "L1",
+                        "kind": "laser",
+                        "row": 0,
+                        "column": 2,
+                        "orientation": "east",
+                        "level": 1,
+                    },
+                    {
+                        "module_id": "L2",
+                        "kind": "laser",
+                        "row": 0,
+                        "column": 3,
+                        "orientation": "east",
+                        "level": 1,
+                    },
+                ],
+            },
+        )
+        self.assertEqual(rejected.status_code, 409, rejected.text)
+        self.assertEqual(
+            rejected.json()["code"],
+            "board_exceeds_active_kit",
         )
 
     def test_match_result_explains_server_decision_metrics(self) -> None:

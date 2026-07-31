@@ -112,6 +112,36 @@ class BoardRecord(Base):
     )
 
 
+class CareerBoardRecord(Base):
+    __tablename__ = "career_boards"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True)
+    player_id: Mapped[str] = mapped_column(
+        ForeignKey("players.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    name: Mapped[str] = mapped_column(String(80), nullable=False)
+    modules: Mapped[list[dict[str, Any]]] = mapped_column(
+        JSON,
+        nullable=False,
+    )
+    fingerprint: Mapped[str] = mapped_column(String(64), nullable=False)
+    module_count: Mapped[int] = mapped_column(Integer, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+    )
+
+    __table_args__ = (
+        UniqueConstraint("player_id", name="uq_career_boards_player_id"),
+        Index("ix_career_boards_player_time", "player_id", "updated_at"),
+    )
+
+
 class MatchRecord(Base):
     __tablename__ = "matches"
 
@@ -462,4 +492,49 @@ class CareerRunRecord(Base):
     __table_args__ = (
         Index("ix_career_runs_player_time", "player_id", "started_at"),
         Index("ix_career_runs_player_status", "player_id", "status"),
+    )
+
+
+class PlayerCosmeticRecord(Base):
+    __tablename__ = "player_cosmetics"
+
+    player_id: Mapped[str] = mapped_column(
+        ForeignKey("players.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    cosmetic_id: Mapped[str] = mapped_column(String(48), nullable=False)
+    acquired_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+    )
+
+    __table_args__ = (
+        PrimaryKeyConstraint(
+            "player_id",
+            "cosmetic_id",
+            name="pk_player_cosmetics",
+        ),
+        Index("ix_player_cosmetics_player", "player_id"),
+    )
+
+
+class PlayerLoadoutRecord(Base):
+    __tablename__ = "player_loadouts"
+
+    player_id: Mapped[str] = mapped_column(
+        ForeignKey("players.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    kit_name: Mapped[str] = mapped_column(String(40), nullable=False)
+    module_kinds: Mapped[list[str]] = mapped_column(JSON, nullable=False)
+    module_skin_id: Mapped[str] = mapped_column(String(48), nullable=False)
+    board_theme_id: Mapped[str] = mapped_column(String(48), nullable=False)
+    profile_frame_id: Mapped[str] = mapped_column(String(48), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
     )

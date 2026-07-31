@@ -194,7 +194,9 @@ class _CircuitCell extends StatelessWidget {
                   ? '${spec?.displayName ?? module.kind.displayName}, '
                       'dört yönlü bağlantı, $statSemantics'
                   : '${spec?.displayName ?? module.kind.displayName}, '
-                      '${module.orientation.shortLabel} yönü, $statSemantics',
+                      '${moduleDisplayDirection(module.kind, module.orientation).shortLabel} '
+                      '${usesConnectionDirectionArrow(module.kind) ? 'bağlantı' : 'etki'} yönü, '
+                      '$statSemantics',
           child: AnimatedScale(
             scale: dropActive ? 1.035 : 1,
             duration: const Duration(milliseconds: 120),
@@ -293,19 +295,19 @@ class _CircuitCell extends StatelessWidget {
                               right: 5,
                               top: 5,
                               child: Tooltip(
-                                message: switch (module.kind) {
-                                  ModuleKind.generator =>
-                                    'Jeneratör çekirdeğe dönük kalır',
-                                  ModuleKind.battery =>
-                                    'Dört yönlü kavşak • yalnız '
-                                        'kullanılabilir uçlar gösterilir',
-                                  _ => 'Ön yön: '
-                                      '${module.orientation.displayName}',
-                                },
+                                message: moduleDirectionTooltip(
+                                  module.kind,
+                                  module.orientation,
+                                ),
                                 child: Icon(
                                   module.kind == ModuleKind.battery
                                       ? Icons.hub_outlined
-                                      : directionIcon(module.orientation),
+                                      : directionIcon(
+                                          moduleDisplayDirection(
+                                            module.kind,
+                                            module.orientation,
+                                          ),
+                                        ),
                                   key: ValueKey(
                                     'module-direction-$cellIndex',
                                   ),

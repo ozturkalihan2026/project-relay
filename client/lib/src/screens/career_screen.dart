@@ -6,8 +6,9 @@ import '../models/relay_models.dart';
 import '../theme/relay_theme.dart';
 import '../widgets/circuit_board.dart';
 import '../widgets/player_status_bar.dart';
+import '../widgets/relay_notice.dart';
+import 'career_battle_screen.dart';
 import 'editor_screen.dart';
-import 'replay_screen.dart';
 
 class CareerScreen extends ConsumerStatefulWidget {
   const CareerScreen({super.key});
@@ -71,11 +72,13 @@ class _CareerScreenState extends ConsumerState<CareerScreen> {
                     _CareerRunCard(
                       run: careerRun,
                       modules: catalog.modules,
+                      availableCredits: snapshot.profile.credits,
                       busyAction: _runAction,
                       onStart: _startRun,
                       onEditBoard: _openCareerEditor,
                       onBattle: () => _battle(catalog.modules),
                       onChooseBooster: _chooseBooster,
+                      onSkipBooster: () => _chooseBooster('none'),
                       onAbandon: _confirmAbandon,
                     ),
                     const SizedBox(height: 12),
@@ -222,6 +225,9 @@ class _CareerScreenState extends ConsumerState<CareerScreen> {
 
   Future<void> _battle(List<ModuleSpec> modules) async {
     if (_runBusy) return;
+    final runBeforeBattle = ref.read(careerRunProvider).requireValue;
+    final stageNumber = runBeforeBattle.opponent?.stageNumber ??
+        (runBeforeBattle.stageIndex + 1);
     setState(() => _runAction = 'battle');
     try {
       final api = ref.read(relayApiProvider);
@@ -235,10 +241,11 @@ class _CareerScreenState extends ConsumerState<CareerScreen> {
       if (mounted) {
         await Navigator.of(context).push(
           MaterialPageRoute<void>(
-            builder: (context) => ReplayScreen(
-              match: outcome.match,
+            builder: (context) => CareerBattleScreen(
+              outcome: outcome,
               replay: replay,
               modules: modules,
+              stageNumber: stageNumber,
             ),
           ),
         );
@@ -306,12 +313,10 @@ class _CareerScreenState extends ConsumerState<CareerScreen> {
       await ref.read(progressionProvider.future);
       if (mounted) {
         final levelText = reward.levelUp ? ' • SEVİYE ${reward.levelAfter}!' : '';
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              '+${reward.xp} XP • +${reward.credits} Devre Kredisi$levelText',
-            ),
-          ),
+        RelayNotice.show(
+          context,
+          '+${reward.xp} XP • +${reward.credits} Devre Kredisi$levelText',
+          tone: RelayNoticeTone.success,
         );
       }
     } catch (error) {
@@ -323,9 +328,7 @@ class _CareerScreenState extends ConsumerState<CareerScreen> {
 
   void _showError(String message) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    RelayNotice.show(context, message, tone: RelayNoticeTone.error);
   }
 }
 
@@ -333,21 +336,25 @@ class _CareerRunCard extends StatelessWidget {
   const _CareerRunCard({
     required this.run,
     required this.modules,
+    required this.availableCredits,
     required this.busyAction,
     required this.onStart,
     required this.onEditBoard,
     required this.onBattle,
     required this.onChooseBooster,
+    required this.onSkipBooster,
     required this.onAbandon,
   });
 
   final CareerRunSnapshot run;
   final List<ModuleSpec> modules;
+  final int availableCredits;
   final String? busyAction;
   final VoidCallback onStart;
   final VoidCallback onEditBoard;
   final VoidCallback onBattle;
   final ValueChanged<String> onChooseBooster;
+  final VoidCallback onSkipBooster;
   final VoidCallback onAbandon;
 
   bool get busy => busyAction != null;
@@ -378,8 +385,9 @@ class _CareerRunCard extends StatelessWidget {
           color: RelayColors.amber,
           title: 'BEŞ SAVAŞLIK KARİYER KOŞUSU',
           subtitle:
-              'Rakip devreyi savaştan önce tam gör, devreni karşı stratejiye '
-              'göre düzenle ve dört seçimle bölüm sonu devresine ulaş.',
+              'Rakip devreyi savaştan önce tam gör ve devreni karşı stratejiye '
+              'göre düzenle. Dördüncü zaferden sonra boss öncesi tek bir '
+              'güçlendirici satın alabilir veya güçlendiricisiz ilerleyebilirsin.',
         ),
         const SizedBox(height: 14),
         if (run.boardRequired)
@@ -519,7 +527,13 @@ class _CareerRunCard extends StatelessWidget {
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
                     : const Icon(Icons.flash_on),
-                label: const Text('SAVAŞA BAŞLA'),
+                label: Text(
+                  opponent.isBoss
+                      ? 'BOSS SAVAŞINA İLERLE'
+                      : opponent.stageNumber == 1
+                          ? 'İLK SAVAŞA BAŞLA'
+                          : 'SONRAKİ SAVAŞA İLERLE',
+                ),
               ),
             ),
           ],
@@ -541,12 +555,21 @@ class _CareerRunCard extends StatelessWidget {
         const _RunTitle(
           icon: Icons.bolt,
           color: RelayColors.amber,
-          title: 'GEÇİCİ GÜÇLENDİRİCİNİ SEÇ',
-          subtitle: 'Bu etki yalnız mevcut kariyer koşusunda çalışır; '
-              'koşu bittiğinde tamamen sıfırlanır.',
+          title: 'BOSS ÖNCESİ GÜÇLENDİRİCİ MAĞAZASI',
+          subtitle: 'Yalnız bu koşunun boss savaşında çalışacak tek bir '
+              'güçlendirici satın alabilir veya satın almadan ilerleyebilirsin.',
         ),
         const SizedBox(height: 12),
         _RunProgress(run: run),
+        const SizedBox(height: 10),
+        Text(
+          'Mevcut bakiye: $availableCredits Devre Kredisi',
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            color: RelayColors.amber,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
         if (run.selectedBoosters.isNotEmpty) ...[
           const SizedBox(height: 12),
           _SelectedBoosters(items: run.selectedBoosters),
@@ -594,7 +617,7 @@ class _CareerRunCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 FilledButton(
-                  onPressed: busy
+                  onPressed: busy || availableCredits < booster.creditCost
                       ? null
                       : () => onChooseBooster(booster.id),
                   child: busyAction == 'booster:${booster.id}'
@@ -602,11 +625,23 @@ class _CareerRunCard extends StatelessWidget {
                           dimension: 16,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : const Text('SEÇ'),
+                      : Text('${booster.creditCost} DK'),
                 ),
               ],
             ),
           ),
+        const SizedBox(height: 4),
+        OutlinedButton.icon(
+          key: const ValueKey('career-booster-skip'),
+          onPressed: busy ? null : onSkipBooster,
+          icon: busyAction == 'booster:none'
+              ? const SizedBox.square(
+                  dimension: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(Icons.arrow_forward),
+          label: const Text('GÜÇLENDİRİCİ ALMADAN BOSS’A İLERLE'),
+        ),
       ],
     );
   }

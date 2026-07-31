@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../theme/relay_theme.dart';
 import '../widgets/player_status_bar.dart';
 import 'career_screen.dart';
+import 'collection_screen.dart';
 import 'how_to_play_screen.dart';
 import 'play_mode_screen.dart';
 import 'settings_screen.dart';
@@ -67,6 +68,17 @@ class MainMenuScreen extends StatelessWidget {
                         ),
                         const SizedBox(height: 10),
                         _MenuButton(
+                          key: const ValueKey('main-menu-collection'),
+                          icon: Icons.inventory_2_outlined,
+                          title: 'KOLEKSİYON',
+                          subtitle: 'Sekizli kit, kozmetik mağaza ve kuşanılanlar',
+                          onPressed: () => _open(
+                            context,
+                            const CollectionScreen(),
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        _MenuButton(
                           key: const ValueKey('main-menu-statistics'),
                           icon: Icons.analytics_outlined,
                           title: 'İSTATİSTİKLER',
@@ -100,7 +112,7 @@ class MainMenuScreen extends StatelessWidget {
                         ),
                         const SizedBox(height: 22),
                         const Text(
-                          'KARİYER VE DEVRE SAVAŞI • v0.6.1',
+                          'KİT, KOLEKSİYON VE DEVRE SAVAŞI • v0.6.2',
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             color: RelayColors.muted,

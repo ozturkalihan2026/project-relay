@@ -31,7 +31,7 @@ class GameManualScreen extends StatelessWidget {
               ),
             ),
             Text(
-              'PROJECT RELAY • v0.6.1',
+              'PROJECT RELAY • v0.6.2',
               style: TextStyle(
                 color: RelayColors.muted,
                 fontSize: 10,
@@ -279,6 +279,97 @@ class GameManualScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 14),
                   const _ManualSection(
+                    icon: Icons.inventory_2_outlined,
+                    title: 'SEKİZLİ KİT VE KOLEKSİYON',
+                    subtitle: 'Hazırlık seçimi güç satışından ayrı tutulur',
+                    children: [
+                      _ManualParagraph(
+                        text: 'Sekizli kit, savaş editöründe erişebileceğiniz '
+                            'modül havuzudur. Kartta en fazla altı modül '
+                            'kullanılır; kitte kalan iki yuva farklı rakiplere '
+                            'karşı yedek seçenektir.',
+                      ),
+                      _ManualParagraph(
+                        text: 'Kit tam olarak sekiz yuva ve yalnız bir '
+                            'Jeneratör içerir. Jeneratör dışındaki bir modül '
+                            'türü en fazla üç kez seçilebilir. Editör paletindeki '
+                            'sayı rozeti o türden kaç kit yuvasının kaldığını '
+                            'gösterir.',
+                      ),
+                      _ManualParagraph(
+                        text: 'Kozmetik mağaza modül gücü, hasar, enerji veya '
+                            'savaş hakkı satmaz. Devre Kredisi yalnız modül '
+                            'kaplaması, devre kartı teması ve profil çerçevesi '
+                            'gibi görsel koleksiyon ürünlerinde kullanılır.',
+                      ),
+                      _ManualParagraph(
+                        text: 'Satın alınan içerikler kalıcı koleksiyona eklenir. '
+                            'Aynı kategoride tek kozmetik kuşanılır; yeni seçim '
+                            'savaş dengesini ve sunucu kurallarını değiştirmez.',
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  const _ManualSection(
+                    icon: Icons.route_outlined,
+                    title: 'KARİYER KOŞUSU VE KARŞI DEVRE',
+                    subtitle: 'Beş savaş, tam ön izleme ve boss hazırlığı',
+                    children: [
+                      _ManualParagraph(
+                        text: 'Kariyer koşusu birbirine bağlı beş savaştan '
+                            'oluşur. Her aşamada savaş başlamadan önce rakibin '
+                            'gerçekte kullanacağı devreyi bütünüyle görürsünüz. '
+                            'Modül türlerini, konumlarını ve bağlantı yönlerini '
+                            'inceleyip Devremi Düzenle ile karşı devrenizi '
+                            'hazırlayın.',
+                      ),
+                      _ManualParagraph(
+                        text: 'Kariyer devresi ile Asenkron PvP devresi ayrı '
+                            'kaydedilir. Kariyerde yaptığınız düzenleme PvP '
+                            'kartınızı, PvP için yaptığınız düzenleme de '
+                            'kariyer kartınızı değiştirmez.',
+                      ),
+                      _ManualParagraph(
+                        text: 'Kariyer savaşları kendine ait savaş ekranında '
+                            'oynanır. Savaş sonucu kesinleşince Yeni Oyun yerine '
+                            'Sonraki Savaş düğmesi görünür. Bu düğme yeni savaşı '
+                            'otomatik başlatmaz; bir sonraki rakibin tam devre '
+                            'ön izlemesine döner. Devrenizi yeniden düzenledikten '
+                            'sonra savaşı siz başlatırsınız.',
+                      ),
+                      _ManualParagraph(
+                        text: 'Dördüncü zaferin ardından düğme Boss Hazırlığına '
+                            'Geç olur. Yalnız boss savaşında geçerli olacak tek '
+                            'bir geçici güçlendiriciyi Devre Kredisi ile satın '
+                            'alabilir veya satın almadan ilerleyebilirsiniz.',
+                      ),
+                      _ManualParagraph(
+                        text: 'Koşu tamamlandığında, kaybedildiğinde veya '
+                            'bırakıldığında geçici güçlendirici sıfırlanır. '
+                            'Kariyer güçlendirmeleri normal ya da dereceli PvP '
+                            'savaşlarına taşınmaz.',
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  const _ManualSection(
+                    icon: Icons.notifications_active_outlined,
+                    title: 'BİLDİRİMLER',
+                    subtitle: 'Her ekranda aynı okunabilir uyarı kuralı',
+                    children: [
+                      _ManualParagraph(
+                        text: 'Başarı, bilgi, uyarı ve hata mesajları ekranın '
+                            'ortasında yarı saydam bir kutuda gösterilir. '
+                            'Sayfa kaydırılmış olsa bile bildirim görünür '
+                            'kalır ve kısa süre sonra otomatik kapanır. '
+                            'Asenkron PvP savaşının XP ve Devre Kredisi ödülü '
+                            'de savaş ekranının altına eklenmez; aynı ortak '
+                            'bildirim kutusunda gösterilir.',
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  const _ManualSection(
                     icon: Icons.emoji_events_outlined,
                     title: 'SAVAŞI KAZANMAK',
                     subtitle: 'Amaç ve beraberlik kuralları',
@@ -302,10 +393,11 @@ class GameManualScreen extends StatelessWidget {
                             'Tam eşitlik beraberliktir.',
                       ),
                       _ManualParagraph(
-                        text: 'Kartınız sunucuda kaydedilir ve aynı modül '
-                            'sayısındaki başka bir oyuncu düzeniyle '
-                            'eşleştirilir. Rakip, hedef seçimi, hasar, sonuç '
-                            've tekrar kaydı sunucu tarafından belirlenir.',
+                        text: 'Asenkron PvP kartınız ayrı olarak sunucuda '
+                            'kaydedilir ve aynı modül sayısındaki başka bir '
+                            'oyuncu düzeniyle eşleştirilir. Rakip, hedef '
+                            'seçimi, hasar, sonuç ve tekrar kaydı sunucu '
+                            'tarafından belirlenir.',
                       ),
                     ],
                   ),
@@ -502,19 +594,20 @@ class _OrientationGuide extends StatelessWidget {
     return const _ManualSection(
       icon: Icons.rotate_right,
       title: 'OK VE PORT YÖNLERİ',
-      subtitle: 'Ok ön tarafı, nokta bağlantı kenarını gösterir',
+      subtitle: 'Okun anlamı modülün işlevine göre açıkça gösterilir',
       children: [
         _ManualParagraph(
-          text: 'Tek portlu bir modül enerjiyi okun tersindeki arka porttan '
-              'alır. Okları birbirine döndürmek yerine port noktalarını '
-              'karşı karşıya getirin.',
+          text: 'Lazer, Darbe Topu, Kalkan, Soğutucu ve Onarım Ünitesindeki '
+              'ok, enerji alan tek portun yönünü gösterir. Bu ok bağlı '
+              'devreye veya çekirdek kapısına bakmalıdır. Noktaları karşı '
+              'karşıya getirdiğinizde modül enerji ağına katılır.',
         ),
         _ManualParagraph(
-          text: 'Batarya ve Güçlendiricinin dört kenarında da port bulunur. '
-              'Batarya yönsüzdür ve döndürülmez. Güçlendiricinin oku ise '
-              'enerji bağlantısını değil, hangi komşu modülün güçleneceğini '
-              'belirler. Kart dışına veya kapısız çekirdek kenarına bakan '
-              'kullanılamayan uçlar kalabalık oluşturmaması için çizilmez.',
+          text: 'Batarya dört yönlü ve yönsüz bir kavşaktır. Güçlendiricinin '
+              'dört kenarında port bulunur; onun oku enerji girişini değil, '
+              'hangi komşu modülün güçleneceğini gösterir. Kart dışına veya '
+              'kapısız çekirdek kenarına bakan kullanılamayan uçlar '
+              'kalabalık oluşturmaması için çizilmez.',
         ),
         _ManualParagraph(
           text: 'Jeneratör yalnızca dört çekirdek kapısına yerleşir ve ön '

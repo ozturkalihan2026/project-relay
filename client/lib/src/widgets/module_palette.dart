@@ -12,6 +12,7 @@ class ModulePalette extends StatelessWidget {
     required this.selectedKind,
     required this.onSelected,
     required this.onBoardModuleReturned,
+    required this.remainingByKind,
     super.key,
   });
 
@@ -19,6 +20,7 @@ class ModulePalette extends StatelessWidget {
   final ModuleKind? selectedKind;
   final ValueChanged<ModuleKind> onSelected;
   final ValueChanged<ModuleDragData> onBoardModuleReturned;
+  final Map<ModuleKind, int> remainingByKind;
 
   @override
   Widget build(BuildContext context) {
@@ -105,6 +107,7 @@ class ModulePalette extends StatelessWidget {
                           module: module,
                           selected: module.kind == selectedKind,
                           width: tileWidth,
+                          remaining: remainingByKind[module.kind] ?? 0,
                           onTap: () => onSelected(module.kind),
                         ),
                     ],
@@ -124,22 +127,25 @@ class _PaletteItem extends StatelessWidget {
     required this.module,
     required this.selected,
     required this.width,
+    required this.remaining,
     required this.onTap,
   });
 
   final ModuleSpec module;
   final bool selected;
   final double width;
+  final int remaining;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
+    final disabled = remaining <= 0;
     return Tooltip(
-      message: '${module.description}\n${_moduleStatistics(module)}',
+      message: '${module.description}\n${_moduleStatistics(module)}\nKitte kalan: $remaining',
       child: Draggable<ModuleDragData>(
         data: ModuleDragData.palette(module.kind),
-        maxSimultaneousDrags: 1,
-        onDragStarted: onTap,
+        maxSimultaneousDrags: disabled ? 0 : 1,
+        onDragStarted: disabled ? null : onTap,
         feedback: _DragFeedback(module: module),
         childWhenDragging: Opacity(
           opacity: 0.38,
@@ -147,14 +153,16 @@ class _PaletteItem extends StatelessWidget {
             module: module,
             selected: selected,
             width: width,
-            onTap: onTap,
+            remaining: remaining,
+            onTap: disabled ? null : onTap,
           ),
         ),
         child: _PaletteTile(
           module: module,
           selected: selected,
           width: width,
-          onTap: onTap,
+          remaining: remaining,
+          onTap: disabled ? null : onTap,
         ),
       ),
     );
@@ -166,24 +174,31 @@ class _PaletteTile extends StatelessWidget {
     required this.module,
     required this.selected,
     required this.width,
+    required this.remaining,
     required this.onTap,
   });
 
   final ModuleSpec module;
   final bool selected;
   final double width;
-  final VoidCallback onTap;
+  final int remaining;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final color = moduleColor(module.kind);
+    final disabled = remaining <= 0;
     return MouseRegion(
-      cursor: SystemMouseCursors.grab,
+      cursor: disabled
+          ? SystemMouseCursors.forbidden
+          : SystemMouseCursors.grab,
       child: Material(
         key: ValueKey('palette-module-${module.kind.wireValue}'),
-        color: selected
-            ? color.withValues(alpha: 0.18)
-            : RelayColors.surfaceHigh,
+        color: disabled
+            ? RelayColors.surfaceHigh.withValues(alpha: 0.45)
+            : selected
+                ? color.withValues(alpha: 0.18)
+                : RelayColors.surfaceHigh,
         borderRadius: BorderRadius.circular(12),
         child: InkWell(
           onTap: onTap,
@@ -196,72 +211,107 @@ class _PaletteTile extends StatelessWidget {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: selected ? color : const Color(0xFF2B5361),
-                width: selected ? 2 : 1,
+                color: disabled
+                    ? RelayColors.muted.withValues(alpha: 0.35)
+                    : selected
+                        ? color
+                        : const Color(0xFF2B5361),
+                width: selected && !disabled ? 2 : 1,
               ),
             ),
-            child: Stack(
-              children: [
-                const Positioned(
-                  right: 0,
-                  top: 0,
-                  child: Icon(
-                    Icons.drag_indicator,
-                    color: RelayColors.muted,
-                    size: 17,
-                  ),
-                ),
-                Positioned.fill(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              moduleIcon(module.kind),
-                              color: color,
-                              size: 24,
+            child: Opacity(
+              opacity: disabled ? 0.48 : 1,
+              child: Stack(
+                children: [
+                  Positioned(
+                    right: 0,
+                    top: 0,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          key: ValueKey(
+                            'palette-module-remaining-${module.kind.wireValue}',
+                          ),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 5,
+                            vertical: 1,
+                          ),
+                          decoration: BoxDecoration(
+                            color: disabled
+                                ? RelayColors.coral.withValues(alpha: 0.16)
+                                : color.withValues(alpha: 0.16),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            '$remaining',
+                            style: TextStyle(
+                              color: disabled ? RelayColors.coral : color,
+                              fontSize: 9,
+                              fontWeight: FontWeight.w900,
                             ),
-                            const SizedBox(width: 6),
-                            Flexible(
-                              child: Text(
-                                module.displayName,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                textAlign: TextAlign.center,
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                        const Icon(
+                          Icons.drag_indicator,
+                          color: RelayColors.muted,
+                          size: 17,
+                        ),
+                      ],
+                    ),
+                  ),
+                  Positioned.fill(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                moduleIcon(module.kind),
+                                color: color,
+                                size: 24,
+                              ),
+                              const SizedBox(width: 6),
+                              Flexible(
+                                child: Text(
+                                  module.displayName,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w900,
+                                  ),
                                 ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 3),
-                      Text(
-                        _moduleStatistics(module),
-                        key: ValueKey(
-                          'palette-module-properties-${module.kind.wireValue}',
+                        const SizedBox(height: 3),
+                        Text(
+                          _moduleStatistics(module),
+                          key: ValueKey(
+                            'palette-module-properties-${module.kind.wireValue}',
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            color: RelayColors.muted,
+                            fontSize: 9.5,
+                            height: 1.15,
+                            fontWeight: FontWeight.w700,
+                          ),
                         ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          color: RelayColors.muted,
-                          fontSize: 9.5,
-                          height: 1.15,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

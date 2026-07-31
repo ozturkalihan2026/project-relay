@@ -10,6 +10,7 @@ import '../theme/relay_theme.dart';
 import '../widgets/circuit_board.dart';
 import '../widgets/module_palette.dart';
 import '../widgets/player_status_bar.dart';
+import '../widgets/relay_notice.dart';
 import 'replay_screen.dart';
 
 enum EditorMode {
@@ -24,14 +25,6 @@ enum EditorMode {
       };
 }
 
-enum _EditorNoticeTone { info, success, warning, error }
-
-class _EditorNotice {
-  const _EditorNotice(this.message, this.tone);
-
-  final String message;
-  final _EditorNoticeTone tone;
-}
 
 class EditorScreen extends ConsumerStatefulWidget {
   const EditorScreen({
@@ -48,16 +41,21 @@ class EditorScreen extends ConsumerStatefulWidget {
 class _EditorScreenState extends ConsumerState<EditorScreen> {
   String _selectedBotId = 'starter_laser';
   bool _busy = false;
-  bool _loadingCareerBoard = false;
-  _EditorNotice? _notice;
+  bool _loadingBoard = false;
+  final ScrollController _editorScrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
-    if (widget.mode == EditorMode.career) {
-      _loadingCareerBoard = true;
-      Future<void>.microtask(_loadCareerBoard);
-    }
+    _loadingBoard = true;
+    Future<void>.microtask(_loadModeBoard);
+  }
+
+
+  @override
+  void dispose() {
+    _editorScrollController.dispose();
+    super.dispose();
   }
 
   @override
@@ -77,7 +75,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
               ),
             ),
             Text(
-              '${widget.mode.title} • v0.6.1',
+              '${widget.mode.title} • v0.6.2',
               style: const TextStyle(
                 color: RelayColors.muted,
                 fontSize: 10,
@@ -99,7 +97,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
       ),
       body: SafeArea(
         child: catalogs.when(
-          data: (bundle) => _loadingCareerBoard
+          data: (bundle) => _loadingBoard
               ? const _LoadingPanel()
               : _buildEditor(bundle),
           loading: () => const _LoadingPanel(),
@@ -112,20 +110,30 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
     );
   }
 
-  Future<void> _loadCareerBoard() async {
+  Future<void> _loadModeBoard() async {
     try {
       await ref.read(guestSessionProvider.future);
-      final saved = await ref.read(relayApiProvider).fetchCurrentBoard();
-      if (saved != null) {
-        ref.read(boardControllerProvider.notifier).loadSavedBoard(saved);
+      final api = ref.read(relayApiProvider);
+      final controller = ref.read(boardControllerProvider.notifier);
+      final collection = await ref.read(collectionProvider.future);
+      controller.applyKit(collection.kit);
+      final SavedBoard? saved = switch (widget.mode) {
+        EditorMode.career => await api.fetchCareerBoard(),
+        EditorMode.online => await api.fetchCurrentBoard(),
+        EditorMode.training => null,
+      };
+      if (saved == null) {
+        controller.reset();
+      } else {
+        controller.loadSavedBoard(saved);
       }
     } on RelayApiException catch (error) {
       _showError(error.message);
     } catch (error) {
-      _showError('Kayıtlı kariyer devresi yüklenemedi: $error');
+      _showError('Kayıtlı devre yüklenemedi: $error');
     } finally {
       if (mounted) {
-        setState(() => _loadingCareerBoard = false);
+        setState(() => _loadingBoard = false);
       }
     }
   }
@@ -153,12 +161,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
           specs: specs,
           modules: catalogs.modules,
           boardMaxWidth: boardMaxWidth,
-          notice: _notice,
-          onNoticeDismissed: _clearNotice,
-          onPaletteSelected: (kind) {
-            controller.selectPalette(kind);
-            _clearNotice();
-          },
+          onPaletteSelected: controller.selectPalette,
           onBoardModuleReturned: _returnModuleToPalette,
           onCellTap: _tapCell,
           onModuleDropped: _dropModule,
@@ -167,7 +170,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
             controller.reset();
             _showNotice(
               'Devre başlangıç düzenine döndürüldü.',
-              _EditorNoticeTone.info,
+              RelayNoticeTone.info,
             );
           },
         );
@@ -204,13 +207,19 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
                 ],
               );
 
-        return SingleChildScrollView(
-          key: const ValueKey('editor-scroll-view'),
-          padding: const EdgeInsets.fromLTRB(14, 4, 14, 20),
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 1360),
-              child: panels,
+        return Scrollbar(
+          key: const ValueKey('editor-page-scrollbar'),
+          controller: _editorScrollController,
+          thumbVisibility: true,
+          child: SingleChildScrollView(
+            key: const ValueKey('editor-scroll-view'),
+            controller: _editorScrollController,
+            padding: const EdgeInsets.fromLTRB(14, 4, 14, 28),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 1360),
+                child: panels,
+              ),
             ),
           ),
         );
@@ -221,7 +230,6 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
   void _tapCell(int index) {
     try {
       ref.read(boardControllerProvider.notifier).tapCell(index);
-      _clearNotice();
     } on StateError catch (error) {
       _showError(error.toString().replaceFirst('Bad state: ', ''));
     }
@@ -230,7 +238,6 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
   void _dropModule(int index, ModuleDragData data) {
     try {
       ref.read(boardControllerProvider.notifier).dropModule(index, data);
-      _clearNotice();
     } on StateError catch (error) {
       _showError(error.toString().replaceFirst('Bad state: ', ''));
     }
@@ -244,7 +251,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
     ref.read(boardControllerProvider.notifier).removeModuleAt(sourceCell);
     _showNotice(
       'Modül devre kartından kaldırıldı.',
-      _EditorNoticeTone.info,
+      RelayNoticeTone.info,
     );
   }
 
@@ -267,8 +274,8 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
               ? 'Devre geçerli; bütün modüller enerji alıyor.'
               : 'Devre geçerli; $unpowered modül enerji almıyor.',
           unpowered == 0
-              ? _EditorNoticeTone.success
-              : _EditorNoticeTone.warning,
+              ? RelayNoticeTone.success
+              : RelayNoticeTone.warning,
         );
       }
     } on RelayApiException catch (error) {
@@ -330,7 +337,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
       ref
           .read(boardControllerProvider.notifier)
           .applyValidation(validation);
-      await api.saveBoard(state.board);
+      await api.saveCareerBoard(state.board);
       ref.invalidate(careerRunProvider);
       if (mounted) {
         Navigator.of(context).pop(true);
@@ -399,22 +406,14 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
   }
 
   void _showError(String message) {
-    _showNotice(message, _EditorNoticeTone.error);
+    _showNotice(message, RelayNoticeTone.error);
   }
 
-  void _showNotice(String message, _EditorNoticeTone tone) {
-    if (!mounted) {
-      return;
-    }
-    setState(() => _notice = _EditorNotice(message, tone));
+  void _showNotice(String message, RelayNoticeTone tone) {
+    if (!mounted) return;
+    RelayNotice.show(context, message, tone: tone);
   }
 
-  void _clearNotice() {
-    if (!mounted || _notice == null) {
-      return;
-    }
-    setState(() => _notice = null);
-  }
 }
 
 class _BoardPanel extends StatelessWidget {
@@ -423,8 +422,6 @@ class _BoardPanel extends StatelessWidget {
     required this.specs,
     required this.modules,
     required this.boardMaxWidth,
-    required this.notice,
-    required this.onNoticeDismissed,
     required this.onPaletteSelected,
     required this.onBoardModuleReturned,
     required this.onCellTap,
@@ -437,8 +434,6 @@ class _BoardPanel extends StatelessWidget {
   final Map<ModuleKind, ModuleSpec> specs;
   final List<ModuleSpec> modules;
   final double boardMaxWidth;
-  final _EditorNotice? notice;
-  final VoidCallback onNoticeDismissed;
   final ValueChanged<ModuleKind> onPaletteSelected;
   final ValueChanged<ModuleDragData> onBoardModuleReturned;
   final ValueChanged<int> onCellTap;
@@ -454,8 +449,8 @@ class _BoardPanel extends StatelessWidget {
         _SectionHeader(
           index: '1',
           title: 'MODÜL SEÇ',
-          subtitle: 'Modül adı ve özellikleri burada görünür; devre kartında '
-              'yalnız simge kalır.',
+          subtitle: '${state.kitName} • Kartta kullanabileceğiniz kit yuvaları '
+              'sayı rozetlerinde görünür.',
         ),
         const SizedBox(height: 8),
         ModulePalette(
@@ -463,6 +458,10 @@ class _BoardPanel extends StatelessWidget {
           selectedKind: state.selectedKind,
           onSelected: onPaletteSelected,
           onBoardModuleReturned: onBoardModuleReturned,
+          remainingByKind: {
+            for (final module in modules)
+              module.kind: state.remainingFor(module.kind),
+          },
         ),
         const SizedBox(height: 12),
         _SectionHeader(
@@ -507,92 +506,7 @@ class _BoardPanel extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(height: 8),
-        AnimatedSwitcher(
-          duration: const Duration(milliseconds: 180),
-          child: notice == null
-              ? const SizedBox.shrink(
-                  key: ValueKey('editor-notice-empty'),
-                )
-              : _EditorNoticeBanner(
-                  key: ValueKey(
-                    'editor-notice-${notice!.tone.name}-${notice!.message}',
-                  ),
-                  notice: notice!,
-                  onDismissed: onNoticeDismissed,
-                ),
-        ),
       ],
-    );
-  }
-}
-
-class _EditorNoticeBanner extends StatelessWidget {
-  const _EditorNoticeBanner({
-    required this.notice,
-    required this.onDismissed,
-    super.key,
-  });
-
-  final _EditorNotice notice;
-  final VoidCallback onDismissed;
-
-  @override
-  Widget build(BuildContext context) {
-    final color = switch (notice.tone) {
-      _EditorNoticeTone.info => RelayColors.cyan,
-      _EditorNoticeTone.success => RelayColors.mint,
-      _EditorNoticeTone.warning => RelayColors.amber,
-      _EditorNoticeTone.error => RelayColors.coral,
-    };
-    final icon = switch (notice.tone) {
-      _EditorNoticeTone.info => Icons.info_outline,
-      _EditorNoticeTone.success => Icons.check_circle_outline,
-      _EditorNoticeTone.warning => Icons.warning_amber_rounded,
-      _EditorNoticeTone.error => Icons.error_outline,
-    };
-
-    return Semantics(
-      liveRegion: true,
-      child: Container(
-        key: const ValueKey('editor-context-notice'),
-        padding: const EdgeInsets.fromLTRB(11, 7, 5, 7),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.10),
-          borderRadius: BorderRadius.circular(11),
-          border: Border.all(color: color.withValues(alpha: 0.58)),
-          boxShadow: [
-            BoxShadow(
-              color: color.withValues(alpha: 0.10),
-              blurRadius: 12,
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Icon(icon, color: color, size: 19),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                notice.message,
-                style: TextStyle(
-                  color: color,
-                  fontSize: 11,
-                  height: 1.3,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-            ),
-            IconButton(
-              key: const ValueKey('editor-notice-dismiss'),
-              tooltip: 'Bildirimi kapat',
-              visualDensity: VisualDensity.compact,
-              onPressed: onDismissed,
-              icon: Icon(Icons.close, color: color, size: 17),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

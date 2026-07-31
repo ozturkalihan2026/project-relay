@@ -23,10 +23,10 @@ class FlutterClientContractTests(unittest.TestCase):
             CLIENT / "lib" / "src" / "widgets" / "game_manual.dart"
         ).read_text(encoding="utf-8")
 
-        self.assertIn("version: 0.6.1+36", pubspec)
-        self.assertIn("${widget.mode.title} • v0.6.1", editor)
-        self.assertIn("KARİYER VE DEVRE SAVAŞI • v0.6.1", main_menu)
-        self.assertIn("PROJECT RELAY • v0.6.1", manual)
+        self.assertIn("version: 0.6.2+39", pubspec)
+        self.assertIn("${widget.mode.title} • v0.6.2", editor)
+        self.assertIn("KİT, KOLEKSİYON VE DEVRE SAVAŞI • v0.6.2", main_menu)
+        self.assertIn("PROJECT RELAY • v0.6.2", manual)
         self.assertIn("audioplayers:", pubspec)
         self.assertIn("assets/sounds/", pubspec)
         self.assertIn("flame:", pubspec)
@@ -55,7 +55,8 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("size: 14,", replay_game)
         self.assertIn("fontWeight: FontWeight.w900", replay_game)
         self.assertIn("maxWidth: rect.width", replay_game)
-        self.assertIn("child: const Text('YENİ OYUN')", controls)
+        self.assertIn("this.primaryActionLabel = 'YENİ OYUN'", controls)
+        self.assertIn("child: Text(primaryActionLabel)", controls)
         self.assertIn("fontSize: 14", controls)
         self.assertIn("letterSpacing: 0.8", controls)
 
@@ -115,7 +116,8 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("minimumSize: Size.zero", controls)
         self.assertIn("tapTargetSize: MaterialTapTargetSize.shrinkWrap", controls)
         self.assertNotIn("minimumSize: const Size(220, 40)", controls)
-        self.assertIn("child: const Text('YENİ OYUN')", controls)
+        self.assertIn("this.primaryActionLabel = 'YENİ OYUN'", controls)
+        self.assertIn("child: Text(primaryActionLabel)", controls)
         self.assertNotIn("Icons.add_circle_outline", controls)
 
         # FittedBox dönüşümleri piksel merkezlerinde makine hassasiyeti farkı yaratabilir.
@@ -199,9 +201,11 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("careerRunProvider", api)
         self.assertIn("TAM DEVRE ÖN İZLEMESİ", career)
         self.assertIn("DEVREMİ DÜZENLE", career)
-        self.assertIn("GEÇİCİ GÜÇLENDİRİCİNİ SEÇ", career)
-        self.assertIn("koşu bittiğinde tamamen sıfırlanır", career)
-        self.assertIn("match-progression-reward", replay)
+        self.assertIn("BOSS ÖNCESİ GÜÇLENDİRİCİ MAĞAZASI", career)
+        self.assertIn("GÜÇLENDİRİCİ ALMADAN BOSS’A İLERLE", career)
+        self.assertIn("SAVAŞ ÖDÜLÜ", replay)
+        self.assertIn("RelayNotice.show", replay)
+        self.assertNotIn("match-progression-reward", replay)
 
     def test_v060_ui_revision_keeps_progression_visible_and_editor_compact(self) -> None:
         status = (
@@ -230,6 +234,45 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("size: 24", palette)
         self.assertGreaterEqual(editor.count("_EditorMenuBackCard(busy: busy)"), 3)
         self.assertIn("void loadSavedBoard(SavedBoard saved)", board_controller)
+
+    def test_v062_collection_and_controlled_kit_contract(self) -> None:
+        api = (
+            CLIENT / "lib" / "src" / "api" / "relay_api.dart"
+        ).read_text(encoding="utf-8")
+        models = (
+            CLIENT / "lib" / "src" / "models" / "relay_models.dart"
+        ).read_text(encoding="utf-8")
+        collection = (
+            CLIENT / "lib" / "src" / "screens" / "collection_screen.dart"
+        ).read_text(encoding="utf-8")
+        controller = (
+            CLIENT / "lib" / "src" / "state" / "board_controller.dart"
+        ).read_text(encoding="utf-8")
+        palette = (
+            CLIENT / "lib" / "src" / "widgets" / "module_palette.dart"
+        ).read_text(encoding="utf-8")
+        main_menu = (
+            CLIENT / "lib" / "src" / "screens" / "main_menu_screen.dart"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("class ControlledKit", models)
+        self.assertIn("class CosmeticItem", models)
+        self.assertIn("class CollectionSnapshot", models)
+        self.assertIn("collectionProvider", api)
+        self.assertIn("fetchCollection", api)
+        self.assertIn("purchaseCosmetic", api)
+        self.assertIn("equipCosmetic", api)
+        self.assertIn("saveControlledKit", api)
+        self.assertIn("KONTROLLÜ SEKİZLİ KİT", collection)
+        self.assertIn("GÜÇ DEĞİL, KİMLİK VE HAZIRLIK", collection)
+        self.assertIn("main-menu-collection", main_menu)
+        self.assertIn("void applyKit(ControlledKit kit)", controller)
+        self.assertIn("remainingFor(ModuleKind kind)", controller)
+        self.assertIn("remainingByKind", palette)
+        self.assertIn("palette-module-remaining-", palette)
+        self.assertIn("ref.read(collectionProvider.future)", (
+            CLIENT / "lib" / "src" / "screens" / "editor_screen.dart"
+        ).read_text(encoding="utf-8"))
 
     def test_session_api_mocks_encode_turkish_json_as_utf8(self) -> None:
         session_test = (
@@ -324,6 +367,9 @@ class FlutterClientContractTests(unittest.TestCase):
             "/api/v1/matches/async",
             "/api/v1/me/statistics",
             "/api/v1/me/progression",
+            "/api/v1/me/collection",
+            "/api/v1/me/collection/equipped",
+            "/api/v1/me/kit",
             "/api/v1/me/career-run",
             "/api/v1/me/career-run/start",
             "/api/v1/me/career-run/booster",
@@ -382,6 +428,7 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertNotIn("İLERLEME YOLU", manual_source)
         self.assertNotIn("_ProgressStage", manual_source)
         self.assertIn("KALKAN NASIL ÇALIŞIR?", manual_source)
+        self.assertIn("SEKİZLİ KİT VE KOLEKSİYON", manual_source)
         self.assertIn("manual-bottom-back-button", manual_source)
         self.assertIn("ANA MENÜYE DÖN", manual_source)
         for module_name in (
@@ -430,11 +477,16 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("home: const MainMenuScreen()", app_source)
         self.assertIn("main-menu-play", main_menu)
         self.assertIn("main-menu-career", main_menu)
+        self.assertIn("main-menu-collection", main_menu)
         self.assertIn("main-menu-statistics", main_menu)
         self.assertIn("main-menu-how-to-play", main_menu)
         self.assertIn("main-menu-settings", main_menu)
         self.assertLess(
             main_menu.index("main-menu-career"),
+            main_menu.index("main-menu-collection"),
+        )
+        self.assertLess(
+            main_menu.index("main-menu-collection"),
             main_menu.index("main-menu-statistics"),
         )
         self.assertLess(
@@ -547,6 +599,9 @@ class FlutterClientContractTests(unittest.TestCase):
         board_source = (
             CLIENT / "lib" / "src" / "widgets" / "circuit_board.dart"
         ).read_text(encoding="utf-8")
+        visual_source = (
+            CLIENT / "lib" / "src" / "widgets" / "module_visuals.dart"
+        ).read_text(encoding="utf-8")
 
         self.assertIn("_PortMarker", board_source)
         self.assertIn("worldPorts(module.orientation)", board_source)
@@ -561,8 +616,8 @@ class FlutterClientContractTests(unittest.TestCase):
             board_source,
         )
         self.assertIn(
-            "'kullanılabilir uçlar gösterilir'",
-            board_source,
+            "kullanılabilir uçlar gösterilir",
+            visual_source,
         )
         self.assertIn("usableBoardPorts(", board_source)
         self.assertIn("module-direction-$cellIndex", board_source)
@@ -588,6 +643,9 @@ class FlutterClientContractTests(unittest.TestCase):
         board_source = (
             CLIENT / "lib" / "src" / "widgets" / "circuit_board.dart"
         ).read_text(encoding="utf-8")
+        visual_source = (
+            CLIENT / "lib" / "src" / "widgets" / "module_visuals.dart"
+        ).read_text(encoding="utf-8")
 
         self.assertIn("reservedCoreCells = <int>{5, 6, 9, 10}", models_source)
         self.assertIn("coreGateDirections", models_source)
@@ -596,8 +654,10 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertNotIn("çekirdeğe kilitli", editor_source)
         self.assertIn(
             "Jeneratör çekirdeğe dönük kalır",
-            board_source,
+            visual_source,
         )
+        self.assertIn("moduleDisplayDirection", board_source)
+        self.assertIn("usesConnectionDirectionArrow", visual_source)
         self.assertIn("rotate-module-$cellIndex", board_source)
         self.assertNotIn("Icons.delete_outline", editor_source)
         self.assertIn("boardMaxWidth", editor_source)
@@ -681,7 +741,7 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("maxWidth: 540", replay_screen)
         self.assertIn("mediaSize.width >= 1500", replay_screen)
         self.assertNotIn("appBar:", replay_screen)
-        self.assertIn("onNewGame: _newGame", replay_screen)
+        self.assertIn("onNewGame: _primaryAction", replay_screen)
         self.assertIn("_togglePlayback", replay_screen)
         self.assertIn("ReplayEventFeed", replay_screen)
         self.assertIn("ReplayAttackOverlay", replay_screen)
@@ -793,21 +853,99 @@ class FlutterClientContractTests(unittest.TestCase):
             sound_player,
         )
 
-    def test_editor_uses_contextual_translucent_notices(self) -> None:
+    def test_game_uses_centered_translucent_notices(self) -> None:
         editor_source = (
             CLIENT / "lib" / "src" / "screens" / "editor_screen.dart"
         ).read_text(encoding="utf-8")
-        widget_test = (
-            CLIENT / "test" / "widget_test.dart"
+        career_source = (
+            CLIENT / "lib" / "src" / "screens" / "career_screen.dart"
+        ).read_text(encoding="utf-8")
+        statistics_source = (
+            CLIENT / "lib" / "src" / "screens" / "statistics_screen.dart"
+        ).read_text(encoding="utf-8")
+        notice_source = (
+            CLIENT / "lib" / "src" / "widgets" / "relay_notice.dart"
         ).read_text(encoding="utf-8")
 
-        self.assertIn("editor-context-notice", editor_source)
-        self.assertIn("_EditorNoticeTone.success", editor_source)
-        self.assertIn("_EditorNoticeTone.warning", editor_source)
-        self.assertIn("_EditorNoticeTone.error", editor_source)
-        self.assertIn("color.withValues(alpha: 0.10)", editor_source)
+        self.assertIn("relay-centered-notice", notice_source)
+        self.assertIn("OverlayEntry", notice_source)
+        self.assertIn("child: Center(", notice_source)
+        self.assertIn("withValues(alpha:", notice_source)
+        self.assertIn("Timer? _dismissTimer", notice_source)
+        self.assertIn("_dismissTimer?.cancel()", notice_source)
+        self.assertIn("RelayNotice.show", editor_source)
+        self.assertIn("RelayNotice.show", career_source)
+        self.assertIn("RelayNotice.show", statistics_source)
         self.assertNotIn("showSnackBar", editor_source)
-        self.assertIn("await tester.ensureVisible(dismissButton)", widget_test)
+        self.assertNotIn("showSnackBar", career_source)
+        self.assertNotIn("showSnackBar", statistics_source)
+
+
+    def test_v061_revision_separates_boards_and_updates_career_flow(self) -> None:
+        api = (
+            CLIENT / "lib" / "src" / "api" / "relay_api.dart"
+        ).read_text(encoding="utf-8")
+        editor = (
+            CLIENT / "lib" / "src" / "screens" / "editor_screen.dart"
+        ).read_text(encoding="utf-8")
+        career = (
+            CLIENT / "lib" / "src" / "screens" / "career_screen.dart"
+        ).read_text(encoding="utf-8")
+        manual = (
+            CLIENT / "lib" / "src" / "widgets" / "game_manual.dart"
+        ).read_text(encoding="utf-8")
+        visuals = (
+            CLIENT / "lib" / "src" / "widgets" / "module_visuals.dart"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("/api/v1/me/career-board", api)
+        self.assertIn("fetchCareerBoard", editor)
+        self.assertIn("saveCareerBoard", editor)
+        self.assertIn("editor-page-scrollbar", editor)
+        self.assertIn("thumbVisibility: true", editor)
+        self.assertIn("SONRAKİ SAVAŞA İLERLE", career)
+        self.assertIn("BOSS ÖNCESİ GÜÇLENDİRİCİ MAĞAZASI", career)
+        self.assertIn("booster.creditCost", career)
+        self.assertIn("career-booster-skip", career)
+        self.assertIn("KARİYER KOŞUSU VE KARŞI DEVRE", manual)
+        self.assertIn("Kariyer devresi ile Asenkron PvP devresi ayrı", manual)
+        self.assertIn("orientation.opposite", visuals)
+        self.assertIn("Enerji bağlantısı", visuals)
+
+    def test_v061_rev3_has_separate_career_battle_and_centered_async_reward(self) -> None:
+        career = (
+            CLIENT / "lib" / "src" / "screens" / "career_screen.dart"
+        ).read_text(encoding="utf-8")
+        career_battle = (
+            CLIENT / "lib" / "src" / "screens" / "career_battle_screen.dart"
+        ).read_text(encoding="utf-8")
+        replay = (
+            CLIENT / "lib" / "src" / "screens" / "replay_screen.dart"
+        ).read_text(encoding="utf-8")
+        controls = (
+            CLIENT / "lib" / "src" / "widgets" / "replay_playback_controls.dart"
+        ).read_text(encoding="utf-8")
+        manual = (
+            CLIENT / "lib" / "src" / "widgets" / "game_manual.dart"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("CareerBattleScreen(", career)
+        self.assertNotIn("builder: (context) => ReplayScreen(", career)
+        self.assertIn("class CareerBattleScreen", career_battle)
+        self.assertIn("career-battle-screen", career_battle)
+        self.assertIn("SONRAKİ SAVAŞ", career_battle)
+        self.assertIn("BOSS HAZIRLIĞINA GEÇ", career_battle)
+        self.assertIn("KOŞUYU TAMAMLA", career_battle)
+        self.assertIn("KARİYER SONUCUNA DÖN", career_battle)
+        self.assertIn("primaryActionRequiresCompletion: true", career_battle)
+        self.assertIn("primaryActionLabel", controls)
+        self.assertIn("primaryActionEnabled", controls)
+        self.assertIn("widget.match.source != 'async'", replay)
+        self.assertIn("SAVAŞ ÖDÜLÜ", replay)
+        self.assertIn("RelayNotice.show", replay)
+        self.assertNotIn("match-progression-reward", replay)
+        self.assertIn("Kariyer savaşları kendine ait savaş ekranında", manual)
+        self.assertIn("Asenkron PvP savaşının XP ve Devre Kredisi ödülü", manual)
 
     def test_replay_scrollbar_and_audio_lifecycle_regressions(self) -> None:
         event_feed = (

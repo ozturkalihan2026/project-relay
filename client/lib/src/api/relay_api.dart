@@ -55,6 +55,11 @@ final careerRunProvider = FutureProvider<CareerRunSnapshot>((ref) async {
   return ref.watch(relayApiProvider).fetchCareerRun();
 });
 
+final collectionProvider = FutureProvider.autoDispose<CollectionSnapshot>((ref) async {
+  await ref.watch(guestSessionProvider.future);
+  return ref.watch(relayApiProvider).fetchCollection();
+});
+
 class RelayApi {
   RelayApi({
     required String baseUrl,
@@ -135,6 +140,30 @@ class RelayApi {
         : null;
   }
 
+  Future<SavedBoard?> fetchCareerBoard() async {
+    try {
+      final payload = await _get(
+        '/api/v1/me/career-board',
+        authorized: true,
+      );
+      return SavedBoard.fromJson(payload);
+    } on RelayApiException catch (error) {
+      if (error.code == 'career_board_not_found' || error.statusCode == 404) {
+        return null;
+      }
+      rethrow;
+    }
+  }
+
+  Future<SavedBoard> saveCareerBoard(BoardDraft board) async {
+    final payload = await _put(
+      '/api/v1/me/career-board',
+      board.toJson(),
+      authorized: true,
+    );
+    return SavedBoard.fromJson(payload);
+  }
+
   Future<BoardValidation> validateBoard(BoardDraft board) async {
     final payload = await _post(
       '/api/v1/boards/validate',
@@ -208,6 +237,48 @@ class RelayApi {
       authorized: true,
     );
     return ProgressionSnapshot.fromJson(payload);
+  }
+
+
+  Future<CollectionSnapshot> fetchCollection() async {
+    final payload = await _get(
+      '/api/v1/me/collection',
+      authorized: true,
+    );
+    return CollectionSnapshot.fromJson(payload);
+  }
+
+  Future<CollectionSnapshot> purchaseCosmetic(String cosmeticId) async {
+    final payload = await _post(
+      '/api/v1/me/collection/cosmetics/$cosmeticId/purchase',
+      const {},
+      authorized: true,
+    );
+    return CollectionSnapshot.fromJson(payload);
+  }
+
+  Future<CollectionSnapshot> equipCosmetic(String cosmeticId) async {
+    final payload = await _put(
+      '/api/v1/me/collection/equipped',
+      {'cosmetic_id': cosmeticId},
+      authorized: true,
+    );
+    return CollectionSnapshot.fromJson(payload);
+  }
+
+  Future<CollectionSnapshot> saveControlledKit({
+    required String name,
+    required List<ModuleKind> moduleKinds,
+  }) async {
+    final payload = await _put(
+      '/api/v1/me/kit',
+      {
+        'name': name,
+        'module_kinds': moduleKinds.map((kind) => kind.wireValue).toList(),
+      },
+      authorized: true,
+    );
+    return CollectionSnapshot.fromJson(payload);
   }
 
   Future<CareerRunSnapshot> fetchCareerRun() async {

@@ -448,6 +448,7 @@ class CareerBoosterChoiceResponse(ApiModel):
     tier: int
     effect_value: int
     effect_label: str
+    credit_cost: int
 
 
 class CareerOpponentPreviewResponse(ApiModel):
@@ -487,3 +488,39 @@ class CareerBoosterSelectionRequest(ApiModel):
 class CareerBattleResponse(ApiModel):
     match: MatchResponse
     run: CareerRunResponse
+
+
+class ControlledKitResponse(ApiModel):
+    name: str
+    module_kinds: list[ModuleKind]
+    updated_at: str
+
+
+class CosmeticItemResponse(ApiModel):
+    cosmetic_id: str
+    category: str
+    display_name: str
+    description: str
+    credit_cost: int
+    accent_hex: str
+    owned: bool
+    equipped: bool
+
+
+class CollectionResponse(ApiModel):
+    player_id: str
+    credits: int
+    cosmetics: list[CosmeticItemResponse]
+    kit: ControlledKitResponse
+    equipped_module_skin_id: str
+    equipped_board_theme_id: str
+    equipped_profile_frame_id: str
+
+
+class SaveControlledKitRequest(ApiModel):
+    name: str = Field(min_length=1, max_length=40)
+    module_kinds: list[ModuleKind] = Field(min_length=8, max_length=8)
+
+
+class EquipCosmeticRequest(ApiModel):
+    cosmetic_id: str = Field(min_length=1, max_length=48)

@@ -41,6 +41,8 @@ class MigrationTests(unittest.TestCase):
         self.assertIn("CREATE TABLE daily_missions", sql)
         self.assertIn("CREATE TABLE player_achievements", sql)
         self.assertIn("CREATE TABLE career_runs", sql)
+        self.assertIn("CREATE TABLE player_cosmetics", sql)
+        self.assertIn("CREATE TABLE player_loadouts", sql)
 
     def test_initial_migration_creates_and_downgrades_online_schema(
         self,
@@ -79,6 +81,9 @@ class MigrationTests(unittest.TestCase):
                     "daily_missions",
                     "player_achievements",
                     "career_runs",
+                    "career_boards",
+                    "player_cosmetics",
+                    "player_loadouts",
                 },
             )
             engine.dispose()

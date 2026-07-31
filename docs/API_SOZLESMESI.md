@@ -1,4 +1,4 @@
-# Project Relay — API Sözleşmesi v0.6.1
+# Project Relay — API Sözleşmesi v0.6.2
 
 Bu sürüm, Flutter/Flame istemcisinin kullandığı kalıcı asenkron PvP
 protokolüdür. Bütün yollar `/api/v1` altında sürümlenir. Etkileşimli Swagger
@@ -12,6 +12,10 @@ belgesi servis çalışırken `/docs` adresindedir.
 | `POST` | `/api/v1/auth/guest` | Güvenli adlı kalıcı misafir oluşturma |
 | `POST` | `/api/v1/auth/refresh` | Yenileme JWT'sini döndürme |
 | `GET` | `/api/v1/me` | Oyuncu ve kayıtlı kartı okuma |
+| `GET` | `/api/v1/me/collection` | Koleksiyon, kredi, aktif kit ve kuşanılanları okuma |
+| `POST` | `/api/v1/me/collection/cosmetics/{id}/purchase` | Devre Kredisiyle kozmetik satın alma |
+| `PUT` | `/api/v1/me/collection/equipped` | Sahip olunan kozmetiği kuşanma |
+| `PUT` | `/api/v1/me/kit` | Kontrollü sekizli kiti kaydetme |
 | `GET` | `/api/v1/me/career` | Derece, haftalık lig ve son maçlar |
 | `GET` | `/api/v1/me/matches` | Sayfalı maç geçmişi |
 | `GET` | `/api/v1/league/current` | Güncel haftalık lig ve liderlik tablosu |
@@ -337,6 +341,34 @@ Aktif durum örneği:
 kullanacağı rakip kartın tam karşılığıdır. İstemci rakip kartı, aşama sonucu,
 güçlendirici etkisi veya ödül hesaplayamaz.
 
-Zaferden sonra durum `awaiting_booster` olur ve `offered_boosters` tam üç öğe
-taşır. Terminal durumda `completed`, `failed` veya `abandoned` döner; ödül varsa
-`reward` alanı v0.6.0 `RewardGrantResponse` sözleşmesini kullanır.
+İlk üç zaferden sonra koşu doğrudan bir sonraki rakip hazırlığına ilerler.
+Dördüncü zaferden sonra durum `awaiting_booster` olur ve boss öncesi satın
+alınabilir güçlendiriciler döner; oyuncu birini Devre Kredisiyle alabilir veya
+mağazayı atlayabilir. Terminal durumda `completed`, `failed` veya `abandoned`
+döner; ödül varsa `reward` alanı v0.6.0 `RewardGrantResponse` sözleşmesini kullanır.
+
+
+## Koleksiyon ve kontrollü kit
+
+`GET /api/v1/me/collection`, oyuncunun Devre Kredisi, sahiplikleri,
+kuşanılan üç kozmetik kategorisi ve aktif sekizli kitini döndürür.
+
+Kit kaydı örneği:
+
+```json
+{
+  "name": "Dengeli Sekizli",
+  "module_kinds": [
+    "generator", "battery", "laser", "pulse_cannon",
+    "shield", "cooler", "amplifier", "repair"
+  ]
+}
+```
+
+Kit tam sekiz yuva ve tam bir Jeneratör içermelidir. Jeneratör dışındaki aynı
+modül en fazla üç kez bulunabilir. `PUT /api/v1/me/board` ve
+`PUT /api/v1/me/career-board`, karttaki modül adetlerini aktif kite göre
+sunucu tarafında yeniden doğrular.
+
+Mağaza yalnız kozmetiktir. Satın alma aynı işlem içinde Devre Kredisini düşürür,
+sahipliği ekler ve kozmetiği kuşanır; ham savaş değeri değiştirmez.

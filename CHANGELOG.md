@@ -1,3 +1,65 @@
+## v0.6.2 — Koleksiyon ve kontrollü sekizli kit
+
+- Ana menüye ayrı **Koleksiyon** ekranı eklendi.
+- Oyuncuya sunucuda saklanan, adı değiştirilebilen sekiz yuvalı kontrollü kit
+  verildi. Kit tam bir Jeneratör içerir; diğer türler en fazla üç kez seçilir.
+- Savaş kartı altı modülle sınırlı kalırken kitteki iki ek yuva karşı devreye
+  göre kullanılabilecek yedek seçeneklerdir.
+- Çevrimiçi, Kariyer ve Antrenman editör paletleri aktif kitte kalan adetleri
+  gösterir; tükenen modüller seçilemez veya sürüklenemez.
+- Çevrimiçi ve Kariyer kartı kayıtları aktif kit sınırına göre sunucuda yeniden
+  doğrulanır.
+- Modül kaplaması, devre kartı teması ve profil çerçevesi koleksiyonu eklendi.
+- Devre Kredisiyle çalışan kozmetik mağaza eklendi; kalıcı savaş gücü satılmaz.
+- `player_cosmetics` ve `player_loadouts` tablolarını ekleyen Alembic
+  `20260731_0007` geçişi oluşturuldu.
+- Koleksiyon, satın alma, kuşanma ve kit uçları API'ye eklendi.
+- API `0.6.2`, istemci `0.6.2+39`; savaş motoru ve denge değerleri değişmedi.
+
+## v0.6.1 rev3 — Ayrı kariyer savaş akışı ve merkezî PvP ödülü
+
+- Kariyer koşusu için `CareerBattleScreen` eklendi. Savaş motoru ve replay
+  bileşenleri ortak kalırken kariyer yönlendirmesi normal, antrenman ve
+  Asenkron PvP akışından ayrıldı.
+- Kariyer savaş ekranındaki birincil düğme savaş bitene kadar pasiftir. Sonuca
+  göre **Sonraki Savaş**, **Boss Hazırlığına Geç**, **Koşuyu Tamamla** veya
+  **Kariyer Sonucuna Dön** metnini gösterir.
+- **Sonraki Savaş** yeni maçı otomatik başlatmaz; oyuncuyu bir sonraki rakibin
+  tam devre ön izlemesine ve kariyer devresini yeniden düzenleyebileceği ekrana
+  geri götürür.
+- Asenkron PvP savaşının XP ve Devre Kredisi kartı sayfa akışından kaldırıldı.
+  Ödül, replay tamamlandığında oyunun ortak yarı saydam merkez bildiriminde
+  gösterilir.
+- Ortak replay kontrolleri farklı oyun modlarının kendi birincil düğme metni,
+  anahtarı ve tamamlanma koşulunu kullanabileceği şekilde genelleştirildi.
+- Nasıl Oynanır bölümü ayrı kariyer savaş ekranı, sonraki rakip hazırlığı ve
+  merkezî PvP ödül bildirimiyle güncellendi.
+- İstemci `0.6.1+38` oldu. API `0.6.1`, PostgreSQL şeması, savaş motoru ve
+  denge değerleri değiştirilmedi.
+
+## v0.6.1 rev2 — Birleşik bildirimler ve ayrılmış kariyer devresi
+
+- Oyun genelindeki geçici mesajlar, kaydırmadan bağımsız olarak ekran ortasında
+  görünen yarı saydam `RelayNotice` katmanına bağlandı; eski alt bar uyarıları
+  kaldırıldı.
+- Editör sayfasına sürekli görünen kaydırma çubuğu eklendi ve bildirimlerin
+  yerleşim alanı tüketmesi engellendi.
+- Kariyer kartı `career_boards` tablosu ve `/api/v1/me/career-board` uçlarıyla
+  Asenkron PvP kartından ayrıldı. Mevcut oyuncular için ilk kullanımda tek
+  seferlik kopyalama yapılır; sonraki düzenlemeler tamamen bağımsızdır.
+- Tek portlu Lazer, Darbe Topu, Kalkan, Soğutucu ve Onarım Ünitesi okları gerçek
+  enerji bağlantı portuna bakacak şekilde görsel olarak düzeltildi. Motorun port
+  ve yön kuralları değiştirilmedi.
+- Kariyer düğmeleri aşamaya göre **İlk Savaşa Başla**, **Sonraki Savaşa İlerle**
+  ve **Boss Savaşına İlerle** olarak ayrıldı.
+- Güçlendirici mağazası yalnız dördüncü zaferden sonra açılır. Oyuncu Devre
+  Kredisi ile tek güçlendirici satın alabilir veya güçlendiricisiz boss'a
+  ilerleyebilir.
+- Nasıl Oynanır; ayrı kariyer/PvP kartları, tam rakip ön izlemesi, boss mağazası,
+  yeni ok anlamları ve ortak bildirim sistemiyle güncellendi.
+- Alembic `20260731_0006`, istemci `0.6.1+37`; API `0.6.1` ve savaş kuralları
+  `0.8` olarak korundu.
+
 ## v0.6.1 — Kariyer koşusu ve tam rakip devre ön izlemesi
 
 - Beş bağlantılı kariyer savaşı ve son aşamada bölüm sonu devresi eklendi.
@@ -9,7 +71,7 @@
   savaş motoruna taraf bazlı `BattleModifiers` olarak eklendi.
 - Koşu sonucu XP/Devre Kredisi ödülü `run_id` ile idempotent hâle getirildi.
 - `career_runs` tablosunu ekleyen Alembic `20260731_0005` geçişi eklendi.
-- API `0.6.1`, istemci `0.6.1+36`; savaş kuralları `0.8` ve rekabetçi temel
+- API `0.6.1`, istemci `0.6.1+37`; savaş kuralları `0.8` ve rekabetçi temel
   modül dengesi değişmedi.
 
 ## v0.6.0 UI rev1 — Kompakt editör ve oyuncu bilgi çubuğu

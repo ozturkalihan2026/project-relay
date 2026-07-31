@@ -38,8 +38,8 @@ dönüştürür.
 | v0.4.13 | Kompakt modül paleti ve güçlü savaş etiketleri | Hazır |
 | v0.5.0 | Derece, haftalık lig ve maç geçmişi | Hazır |
 | v0.6.0 | XP, seviye, görev, başarım ve güçlendirici ustalığı temeli | Hazır |
-| v0.6.1 | Kariyer koşusu, tam rakip ön izlemesi ve geçici güçlendiriciler | Hazır |
-| v0.6.2 | Kozmetik mağaza, koleksiyon ve sekizli kit | Planlandı |
+| v0.6.1 | Kariyer koşusu, tam ön izleme, ayrı kariyer kartı/savaş akışı ve boss mağazası | Hazır |
+| v0.6.2 | Kozmetik mağaza, koleksiyon ve sekizli kit | Hazır |
 | v0.7.0 | Sezon, kapalı alfa ve kötüye kullanım koruması | Planlandı |
 | v0.8.0 | Sosyal yapı, klan temeli ve kapalı gelir altyapısı | Planlandı |
 | v1.0.0 | Android ve web açık beta | Hedef |
@@ -235,18 +235,24 @@ etkisi artar; koşu bittiğinde bütün etkiler sıfırlanır.
 - Beş bağlantılı savaş ve beşinci aşamada bölüm sonu devresi
 - Savaşta kullanılacak rakip kartın tam devre ön izlemesi
 - Ön izlemeye göre kartı kaydeden ayrı kariyer editörü
-- İlk dört zafer sonrası üç geçici güçlendiriciden birini seçme
+- Kariyere özel savaş ekranı ve sonuçtan sonraki rakip hazırlığına dönüş
+- Asenkron PvP ödülünü ortak merkez bildiriminde gösterme
+- Kariyer kartını Asenkron PvP kartından ayrı saklama
+- Dördüncü zafer sonrası Devre Kredisi ile tek boss güçlendiricisi alma veya atlama
 - Seviye kademesini yalnız koşu içi güçlendirici etkisine uygulama
 - Beraberlik/mağlubiyette başarısızlık, tamamlanma ve bütün etkilerin sıfırlanması
 - `run_id` ile tek seferlik XP ve Devre Kredisi ödülü
 - Alembic `20260731_0005` ile sunucu yetkili koşu kalıcılığı
 
-## v0.6.2 — Planlanan mağaza ve koleksiyon
+## v0.6.2 — Koleksiyon ve kontrollü kit
 
-- Devre kartı, çekirdek, modül çerçevesi ve profil kozmetikleri
-- Devre Kredisi ile açık ve öngörülebilir satın alma
-- Kontrollü sekizli kit ve koleksiyon görünümü
+- Modül kaplaması, devre kartı teması ve profil çerçevesi koleksiyonu
+- Devre Kredisi ile açık ve öngörülebilir kozmetik satın alma
+- Tam bir Jeneratörlü, tür başına en fazla üç kopyalı kontrollü sekizli kit
+- Altı aktif kart modülüne karşı iki yedek hazırlık seçeneği
+- Editör paletlerinde kitte kalan adet ve sunucuda kart/kit doğrulaması
 - Dereceli savaşta ücretli veya kalıcı ham güç bulunmaması
+- Alembic `20260731_0007` ile kalıcı sahiplik ve yükleme verisi
 
 ## Değişmeyen karar kapıları
 

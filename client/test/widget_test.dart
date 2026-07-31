@@ -20,6 +20,7 @@ void main() {
       expect(find.byKey(const ValueKey('player-status-xp')), findsOneWidget);
       expect(find.text('OYNA'), findsOneWidget);
       expect(find.text('KARİYER'), findsOneWidget);
+      expect(find.text('KOLEKSİYON'), findsOneWidget);
       expect(find.text('İSTATİSTİKLER'), findsOneWidget);
       expect(find.text('NASIL OYNANIR'), findsOneWidget);
       expect(find.text('AYARLAR'), findsOneWidget);
@@ -48,7 +49,7 @@ void main() {
       expect(generatorPaletteTile, findsOneWidget);
       expect(tester.getSize(generatorPaletteTile).height, 66);
 
-      expect(find.textContaining('ÇEVRİMİÇİ SAVAŞ • v0.6.1'), findsOneWidget);
+      expect(find.textContaining('ÇEVRİMİÇİ SAVAŞ • v0.6.2'), findsOneWidget);
       expect(find.text('DEVREYİ KUR'), findsOneWidget);
       expect(find.text('ASENKRON PvP'), findsOneWidget);
       expect(
@@ -112,7 +113,7 @@ void main() {
       await tester.tap(find.byKey(const ValueKey('play-mode-training')));
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('ANTRENMAN • v0.6.1'), findsOneWidget);
+      expect(find.textContaining('ANTRENMAN • v0.6.2'), findsOneWidget);
       expect(find.byKey(const ValueKey('training-panel')), findsOneWidget);
       expect(find.text('ANTRENMAN RAKİPLERİ'), findsOneWidget);
       expect(find.text('SEÇİLİ BOTLA SAVAŞ'), findsOneWidget);
@@ -142,6 +143,7 @@ void main() {
       await _pumpApp(tester);
 
       final career = find.byKey(const ValueKey('main-menu-career'));
+      final collection = find.byKey(const ValueKey('main-menu-collection'));
       final statistics = find.byKey(
         const ValueKey('main-menu-statistics'),
       );
@@ -149,6 +151,10 @@ void main() {
       final settings = find.byKey(const ValueKey('main-menu-settings'));
       expect(
         tester.getCenter(career).dy,
+        lessThan(tester.getCenter(collection).dy),
+      );
+      expect(
+        tester.getCenter(collection).dy,
         lessThan(tester.getCenter(statistics).dy),
       );
       expect(
@@ -166,6 +172,11 @@ void main() {
       expect(find.text('OYUNUN AMACI NEDİR?'), findsOneWidget);
       expect(find.text('ENERJİ NASIL AKAR?'), findsOneWidget);
       expect(find.text('KALKAN NASIL ÇALIŞIR?'), findsOneWidget);
+      expect(find.text('SEKİZLİ KİT VE KOLEKSİYON'), findsWidgets);
+      final careerGuide = find.text('KARİYER KOŞUSU VE KARŞI DEVRE');
+      await tester.scrollUntilVisible(careerGuide, 260);
+      await tester.pumpAndSettle();
+      expect(careerGuide, findsOneWidget);
 
       final bottomBack = find.byKey(
         const ValueKey('manual-bottom-back-button'),
@@ -261,7 +272,35 @@ void main() {
   );
 
   testWidgets(
-    'yerleşim uyarısı okunabilir bağlamsal kartta gösterilir',
+    'koleksiyon ekranı kontrollü sekizli kiti ve kozmetikleri gösterir',
+    (tester) async {
+      await _pumpApp(tester);
+
+      final collectionMenu = find.byKey(
+        const ValueKey('main-menu-collection'),
+      );
+      await tester.ensureVisible(collectionMenu);
+      await tester.tap(collectionMenu);
+      await tester.pumpAndSettle();
+
+      expect(find.text('KOLEKSİYON VE KİT'), findsOneWidget);
+      expect(find.text('KONTROLLÜ SEKİZLİ KİT'), findsOneWidget);
+      expect(find.byKey(const ValueKey('collection-credits')), findsOneWidget);
+      expect(find.byKey(const ValueKey('controlled-kit-card')), findsOneWidget);
+      expect(find.byKey(const ValueKey('kit-slot-0')), findsOneWidget);
+      expect(find.byKey(const ValueKey('kit-slot-7')), findsOneWidget);
+      expect(find.byKey(const ValueKey('save-controlled-kit')), findsOneWidget);
+
+      final back = find.byKey(const ValueKey('collection-menu-back'));
+      await tester.scrollUntilVisible(back, 280);
+      await tester.tap(back);
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('main-menu-play')), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'yerleşim uyarısı ortalanmış ortak bildirimde gösterilir',
     (tester) async {
       await _pumpApp(tester);
       await tester.tap(find.byKey(const ValueKey('main-menu-play')));
@@ -270,30 +309,25 @@ void main() {
       await tester.pumpAndSettle();
 
       await tester.tap(
-        find.byKey(const ValueKey('palette-module-generator')),
+        find.byKey(const ValueKey('palette-module-laser')),
       );
-      await tester.tap(find.byKey(const ValueKey('circuit-cell-0')));
+      await tester.tap(find.byKey(const ValueKey('circuit-cell-5')));
       await tester.pump();
 
       expect(
-        find.byKey(const ValueKey('editor-context-notice')),
+        find.byKey(const ValueKey('relay-centered-notice')),
         findsOneWidget,
       );
       expect(
-        find.textContaining('Jeneratör yalnızca çekirdeğin dört kapı'),
+        find.textContaining('Ortadaki 2×2 alan pasif çekirdeğe ayrılmıştır'),
         findsOneWidget,
       );
       expect(find.byType(SnackBar), findsNothing);
 
-      final dismissButton = find.byKey(
-        const ValueKey('editor-notice-dismiss'),
-      );
-      await tester.ensureVisible(dismissButton);
-      await tester.pumpAndSettle();
-      await tester.tap(dismissButton);
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(seconds: 7));
+      await tester.pump();
       expect(
-        find.byKey(const ValueKey('editor-context-notice')),
+        find.byKey(const ValueKey('relay-centered-notice')),
         findsNothing,
       );
     },
@@ -317,6 +351,61 @@ Future<void> _pumpApp(WidgetTester tester) async {
                 availableModuleCounts: [2],
               ),
             ],
+          ),
+        ),
+        collectionProvider.overrideWith(
+          (ref) async => CollectionSnapshot(
+            playerId: 'player-test',
+            credits: 230,
+            cosmetics: const [
+              CosmeticItem(
+                id: 'module_neon_cyan',
+                category: 'module_skin',
+                displayName: 'Neon Sinyal',
+                description: 'Başlangıç modül kaplaması.',
+                creditCost: 0,
+                accentHex: '#38E8FF',
+                owned: true,
+                equipped: true,
+              ),
+              CosmeticItem(
+                id: 'board_midnight_grid',
+                category: 'board_theme',
+                displayName: 'Gece Izgarası',
+                description: 'Başlangıç devre kartı teması.',
+                creditCost: 0,
+                accentHex: '#184B5B',
+                owned: true,
+                equipped: true,
+              ),
+              CosmeticItem(
+                id: 'frame_signal',
+                category: 'profile_frame',
+                displayName: 'Sinyal Çerçevesi',
+                description: 'Başlangıç profil çerçevesi.',
+                creditCost: 0,
+                accentHex: '#68F5C0',
+                owned: true,
+                equipped: true,
+              ),
+            ],
+            kit: ControlledKit(
+              name: 'Dengeli Sekizli',
+              moduleKinds: const [
+                ModuleKind.generator,
+                ModuleKind.battery,
+                ModuleKind.laser,
+                ModuleKind.laser,
+                ModuleKind.pulseCannon,
+                ModuleKind.shield,
+                ModuleKind.cooler,
+                ModuleKind.repair,
+              ],
+              updatedAt: DateTime.utc(2026, 7, 31),
+            ),
+            equippedModuleSkinId: 'module_neon_cyan',
+            equippedBoardThemeId: 'board_midnight_grid',
+            equippedProfileFrameId: 'frame_signal',
           ),
         ),
         statisticsProvider.overrideWith(

@@ -5,6 +5,7 @@ import '../api/relay_api.dart';
 import '../models/relay_models.dart';
 import '../theme/relay_theme.dart';
 import '../widgets/player_status_bar.dart';
+import '../widgets/relay_notice.dart';
 import 'replay_screen.dart';
 
 class StatisticsScreen extends ConsumerStatefulWidget {
@@ -129,8 +130,10 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
       );
     } catch (error) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Tekrar açılamadı: $error')),
+        RelayNotice.show(
+          context,
+          'Tekrar açılamadı: $error',
+          tone: RelayNoticeTone.error,
         );
       }
     } finally {

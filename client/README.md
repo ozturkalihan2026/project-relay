@@ -1,6 +1,6 @@
 # Project Relay Flutter İstemcisi
 
-Bu dizin v0.6.1 ana menüsü, oynanabilir Kariyer ve ayrı İstatistikler ekranları, kalıcı
+Bu dizin v0.6.2 ana menüsü, oynanabilir Kariyer ve ayrı İstatistikler ekranları, kalıcı
 misafir oturumu, dereceli asenkron eşleştirme, XP/seviye/Devre Kredisi, günlük
 görevler, başarımlar, güçlendirici ustalığı, haftalık lig ve maç geçmişi,
 sürükle-bırak kart düzenleyici, etkileşimli oyun el kitabı ve Flame savaş
@@ -39,11 +39,10 @@ Kartın dışına veya kapısız çekirdek alanına bakan kullanılamayan port
 işaretleri çizilmez. Güçlendiricinin yön oku sağ üstte sürekli görünür;
 döndürülebilen modüllerin döndürme düğmesi sol üstte sürekli görünür.
 
-Bağlantı doğrulama, yerleşim ve API hataları ekranın altına yayılan SnackBar
-yerine devre kartının altında saydam ve durum rengine sahip bağlamsal kartta
-gösterilir.
+Bağlantı doğrulama, yerleşim ve API hataları kaydırmadan bağımsız ortak
+yarı saydam merkez bildiriminde gösterilir.
 
-Uygulama **Oyna**, **Kariyer**, **İstatistikler**, **Nasıl Oynanır** ve **Ayarlar** seçenekli ana menüyle açılır. Kariyer XP, seviye, Devre Kredisi, günlük görevler, başarımlar ve yalnız koşu içinde geçerli güçlendirici kademelerini gösterir. İstatistikler dereceyi, haftalık ligi, liderlik tablosunu ve replay açılabilen maç geçmişini gösterir.
+Uygulama **Oyna**, **Kariyer**, **Koleksiyon**, **İstatistikler**, **Nasıl Oynanır** ve **Ayarlar** seçenekli ana menüyle açılır. Kariyer XP, seviye, Devre Kredisi, günlük görevler, başarımlar ve yalnız koşu içinde geçerli güçlendirici kademelerini gösterir. İstatistikler dereceyi, haftalık ligi, liderlik tablosunu ve replay açılabilen maç geçmişini gösterir.
 Oyna altındaki **Çevrimiçi Savaş** yalnız asenkron oyuncu eşleştirmesini,
 **Antrenman** yalnız dokuz sabit rakibi gösterir. Modül adı ile Can ve role
 özgü değerler seçim paletinde görünür; devre hücreleri savaş alanını sade
@@ -91,8 +90,12 @@ FastAPI ve PostgreSQL'in ayrı terminalde 8000 portunda çalışıyor olması
 gerekir. Proje kökündeki `docker compose up --build` ikisini birlikte başlatır.
 
 
-## v0.6.1 kariyer akışı
 
-Kariyer ekranı aktif koşuyu sunucudan okur, rakibin tam devre ön izlemesini
-gösterir, özel kariyer editörüne geçiş yapar ve savaş sonrasında üçlü geçici
-güçlendirici seçimini yönetir. İstemci sürümü `0.6.1+36`dır.
+## v0.6.2 koleksiyon ve kit
+
+Ana menüdeki **Koleksiyon**, sekiz modüllük aktif kiti ve kozmetik sahipliklerini
+gösterir. Kitte tam bir Jeneratör bulunur; diğer türler en fazla üç kez
+seçilebilir. Kartta en fazla altı modül kullanıldığı için kalan iki kit yuvası
+rakibe göre yedek seçenektir. Editör paleti her türde kalan adedi gösterir.
+Modül kaplamaları, kart temaları ve profil çerçeveleri Devre Kredisiyle alınır;
+mağaza kalıcı savaş gücü satmaz. İstemci sürümü `0.6.2+39`dur.

@@ -1407,6 +1407,7 @@ class CareerBoosterChoice {
     required this.tier,
     required this.effectValue,
     required this.effectLabel,
+    required this.creditCost,
   });
 
   factory CareerBoosterChoice.fromJson(Map<String, dynamic> json) {
@@ -1417,6 +1418,7 @@ class CareerBoosterChoice {
       tier: json['tier'] as int,
       effectValue: json['effect_value'] as int,
       effectLabel: json['effect_label'] as String,
+      creditCost: json['credit_cost'] as int? ?? 0,
     );
   }
 
@@ -1426,6 +1428,7 @@ class CareerBoosterChoice {
   final int tier;
   final int effectValue;
   final String effectLabel;
+  final int creditCost;
 }
 
 class CareerOpponentPreview {
@@ -1559,4 +1562,103 @@ class CareerBattleResponse {
 
   final MatchResponse match;
   final CareerRunSnapshot run;
+}
+
+class ControlledKit {
+  const ControlledKit({
+    required this.name,
+    required this.moduleKinds,
+    required this.updatedAt,
+  });
+
+  factory ControlledKit.fromJson(Map<String, dynamic> json) {
+    return ControlledKit(
+      name: json['name'] as String,
+      moduleKinds: (json['module_kinds'] as List<dynamic>)
+          .map((value) => ModuleKind.parse(value as String))
+          .toList(growable: false),
+      updatedAt: DateTime.parse(json['updated_at'] as String),
+    );
+  }
+
+  final String name;
+  final List<ModuleKind> moduleKinds;
+  final DateTime updatedAt;
+
+  Map<ModuleKind, int> get counts {
+    final values = <ModuleKind, int>{};
+    for (final kind in moduleKinds) {
+      values[kind] = (values[kind] ?? 0) + 1;
+    }
+    return values;
+  }
+}
+
+class CosmeticItem {
+  const CosmeticItem({
+    required this.id,
+    required this.category,
+    required this.displayName,
+    required this.description,
+    required this.creditCost,
+    required this.accentHex,
+    required this.owned,
+    required this.equipped,
+  });
+
+  factory CosmeticItem.fromJson(Map<String, dynamic> json) {
+    return CosmeticItem(
+      id: json['cosmetic_id'] as String,
+      category: json['category'] as String,
+      displayName: json['display_name'] as String,
+      description: json['description'] as String,
+      creditCost: json['credit_cost'] as int,
+      accentHex: json['accent_hex'] as String,
+      owned: json['owned'] as bool,
+      equipped: json['equipped'] as bool,
+    );
+  }
+
+  final String id;
+  final String category;
+  final String displayName;
+  final String description;
+  final int creditCost;
+  final String accentHex;
+  final bool owned;
+  final bool equipped;
+}
+
+class CollectionSnapshot {
+  const CollectionSnapshot({
+    required this.playerId,
+    required this.credits,
+    required this.cosmetics,
+    required this.kit,
+    required this.equippedModuleSkinId,
+    required this.equippedBoardThemeId,
+    required this.equippedProfileFrameId,
+  });
+
+  factory CollectionSnapshot.fromJson(Map<String, dynamic> json) {
+    return CollectionSnapshot(
+      playerId: json['player_id'] as String,
+      credits: json['credits'] as int,
+      cosmetics: (json['cosmetics'] as List<dynamic>)
+          .map((item) => CosmeticItem.fromJson(item as Map<String, dynamic>))
+          .toList(growable: false),
+      kit: ControlledKit.fromJson(json['kit'] as Map<String, dynamic>),
+      equippedModuleSkinId: json['equipped_module_skin_id'] as String,
+      equippedBoardThemeId: json['equipped_board_theme_id'] as String,
+      equippedProfileFrameId: json['equipped_profile_frame_id'] as String,
+    );
+  }
+
+  final String playerId;
+  final int credits;
+  final List<CosmeticItem> cosmetics;
+  final ControlledKit kit;
+  final String equippedModuleSkinId;
+  final String equippedBoardThemeId;
+  final String equippedProfileFrameId;
 }

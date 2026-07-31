@@ -21,6 +21,11 @@ from relay_engine.catalog import MODULE_SPECS
 
 from .auth import AuthError, AuthService, GuestSession, PlayerView
 from .bots import BotDefinition, BotNotFoundError
+from .collection import (
+    CollectionError,
+    CollectionService,
+    CollectionSnapshot,
+)
 from .competitive import (
     CareerSnapshot,
     CompetitiveService,
@@ -54,6 +59,8 @@ from .schemas import (
     CareerBoosterSelectionRequest,
     CareerResponse,
     CareerRunResponse,
+    CollectionResponse,
+    EquipCosmeticRequest,
     ClaimRewardResponse,
     CreateBotMatchRequest,
     CurrentLeagueResponse,
@@ -69,6 +76,7 @@ from .schemas import (
     RefreshSessionRequest,
     ReplayResponse,
     SavedBoardResponse,
+    SaveControlledKitRequest,
     VerifyReplayRequest,
     VerifyReplayResponse,
 )
@@ -376,6 +384,7 @@ def _career_run_payload(snapshot: CareerRunSnapshot) -> dict[str, Any]:
             "tier": item.tier,
             "effect_value": item.effect_value,
             "effect_label": item.effect_label,
+            "credit_cost": item.credit_cost,
         }
 
     opponent = None
@@ -426,6 +435,34 @@ def _career_run_payload(snapshot: CareerRunSnapshot) -> dict[str, Any]:
         ),
     }
 
+
+
+def _collection_payload(snapshot: CollectionSnapshot) -> dict[str, Any]:
+    return {
+        "player_id": snapshot.player_id,
+        "credits": snapshot.credits,
+        "cosmetics": [
+            {
+                "cosmetic_id": item.cosmetic_id,
+                "category": item.category,
+                "display_name": item.display_name,
+                "description": item.description,
+                "credit_cost": item.credit_cost,
+                "accent_hex": item.accent_hex,
+                "owned": item.owned,
+                "equipped": item.equipped,
+            }
+            for item in snapshot.cosmetics
+        ],
+        "kit": {
+            "name": snapshot.kit.name,
+            "module_kinds": [kind.value for kind in snapshot.kit.module_kinds],
+            "updated_at": snapshot.kit.updated_at.isoformat(),
+        },
+        "equipped_module_skin_id": snapshot.equipped_module_skin_id,
+        "equipped_board_theme_id": snapshot.equipped_board_theme_id,
+        "equipped_profile_frame_id": snapshot.equipped_profile_frame_id,
+    }
 
 def _history_payload(page: MatchHistoryPage) -> dict[str, Any]:
     return {
@@ -482,6 +519,7 @@ def create_app(
     competitive_service: CompetitiveService | None = None,
     progression_service: ProgressionService | None = None,
     career_service: CareerRunService | None = None,
+    collection_service: CollectionService | None = None,
 ) -> FastAPI:
     resolved_settings = settings or Settings.from_environment()
     resolved_database = database or Database(
@@ -511,15 +549,18 @@ def create_app(
         resolved_online,
         resolved_progression,
     )
+    resolved_collection = collection_service or CollectionService(
+        resolved_database
+    )
     bearer = HTTPBearer(auto_error=False)
 
     application = FastAPI(
         title="Project Relay API",
         version=API_VERSION,
         description=(
-            "Project Relay v0.6.1 kariyer ve rekabet API'si. "
-            "Beş savaşlık kariyer koşusu, tam rakip ön izlemesi, geçici "
-            "güçlendiriciler ve bütün ödüller sunucuda hesaplanır."
+            "Project Relay v0.6.2 kariyer, koleksiyon ve rekabet API'si. "
+            "Sekiz yuvalı kontrollü kit, güç satmayan kozmetik mağaza ve "
+            "kalıcı koleksiyon sunucu tarafından doğrulanır."
         ),
     )
     application.add_middleware(
@@ -536,6 +577,7 @@ def create_app(
     application.state.competitive_service = resolved_competitive
     application.state.progression_service = resolved_progression
     application.state.career_service = resolved_career
+    application.state.collection_service = resolved_collection
 
     def current_player(
         credentials: HTTPAuthorizationCredentials | None = Depends(bearer),
@@ -664,6 +706,20 @@ def create_app(
         return JSONResponse(
             status_code=exc.status_code,
             content={"code": exc.code, "message": exc.message},
+        )
+
+    @application.exception_handler(CollectionError)
+    async def collection_error_handler(
+        _request: Request,
+        exc: CollectionError,
+    ) -> JSONResponse:
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={
+                "code": exc.code,
+                "message": exc.message,
+                "details": None,
+            },
         )
 
     @application.exception_handler(CareerRunError)
@@ -979,6 +1035,123 @@ def create_app(
             ],
         }
 
+    @application.get(
+        "/api/v1/me/collection",
+        response_model=CollectionResponse,
+        responses={401: {"model": ErrorResponse}},
+        tags=["collection"],
+    )
+    def get_collection(
+        player: PlayerView = Depends(current_player),
+    ) -> dict[str, Any]:
+        return _collection_payload(
+            resolved_collection.snapshot(player.player_id)
+        )
+
+    @application.post(
+        "/api/v1/me/collection/cosmetics/{cosmetic_id}/purchase",
+        response_model=CollectionResponse,
+        responses={
+            401: {"model": ErrorResponse},
+            404: {"model": ErrorResponse},
+            409: {"model": ErrorResponse},
+        },
+        tags=["collection"],
+    )
+    def purchase_cosmetic(
+        cosmetic_id: str,
+        player: PlayerView = Depends(current_player),
+    ) -> dict[str, Any]:
+        return _collection_payload(
+            resolved_collection.purchase(player.player_id, cosmetic_id)
+        )
+
+    @application.put(
+        "/api/v1/me/collection/equipped",
+        response_model=CollectionResponse,
+        responses={
+            401: {"model": ErrorResponse},
+            404: {"model": ErrorResponse},
+            409: {"model": ErrorResponse},
+        },
+        tags=["collection"],
+    )
+    def equip_cosmetic(
+        request: EquipCosmeticRequest,
+        player: PlayerView = Depends(current_player),
+    ) -> dict[str, Any]:
+        return _collection_payload(
+            resolved_collection.equip(
+                player.player_id,
+                request.cosmetic_id,
+            )
+        )
+
+    @application.put(
+        "/api/v1/me/kit",
+        response_model=CollectionResponse,
+        responses={
+            401: {"model": ErrorResponse},
+            409: {"model": ErrorResponse},
+            422: {"model": ErrorResponse},
+        },
+        tags=["collection"],
+    )
+    def save_controlled_kit(
+        request: SaveControlledKitRequest,
+        player: PlayerView = Depends(current_player),
+    ) -> dict[str, Any]:
+        return _collection_payload(
+            resolved_collection.save_kit(
+                player.player_id,
+                name=request.name,
+                module_kinds=request.module_kinds,
+            )
+        )
+
+    @application.get(
+        "/api/v1/me/career-board",
+        response_model=SavedBoardResponse,
+        responses={
+            401: {"model": ErrorResponse},
+            404: {"model": ErrorResponse},
+        },
+        tags=["career"],
+    )
+    def get_career_board(
+        player: PlayerView = Depends(current_player),
+    ) -> dict[str, Any]:
+        saved = resolved_career.get_board(player.player_id)
+        if saved is None:
+            raise CareerRunError(
+                "career_board_not_found",
+                "Henüz kayıtlı bir kariyer devresi yok.",
+                status_code=404,
+            )
+        return _saved_board_payload(saved, match_service)
+
+    @application.put(
+        "/api/v1/me/career-board",
+        response_model=SavedBoardResponse,
+        responses={
+            401: {"model": ErrorResponse},
+            409: {"model": ErrorResponse},
+            422: {"model": ErrorResponse},
+        },
+        tags=["career"],
+    )
+    def save_career_board(
+        board: BoardPayload,
+        player: PlayerView = Depends(current_player),
+    ) -> dict[str, Any]:
+        domain_board = board.to_domain()
+        resolved_collection.validate_board(player.player_id, domain_board)
+        saved = resolved_career.save_board(
+            player.player_id,
+            domain_board,
+        )
+        return _saved_board_payload(saved, match_service)
+
     @application.put(
         "/api/v1/me/board",
         response_model=SavedBoardResponse,
@@ -992,9 +1165,11 @@ def create_app(
         board: BoardPayload,
         player: PlayerView = Depends(current_player),
     ) -> dict[str, Any]:
+        domain_board = board.to_domain()
+        resolved_collection.validate_board(player.player_id, domain_board)
         saved = resolved_online.save_board(
             player.player_id,
-            board.to_domain(),
+            domain_board,
         )
         return _saved_board_payload(saved, match_service)
 

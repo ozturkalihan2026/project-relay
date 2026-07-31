@@ -9,7 +9,11 @@ from pathlib import Path
 from relay_api.career import CareerRunError, CareerRunService
 from relay_api.config import Settings
 from relay_api.database import Database
-from relay_api.db_models import CareerRunRecord, PlayerRecord
+from relay_api.db_models import (
+    CareerRunRecord,
+    PlayerProgressionRecord,
+    PlayerRecord,
+)
 from relay_api.online import OnlinePlayService
 from relay_api.progression import ProgressionService
 from relay_api.service import MatchService
@@ -155,8 +159,8 @@ class CareerRunServiceTests(unittest.TestCase):
         self.assertEqual(context.exception.code, "board_required")
 
     def test_start_is_idempotent_while_run_is_active(self) -> None:
-        career, online, _, _ = self._service(["left"])
-        online.save_board("player-a", _board())
+        career, _, _, _ = self._service(["left"])
+        career.save_board("player-a", _board())
 
         first = career.start("player-a")
         second = career.start("player-a")
@@ -165,8 +169,8 @@ class CareerRunServiceTests(unittest.TestCase):
         self.assertEqual(second.status, "active")
 
     def test_start_exposes_exact_full_opponent_board_preview(self) -> None:
-        career, online, _, _ = self._service(["left"])
-        online.save_board("player-a", _board())
+        career, _, _, _ = self._service(["left"])
+        career.save_board("player-a", _board())
         run = career.start("player-a")
 
         self.assertEqual(run.status, "active")
@@ -178,23 +182,44 @@ class CareerRunServiceTests(unittest.TestCase):
             result.match.opponent_board.to_dict(),
             run.opponent.board.to_dict(),
         )
-        self.assertEqual(result.run.status, "awaiting_booster")
-        self.assertEqual(len(result.run.offered_boosters), 3)
+        self.assertEqual(result.run.status, "active")
+        self.assertEqual(result.run.stage_index, 1)
+        self.assertEqual(result.run.offered_boosters, ())
 
     def test_five_wins_complete_run_and_reward_once(self) -> None:
-        career, online, progression, matches = self._service(["left"] * 5)
-        online.save_board("player-a", _board())
+        career, _, progression, matches = self._service(["left"] * 5)
+        career.save_board("player-a", _board())
+        progression.snapshot("player-a")
+        with self.database.session() as session:
+            record = session.get(PlayerProgressionRecord, "player-a")
+            assert record is not None
+            record.credits = 200
+
         run = career.start("player-a")
-        for stage in range(5):
+        for stage in range(4):
             result = career.battle("player-a")
             run = result.run
-            if stage < 4:
-                self.assertEqual(run.status, "awaiting_booster")
-                run = career.select_booster(
-                    "player-a", run.offered_boosters[0].booster_id
-                )
+            if stage < 3:
                 self.assertEqual(run.status, "active")
+                self.assertEqual(run.offered_boosters, ())
+            else:
+                self.assertEqual(run.status, "awaiting_booster")
+                self.assertEqual(len(run.offered_boosters), 3)
 
+        overcharge = next(
+            item for item in run.offered_boosters
+            if item.booster_id == "overcharge"
+        )
+        self.assertEqual(overcharge.credit_cost, 75)
+        run = career.select_booster("player-a", "overcharge")
+        self.assertEqual(run.status, "active")
+        self.assertEqual(run.opponent.stage_number, 5)
+        self.assertEqual(
+            progression.snapshot("player-a").profile.credits,
+            125,
+        )
+
+        run = career.battle("player-a").run
         self.assertEqual(run.status, "completed")
         self.assertEqual(run.wins, 5)
         self.assertEqual(run.reward.xp, 300)
@@ -203,14 +228,66 @@ class CareerRunServiceTests(unittest.TestCase):
             progression.career_reward("player-a", run.run_id),
             run.reward,
         )
-        self.assertGreater(matches.last_player_modifiers.generator_output_multiplier, 1.0)
+        self.assertGreater(
+            matches.last_player_modifiers.generator_output_multiplier,
+            1.0,
+        )
+        self.assertEqual(
+            progression.snapshot("player-a").profile.credits,
+            315,
+        )
         restarted = career.start("player-a")
         self.assertEqual(restarted.status, "active")
         self.assertEqual(restarted.selected_boosters, ())
 
-    def test_terminal_read_repairs_missing_idempotent_reward(self) -> None:
-        career, online, progression, _ = self._service([])
+    def test_booster_can_be_skipped_before_boss(self) -> None:
+        career, _, _, _ = self._service(["left"] * 4)
+        career.save_board("player-a", _board())
+        career.start("player-a")
+        run = None
+        for _ in range(4):
+            run = career.battle("player-a").run
+        assert run is not None
+        self.assertEqual(run.status, "awaiting_booster")
+
+        advanced = career.select_booster("player-a", "none")
+
+        self.assertEqual(advanced.status, "active")
+        self.assertEqual(advanced.opponent.stage_number, 5)
+        self.assertEqual(advanced.selected_boosters, ())
+
+    def test_career_board_is_independent_from_async_pvp_board(self) -> None:
+        career, online, _, _ = self._service([])
         online.save_board("player-a", _board())
+        career_board = BoardLayout(
+            name="Ayrı Kariyer Devresi",
+            modules=tuple(
+                module if module.module_id != "P-COOL" else ModulePlacement(
+                    module_id=module.module_id,
+                    kind=module.kind,
+                    row=3,
+                    column=2,
+                    orientation=Direction.NORTH,
+                )
+                for module in _board().modules
+            ),
+        )
+        career.save_board("player-a", career_board)
+
+        saved_online = online.get_board("player-a")
+        saved_career = career.get_board(
+            "player-a", clone_online_if_missing=False
+        )
+
+        self.assertIsNotNone(saved_online)
+        self.assertIsNotNone(saved_career)
+        self.assertEqual(saved_online.board.to_dict(), _board().to_dict())
+        self.assertEqual(saved_career.board.to_dict(), career_board.to_dict())
+        self.assertNotEqual(saved_online.fingerprint, saved_career.fingerprint)
+
+    def test_terminal_read_repairs_missing_idempotent_reward(self) -> None:
+        career, _, progression, _ = self._service([])
+        career.save_board("player-a", _board())
         with self.database.session() as session:
             session.add(
                 CareerRunRecord(
@@ -239,8 +316,8 @@ class CareerRunServiceTests(unittest.TestCase):
         )
 
     def test_non_win_fails_and_clears_active_effects_for_new_run(self) -> None:
-        career, online, _, _ = self._service([None])
-        online.save_board("player-a", _board())
+        career, _, _, _ = self._service([None])
+        career.save_board("player-a", _board())
         career.start("player-a")
         result = career.battle("player-a")
         self.assertEqual(result.run.status, "failed")

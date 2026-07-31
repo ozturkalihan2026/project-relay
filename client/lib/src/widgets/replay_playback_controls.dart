@@ -12,6 +12,9 @@ class ReplayPlaybackControls extends StatelessWidget {
     required this.onToggleSound,
     required this.onSpeedChanged,
     required this.onNewGame,
+    this.primaryActionLabel = 'YENİ OYUN',
+    this.primaryActionKey = 'replay-new-game-button',
+    this.primaryActionEnabled = true,
     super.key,
   });
 
@@ -23,6 +26,9 @@ class ReplayPlaybackControls extends StatelessWidget {
   final VoidCallback onToggleSound;
   final ValueChanged<double> onSpeedChanged;
   final VoidCallback onNewGame;
+  final String primaryActionLabel;
+  final String primaryActionKey;
+  final bool primaryActionEnabled;
 
   @override
   Widget build(BuildContext context) {
@@ -106,11 +112,13 @@ class ReplayPlaybackControls extends StatelessWidget {
             width: 220,
             height: 40,
             child: FilledButton(
-              key: const ValueKey('replay-new-game-button'),
-              onPressed: onNewGame,
+              key: ValueKey(primaryActionKey),
+              onPressed: primaryActionEnabled ? onNewGame : null,
               style: FilledButton.styleFrom(
                 backgroundColor: RelayColors.cyan,
                 foregroundColor: const Color(0xFF07161C),
+                disabledBackgroundColor: const Color(0xFF24434C),
+                disabledForegroundColor: RelayColors.muted,
                 minimumSize: Size.zero,
                 padding:
                     const EdgeInsets.symmetric(horizontal: 26, vertical: 9),
@@ -121,7 +129,10 @@ class ReplayPlaybackControls extends StatelessWidget {
                   letterSpacing: 0.8,
                 ),
               ),
-              child: const Text('YENİ OYUN'),
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(primaryActionLabel),
+              ),
             ),
           ),
         ],
