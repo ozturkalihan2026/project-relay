@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import '../game/replay_game.dart';
 import '../models/relay_models.dart';
 import '../theme/cosmetic_visuals.dart';
-import '../theme/relay_theme.dart';
 
 class ReplayAttackOverlay extends StatefulWidget {
   const ReplayAttackOverlay({
