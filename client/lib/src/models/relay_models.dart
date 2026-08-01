@@ -667,6 +667,29 @@ class RatingChange {
   final String weekKey;
 }
 
+class SeasonPointChangeModel {
+  const SeasonPointChangeModel({
+    required this.seasonKey,
+    required this.outcome,
+    required this.pointsGained,
+    required this.totalPoints,
+  });
+
+  factory SeasonPointChangeModel.fromJson(Map<String, dynamic> json) {
+    return SeasonPointChangeModel(
+      seasonKey: json['season_key'] as String,
+      outcome: json['outcome'] as String,
+      pointsGained: json['points_gained'] as int,
+      totalPoints: json['total_points'] as int,
+    );
+  }
+
+  final String seasonKey;
+  final String outcome;
+  final int pointsGained;
+  final int totalPoints;
+}
+
 class MatchResponse {
   const MatchResponse({
     required this.id,
@@ -680,12 +703,14 @@ class MatchResponse {
     required this.replayEventCount,
     this.ratingChange,
     this.progressionReward,
+    this.seasonChange,
   });
 
   factory MatchResponse.fromJson(Map<String, dynamic> json) {
     final replay = json['replay'] as Map<String, dynamic>;
     final ratingPayload = json['rating_change'];
     final progressionPayload = json['progression_reward'];
+    final seasonPayload = json['season_change'];
     return MatchResponse(
       id: json['match_id'] as String,
       createdAt: DateTime.parse(json['created_at'] as String),
@@ -708,6 +733,9 @@ class MatchResponse {
       progressionReward: progressionPayload is Map<String, dynamic>
           ? ProgressionReward.fromJson(progressionPayload)
           : null,
+      seasonChange: seasonPayload is Map<String, dynamic>
+          ? SeasonPointChangeModel.fromJson(seasonPayload)
+          : null,
     );
   }
 
@@ -722,6 +750,7 @@ class MatchResponse {
   final int replayEventCount;
   final RatingChange? ratingChange;
   final ProgressionReward? progressionReward;
+  final SeasonPointChangeModel? seasonChange;
 }
 
 
@@ -1661,4 +1690,417 @@ class CollectionSnapshot {
   final String equippedModuleSkinId;
   final String equippedBoardThemeId;
   final String equippedProfileFrameId;
+}
+
+class SeasonWindowModel {
+  const SeasonWindowModel({
+    required this.key,
+    required this.title,
+    required this.startsAt,
+    required this.endsAt,
+  });
+
+  factory SeasonWindowModel.fromJson(Map<String, dynamic> json) {
+    return SeasonWindowModel(
+      key: json['season_key'] as String,
+      title: json['title'] as String,
+      startsAt: DateTime.parse(json['starts_at'] as String),
+      endsAt: DateTime.parse(json['ends_at'] as String),
+    );
+  }
+
+  final String key;
+  final String title;
+  final DateTime startsAt;
+  final DateTime endsAt;
+}
+
+class SeasonEntryModel {
+  const SeasonEntryModel({
+    required this.points,
+    required this.matches,
+    required this.wins,
+    required this.draws,
+    required this.losses,
+    required this.position,
+    required this.participantCount,
+    required this.claimedTiers,
+  });
+
+  factory SeasonEntryModel.fromJson(Map<String, dynamic> json) {
+    return SeasonEntryModel(
+      points: json['points'] as int,
+      matches: json['matches'] as int,
+      wins: json['wins'] as int,
+      draws: json['draws'] as int,
+      losses: json['losses'] as int,
+      position: json['position'] as int,
+      participantCount: json['participant_count'] as int,
+      claimedTiers: (json['claimed_tiers'] as List<dynamic>)
+          .map((value) => value as int)
+          .toSet(),
+    );
+  }
+
+  final int points;
+  final int matches;
+  final int wins;
+  final int draws;
+  final int losses;
+  final int position;
+  final int participantCount;
+  final Set<int> claimedTiers;
+}
+
+class SeasonTierModel {
+  const SeasonTierModel({
+    required this.tier,
+    required this.title,
+    required this.requiredPoints,
+    required this.rewardXp,
+    required this.rewardCredits,
+    required this.unlocked,
+    required this.claimed,
+  });
+
+  factory SeasonTierModel.fromJson(Map<String, dynamic> json) {
+    return SeasonTierModel(
+      tier: json['tier'] as int,
+      title: json['title'] as String,
+      requiredPoints: json['required_points'] as int,
+      rewardXp: json['reward_xp'] as int,
+      rewardCredits: json['reward_credits'] as int,
+      unlocked: json['unlocked'] as bool,
+      claimed: json['claimed'] as bool,
+    );
+  }
+
+  final int tier;
+  final String title;
+  final int requiredPoints;
+  final int rewardXp;
+  final int rewardCredits;
+  final bool unlocked;
+  final bool claimed;
+}
+
+class SeasonStandingModel {
+  const SeasonStandingModel({
+    required this.position,
+    required this.playerId,
+    required this.displayName,
+    required this.points,
+    required this.wins,
+    required this.matches,
+    required this.isCurrentPlayer,
+  });
+
+  factory SeasonStandingModel.fromJson(Map<String, dynamic> json) {
+    return SeasonStandingModel(
+      position: json['position'] as int,
+      playerId: json['player_id'] as String,
+      displayName: json['display_name'] as String,
+      points: json['points'] as int,
+      wins: json['wins'] as int,
+      matches: json['matches'] as int,
+      isCurrentPlayer: json['is_current_player'] as bool,
+    );
+  }
+
+  final int position;
+  final String playerId;
+  final String displayName;
+  final int points;
+  final int wins;
+  final int matches;
+  final bool isCurrentPlayer;
+}
+
+class SeasonSnapshotModel {
+  const SeasonSnapshotModel({
+    required this.season,
+    required this.entry,
+    required this.tiers,
+    required this.leaderboard,
+  });
+
+  factory SeasonSnapshotModel.fromJson(Map<String, dynamic> json) {
+    return SeasonSnapshotModel(
+      season: SeasonWindowModel.fromJson(
+        json['season'] as Map<String, dynamic>,
+      ),
+      entry: SeasonEntryModel.fromJson(
+        json['entry'] as Map<String, dynamic>,
+      ),
+      tiers: (json['tiers'] as List<dynamic>)
+          .map((item) => SeasonTierModel.fromJson(item as Map<String, dynamic>))
+          .toList(growable: false),
+      leaderboard: (json['leaderboard'] as List<dynamic>)
+          .map(
+            (item) => SeasonStandingModel.fromJson(
+              item as Map<String, dynamic>,
+            ),
+          )
+          .toList(growable: false),
+    );
+  }
+
+  final SeasonWindowModel season;
+  final SeasonEntryModel entry;
+  final List<SeasonTierModel> tiers;
+  final List<SeasonStandingModel> leaderboard;
+}
+
+class AlphaSafetySnapshotModel {
+  const AlphaSafetySnapshotModel({
+    required this.matchRequests,
+    required this.matchLimit,
+    required this.matchWindowSeconds,
+    required this.feedbackRequests,
+    required this.feedbackLimit,
+    required this.feedbackWindowSeconds,
+    required this.blockedUntil,
+    required this.serverAuthoritativeResults,
+    required this.idempotentRewards,
+    required this.boardValidation,
+  });
+
+  factory AlphaSafetySnapshotModel.fromJson(Map<String, dynamic> json) {
+    return AlphaSafetySnapshotModel(
+      matchRequests: json['match_requests'] as int,
+      matchLimit: json['match_limit'] as int,
+      matchWindowSeconds: json['match_window_seconds'] as int,
+      feedbackRequests: json['feedback_requests'] as int,
+      feedbackLimit: json['feedback_limit'] as int,
+      feedbackWindowSeconds: json['feedback_window_seconds'] as int,
+      blockedUntil: json['blocked_until'] == null
+          ? null
+          : DateTime.parse(json['blocked_until'] as String),
+      serverAuthoritativeResults:
+          json['server_authoritative_results'] as bool,
+      idempotentRewards: json['idempotent_rewards'] as bool,
+      boardValidation: json['board_validation'] as bool,
+    );
+  }
+
+  final int matchRequests;
+  final int matchLimit;
+  final int matchWindowSeconds;
+  final int feedbackRequests;
+  final int feedbackLimit;
+  final int feedbackWindowSeconds;
+  final DateTime? blockedUntil;
+  final bool serverAuthoritativeResults;
+  final bool idempotentRewards;
+  final bool boardValidation;
+}
+
+class AlphaFeedbackReceiptModel {
+  const AlphaFeedbackReceiptModel({
+    required this.feedbackId,
+    required this.category,
+    required this.createdAt,
+  });
+
+  factory AlphaFeedbackReceiptModel.fromJson(Map<String, dynamic> json) {
+    return AlphaFeedbackReceiptModel(
+      feedbackId: json['feedback_id'] as String,
+      category: json['category'] as String,
+      createdAt: DateTime.parse(json['created_at'] as String),
+    );
+  }
+
+  final String feedbackId;
+  final String category;
+  final DateTime createdAt;
+}
+
+class SocialPlayerModel {
+  const SocialPlayerModel({
+    required this.playerId,
+    required this.displayName,
+    required this.statusMessage,
+    required this.favoriteModule,
+    required this.relationship,
+  });
+
+  factory SocialPlayerModel.fromJson(Map<String, dynamic> json) {
+    return SocialPlayerModel(
+      playerId: json['player_id'] as String,
+      displayName: json['display_name'] as String,
+      statusMessage: json['status_message'] as String,
+      favoriteModule: ModuleKind.parse(json['favorite_module'] as String),
+      relationship: json['relationship'] as String,
+    );
+  }
+
+  final String playerId;
+  final String displayName;
+  final String statusMessage;
+  final ModuleKind favoriteModule;
+  final String relationship;
+}
+
+class FriendRequestModel {
+  const FriendRequestModel({
+    required this.requestId,
+    required this.player,
+    required this.createdAt,
+  });
+
+  factory FriendRequestModel.fromJson(Map<String, dynamic> json) {
+    return FriendRequestModel(
+      requestId: json['request_id'] as String,
+      player: SocialPlayerModel.fromJson(
+        json['player'] as Map<String, dynamic>,
+      ),
+      createdAt: DateTime.parse(json['created_at'] as String),
+    );
+  }
+
+  final String requestId;
+  final SocialPlayerModel player;
+  final DateTime createdAt;
+}
+
+class SocialProfileModel {
+  const SocialProfileModel({
+    required this.playerId,
+    required this.displayName,
+    required this.statusMessage,
+    required this.favoriteModule,
+    required this.friendCount,
+  });
+
+  factory SocialProfileModel.fromJson(Map<String, dynamic> json) {
+    return SocialProfileModel(
+      playerId: json['player_id'] as String,
+      displayName: json['display_name'] as String,
+      statusMessage: json['status_message'] as String,
+      favoriteModule: ModuleKind.parse(json['favorite_module'] as String),
+      friendCount: json['friend_count'] as int,
+    );
+  }
+
+  final String playerId;
+  final String displayName;
+  final String statusMessage;
+  final ModuleKind favoriteModule;
+  final int friendCount;
+}
+
+class ClanMemberModel {
+  const ClanMemberModel({
+    required this.playerId,
+    required this.displayName,
+    required this.role,
+    required this.joinedAt,
+    required this.isCurrentPlayer,
+  });
+
+  factory ClanMemberModel.fromJson(Map<String, dynamic> json) {
+    return ClanMemberModel(
+      playerId: json['player_id'] as String,
+      displayName: json['display_name'] as String,
+      role: json['role'] as String,
+      joinedAt: DateTime.parse(json['joined_at'] as String),
+      isCurrentPlayer: json['is_current_player'] as bool,
+    );
+  }
+
+  final String playerId;
+  final String displayName;
+  final String role;
+  final DateTime joinedAt;
+  final bool isCurrentPlayer;
+}
+
+class ClanModel {
+  const ClanModel({
+    required this.clanId,
+    required this.name,
+    required this.tag,
+    required this.description,
+    required this.leaderPlayerId,
+    required this.isOpen,
+    required this.memberCount,
+    required this.members,
+  });
+
+  factory ClanModel.fromJson(Map<String, dynamic> json) {
+    return ClanModel(
+      clanId: json['clan_id'] as String,
+      name: json['name'] as String,
+      tag: json['tag'] as String,
+      description: json['description'] as String,
+      leaderPlayerId: json['leader_player_id'] as String,
+      isOpen: json['is_open'] as bool,
+      memberCount: json['member_count'] as int,
+      members: (json['members'] as List<dynamic>)
+          .map(
+            (item) => ClanMemberModel.fromJson(
+              item as Map<String, dynamic>,
+            ),
+          )
+          .toList(growable: false),
+    );
+  }
+
+  final String clanId;
+  final String name;
+  final String tag;
+  final String description;
+  final String leaderPlayerId;
+  final bool isOpen;
+  final int memberCount;
+  final List<ClanMemberModel> members;
+}
+
+class SocialSnapshotModel {
+  const SocialSnapshotModel({
+    required this.profile,
+    required this.incomingRequests,
+    required this.outgoingRequests,
+    required this.friends,
+    required this.clan,
+  });
+
+  factory SocialSnapshotModel.fromJson(Map<String, dynamic> json) {
+    final clanPayload = json['clan'];
+    return SocialSnapshotModel(
+      profile: SocialProfileModel.fromJson(
+        json['profile'] as Map<String, dynamic>,
+      ),
+      incomingRequests: (json['incoming_requests'] as List<dynamic>)
+          .map(
+            (item) => FriendRequestModel.fromJson(
+              item as Map<String, dynamic>,
+            ),
+          )
+          .toList(growable: false),
+      outgoingRequests: (json['outgoing_requests'] as List<dynamic>)
+          .map(
+            (item) => FriendRequestModel.fromJson(
+              item as Map<String, dynamic>,
+            ),
+          )
+          .toList(growable: false),
+      friends: (json['friends'] as List<dynamic>)
+          .map(
+            (item) => SocialPlayerModel.fromJson(
+              item as Map<String, dynamic>,
+            ),
+          )
+          .toList(growable: false),
+      clan: clanPayload is Map<String, dynamic>
+          ? ClanModel.fromJson(clanPayload)
+          : null,
+    );
+  }
+
+  final SocialProfileModel profile;
+  final List<FriendRequestModel> incomingRequests;
+  final List<FriendRequestModel> outgoingRequests;
+  final List<SocialPlayerModel> friends;
+  final ClanModel? clan;
 }

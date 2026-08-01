@@ -1,4 +1,4 @@
-# Project Relay v0.6.2 — İstemci Mimarisi
+# Project Relay v0.8.0 — İstemci Mimarisi
 
 ## Katmanlar
 
@@ -101,10 +101,18 @@ FastAPI ve deterministik Python motorudur:
 - replay olayları ve checksum.
 
 
-## v0.6.2 koleksiyon akışı
+## v0.7.0 koleksiyon akışı
 
 Koleksiyon ekranı `collectionProvider` ile tek sunucu anlık görüntüsü kullanır.
 Kit kaydı ve kozmetik eylemlerinden sonra koleksiyon ile ilerleme sağlayıcıları
 yenilenir. Editör açılırken aktif kit yüklenir; çevrimiçi, kariyer ve antrenman
 paletleri aynı kalan-adet kuralına bağlanır. Sunucuya kaydedilen kartlar istemci
 kısıtından bağımsız olarak aktif kit karşısında tekrar denetlenir.
+
+
+## v0.8.0 sosyal ve klan akışı
+
+- `socialProvider`, oyuncunun sosyal profilini, isteklerini, arkadaşlarını ve mevcut klanını yükler.
+- `clanDirectoryProvider`, açık klanları ayrı ve yenilenebilir bir akışta getirir.
+- `SocialScreen`, profil düzenleme, oyuncu arama, arkadaşlık ve klan işlemlerini ortak merkez bildirimleriyle yürütür.
+- Bütün üyelik ve ilişki kuralları FastAPI tarafından yeniden doğrulanır.

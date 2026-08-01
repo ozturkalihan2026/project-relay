@@ -23,10 +23,10 @@ class FlutterClientContractTests(unittest.TestCase):
             CLIENT / "lib" / "src" / "widgets" / "game_manual.dart"
         ).read_text(encoding="utf-8")
 
-        self.assertIn("version: 0.6.2+40", pubspec)
-        self.assertIn("${widget.mode.title} • v0.6.2", editor)
-        self.assertIn("KİT, KOLEKSİYON VE DEVRE SAVAŞI • v0.6.2", main_menu)
-        self.assertIn("PROJECT RELAY • v0.6.2", manual)
+        self.assertIn("version: 0.8.0+42", pubspec)
+        self.assertIn("${widget.mode.title} • v0.8.0", editor)
+        self.assertIn("SOSYAL, KLAN VE DEVRE SAVAŞI • v0.8.0", main_menu)
+        self.assertIn("PROJECT RELAY • v0.8.0", manual)
         self.assertIn("audioplayers:", pubspec)
         self.assertIn("assets/sounds/", pubspec)
         self.assertIn("flame:", pubspec)
@@ -234,6 +234,28 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("size: 24", palette)
         self.assertGreaterEqual(editor.count("_EditorMenuBackCard(busy: busy)"), 3)
         self.assertIn("void loadSavedBoard(SavedBoard saved)", board_controller)
+
+    def test_v070_season_closed_alpha_and_safety_contract(self) -> None:
+        api = (CLIENT / "lib" / "src" / "api" / "relay_api.dart").read_text(encoding="utf-8")
+        models = (CLIENT / "lib" / "src" / "models" / "relay_models.dart").read_text(encoding="utf-8")
+        season = (CLIENT / "lib" / "src" / "screens" / "season_screen.dart").read_text(encoding="utf-8")
+        main_menu = (CLIENT / "lib" / "src" / "screens" / "main_menu_screen.dart").read_text(encoding="utf-8")
+        manual = (CLIENT / "lib" / "src" / "widgets" / "game_manual.dart").read_text(encoding="utf-8")
+        replay = (CLIENT / "lib" / "src" / "screens" / "replay_screen.dart").read_text(encoding="utf-8")
+
+        self.assertIn("seasonProvider", api)
+        self.assertIn("alphaSafetyProvider", api)
+        self.assertIn("/api/v1/me/season", api)
+        self.assertIn("/api/v1/alpha/feedback", api)
+        self.assertIn("class SeasonSnapshotModel", models)
+        self.assertIn("class AlphaSafetySnapshotModel", models)
+        self.assertIn("SEZON VE KAPALI ALFA", season)
+        self.assertIn("alpha-feedback-submit", season)
+        self.assertIn("SeasonPointChangeModel", models)
+        self.assertIn("season_change", models)
+        self.assertIn("main-menu-season", main_menu)
+        self.assertIn("SEZON VE KAPALI ALFA", manual)
+        self.assertIn("Sezon Puanı", replay)
 
     def test_v062_collection_and_controlled_kit_contract(self) -> None:
         api = (
@@ -478,6 +500,8 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("main-menu-play", main_menu)
         self.assertIn("main-menu-career", main_menu)
         self.assertIn("main-menu-collection", main_menu)
+        self.assertIn("main-menu-season", main_menu)
+        self.assertIn("main-menu-social", main_menu)
         self.assertIn("main-menu-statistics", main_menu)
         self.assertIn("main-menu-how-to-play", main_menu)
         self.assertIn("main-menu-settings", main_menu)
@@ -487,6 +511,14 @@ class FlutterClientContractTests(unittest.TestCase):
         )
         self.assertLess(
             main_menu.index("main-menu-collection"),
+            main_menu.index("main-menu-season"),
+        )
+        self.assertLess(
+            main_menu.index("main-menu-season"),
+            main_menu.index("main-menu-social"),
+        )
+        self.assertLess(
+            main_menu.index("main-menu-social"),
             main_menu.index("main-menu-statistics"),
         )
         self.assertLess(
@@ -1138,6 +1170,32 @@ class FlutterClientContractTests(unittest.TestCase):
             editor_source,
         )
         self.assertIn("?trailing,", editor_source)
+
+    def test_v080_social_friendship_and_clan_contract(self) -> None:
+        api = (
+            CLIENT / "lib" / "src" / "api" / "relay_api.dart"
+        ).read_text(encoding="utf-8")
+        models = (
+            CLIENT / "lib" / "src" / "models" / "relay_models.dart"
+        ).read_text(encoding="utf-8")
+        social = (
+            CLIENT / "lib" / "src" / "screens" / "social_screen.dart"
+        ).read_text(encoding="utf-8")
+        main_menu = (
+            CLIENT / "lib" / "src" / "screens" / "main_menu_screen.dart"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("socialProvider", api)
+        self.assertIn("clanDirectoryProvider", api)
+        self.assertIn("/api/v1/me/social", api)
+        self.assertIn("/api/v1/social/players", api)
+        self.assertIn("/api/v1/clans", api)
+        self.assertIn("class SocialSnapshotModel", models)
+        self.assertIn("class ClanModel", models)
+        self.assertIn("SOSYAL VE KLAN", social)
+        self.assertIn("social-player-search", social)
+        self.assertIn("social-clan-directory", social)
+        self.assertIn("main-menu-social", main_menu)
 
 
 if __name__ == "__main__":

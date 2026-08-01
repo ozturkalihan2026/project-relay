@@ -132,7 +132,7 @@ class RelayApiTests(unittest.TestCase):
         response = self.client.get("/healthz")
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["version"], "0.6.2")
+        self.assertEqual(response.json()["version"], "0.8.0")
         self.assertEqual(response.json()["rules_version"], "0.8")
         self.assertEqual(response.json()["storage"], "sqlite")
         self.assertEqual(response.json()["database"], "ok")
@@ -648,6 +648,33 @@ class RelayApiTests(unittest.TestCase):
         self.assertEqual(missing_bot.json()["code"], "bot_not_found")
         self.assertEqual(missing_match.status_code, 404)
         self.assertEqual(missing_match.json()["code"], "match_not_found")
+
+    def test_season_and_closed_alpha_endpoints_are_authenticated(self) -> None:
+        guest_response = self.client.post("/api/v1/auth/guest")
+        self.assertEqual(guest_response.status_code, 201, guest_response.text)
+        token = guest_response.json()["tokens"]["access_token"]
+        headers = {"Authorization": f"Bearer {token}"}
+
+        season = self.client.get("/api/v1/me/season", headers=headers)
+        safety = self.client.get("/api/v1/me/alpha-safety", headers=headers)
+        feedback = self.client.post(
+            "/api/v1/alpha/feedback",
+            headers=headers,
+            json={
+                "category": "arayuz",
+                "message": "Sezon ekranı test geri bildirimi.",
+                "client_version": "0.8.0",
+            },
+        )
+
+        self.assertEqual(season.status_code, 200, season.text)
+        self.assertEqual(season.json()["entry"]["points"], 0)
+        self.assertEqual(len(season.json()["tiers"]), 4)
+        self.assertEqual(safety.status_code, 200, safety.text)
+        self.assertTrue(safety.json()["server_authoritative_results"])
+        self.assertTrue(safety.json()["idempotent_rewards"])
+        self.assertEqual(feedback.status_code, 201, feedback.text)
+        self.assertEqual(feedback.json()["category"], "arayuz")
 
     def test_local_flutter_web_origin_passes_cors_preflight(self) -> None:
         response = self.client.options(

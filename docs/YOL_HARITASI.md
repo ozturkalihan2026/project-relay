@@ -41,8 +41,8 @@ dönüştürür.
 | v0.6.1 | Kariyer koşusu, tam ön izleme, ayrı kariyer kartı/savaş akışı ve boss mağazası | Hazır |
 | v0.6.2 | Kozmetik mağaza, koleksiyon ve sekizli kit | Hazır |
 | v0.6.2 rev1 | Görsel kozmetikler, ekonomi dengesi ve seviye kutlaması | Hazır |
-| v0.7.0 | Sezon, kapalı alfa ve kötüye kullanım koruması | Planlandı |
-| v0.8.0 | Sosyal yapı, klan temeli ve kapalı gelir altyapısı | Planlandı |
+| v0.7.0 | Sezon, kapalı alfa ve kötüye kullanım koruması | Hazır |
+| v0.8.0 | Sosyal profil, arkadaşlık ve klan temeli | Hazır |
 | v1.0.0 | Android ve web açık beta | Hedef |
 
 ## Şimdiye kadar yapılanlar
@@ -254,6 +254,30 @@ etkisi artar; koşu bittiğinde bütün etkiler sıfırlanır.
 - Editör paletlerinde kitte kalan adet ve sunucuda kart/kit doğrulaması
 - Dereceli savaşta ücretli veya kalıcı ham güç bulunmaması
 - Alembic `20260731_0007` ile kalıcı sahiplik ve yükleme verisi
+
+## v0.7.0 — Hazır sezon ve kapalı alfa
+
+- Takvim ayına bağlı Alfa Sezonu
+- Gerçek oyuncu Asenkron PvP için 5/3/1 sezon puanı
+- Bot ve Antrenman savaşlarında sıfır sezon puanı
+- Dört tek seferlik, sunucu yetkili sezon ödül kademesi
+- Sezon sıralaması ve oyuncunun anlık konumu
+- Maç başına idempotent sezon puanı kaydı
+- Bir dakikada 20 savaş isteği hız sınırı
+- Saatte 3 kapalı alfa geri bildirimi sınırı
+- Denge, hata ve arayüz geri bildirimlerinin sunucuda saklanması
+- Alembic `20260801_0008` sezon/alfa güvenlik şeması
+
+## v0.8.0 — Hazır sosyal ve klan temeli
+
+- Oyuncu durum mesajı ve favori modül içeren sosyal profil
+- Adla oyuncu arama ve çift yönlü arkadaşlık isteği akışı
+- Arkadaşlık kabul/ret ve arkadaşlıktan çıkarma
+- Açık klan keşfi, klan kurma, katılma ve ayrılma
+- Tek klan üyeliği, lider/üye rolleri ve 20 üye sınırı
+- Liderin üye varken ayrılamadığı sunucu yetkili üyelik kuralları
+- Sosyal sistemlerin dereceye, modül değerine veya savaş ödülüne etki etmemesi
+- Kapalı alfa verileri yeterli olmadan gelir veya canlı 1v1 eklememe
 
 ## Değişmeyen karar kapıları
 

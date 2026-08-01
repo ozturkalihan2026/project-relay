@@ -1,4 +1,4 @@
-# Project Relay — API Sözleşmesi v0.6.2
+# Project Relay — API Sözleşmesi v0.8.0
 
 Bu sürüm, Flutter/Flame istemcisinin kullandığı kalıcı asenkron PvP
 protokolüdür. Bütün yollar `/api/v1` altında sürümlenir. Etkileşimli Swagger
@@ -372,3 +372,88 @@ sunucu tarafında yeniden doğrular.
 
 Mağaza yalnız kozmetiktir. Satın alma aynı işlem içinde Devre Kredisini düşürür,
 sahipliği ekler ve kozmetiği kuşanır; ham savaş değeri değiştirmez.
+
+## v0.7.0 sezon ve kapalı alfa uçları
+
+### `GET /api/v1/me/season`
+
+Aktif takvim sezonunu, oyuncunun puan/kayıt özetini, dört ödül kademesini ve
+sezon sıralamasını döndürür.
+
+### `POST /api/v1/me/season/tiers/{tier}/claim`
+
+Açılmış sezon kademesinin XP ve Devre Kredisi ödülünü tek seferlik verir.
+Yinelenen istek aynı ödül kaydını döndürür; ikinci kez bakiye yazmaz.
+
+### `GET /api/v1/me/alpha-safety`
+
+Savaş/geri bildirim istek sayaçlarını ve sunucu yetkisi, idempotent ödül ile
+kart doğrulama korumalarının durumunu döndürür.
+
+### `POST /api/v1/alpha/feedback`
+
+`category`, `message` ve `client_version` alanlarıyla kapalı alfa geri bildirimi
+kaydeder. Oyuncu başına saatlik sınır aşılırsa `429` döndürür.
+
+### `POST /api/v1/matches/async`
+
+v0.7.0'da mevcut akış korunur. Oyuncu başına dakikalık istek sınırı aşılırsa
+`429`; gerçek oyuncu maçı tamamlanırsa iki katılımcı için idempotent sezon puanı
+kaydı oluşturulur. Bot geri dönüşü sezon puanı üretmez.
+
+### Asenkron maçta `season_change`
+
+Gerçek oyuncu eşleşmesinde maç yanıtı aşağıdaki alanı içerir:
+
+```json
+{
+  "season_change": {
+    "season_key": "2026-08",
+    "outcome": "win",
+    "points_gained": 5,
+    "total_points": 18
+  }
+}
+```
+
+Bot geri dönüşünde `season_change` değeri `null`dır. İstemci bu özeti savaş
+ödülü bildiriminde gösterir ve sezon ekranını yeniler.
+
+
+## v0.8.0 sosyal ve klan uçları
+
+### `GET /api/v1/me/social`
+
+Oyuncunun sosyal profilini, gelen/giden arkadaşlık isteklerini, arkadaşlarını ve
+varsa mevcut klanını döndürür.
+
+### `PUT /api/v1/me/social/profile`
+
+`status_message` ve `favorite_module` alanlarını günceller. Favori modül sekiz
+temel modülden biri olmalıdır.
+
+### `GET /api/v1/social/players?query=...`
+
+En az iki karakterlik ad araması yapar. Sonuçlarda mevcut ilişki `none`,
+`incoming`, `outgoing` veya `friend` olarak döner.
+
+### Arkadaşlık işlemleri
+
+- `POST /api/v1/me/friends/requests/{target_player_id}`
+- `POST /api/v1/me/friends/requests/{request_id}/accept`
+- `POST /api/v1/me/friends/requests/{request_id}/decline`
+- `POST /api/v1/me/friends/{friend_player_id}/remove`
+
+Aynı oyuncuyla yinelenen bekleyen istek veya kabul edilmiş arkadaşlık sunucu
+tarafından reddedilir.
+
+### Klan işlemleri
+
+- `GET /api/v1/clans`
+- `POST /api/v1/clans`
+- `POST /api/v1/clans/{clan_id}/join`
+- `POST /api/v1/me/clan/leave`
+
+Bir oyuncu aynı anda yalnızca bir klana üye olabilir. Açık klanlar en fazla 20
+üyeye sahiptir. Lider, başka üyeler varken klanı terk edemez. Klan üyeliği
+savaş gücü, derece veya ödül çarpanı vermez.

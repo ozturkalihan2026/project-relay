@@ -31,7 +31,7 @@ class GameManualScreen extends StatelessWidget {
               ),
             ),
             Text(
-              'PROJECT RELAY • v0.6.2',
+              'PROJECT RELAY • v0.8.0',
               style: TextStyle(
                 color: RelayColors.muted,
                 fontSize: 10,
@@ -378,6 +378,66 @@ class GameManualScreen extends StatelessWidget {
                             'güçlendiricileri kredi harcar; kozmetik fiyatları da '
                             'koleksiyonun birkaç oturumda tükenmemesi için '
                             'uzun vadeli hedef olarak ayarlanmıştır.',
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  const _ManualSection(
+                    icon: Icons.auto_awesome,
+                    title: 'SEZON VE KAPALI ALFA',
+                    subtitle: 'Aylık hedefler, adil puan ve güvenli geri bildirim',
+                    children: [
+                      _ManualParagraph(
+                        text: 'Sezon puanı yalnız gerçek oyuncuya karşı yapılan '
+                            'asenkron dereceli savaşlardan gelir. Galibiyet 5, '
+                            'beraberlik 3 ve mağlubiyet 1 sezon puanı verir. '
+                            'Bot ve antrenman savaşları sezon sıralamasını etkilemez.',
+                      ),
+                      _ManualParagraph(
+                        text: 'Sezon kademeleri sınırlı XP ve Devre Kredisi '
+                            'ödülleri verir. Ödüller sunucu tarafından tek '
+                            'seferlik kaydedilir; aynı kademe tekrar alınamaz.',
+                      ),
+                      _ManualParagraph(
+                        text: 'Kapalı alfa ekranı savaş isteği sınırını, tek '
+                            'seferlik ödül korumasını ve sunucu doğrulamasını '
+                            'gösterir. Çok hızlı istekler kısa süreli sınırlandırılır.',
+                      ),
+                      _ManualParagraph(
+                        text: 'Denge, hata veya arayüz geri bildirimi Sezon ve '
+                            'Alfa ekranından doğrudan kaydedilebilir. Kişisel '
+                            'bilgi yazmayın; ne olduğunu ve beklenen davranışı açıklayın.',
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  const _ManualSection(
+                    icon: Icons.groups_2_outlined,
+                    title: 'SOSYAL VE KLAN',
+                    subtitle: 'Oyuncu profili, arkadaşlar ve açık klanlar',
+                    children: [
+                      _ManualParagraph(
+                        text: 'Sosyal profilinde kısa bir durum mesajı ve '
+                            'favori modülünü gösterebilirsin. Bu bilgiler savaş '
+                            'gücünü değiştirmez; yalnızca oyuncu kimliğini '
+                            'diğer devre ustalarına tanıtır.',
+                      ),
+                      _ManualParagraph(
+                        text: 'Oyuncu adıyla arama yapabilir, arkadaşlık isteği '
+                            'gönderebilir ve gelen istekleri kabul ya da '
+                            'reddedebilirsin. Arkadaş listesi sosyal bağlantıdır; '
+                            'eşleşme veya ödül avantajı sağlamaz.',
+                      ),
+                      _ManualParagraph(
+                        text: 'Açık klanlara katılabilir veya 20 üyeye kadar '
+                            'kendi klanını kurabilirsin. İlk sürümde klanlar '
+                            'isim, etiket, açıklama ve üye listesi sunar; klan '
+                            'savaşları daha sonraki sürümlerde değerlendirilecektir.',
+                      ),
+                      _ManualParagraph(
+                        text: 'Bir oyuncu aynı anda yalnızca bir klana üye olur. '
+                            'Lider, klanında başka üyeler varken ayrılamaz; '
+                            'üyelik kuralları sunucu tarafından doğrulanır.',
                       ),
                     ],
                   ),

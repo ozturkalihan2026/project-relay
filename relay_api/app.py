@@ -20,6 +20,7 @@ from relay_engine import compute_replay_checksum
 from relay_engine.catalog import MODULE_SPECS
 
 from .auth import AuthError, AuthService, GuestSession, PlayerView
+from .alpha import AlphaSafetyError, AlphaSafetyService, AlphaSafetySnapshot
 from .bots import BotDefinition, BotNotFoundError
 from .collection import (
     CollectionError,
@@ -55,6 +56,9 @@ from .schemas import (
     BoardValidationResponse,
     BotListResponse,
     BotResponse,
+    AlphaFeedbackRequest,
+    AlphaFeedbackResponse,
+    AlphaSafetyResponse,
     CareerBattleResponse,
     CareerBoosterSelectionRequest,
     CareerResponse,
@@ -77,8 +81,27 @@ from .schemas import (
     ReplayResponse,
     SavedBoardResponse,
     SaveControlledKitRequest,
+    SeasonResponse,
+    ClanListResponse,
+    CreateClanRequest,
+    SocialSearchResponse,
+    SocialSnapshotResponse,
+    UpdateSocialProfileRequest,
     VerifyReplayRequest,
     VerifyReplayResponse,
+)
+from .season import (
+    SeasonError,
+    SeasonPointChange,
+    SeasonService,
+    SeasonSnapshot,
+)
+from .social import (
+    ClanView,
+    SocialError,
+    SocialPlayer,
+    SocialService,
+    SocialSnapshot,
 )
 from .service import API_VERSION, RULES_VERSION, MatchService
 from .store import (
@@ -169,6 +192,7 @@ def _match_payload(
     *,
     rating_change: MatchRatingChange | None = None,
     progression_reward: RewardGrant | None = None,
+    season_change: SeasonPointChange | None = None,
     viewer_player_id: str | None = None,
     opponent_override: dict[str, str] | None = None,
 ) -> dict[str, Any]:
@@ -220,6 +244,16 @@ def _match_payload(
         "progression_reward": (
             _reward_payload(progression_reward)
             if progression_reward is not None
+            else None
+        ),
+        "season_change": (
+            {
+                "season_key": season_change.season_key,
+                "outcome": season_change.outcome,
+                "points_gained": season_change.points_gained,
+                "total_points": season_change.total_points,
+            }
+            if season_change is not None
             else None
         ),
     }
@@ -437,6 +471,70 @@ def _career_run_payload(snapshot: CareerRunSnapshot) -> dict[str, Any]:
 
 
 
+def _season_payload(snapshot: SeasonSnapshot) -> dict[str, Any]:
+    return {
+        "season": {
+            "season_key": snapshot.window.key,
+            "title": snapshot.window.title,
+            "starts_at": snapshot.window.starts_at.isoformat(),
+            "ends_at": snapshot.window.ends_at.isoformat(),
+        },
+        "entry": {
+            "points": snapshot.entry.points,
+            "matches": snapshot.entry.matches,
+            "wins": snapshot.entry.wins,
+            "draws": snapshot.entry.draws,
+            "losses": snapshot.entry.losses,
+            "position": snapshot.entry.position,
+            "participant_count": snapshot.entry.participant_count,
+            "claimed_tiers": list(snapshot.entry.claimed_tiers),
+        },
+        "tiers": [
+            {
+                "tier": item.tier,
+                "title": item.title,
+                "required_points": item.required_points,
+                "reward_xp": item.reward_xp,
+                "reward_credits": item.reward_credits,
+                "unlocked": item.unlocked,
+                "claimed": item.claimed,
+            }
+            for item in snapshot.tiers
+        ],
+        "leaderboard": [
+            {
+                "position": item.position,
+                "player_id": item.player_id,
+                "display_name": item.display_name,
+                "points": item.points,
+                "wins": item.wins,
+                "matches": item.matches,
+                "is_current_player": item.is_current_player,
+            }
+            for item in snapshot.leaderboard
+        ],
+    }
+
+
+def _alpha_safety_payload(snapshot: AlphaSafetySnapshot) -> dict[str, Any]:
+    return {
+        "match_requests": snapshot.match_requests,
+        "match_limit": snapshot.match_limit,
+        "match_window_seconds": snapshot.match_window_seconds,
+        "feedback_requests": snapshot.feedback_requests,
+        "feedback_limit": snapshot.feedback_limit,
+        "feedback_window_seconds": snapshot.feedback_window_seconds,
+        "blocked_until": (
+            snapshot.blocked_until.isoformat()
+            if snapshot.blocked_until is not None
+            else None
+        ),
+        "server_authoritative_results": snapshot.server_authoritative_results,
+        "idempotent_rewards": snapshot.idempotent_rewards,
+        "board_validation": snapshot.board_validation,
+    }
+
+
 def _collection_payload(snapshot: CollectionSnapshot) -> dict[str, Any]:
     return {
         "player_id": snapshot.player_id,
@@ -463,6 +561,68 @@ def _collection_payload(snapshot: CollectionSnapshot) -> dict[str, Any]:
         "equipped_board_theme_id": snapshot.equipped_board_theme_id,
         "equipped_profile_frame_id": snapshot.equipped_profile_frame_id,
     }
+
+def _social_player_payload(player: SocialPlayer) -> dict[str, Any]:
+    return {
+        "player_id": player.player_id,
+        "display_name": player.display_name,
+        "status_message": player.status_message,
+        "favorite_module": player.favorite_module,
+        "relationship": player.relationship,
+    }
+
+
+def _clan_payload(clan: ClanView) -> dict[str, Any]:
+    return {
+        "clan_id": clan.clan_id,
+        "name": clan.name,
+        "tag": clan.tag,
+        "description": clan.description,
+        "leader_player_id": clan.leader_player_id,
+        "is_open": clan.is_open,
+        "member_count": clan.member_count,
+        "members": [
+            {
+                "player_id": item.player_id,
+                "display_name": item.display_name,
+                "role": item.role,
+                "joined_at": item.joined_at.isoformat(),
+                "is_current_player": item.is_current_player,
+            }
+            for item in clan.members
+        ],
+    }
+
+
+def _social_payload(snapshot: SocialSnapshot) -> dict[str, Any]:
+    return {
+        "profile": {
+            "player_id": snapshot.profile.player_id,
+            "display_name": snapshot.profile.display_name,
+            "status_message": snapshot.profile.status_message,
+            "favorite_module": snapshot.profile.favorite_module,
+            "friend_count": snapshot.profile.friend_count,
+        },
+        "incoming_requests": [
+            {
+                "request_id": item.request_id,
+                "player": _social_player_payload(item.player),
+                "created_at": item.created_at.isoformat(),
+            }
+            for item in snapshot.incoming_requests
+        ],
+        "outgoing_requests": [
+            {
+                "request_id": item.request_id,
+                "player": _social_player_payload(item.player),
+                "created_at": item.created_at.isoformat(),
+            }
+            for item in snapshot.outgoing_requests
+        ],
+        "friends": [_social_player_payload(item) for item in snapshot.friends],
+        "clan": _clan_payload(snapshot.clan) if snapshot.clan is not None else None,
+    }
+
 
 def _history_payload(page: MatchHistoryPage) -> dict[str, Any]:
     return {
@@ -520,6 +680,9 @@ def create_app(
     progression_service: ProgressionService | None = None,
     career_service: CareerRunService | None = None,
     collection_service: CollectionService | None = None,
+    season_service: SeasonService | None = None,
+    alpha_safety_service: AlphaSafetyService | None = None,
+    social_service: SocialService | None = None,
 ) -> FastAPI:
     resolved_settings = settings or Settings.from_environment()
     resolved_database = database or Database(
@@ -552,15 +715,24 @@ def create_app(
     resolved_collection = collection_service or CollectionService(
         resolved_database
     )
+    resolved_season = season_service or SeasonService(
+        resolved_database,
+        resolved_progression,
+        clock=match_service.clock,
+    )
+    resolved_alpha = alpha_safety_service or AlphaSafetyService(
+        resolved_database
+    )
+    resolved_social = social_service or SocialService(resolved_database)
     bearer = HTTPBearer(auto_error=False)
 
     application = FastAPI(
         title="Project Relay API",
         version=API_VERSION,
         description=(
-            "Project Relay v0.6.2 kariyer, koleksiyon ve rekabet API'si. "
-            "Sekiz yuvalı kontrollü kit, güç satmayan kozmetik mağaza ve "
-            "kalıcı koleksiyon sunucu tarafından doğrulanır."
+            "Project Relay v0.8.0 sosyal yapı ve klan temeli API'si. "
+            "Arkadaşlık istekleri, oyuncu profilleri, açık klan keşfi ve "
+            "sunucu yetkili üyelik kuralları birlikte doğrulanır."
         ),
     )
     application.add_middleware(
@@ -578,6 +750,9 @@ def create_app(
     application.state.progression_service = resolved_progression
     application.state.career_service = resolved_career
     application.state.collection_service = resolved_collection
+    application.state.season_service = resolved_season
+    application.state.alpha_safety_service = resolved_alpha
+    application.state.social_service = resolved_social
 
     def current_player(
         credentials: HTTPAuthorizationCredentials | None = Depends(bearer),
@@ -726,6 +901,48 @@ def create_app(
     async def career_error_handler(
         _request: Request,
         exc: CareerRunError,
+    ) -> JSONResponse:
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={
+                "code": exc.code,
+                "message": exc.message,
+                "details": None,
+            },
+        )
+
+    @application.exception_handler(SeasonError)
+    async def season_error_handler(
+        _request: Request,
+        exc: SeasonError,
+    ) -> JSONResponse:
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={
+                "code": exc.code,
+                "message": exc.message,
+                "details": None,
+            },
+        )
+
+    @application.exception_handler(AlphaSafetyError)
+    async def alpha_safety_error_handler(
+        _request: Request,
+        exc: AlphaSafetyError,
+    ) -> JSONResponse:
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={
+                "code": exc.code,
+                "message": exc.message,
+                "details": None,
+            },
+        )
+
+    @application.exception_handler(SocialError)
+    async def social_error_handler(
+        _request: Request,
+        exc: SocialError,
     ) -> JSONResponse:
         return JSONResponse(
             status_code=exc.status_code,
@@ -996,6 +1213,175 @@ def create_app(
         return _career_run_payload(resolved_career.abandon(player.player_id))
 
     @application.get(
+        "/api/v1/me/social",
+        response_model=SocialSnapshotResponse,
+        responses={401: {"model": ErrorResponse}},
+        tags=["social"],
+    )
+    def get_social_snapshot(
+        player: PlayerView = Depends(current_player),
+    ) -> dict[str, Any]:
+        return _social_payload(resolved_social.snapshot(player.player_id))
+
+    @application.put(
+        "/api/v1/me/social/profile",
+        response_model=SocialSnapshotResponse,
+        responses={401: {"model": ErrorResponse}, 409: {"model": ErrorResponse}},
+        tags=["social"],
+    )
+    def update_social_profile(
+        request: UpdateSocialProfileRequest,
+        player: PlayerView = Depends(current_player),
+    ) -> dict[str, Any]:
+        return _social_payload(
+            resolved_social.update_profile(
+                player.player_id,
+                status_message=request.status_message,
+                favorite_module=request.favorite_module.value,
+            )
+        )
+
+    @application.get(
+        "/api/v1/social/players",
+        response_model=SocialSearchResponse,
+        responses={401: {"model": ErrorResponse}},
+        tags=["social"],
+    )
+    def search_social_players(
+        query: str = Query(min_length=2, max_length=32),
+        limit: int = Query(default=20, ge=1, le=30),
+        player: PlayerView = Depends(current_player),
+    ) -> dict[str, Any]:
+        return {
+            "players": [
+                _social_player_payload(item)
+                for item in resolved_social.search_players(
+                    player.player_id, query, limit=limit
+                )
+            ]
+        }
+
+    @application.post(
+        "/api/v1/me/friends/requests/{target_player_id}",
+        response_model=SocialSnapshotResponse,
+        responses={401: {"model": ErrorResponse}, 409: {"model": ErrorResponse}},
+        tags=["social"],
+    )
+    def send_friend_request(
+        target_player_id: str,
+        player: PlayerView = Depends(current_player),
+    ) -> dict[str, Any]:
+        return _social_payload(
+            resolved_social.send_friend_request(player.player_id, target_player_id)
+        )
+
+    @application.post(
+        "/api/v1/me/friends/requests/{request_id}/accept",
+        response_model=SocialSnapshotResponse,
+        responses={401: {"model": ErrorResponse}, 404: {"model": ErrorResponse}},
+        tags=["social"],
+    )
+    def accept_friend_request(
+        request_id: str,
+        player: PlayerView = Depends(current_player),
+    ) -> dict[str, Any]:
+        return _social_payload(
+            resolved_social.respond_friend_request(
+                player.player_id, request_id, accept=True
+            )
+        )
+
+    @application.post(
+        "/api/v1/me/friends/requests/{request_id}/decline",
+        response_model=SocialSnapshotResponse,
+        responses={401: {"model": ErrorResponse}, 404: {"model": ErrorResponse}},
+        tags=["social"],
+    )
+    def decline_friend_request(
+        request_id: str,
+        player: PlayerView = Depends(current_player),
+    ) -> dict[str, Any]:
+        return _social_payload(
+            resolved_social.respond_friend_request(
+                player.player_id, request_id, accept=False
+            )
+        )
+
+    @application.post(
+        "/api/v1/me/friends/{friend_player_id}/remove",
+        response_model=SocialSnapshotResponse,
+        responses={401: {"model": ErrorResponse}, 404: {"model": ErrorResponse}},
+        tags=["social"],
+    )
+    def remove_friend(
+        friend_player_id: str,
+        player: PlayerView = Depends(current_player),
+    ) -> dict[str, Any]:
+        return _social_payload(
+            resolved_social.remove_friend(player.player_id, friend_player_id)
+        )
+
+    @application.get(
+        "/api/v1/clans",
+        response_model=ClanListResponse,
+        responses={401: {"model": ErrorResponse}},
+        tags=["clans"],
+    )
+    def list_clans(
+        limit: int = Query(default=30, ge=1, le=50),
+        player: PlayerView = Depends(current_player),
+    ) -> dict[str, Any]:
+        return {
+            "clans": [
+                _clan_payload(item)
+                for item in resolved_social.list_clans(player.player_id, limit=limit)
+            ]
+        }
+
+    @application.post(
+        "/api/v1/clans",
+        response_model=SocialSnapshotResponse,
+        status_code=status.HTTP_201_CREATED,
+        responses={401: {"model": ErrorResponse}, 409: {"model": ErrorResponse}},
+        tags=["clans"],
+    )
+    def create_clan(
+        request: CreateClanRequest,
+        player: PlayerView = Depends(current_player),
+    ) -> dict[str, Any]:
+        return _social_payload(
+            resolved_social.create_clan(
+                player.player_id,
+                name=request.name,
+                tag=request.tag,
+                description=request.description,
+            )
+        )
+
+    @application.post(
+        "/api/v1/clans/{clan_id}/join",
+        response_model=SocialSnapshotResponse,
+        responses={401: {"model": ErrorResponse}, 409: {"model": ErrorResponse}},
+        tags=["clans"],
+    )
+    def join_clan(
+        clan_id: str,
+        player: PlayerView = Depends(current_player),
+    ) -> dict[str, Any]:
+        return _social_payload(resolved_social.join_clan(player.player_id, clan_id))
+
+    @application.post(
+        "/api/v1/me/clan/leave",
+        response_model=SocialSnapshotResponse,
+        responses={401: {"model": ErrorResponse}, 409: {"model": ErrorResponse}},
+        tags=["clans"],
+    )
+    def leave_clan(
+        player: PlayerView = Depends(current_player),
+    ) -> dict[str, Any]:
+        return _social_payload(resolved_social.leave_clan(player.player_id))
+
+    @application.get(
         "/api/v1/me/matches",
         response_model=MatchHistoryResponse,
         responses={401: {"model": ErrorResponse}},
@@ -1033,6 +1419,80 @@ def create_app(
             "leaderboard": [
                 _standing_payload(standing) for standing in leaderboard
             ],
+        }
+
+    @application.get(
+        "/api/v1/me/season",
+        response_model=SeasonResponse,
+        responses={401: {"model": ErrorResponse}},
+        tags=["season"],
+    )
+    def get_current_season(
+        limit: int = Query(default=20, ge=1, le=100),
+        player: PlayerView = Depends(current_player),
+    ) -> dict[str, Any]:
+        return _season_payload(
+            resolved_season.snapshot(player.player_id, limit=limit)
+        )
+
+    @application.post(
+        "/api/v1/me/season/tiers/{tier}/claim",
+        response_model=ClaimRewardResponse,
+        responses={
+            401: {"model": ErrorResponse},
+            404: {"model": ErrorResponse},
+            409: {"model": ErrorResponse},
+        },
+        tags=["season"],
+    )
+    def claim_season_tier(
+        tier: int,
+        player: PlayerView = Depends(current_player),
+    ) -> dict[str, Any]:
+        return {
+            "reward": _reward_payload(
+                resolved_season.claim_tier(player.player_id, tier)
+            )
+        }
+
+    @application.get(
+        "/api/v1/me/alpha-safety",
+        response_model=AlphaSafetyResponse,
+        responses={401: {"model": ErrorResponse}},
+        tags=["alpha"],
+    )
+    def get_alpha_safety(
+        player: PlayerView = Depends(current_player),
+    ) -> dict[str, Any]:
+        return _alpha_safety_payload(
+            resolved_alpha.snapshot(player.player_id)
+        )
+
+    @application.post(
+        "/api/v1/alpha/feedback",
+        response_model=AlphaFeedbackResponse,
+        status_code=status.HTTP_201_CREATED,
+        responses={
+            401: {"model": ErrorResponse},
+            422: {"model": ErrorResponse},
+            429: {"model": ErrorResponse},
+        },
+        tags=["alpha"],
+    )
+    def submit_alpha_feedback(
+        request: AlphaFeedbackRequest,
+        player: PlayerView = Depends(current_player),
+    ) -> dict[str, Any]:
+        receipt = resolved_alpha.submit_feedback(
+            player.player_id,
+            category=request.category,
+            message=request.message,
+            client_version=request.client_version,
+        )
+        return {
+            "feedback_id": receipt.feedback_id,
+            "category": receipt.category,
+            "created_at": receipt.created_at.isoformat(),
         }
 
     @application.get(
@@ -1251,19 +1711,23 @@ def create_app(
         responses={
             401: {"model": ErrorResponse},
             409: {"model": ErrorResponse},
+            429: {"model": ErrorResponse},
         },
         tags=["matches"],
     )
     def create_async_match(
         player: PlayerView = Depends(current_player),
     ) -> dict[str, Any]:
+        resolved_alpha.guard_async_match(player.player_id)
         match = resolved_online.create_async_match(player.player_id)
         rating_change = resolved_competitive.apply_match(match)
+        season_change = resolved_season.record_match(match)
         progression_reward = resolved_progression.apply_match(match)
         return _match_payload(
             match,
             rating_change=rating_change,
             progression_reward=progression_reward,
+            season_change=season_change,
             viewer_player_id=player.player_id,
         )
 

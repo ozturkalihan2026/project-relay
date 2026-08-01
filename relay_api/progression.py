@@ -563,6 +563,47 @@ class ProgressionService:
             )
             return self._grant(existing) if existing is not None else None
 
+    def grant_external_reward(
+        self,
+        player_id: str,
+        *,
+        source_type: str,
+        source_id: str,
+        reason: str,
+        xp: int,
+        credits: int,
+    ) -> RewardGrant:
+        """Grant one idempotent server-authoritative reward.
+
+        This is intentionally narrow and is used by bounded systems such as
+        season tier claims. The unique reward source prevents duplicate grants.
+        """
+        if xp < 0 or credits < 0:
+            raise ValueError("Ödül değerleri negatif olamaz.")
+        now = self.clock()
+        with self.database.session() as session:
+            existing = self._existing_grant(
+                session, player_id, source_type, source_id
+            )
+            if existing is not None:
+                return self._grant(existing)
+            if session.get(PlayerRecord, player_id) is None:
+                raise LookupError("Ödüllendirilecek oyuncu bulunamadı.")
+            record = self._progression_record(session, player_id, now)
+            grant = self._apply_reward(
+                session,
+                record,
+                source_type=source_type,
+                source_id=source_id,
+                reason=reason,
+                xp=xp,
+                credits=credits,
+                now=now,
+            )
+            self._sync_achievements(session, record, now)
+            session.flush()
+            return grant
+
     @staticmethod
     def booster_masteries(level: int) -> tuple[BoosterMastery, ...]:
         return ProgressionService._boosters(level)

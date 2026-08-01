@@ -1,3 +1,35 @@
+## v0.8.0 — Sosyal yapı ve klan temeli
+
+- Oyuncu sosyal profili, durum mesajı ve favori modül
+- Oyuncu arama, arkadaşlık isteği, kabul/ret ve arkadaşlıktan çıkarma
+- Açık klan listesi, klan kurma, katılma ve ayrılma
+- Tek klan üyeliği, 20 üye sınırı ve lider ayrılma koruması
+- Yeni `SOSYAL VE KLAN` Flutter ekranı ve ana menü bağlantısı
+- Nasıl Oynanır bölümünde sosyal/klan kuralları
+- Alembic `20260801_0009` sosyal ve klan şeması
+- API `0.8.0`, istemci `0.8.0+42`; savaş kuralları ve denge `0.8` olarak korundu
+- Gelir sistemi, gerçek para ve kalıcı savaş gücü kapalı tutuldu
+
+## v0.7.0 — Sezon, kapalı alfa ve kötüye kullanım koruması
+
+- Takvim ayına bağlı Alfa Sezonu, sezon puanı ve sıralama eklendi.
+- Yalnız gerçek oyuncuya karşı Asenkron PvP savaşları sezon puanı üretir;
+  galibiyet 5, beraberlik 3, mağlubiyet 1 puandır. Bot ve antrenman hariçtir.
+- Dört sezon ödül kademesi eklendi. Ödüller sezon + kademe anahtarıyla tek
+  seferlik ve sunucu yetkilidir.
+- Gerçek oyuncu maçı sonrası kazanılan sezon puanı ve yeni toplam, ortak savaş
+  ödülü bildiriminde gösterilir; bot geri dönüşünde bu alan boş kalır.
+- Aynı maçın iki kez sezon puanı vermesini engelleyen `season_match_points`
+  kaydı eklendi.
+- Kapalı alfa ekranına güvenlik durumu, istek sayaçları, sezon sıralaması ve
+  geri bildirim formu eklendi.
+- Oyuncu başına bir dakikada 20 Asenkron PvP isteği ve saatte 3 geri bildirim
+  sınırı sunucuda kalıcı olarak uygulanır.
+- `season_entries`, `season_match_points`, `alpha_feedback` ve `player_safety`
+  tablolarını oluşturan Alembic `20260801_0008` geçişi eklendi.
+- API `0.7.0`, istemci `0.7.0+41`; savaş kuralları `0.8`, modül dengesi ve
+  kalıcı güç adaleti değişmedi.
+
 ## v0.6.2 rev1 — Görsel kozmetikler, dengeli ekonomi ve seviye kutlaması
 
 - Kuşanılan devre kartı temaları editör ve oyuncunun savaş kartına uygulandı.

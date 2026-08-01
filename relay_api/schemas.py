@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -216,6 +216,13 @@ class RatingChangeResponse(ApiModel):
     week_key: str
 
 
+class SeasonPointChangeResponse(ApiModel):
+    season_key: str
+    outcome: str
+    points_gained: int
+    total_points: int
+
+
 class MatchResponse(ApiModel):
     match_id: str
     created_at: str
@@ -227,6 +234,7 @@ class MatchResponse(ApiModel):
     replay: ReplayMetadataResponse
     rating_change: RatingChangeResponse | None = None
     progression_reward: RewardGrantResponse | None = None
+    season_change: SeasonPointChangeResponse | None = None
 
 
 class BattleEventResponse(ApiModel):
@@ -524,3 +532,141 @@ class SaveControlledKitRequest(ApiModel):
 
 class EquipCosmeticRequest(ApiModel):
     cosmetic_id: str = Field(min_length=1, max_length=48)
+
+
+class SeasonWindowResponse(ApiModel):
+    season_key: str
+    title: str
+    starts_at: str
+    ends_at: str
+
+
+class SeasonEntryResponse(ApiModel):
+    points: int
+    matches: int
+    wins: int
+    draws: int
+    losses: int
+    position: int
+    participant_count: int
+    claimed_tiers: list[int]
+
+
+class SeasonTierResponse(ApiModel):
+    tier: int
+    title: str
+    required_points: int
+    reward_xp: int
+    reward_credits: int
+    unlocked: bool
+    claimed: bool
+
+
+class SeasonStandingResponse(ApiModel):
+    position: int
+    player_id: str
+    display_name: str
+    points: int
+    wins: int
+    matches: int
+    is_current_player: bool
+
+
+class SeasonResponse(ApiModel):
+    season: SeasonWindowResponse
+    entry: SeasonEntryResponse
+    tiers: list[SeasonTierResponse]
+    leaderboard: list[SeasonStandingResponse]
+
+
+class AlphaSafetyResponse(ApiModel):
+    match_requests: int
+    match_limit: int
+    match_window_seconds: int
+    feedback_requests: int
+    feedback_limit: int
+    feedback_window_seconds: int
+    blocked_until: str | None
+    server_authoritative_results: bool
+    idempotent_rewards: bool
+    board_validation: bool
+
+
+class AlphaFeedbackRequest(ApiModel):
+    category: Literal["denge", "hata", "arayuz", "diger"]
+    message: str = Field(min_length=3, max_length=1200)
+    client_version: str = Field(default="0.8.0", min_length=1, max_length=24)
+
+
+class AlphaFeedbackResponse(ApiModel):
+    feedback_id: str
+    category: str
+    created_at: str
+
+
+class SocialPlayerResponse(ApiModel):
+    player_id: str
+    display_name: str
+    status_message: str
+    favorite_module: str
+    relationship: str
+
+
+class FriendRequestResponse(ApiModel):
+    request_id: str
+    player: SocialPlayerResponse
+    created_at: str
+
+
+class SocialProfileResponse(ApiModel):
+    player_id: str
+    display_name: str
+    status_message: str
+    favorite_module: str
+    friend_count: int
+
+
+class ClanMemberResponse(ApiModel):
+    player_id: str
+    display_name: str
+    role: str
+    joined_at: str
+    is_current_player: bool
+
+
+class ClanResponse(ApiModel):
+    clan_id: str
+    name: str
+    tag: str
+    description: str
+    leader_player_id: str
+    is_open: bool
+    member_count: int
+    members: list[ClanMemberResponse]
+
+
+class SocialSnapshotResponse(ApiModel):
+    profile: SocialProfileResponse
+    incoming_requests: list[FriendRequestResponse]
+    outgoing_requests: list[FriendRequestResponse]
+    friends: list[SocialPlayerResponse]
+    clan: ClanResponse | None
+
+
+class SocialSearchResponse(ApiModel):
+    players: list[SocialPlayerResponse]
+
+
+class ClanListResponse(ApiModel):
+    clans: list[ClanResponse]
+
+
+class UpdateSocialProfileRequest(ApiModel):
+    status_message: str = Field(min_length=1, max_length=160)
+    favorite_module: ModuleKind
+
+
+class CreateClanRequest(ApiModel):
+    name: str = Field(min_length=3, max_length=48)
+    tag: str = Field(min_length=2, max_length=8)
+    description: str = Field(min_length=3, max_length=240)

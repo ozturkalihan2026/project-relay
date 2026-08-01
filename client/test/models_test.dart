@@ -319,6 +319,12 @@ void main() {
         'credits_after': 30,
         'granted_at': '2026-07-31T09:00:00+00:00',
       },
+      'season_change': {
+        'season_key': '2026-08',
+        'outcome': 'win',
+        'points_gained': 5,
+        'total_points': 18,
+      },
       'rating_change': {
         'outcome': 'win',
         'rating_before': 1000,
@@ -346,6 +352,8 @@ void main() {
     expect(match.ratingChange?.ratingDelta, 16);
     expect(match.progressionReward?.xp, 50);
     expect(match.progressionReward?.credits, 30);
+    expect(match.seasonChange?.pointsGained, 5);
+    expect(match.seasonChange?.totalPoints, 18);
     expect(match.createdAt, DateTime.parse('2026-07-31T09:00:00+00:00'));
   });
 

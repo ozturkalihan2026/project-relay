@@ -21,6 +21,8 @@ void main() {
       expect(find.text('OYNA'), findsOneWidget);
       expect(find.text('KARİYER'), findsOneWidget);
       expect(find.text('KOLEKSİYON'), findsOneWidget);
+      expect(find.text('SEZON VE ALFA'), findsOneWidget);
+      expect(find.text('SOSYAL VE KLAN'), findsOneWidget);
       expect(find.text('İSTATİSTİKLER'), findsOneWidget);
       expect(find.text('NASIL OYNANIR'), findsOneWidget);
       expect(find.text('AYARLAR'), findsOneWidget);
@@ -49,7 +51,7 @@ void main() {
       expect(generatorPaletteTile, findsOneWidget);
       expect(tester.getSize(generatorPaletteTile).height, 66);
 
-      expect(find.textContaining('ÇEVRİMİÇİ SAVAŞ • v0.6.2'), findsOneWidget);
+      expect(find.textContaining('ÇEVRİMİÇİ SAVAŞ • v0.8.0'), findsOneWidget);
       expect(find.text('DEVREYİ KUR'), findsOneWidget);
       expect(find.text('ASENKRON PvP'), findsOneWidget);
       expect(
@@ -113,7 +115,7 @@ void main() {
       await tester.tap(find.byKey(const ValueKey('play-mode-training')));
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('ANTRENMAN • v0.6.2'), findsOneWidget);
+      expect(find.textContaining('ANTRENMAN • v0.8.0'), findsOneWidget);
       expect(find.byKey(const ValueKey('training-panel')), findsOneWidget);
       expect(find.text('ANTRENMAN RAKİPLERİ'), findsOneWidget);
       expect(find.text('SEÇİLİ BOTLA SAVAŞ'), findsOneWidget);
@@ -144,6 +146,8 @@ void main() {
 
       final career = find.byKey(const ValueKey('main-menu-career'));
       final collection = find.byKey(const ValueKey('main-menu-collection'));
+      final season = find.byKey(const ValueKey('main-menu-season'));
+      final social = find.byKey(const ValueKey('main-menu-social'));
       final statistics = find.byKey(
         const ValueKey('main-menu-statistics'),
       );
@@ -155,6 +159,14 @@ void main() {
       );
       expect(
         tester.getCenter(collection).dy,
+        lessThan(tester.getCenter(season).dy),
+      );
+      expect(
+        tester.getCenter(season).dy,
+        lessThan(tester.getCenter(social).dy),
+      );
+      expect(
+        tester.getCenter(social).dy,
         lessThan(tester.getCenter(statistics).dy),
       );
       expect(
@@ -177,6 +189,10 @@ void main() {
       await tester.scrollUntilVisible(careerGuide, 260);
       await tester.pumpAndSettle();
       expect(careerGuide, findsOneWidget);
+      final seasonGuide = find.text('SEZON VE KAPALI ALFA');
+      await tester.scrollUntilVisible(seasonGuide, 260);
+      await tester.pumpAndSettle();
+      expect(seasonGuide, findsOneWidget);
 
       final bottomBack = find.byKey(
         const ValueKey('manual-bottom-back-button'),
@@ -233,10 +249,16 @@ void main() {
       await tester.tap(statisticsBack);
       await tester.pumpAndSettle();
 
-      await tester.tap(find.byKey(const ValueKey('main-menu-play')));
+      final playMenu = find.byKey(const ValueKey('main-menu-play'));
+      expect(playMenu, findsOneWidget);
+      await tester.ensureVisible(playMenu);
+      await tester.pumpAndSettle();
+      await tester.tap(playMenu);
       await tester.pumpAndSettle();
       final playBack = find.byKey(const ValueKey('play-mode-back-button'));
+      expect(playBack, findsOneWidget);
       await tester.ensureVisible(playBack);
+      await tester.pumpAndSettle();
       await tester.tap(playBack);
       await tester.pumpAndSettle();
 
@@ -268,6 +290,36 @@ void main() {
       await tester.tap(settingsBack);
       await tester.pumpAndSettle();
       expect(find.byKey(const ValueKey('main-menu-play')), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'sezon ve alfa ekranı kademeleri ile korumaları gösterir',
+    (tester) async {
+      await _pumpApp(tester);
+      final seasonMenu = find.byKey(const ValueKey('main-menu-season'));
+      await tester.ensureVisible(seasonMenu);
+      await tester.pumpAndSettle();
+      await tester.tap(seasonMenu);
+      await tester.pumpAndSettle();
+
+      expect(find.text('SEZON VE KAPALI ALFA'), findsOneWidget);
+      expect(find.byKey(const ValueKey('season-summary-card')), findsOneWidget);
+      expect(find.byKey(const ValueKey('season-tier-1')), findsOneWidget);
+      expect(find.byKey(const ValueKey('alpha-safety-card')), findsOneWidget);
+      final feedback = find.byKey(const ValueKey('alpha-feedback-card'));
+      final scrollable = find.descendant(
+        of: find.byKey(const ValueKey('season-scroll-view')),
+        matching: find.byWidgetPredicate(
+          (widget) =>
+              widget is Scrollable &&
+              widget.axisDirection == AxisDirection.down,
+        ),
+      );
+      expect(scrollable, findsOneWidget);
+      await tester.scrollUntilVisible(feedback, 280, scrollable: scrollable);
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('alpha-feedback-submit')), findsOneWidget);
     },
   );
 
@@ -364,6 +416,62 @@ Future<void> _pumpApp(WidgetTester tester) async {
                 availableModuleCounts: [2],
               ),
             ],
+          ),
+        ),
+        seasonProvider.overrideWith(
+          (ref) async => SeasonSnapshotModel(
+            season: SeasonWindowModel(
+              key: '2026-08',
+              title: 'ALFA SEZONU 2026.08',
+              startsAt: DateTime.utc(2026, 8, 1),
+              endsAt: DateTime.utc(2026, 9, 1),
+            ),
+            entry: const SeasonEntryModel(
+              points: 18,
+              matches: 4,
+              wins: 3,
+              draws: 0,
+              losses: 1,
+              position: 1,
+              participantCount: 2,
+              claimedTiers: <int>{},
+            ),
+            tiers: const [
+              SeasonTierModel(
+                tier: 1,
+                title: 'İlk Devre',
+                requiredPoints: 12,
+                rewardXp: 20,
+                rewardCredits: 8,
+                unlocked: true,
+                claimed: false,
+              ),
+            ],
+            leaderboard: const [
+              SeasonStandingModel(
+                position: 1,
+                playerId: 'player-test',
+                displayName: 'MaviRole-2026',
+                points: 18,
+                wins: 3,
+                matches: 4,
+                isCurrentPlayer: true,
+              ),
+            ],
+          ),
+        ),
+        alphaSafetyProvider.overrideWith(
+          (ref) async => const AlphaSafetySnapshotModel(
+            matchRequests: 2,
+            matchLimit: 20,
+            matchWindowSeconds: 60,
+            feedbackRequests: 0,
+            feedbackLimit: 3,
+            feedbackWindowSeconds: 3600,
+            blockedUntil: null,
+            serverAuthoritativeResults: true,
+            idempotentRewards: true,
+            boardValidation: true,
           ),
         ),
         collectionProvider.overrideWith(

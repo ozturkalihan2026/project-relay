@@ -154,13 +154,21 @@ class _ReplayScreenState extends ConsumerState<ReplayScreen> {
           ),
         );
       } else {
+        final season = widget.match.seasonChange;
+        final seasonLine = season == null
+            ? ''
+            : '\n+${season.pointsGained} Sezon Puanı • Toplam ${season.totalPoints}';
         RelayNotice.show(
           context,
           '${widget.completionRewardTitle}\n+${reward.xp} XP • '
-          '+${reward.credits} Devre Kredisi • SV ${reward.levelAfter}',
+          '+${reward.credits} Devre Kredisi • SV ${reward.levelAfter}'
+          '$seasonLine',
           tone: RelayNoticeTone.success,
-          duration: const Duration(seconds: 6),
+          duration: const Duration(seconds: 7),
         );
+      }
+      if (widget.match.seasonChange != null) {
+        ref.invalidate(seasonProvider);
       }
     });
   }

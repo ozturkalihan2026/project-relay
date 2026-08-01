@@ -259,6 +259,12 @@ class OnlineApiTests(unittest.TestCase):
         )
         self.assertIsNotNone(payload["rating_change"])
         self.assertIsNotNone(payload["progression_reward"])
+        self.assertIsNotNone(payload["season_change"])
+        self.assertIn(payload["season_change"]["points_gained"], {1, 3, 5})
+        self.assertEqual(
+            payload["season_change"]["total_points"],
+            payload["season_change"]["points_gained"],
+        )
         self.assertGreater(payload["progression_reward"]["xp"], 0)
         self.assertGreater(payload["progression_reward"]["credits"], 0)
         self.assertIn(
@@ -285,11 +291,16 @@ class OnlineApiTests(unittest.TestCase):
             "/api/v1/me/statistics",
             headers=self._authorization(first),
         )
+        season = self.client.get(
+            "/api/v1/me/season",
+            headers=self._authorization(first),
+        )
         self.assertEqual(career.status_code, 200, career.text)
         self.assertEqual(history.status_code, 200, history.text)
         self.assertEqual(league.status_code, 200, league.text)
         self.assertEqual(progression.status_code, 200, progression.text)
         self.assertEqual(statistics.status_code, 200, statistics.text)
+        self.assertEqual(season.status_code, 200, season.text)
         self.assertEqual(career.json()["profile"]["rated_matches"], 1)
         self.assertEqual(history.json()["total"], 1)
         self.assertTrue(history.json()["items"][0]["rated"])
@@ -297,6 +308,10 @@ class OnlineApiTests(unittest.TestCase):
         self.assertEqual(progression.json()["profile"]["matches_completed"], 1)
         self.assertEqual(len(progression.json()["daily_missions"]), 3)
         self.assertEqual(statistics.json()["profile"]["rated_matches"], 1)
+        self.assertEqual(
+            season.json()["entry"]["points"],
+            payload["season_change"]["points_gained"],
+        )
 
     def test_progression_reward_daily_claim_and_achievement_are_idempotent(
         self,
@@ -384,6 +399,7 @@ class OnlineApiTests(unittest.TestCase):
         )
         self.assertIsNotNone(first_match.json()["rating_change"])
         self.assertIsNone(second_match.json()["rating_change"])
+        self.assertIsNone(second_match.json()["season_change"])
         self.assertIsNotNone(second_match.json()["progression_reward"])
         career = self.client.get(
             "/api/v1/me/career",

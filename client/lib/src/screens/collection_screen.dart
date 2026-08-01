@@ -43,7 +43,7 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen> {
               ),
             ),
             Text(
-              'PROJECT RELAY • v0.6.2',
+              'PROJECT RELAY • v0.8.0',
               style: TextStyle(color: RelayColors.muted, fontSize: 10),
             ),
           ],

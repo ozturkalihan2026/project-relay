@@ -538,3 +538,220 @@ class PlayerLoadoutRecord(Base):
         DateTime(timezone=True),
         nullable=False,
     )
+
+
+class SeasonEntryRecord(Base):
+    __tablename__ = "season_entries"
+
+    season_key: Mapped[str] = mapped_column(String(16), nullable=False)
+    player_id: Mapped[str] = mapped_column(
+        ForeignKey("players.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    points: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    matches: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    wins: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    draws: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    losses: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    claimed_tiers: Mapped[list[int]] = mapped_column(
+        JSON,
+        nullable=False,
+        default=list,
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+    )
+
+    __table_args__ = (
+        PrimaryKeyConstraint(
+            "season_key",
+            "player_id",
+            name="pk_season_entries",
+        ),
+        Index(
+            "ix_season_entries_leaderboard",
+            "season_key",
+            "points",
+            "wins",
+            "updated_at",
+        ),
+    )
+
+
+class SeasonMatchRecord(Base):
+    __tablename__ = "season_match_points"
+
+    match_id: Mapped[str] = mapped_column(
+        ForeignKey("matches.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    season_key: Mapped[str] = mapped_column(String(16), nullable=False)
+    requester_player_id: Mapped[str] = mapped_column(
+        ForeignKey("players.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    opponent_player_id: Mapped[str] = mapped_column(
+        ForeignKey("players.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    requester_points: Mapped[int] = mapped_column(Integer, nullable=False)
+    opponent_points: Mapped[int] = mapped_column(Integer, nullable=False)
+    recorded_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+    )
+
+    __table_args__ = (
+        Index(
+            "ix_season_match_player",
+            "season_key",
+            "requester_player_id",
+        ),
+    )
+
+
+class AlphaFeedbackRecord(Base):
+    __tablename__ = "alpha_feedback"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True)
+    player_id: Mapped[str] = mapped_column(
+        ForeignKey("players.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    category: Mapped[str] = mapped_column(String(24), nullable=False)
+    message: Mapped[str] = mapped_column(String(1200), nullable=False)
+    client_version: Mapped[str] = mapped_column(String(24), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+    )
+
+    __table_args__ = (
+        Index("ix_alpha_feedback_player_time", "player_id", "created_at"),
+    )
+
+
+class PlayerSafetyRecord(Base):
+    __tablename__ = "player_safety"
+
+    player_id: Mapped[str] = mapped_column(
+        ForeignKey("players.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    match_window_started_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+    )
+    match_requests: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    feedback_window_started_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+    )
+    feedback_requests: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        default=0,
+    )
+    blocked_until: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+    )
+
+
+class PlayerSocialProfileRecord(Base):
+    __tablename__ = "player_social_profiles"
+
+    player_id: Mapped[str] = mapped_column(
+        ForeignKey("players.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    status_message: Mapped[str] = mapped_column(
+        String(160), nullable=False, default="Devresini geliştiriyor."
+    )
+    favorite_module: Mapped[str] = mapped_column(
+        String(32), nullable=False, default="generator"
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
+
+
+class FriendRequestRecord(Base):
+    __tablename__ = "friend_requests"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True)
+    sender_player_id: Mapped[str] = mapped_column(
+        ForeignKey("players.id", ondelete="CASCADE"), nullable=False
+    )
+    receiver_player_id: Mapped[str] = mapped_column(
+        ForeignKey("players.id", ondelete="CASCADE"), nullable=False
+    )
+    status: Mapped[str] = mapped_column(String(16), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
+
+    __table_args__ = (
+        UniqueConstraint(
+            "sender_player_id",
+            "receiver_player_id",
+            name="uq_friend_requests_direction",
+        ),
+        Index("ix_friend_requests_receiver_status", "receiver_player_id", "status"),
+        Index("ix_friend_requests_sender_status", "sender_player_id", "status"),
+    )
+
+
+class ClanRecord(Base):
+    __tablename__ = "clans"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True)
+    name: Mapped[str] = mapped_column(String(48), nullable=False, unique=True)
+    tag: Mapped[str] = mapped_column(String(8), nullable=False, unique=True)
+    description: Mapped[str] = mapped_column(String(240), nullable=False)
+    leader_player_id: Mapped[str] = mapped_column(
+        ForeignKey("players.id", ondelete="RESTRICT"), nullable=False
+    )
+    is_open: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
+
+    __table_args__ = (
+        Index("ix_clans_open_updated", "is_open", "updated_at"),
+    )
+
+
+class ClanMemberRecord(Base):
+    __tablename__ = "clan_members"
+
+    clan_id: Mapped[str] = mapped_column(
+        ForeignKey("clans.id", ondelete="CASCADE"), nullable=False
+    )
+    player_id: Mapped[str] = mapped_column(
+        ForeignKey("players.id", ondelete="CASCADE"), nullable=False, unique=True
+    )
+    role: Mapped[str] = mapped_column(String(16), nullable=False)
+    joined_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
+
+    __table_args__ = (
+        PrimaryKeyConstraint("clan_id", "player_id", name="pk_clan_members"),
+        Index("ix_clan_members_clan_role", "clan_id", "role", "joined_at"),
+    )

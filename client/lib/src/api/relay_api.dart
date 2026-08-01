@@ -60,6 +60,27 @@ final collectionProvider = FutureProvider.autoDispose<CollectionSnapshot>((ref) 
   return ref.watch(relayApiProvider).fetchCollection();
 });
 
+final seasonProvider = FutureProvider.autoDispose<SeasonSnapshotModel>((ref) async {
+  await ref.watch(guestSessionProvider.future);
+  return ref.watch(relayApiProvider).fetchSeason();
+});
+
+final alphaSafetyProvider =
+    FutureProvider.autoDispose<AlphaSafetySnapshotModel>((ref) async {
+  await ref.watch(guestSessionProvider.future);
+  return ref.watch(relayApiProvider).fetchAlphaSafety();
+});
+
+final socialProvider = FutureProvider.autoDispose<SocialSnapshotModel>((ref) async {
+  await ref.watch(guestSessionProvider.future);
+  return ref.watch(relayApiProvider).fetchSocial();
+});
+
+final clanDirectoryProvider = FutureProvider.autoDispose<List<ClanModel>>((ref) async {
+  await ref.watch(guestSessionProvider.future);
+  return ref.watch(relayApiProvider).fetchClans();
+});
+
 class RelayApi {
   RelayApi({
     required String baseUrl,
@@ -239,6 +260,166 @@ class RelayApi {
     return ProgressionSnapshot.fromJson(payload);
   }
 
+
+  Future<SeasonSnapshotModel> fetchSeason({int limit = 20}) async {
+    final payload = await _get(
+      '/api/v1/me/season?limit=$limit',
+      authorized: true,
+    );
+    return SeasonSnapshotModel.fromJson(payload);
+  }
+
+  Future<ProgressionReward> claimSeasonTier(int tier) async {
+    final payload = await _post(
+      '/api/v1/me/season/tiers/$tier/claim',
+      const {},
+      authorized: true,
+    );
+    return ProgressionReward.fromJson(
+      payload['reward'] as Map<String, dynamic>,
+    );
+  }
+
+  Future<AlphaSafetySnapshotModel> fetchAlphaSafety() async {
+    final payload = await _get(
+      '/api/v1/me/alpha-safety',
+      authorized: true,
+    );
+    return AlphaSafetySnapshotModel.fromJson(payload);
+  }
+
+  Future<AlphaFeedbackReceiptModel> submitAlphaFeedback({
+    required String category,
+    required String message,
+  }) async {
+    final payload = await _post(
+      '/api/v1/alpha/feedback',
+      {
+        'category': category,
+        'message': message,
+        'client_version': '0.8.0',
+      },
+      authorized: true,
+    );
+    return AlphaFeedbackReceiptModel.fromJson(payload);
+  }
+
+  Future<SocialSnapshotModel> fetchSocial() async {
+    final payload = await _get(
+      '/api/v1/me/social',
+      authorized: true,
+    );
+    return SocialSnapshotModel.fromJson(payload);
+  }
+
+  Future<SocialSnapshotModel> updateSocialProfile({
+    required String statusMessage,
+    required ModuleKind favoriteModule,
+  }) async {
+    final payload = await _put(
+      '/api/v1/me/social/profile',
+      {
+        'status_message': statusMessage,
+        'favorite_module': favoriteModule.wireValue,
+      },
+      authorized: true,
+    );
+    return SocialSnapshotModel.fromJson(payload);
+  }
+
+  Future<List<SocialPlayerModel>> searchSocialPlayers(String query) async {
+    final payload = await _get(
+      '/api/v1/social/players?query=${Uri.encodeQueryComponent(query)}',
+      authorized: true,
+    );
+    return (payload['players'] as List<dynamic>)
+        .map(
+          (item) => SocialPlayerModel.fromJson(
+            item as Map<String, dynamic>,
+          ),
+        )
+        .toList(growable: false);
+  }
+
+  Future<SocialSnapshotModel> sendFriendRequest(String playerId) async {
+    final payload = await _post(
+      '/api/v1/me/friends/requests/$playerId',
+      const {},
+      authorized: true,
+    );
+    return SocialSnapshotModel.fromJson(payload);
+  }
+
+  Future<SocialSnapshotModel> respondFriendRequest({
+    required String requestId,
+    required bool accept,
+  }) async {
+    final action = accept ? 'accept' : 'decline';
+    final payload = await _post(
+      '/api/v1/me/friends/requests/$requestId/$action',
+      const {},
+      authorized: true,
+    );
+    return SocialSnapshotModel.fromJson(payload);
+  }
+
+  Future<SocialSnapshotModel> removeFriend(String playerId) async {
+    final payload = await _post(
+      '/api/v1/me/friends/$playerId/remove',
+      const {},
+      authorized: true,
+    );
+    return SocialSnapshotModel.fromJson(payload);
+  }
+
+  Future<List<ClanModel>> fetchClans() async {
+    final payload = await _get(
+      '/api/v1/clans',
+      authorized: true,
+    );
+    return (payload['clans'] as List<dynamic>)
+        .map(
+          (item) => ClanModel.fromJson(
+            item as Map<String, dynamic>,
+          ),
+        )
+        .toList(growable: false);
+  }
+
+  Future<SocialSnapshotModel> createClan({
+    required String name,
+    required String tag,
+    required String description,
+  }) async {
+    final payload = await _post(
+      '/api/v1/clans',
+      {
+        'name': name,
+        'tag': tag,
+        'description': description,
+      },
+      authorized: true,
+    );
+    return SocialSnapshotModel.fromJson(payload);
+  }
+
+  Future<SocialSnapshotModel> joinClan(String clanId) async {
+    final payload = await _post(
+      '/api/v1/clans/$clanId/join',
+      const {},
+      authorized: true,
+    );
+    return SocialSnapshotModel.fromJson(payload);
+  }
+
+  Future<SocialSnapshotModel> leaveClan() async {
+    final payload = await _post(
+      '/api/v1/me/clan/leave',
+      const {},
+      authorized: true,
+    );
+    return SocialSnapshotModel.fromJson(payload);
+  }
 
   Future<CollectionSnapshot> fetchCollection() async {
     final payload = await _get(

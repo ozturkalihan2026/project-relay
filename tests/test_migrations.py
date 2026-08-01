@@ -43,6 +43,14 @@ class MigrationTests(unittest.TestCase):
         self.assertIn("CREATE TABLE career_runs", sql)
         self.assertIn("CREATE TABLE player_cosmetics", sql)
         self.assertIn("CREATE TABLE player_loadouts", sql)
+        self.assertIn("CREATE TABLE season_entries", sql)
+        self.assertIn("CREATE TABLE season_match_points", sql)
+        self.assertIn("CREATE TABLE alpha_feedback", sql)
+        self.assertIn("CREATE TABLE player_safety", sql)
+        self.assertIn("CREATE TABLE player_social_profiles", sql)
+        self.assertIn("CREATE TABLE friend_requests", sql)
+        self.assertIn("CREATE TABLE clans", sql)
+        self.assertIn("CREATE TABLE clan_members", sql)
 
     def test_initial_migration_creates_and_downgrades_online_schema(
         self,
@@ -84,6 +92,14 @@ class MigrationTests(unittest.TestCase):
                     "career_boards",
                     "player_cosmetics",
                     "player_loadouts",
+                    "season_entries",
+                    "season_match_points",
+                    "alpha_feedback",
+                    "player_safety",
+                    "player_social_profiles",
+                    "friend_requests",
+                    "clans",
+                    "clan_members",
                 },
             )
             engine.dispose()
