@@ -8,8 +8,17 @@ import '../widgets/module_visuals.dart';
 import '../widgets/player_status_bar.dart';
 import '../widgets/relay_notice.dart';
 
+enum CollectionScreenMode { collection, store }
+
+enum _CollectionSection { kit, cosmetics }
+
 class CollectionScreen extends ConsumerStatefulWidget {
-  const CollectionScreen({super.key});
+  const CollectionScreen({
+    this.mode = CollectionScreenMode.collection,
+    super.key,
+  });
+
+  final CollectionScreenMode mode;
 
   @override
   ConsumerState<CollectionScreen> createState() => _CollectionScreenState();
@@ -19,6 +28,7 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen> {
   final TextEditingController _kitNameController = TextEditingController();
   CollectionSnapshot? _snapshot;
   List<ModuleKind>? _kitSlots;
+  _CollectionSection _section = _CollectionSection.kit;
   bool _busy = false;
 
   @override
@@ -32,18 +42,20 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen> {
     final remote = ref.watch(collectionProvider);
     return Scaffold(
       appBar: AppBar(
-        title: const Column(
+        title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'KOLEKSİYON VE KİT',
-              style: TextStyle(
+              widget.mode == CollectionScreenMode.store
+                  ? 'MAĞAZA'
+                  : 'KOLEKSİYON',
+              style: const TextStyle(
                 fontWeight: FontWeight.w900,
                 letterSpacing: 1.1,
               ),
             ),
-            Text(
-              'PROJECT RELAY • v0.8.0',
+            const Text(
+              'PROJECT RELAY • v0.8.3',
               style: TextStyle(color: RelayColors.muted, fontSize: 10),
             ),
           ],
@@ -90,30 +102,126 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen> {
         });
       },
       child: ListView(
-        key: const ValueKey('collection-scroll-view'),
+        key: ValueKey(
+          widget.mode == CollectionScreenMode.store
+              ? 'store-scroll-view'
+              : 'collection-scroll-view',
+        ),
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 36),
         children: [
           _CollectionHeader(credits: snapshot.credits),
           const SizedBox(height: 14),
-          _KitEditor(
-            nameController: _kitNameController,
-            slots: kitSlots,
-            busy: _busy,
-            onChanged: (index, kind) {
-              setState(() {
-                final slots = List<ModuleKind>.from(kitSlots);
-                slots[index] = kind;
-                _kitSlots = slots;
-              });
-            },
-            onSave: _saveKit,
-          ),
+          if (widget.mode == CollectionScreenMode.store) ...[
+            const _StoreIntro(),
+            const SizedBox(height: 14),
+            _cosmeticCatalog(
+              snapshot,
+              owned: false,
+              emptyMessage:
+                  'Mağazada satın alınmamış kozmetik kalmadı. Yeni içerikler '
+                  'dengeyi değiştirmeden sonraki katalog güncellemelerinde eklenebilir.',
+            ),
+          ] else ...[
+            _collectionSectionSelector(),
+            const SizedBox(height: 14),
+            if (_section == _CollectionSection.kit)
+              _KitEditor(
+                nameController: _kitNameController,
+                slots: kitSlots,
+                busy: _busy,
+                onChanged: (index, kind) {
+                  setState(() {
+                    final slots = List<ModuleKind>.from(kitSlots);
+                    slots[index] = kind;
+                    _kitSlots = slots;
+                  });
+                },
+                onSave: _saveKit,
+              )
+            else
+              _cosmeticCatalog(
+                snapshot,
+                owned: true,
+                emptyMessage:
+                    'Henüz sahip olduğun kozmetik yok. Mağazadan Devre Kredisi '
+                    'ile görsel içerik alabilirsin.',
+              ),
+          ],
           const SizedBox(height: 18),
-          for (final category in const [
-            'module_skin',
-            'board_theme',
-            'profile_frame',
-          ]) ...[
+          OutlinedButton.icon(
+            key: ValueKey(
+              widget.mode == CollectionScreenMode.store
+                  ? 'store-menu-back'
+                  : 'collection-menu-back',
+            ),
+            onPressed: _busy ? null : () => Navigator.of(context).maybePop(),
+            icon: const Icon(Icons.arrow_back),
+            label: const Text('ANA MENÜYE DÖN'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _collectionSectionSelector() {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: SegmentedButton<_CollectionSection>(
+        key: const ValueKey('collection-section-selector'),
+        showSelectedIcon: false,
+        segments: const [
+          ButtonSegment(
+            value: _CollectionSection.kit,
+            icon: Icon(Icons.dashboard_customize_outlined),
+            label: Text(
+              'KİT',
+              key: ValueKey('collection-section-kit'),
+            ),
+          ),
+          ButtonSegment(
+            value: _CollectionSection.cosmetics,
+            icon: Icon(Icons.palette_outlined),
+            label: Text(
+              'KOZMETİK',
+              key: ValueKey('collection-section-cosmetics'),
+            ),
+          ),
+        ],
+        selected: {_section},
+        onSelectionChanged: _busy
+            ? null
+            : (selection) {
+                setState(() => _section = selection.first);
+              },
+      ),
+    );
+  }
+
+  Widget _cosmeticCatalog(
+    CollectionSnapshot snapshot, {
+    required bool owned,
+    required String emptyMessage,
+  }) {
+    final visibleItems = snapshot.cosmetics
+        .where((item) => item.owned == owned)
+        .toList(growable: false);
+    if (visibleItems.isEmpty) {
+      return _CollectionEmptyState(
+        icon: owned
+            ? Icons.inventory_2_outlined
+            : Icons.storefront_outlined,
+        message: emptyMessage,
+      );
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        for (final category in const [
+          'module_skin',
+          'board_theme',
+          'profile_frame',
+        ])
+          if (visibleItems.any((item) => item.category == category)) ...[
             _CategoryTitle(category: category),
             const SizedBox(height: 8),
             LayoutBuilder(
@@ -126,7 +234,7 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen> {
                 const spacing = 10.0;
                 final width =
                     (constraints.maxWidth - spacing * (columns - 1)) / columns;
-                final items = snapshot.cosmetics
+                final items = visibleItems
                     .where((item) => item.category == category)
                     .toList(growable: false);
                 return Wrap(
@@ -148,14 +256,7 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen> {
             ),
             const SizedBox(height: 18),
           ],
-          OutlinedButton.icon(
-            key: const ValueKey('collection-menu-back'),
-            onPressed: _busy ? null : () => Navigator.of(context).maybePop(),
-            icon: const Icon(Icons.arrow_back),
-            label: const Text('ANA MENÜYE DÖN'),
-          ),
-        ],
-      ),
+      ],
     );
   }
 
@@ -525,6 +626,81 @@ class _CosmeticCard extends StatelessWidget {
                 icon: const Icon(Icons.toll_outlined),
                 label: Text('${item.creditCost} KREDİ'),
               ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _StoreIntro extends StatelessWidget {
+  const _StoreIntro();
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      key: const ValueKey('store-intro-card'),
+      child: const Padding(
+        padding: EdgeInsets.all(18),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(Icons.storefront_outlined, color: RelayColors.amber, size: 30),
+            SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'GÖRSEL İÇERİK MAĞAZASI',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 0.8,
+                    ),
+                  ),
+                  SizedBox(height: 6),
+                  Text(
+                    'Devre Kredisi yalnız görsel kimlik için kullanılır. '
+                    'Mağaza modül hasarı, canı, enerjisi veya derece avantajı satmaz.',
+                    style: TextStyle(
+                      color: RelayColors.muted,
+                      fontSize: 11,
+                      height: 1.4,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CollectionEmptyState extends StatelessWidget {
+  const _CollectionEmptyState({
+    required this.icon,
+    required this.message,
+  });
+
+  final IconData icon;
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 28),
+        child: Column(
+          children: [
+            Icon(icon, color: RelayColors.muted, size: 38),
+            const SizedBox(height: 10),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: RelayColors.muted, height: 1.4),
+            ),
           ],
         ),
       ),

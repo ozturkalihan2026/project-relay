@@ -1,30 +1,46 @@
-# Project Relay v0.8.0 — Sosyal Yapı ve Klan Temeli
+# Project Relay v0.8.3 — Ana Merkez ve Menü Düzeni
 
 Project Relay; oyuncuların merkezî çekirdek çevresine yönlü bağlantılarla modül
 yerleştirip sunucu yetkili, deterministik devre savaşları yaptığı Flutter +
 FastAPI projesidir.
 
-## v0.8.0 odak noktası
+## v0.8.3 odak noktası
 
-- Oyuncuya özel sosyal durum mesajı ve favori modül
-- Oyuncu adına göre arama
-- Gönderilen ve gelen arkadaşlık istekleri
-- Arkadaşlık isteğini kabul etme, reddetme ve arkadaşlıktan çıkarma
-- Bir oyuncunun aynı anda yalnızca bir klana üye olabildiği klan temeli
-- Açık klan keşfi, klan kurma, katılma ve ayrılma
-- Klan lideri ve üye rollerinin sunucu tarafında doğrulanması
-- Klan başına 20 üye sınırı
-- Liderin, klanında başka üyeler varken ayrılamaması
-- Sosyal ve klan özelliklerinin rekabetçi savaş gücü vermemesi
-- Alembic `20260801_0009` geçişi
-- Flutter istemcisi `0.8.0+42`, API `0.8.0`, savaş kuralları `0.8`
+- Ana ekranın üst oyuncu çubuğu ve beş ürün alanıyla sadeleştirilmesi
+- Üst çubukta profil, seviye, Devre Kredisi, Ayarlar ve Nasıl Oynanır erişimi
+- Ödülü alınabilir günlük görev veya başarım olduğunda profil bildirim noktası
+- **Oyna** altında Çevrimiçi Savaş, Kariyer ve Antrenmanın birleştirilmesi
+- **Profil** altında Genel, Derece ve Sezon, Maç Geçmişi, Günlük Görevler ve
+  Başarımların toplanması
+- **Klan** alanında özet, üyeler, etkinlik ve ayarlar alt bölümleri
+- **Koleksiyon** alanının Kit ve Kozmetik olarak ayrılması
+- Satın alınmamış kozmetikler için ayrı **Mağaza** girişi
+- Komutan Sistemi ile Oyuncu Tarzı Profilinin uygulanmadan özellik havuzunda
+  korunması
 
-v0.7.0'daki Alfa Sezonu, geri bildirim ve kötüye kullanım korumaları ile
-v0.6.2 rev1'deki kontrollü sekizli kit, görsel kozmetikler, sürdürülebilir
-XP/Devre Kredisi ekonomisi ve seviye kutlamaları korunur.
+API ve istemci sürümleri `0.8.3` / `0.8.3+47` olarak güncellendi. PostgreSQL
+şeması, Alembic başı `20260801_0009`, savaş kuralları `0.8` ve oyun dengesi
+değişmedi.
+
+**rev1 hotfix:** Yerel Flutter analizinde bulunan gereksiz null-aware erişimler
+ve klan alt bölümündeki ad çakışması giderildi. İstemci yapı numarası
+`0.8.3+46` oldu.
+
+**rev2 hotfix:** 800×600 widget test yüzeyinde profil yatay sekmeleri ve
+Koleksiyon geri düğmesi doğru kaydırma alanları kullanılarak görünür hâle
+getirildi. İstemci yapı numarası `0.8.3+47` oldu.
 
 Ayrıntılı sürüm belgesi:
-[docs/V0.8.0_SOSYAL_VE_KLAN.md](docs/V0.8.0_SOSYAL_VE_KLAN.md)
+[docs/V0.8.3_ANA_MERKEZ_VE_MENU_DUZENI.md](docs/V0.8.3_ANA_MERKEZ_VE_MENU_DUZENI.md)
+
+Test raporu:
+[docs/V0.8.3_TEST_RAPORU.md](docs/V0.8.3_TEST_RAPORU.md)
+
+rev2 widget test hotfix raporu:
+[docs/V0.8.3_REV2_WIDGET_TEST_KAYDIRMA_HOTFIX.md](docs/V0.8.3_REV2_WIDGET_TEST_KAYDIRMA_HOTFIX.md)
+
+Özellik havuzu:
+[docs/OZELLIK_HAVUZU.md](docs/OZELLIK_HAVUZU.md)
 
 ## Çalıştırma
 
@@ -48,6 +64,6 @@ Swagger belgesi servis çalışırken `http://127.0.0.1:8000/docs` adresindedir.
 
 ## Sonraki hedef
 
-v1.0.0 açık beta öncesinde; onboarding, hata telemetrisi, performans ve gerçek
-oyuncu alfa verileriyle dengeleme tamamlanacaktır. Canlı 1v1, gerçek para,
-enerji kapısı ve kalıcı savaş gücü bu sürümde bulunmaz.
+v0.9.0 kapalı alfa hazırlığında telemetri, hata kayıtları, cihaz/ekran QA ve
+gerçek oyuncu test akışı kurulacaktır. Canlı 1v1, gerçek para, enerji kapısı,
+kalıcı savaş gücü ve özellik havuzundaki Komutan Sistemi bu sürümde bulunmaz.

@@ -1,7 +1,7 @@
 name: project_relay_client
-description: Project Relay v0.8.0 social profile, friendship and clan foundation client
+description: Project Relay v0.8.3 main hub, profile consolidation and cosmetic navigation client
 publish_to: none
-version: 0.8.0+42
+version: 0.8.3+47
 
 environment:
   sdk: ">=3.11.0 <4.0.0"

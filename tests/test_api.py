@@ -132,7 +132,7 @@ class RelayApiTests(unittest.TestCase):
         response = self.client.get("/healthz")
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["version"], "0.8.0")
+        self.assertEqual(response.json()["version"], "0.8.3")
         self.assertEqual(response.json()["rules_version"], "0.8")
         self.assertEqual(response.json()["storage"], "sqlite")
         self.assertEqual(response.json()["database"], "ok")
@@ -663,7 +663,7 @@ class RelayApiTests(unittest.TestCase):
             json={
                 "category": "arayuz",
                 "message": "Sezon ekranı test geri bildirimi.",
-                "client_version": "0.8.0",
+                "client_version": "0.8.3",
             },
         )
 

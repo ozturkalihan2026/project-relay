@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../theme/relay_theme.dart';
 import '../widgets/player_status_bar.dart';
+import 'career_screen.dart';
 import 'editor_screen.dart';
 
 class PlayModeScreen extends StatelessWidget {
@@ -56,6 +57,22 @@ class PlayModeScreen extends StatelessWidget {
                     onPressed: () => _openEditor(
                       context,
                       EditorMode.online,
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  _ModeCard(
+                    key: const ValueKey('play-mode-career'),
+                    icon: Icons.route_outlined,
+                    color: RelayColors.cyan,
+                    title: 'KARİYER',
+                    subtitle:
+                        'Beş savaşlık koşuda rakip devreleri incele, geçici '
+                        'güçlendirici seç ve boss devresine ulaş.',
+                    badge: 'KOŞU MODU',
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (context) => const CareerScreen(),
+                      ),
                     ),
                   ),
                   const SizedBox(height: 14),

@@ -6,9 +6,19 @@ import '../models/relay_models.dart';
 import '../theme/relay_theme.dart';
 import '../widgets/player_status_bar.dart';
 import '../widgets/relay_notice.dart';
+import 'season_screen.dart';
+
+enum SocialSection { profile, friends, clan }
+
+enum _ClanSection { summary, members, activity, settings }
 
 class SocialScreen extends ConsumerStatefulWidget {
-  const SocialScreen({super.key});
+  const SocialScreen({
+    this.initialSection = SocialSection.profile,
+    super.key,
+  });
+
+  final SocialSection initialSection;
 
   @override
   ConsumerState<SocialScreen> createState() => _SocialScreenState();
@@ -17,8 +27,17 @@ class SocialScreen extends ConsumerStatefulWidget {
 class _SocialScreenState extends ConsumerState<SocialScreen> {
   final TextEditingController _searchController = TextEditingController();
   List<SocialPlayerModel> _searchResults = const [];
+  late SocialSection _section;
+  _ClanSection _selectedClanSection = _ClanSection.summary;
   bool _busy = false;
   bool _searching = false;
+  bool _searchAttempted = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _section = widget.initialSection;
+  }
 
   @override
   void dispose() {
@@ -32,18 +51,20 @@ class _SocialScreenState extends ConsumerState<SocialScreen> {
     final clans = ref.watch(clanDirectoryProvider);
     return Scaffold(
       appBar: AppBar(
-        title: const Column(
+        title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'SOSYAL VE KLAN',
-              style: TextStyle(
+              widget.initialSection == SocialSection.clan
+                  ? 'KLAN'
+                  : 'SOSYAL MERKEZ',
+              style: const TextStyle(
                 fontWeight: FontWeight.w900,
                 letterSpacing: 1.1,
               ),
             ),
-            Text(
-              'PROJECT RELAY • v0.8.0',
+            const Text(
+              'PROJECT RELAY • v0.8.3',
               style: TextStyle(color: RelayColors.muted, fontSize: 10),
             ),
           ],
@@ -96,8 +117,118 @@ class _SocialScreenState extends ConsumerState<SocialScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _profileCard(snapshot.profile),
+        _summaryCard(snapshot),
+        const SizedBox(height: 12),
+        _sectionSelector(snapshot),
         const SizedBox(height: 14),
+        switch (_section) {
+          SocialSection.profile => _profileSection(snapshot),
+          SocialSection.friends => _friendsSection(snapshot),
+          SocialSection.clan => _clanSection(snapshot, clans),
+        },
+      ],
+    );
+  }
+
+  Widget _summaryCard(SocialSnapshotModel snapshot) {
+    return Card(
+      key: const ValueKey('social-summary-card'),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Wrap(
+          spacing: 10,
+          runSpacing: 10,
+          alignment: WrapAlignment.center,
+          children: [
+            _MetricPill(
+              icon: Icons.people_alt_outlined,
+              value: '${snapshot.friends.length}',
+              label: 'ARKADAŞ',
+            ),
+            _MetricPill(
+              icon: Icons.mark_email_unread_outlined,
+              value: '${snapshot.incomingRequests.length}',
+              label: 'GELEN İSTEK',
+              accent: snapshot.incomingRequests.isNotEmpty
+                  ? RelayColors.amber
+                  : RelayColors.cyan,
+            ),
+            _MetricPill(
+              icon: Icons.send_outlined,
+              value: '${snapshot.outgoingRequests.length}',
+              label: 'BEKLEYEN',
+            ),
+            _MetricPill(
+              icon: Icons.hub_outlined,
+              value: snapshot.clan?.tag ?? '—',
+              label: snapshot.clan == null ? 'KLAN YOK' : 'KLAN',
+              accent: snapshot.clan == null
+                  ? RelayColors.muted
+                  : RelayColors.amber,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _sectionSelector(SocialSnapshotModel snapshot) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: SegmentedButton<SocialSection>(
+        key: const ValueKey('social-section-selector'),
+        showSelectedIcon: false,
+        segments: [
+          const ButtonSegment(
+            value: SocialSection.profile,
+            icon: Icon(Icons.account_circle_outlined),
+            label: Text(
+              'PROFİL',
+              key: ValueKey('social-section-profile'),
+            ),
+          ),
+          ButtonSegment(
+            value: SocialSection.friends,
+            icon: const Icon(Icons.people_alt_outlined),
+            label: Text(
+              'ARKADAŞLAR ${snapshot.friends.length}',
+              key: const ValueKey('social-section-friends'),
+            ),
+          ),
+          ButtonSegment(
+            value: SocialSection.clan,
+            icon: const Icon(Icons.hub_outlined),
+            label: Text(
+              snapshot.clan == null ? 'KLAN' : 'KLAN ${snapshot.clan!.tag}',
+              key: const ValueKey('social-section-clan'),
+            ),
+          ),
+        ],
+        selected: {_section},
+        onSelectionChanged: _busy
+            ? null
+            : (selection) {
+                setState(() => _section = selection.first);
+              },
+      ),
+    );
+  }
+
+  Widget _profileSection(SocialSnapshotModel snapshot) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _profileCard(snapshot.profile),
+        const SizedBox(height: 12),
+        _safetyCard(),
+      ],
+    );
+  }
+
+  Widget _friendsSection(SocialSnapshotModel snapshot) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
         if (snapshot.incomingRequests.isNotEmpty) ...[
           _sectionTitle(Icons.mark_email_unread_outlined, 'GELEN İSTEKLER'),
           const SizedBox(height: 8),
@@ -107,6 +238,7 @@ class _SocialScreenState extends ConsumerState<SocialScreen> {
               children: [
                 for (final request in snapshot.incomingRequests)
                   ListTile(
+                    onTap: () => _showPlayerProfile(request.player),
                     leading: const CircleAvatar(
                       child: Icon(Icons.person_add_alt_1),
                     ),
@@ -114,7 +246,10 @@ class _SocialScreenState extends ConsumerState<SocialScreen> {
                       request.player.displayName,
                       style: const TextStyle(fontWeight: FontWeight.w900),
                     ),
-                    subtitle: Text(request.player.statusMessage),
+                    subtitle: Text(
+                      '${request.player.statusMessage}\n${_formatDate(request.createdAt)} tarihinde gönderildi',
+                    ),
+                    isThreeLine: true,
                     trailing: Wrap(
                       spacing: 6,
                       children: [
@@ -152,6 +287,33 @@ class _SocialScreenState extends ConsumerState<SocialScreen> {
           ),
           const SizedBox(height: 14),
         ],
+        if (snapshot.outgoingRequests.isNotEmpty) ...[
+          _sectionTitle(Icons.send_outlined, 'GÖNDERİLEN İSTEKLER'),
+          const SizedBox(height: 8),
+          Card(
+            key: const ValueKey('social-outgoing-requests'),
+            child: Column(
+              children: [
+                for (final request in snapshot.outgoingRequests)
+                  ListTile(
+                    onTap: () => _showPlayerProfile(request.player),
+                    leading: const CircleAvatar(
+                      child: Icon(Icons.schedule_outlined),
+                    ),
+                    title: Text(
+                      request.player.displayName,
+                      style: const TextStyle(fontWeight: FontWeight.w900),
+                    ),
+                    subtitle: Text(
+                      '${_formatDate(request.createdAt)} • Oyuncunun yanıtı bekleniyor',
+                    ),
+                    trailing: const Chip(label: Text('BEKLİYOR')),
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 14),
+        ],
         _sectionTitle(Icons.people_alt_outlined, 'ARKADAŞLAR'),
         const SizedBox(height: 8),
         Card(
@@ -168,6 +330,7 @@ class _SocialScreenState extends ConsumerState<SocialScreen> {
                   children: [
                     for (final friend in snapshot.friends)
                       ListTile(
+                        onTap: () => _showPlayerProfile(friend),
                         leading: const CircleAvatar(
                           child: Icon(Icons.person_outline),
                         ),
@@ -180,9 +343,7 @@ class _SocialScreenState extends ConsumerState<SocialScreen> {
                         ),
                         trailing: IconButton(
                           tooltip: 'Arkadaşlıktan çıkar',
-                          onPressed: _busy
-                              ? null
-                              : () => _removeFriend(friend.playerId),
+                          onPressed: _busy ? null : () => _removeFriend(friend),
                           icon: const Icon(Icons.person_remove_outlined),
                         ),
                       ),
@@ -191,12 +352,21 @@ class _SocialScreenState extends ConsumerState<SocialScreen> {
         ),
         const SizedBox(height: 14),
         _playerSearchCard(),
-        const SizedBox(height: 14),
+      ],
+    );
+  }
+
+  Widget _clanSection(
+    SocialSnapshotModel snapshot,
+    AsyncValue<List<ClanModel>> clans,
+  ) {
+    final clan = snapshot.clan;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
         _sectionTitle(Icons.hub_outlined, 'KLAN'),
         const SizedBox(height: 8),
-        if (snapshot.clan != null)
-          _currentClanCard(snapshot.clan!)
-        else ...[
+        if (clan == null) ...[
           _MessageCard(
             key: const ValueKey('social-no-clan-card'),
             icon: Icons.hub_outlined,
@@ -208,8 +378,58 @@ class _SocialScreenState extends ConsumerState<SocialScreen> {
           ),
           const SizedBox(height: 10),
           _clanDirectory(clans),
+        ] else ...[
+          _clanSectionSelector(),
+          const SizedBox(height: 12),
+          switch (_selectedClanSection) {
+            _ClanSection.summary => _clanSummaryCard(clan),
+            _ClanSection.members => _clanMembersCard(clan),
+            _ClanSection.activity => _clanActivityCard(clan),
+            _ClanSection.settings => _clanSettingsCard(
+                clan,
+                snapshot.profile,
+              ),
+          },
         ],
       ],
+    );
+  }
+
+  Widget _clanSectionSelector() {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: SegmentedButton<_ClanSection>(
+        key: const ValueKey('clan-section-selector'),
+        showSelectedIcon: false,
+        segments: const [
+          ButtonSegment(
+            value: _ClanSection.summary,
+            icon: Icon(Icons.dashboard_outlined),
+            label: Text('KLAN ÖZETİ'),
+          ),
+          ButtonSegment(
+            value: _ClanSection.members,
+            icon: Icon(Icons.group_outlined),
+            label: Text('ÜYELER'),
+          ),
+          ButtonSegment(
+            value: _ClanSection.activity,
+            icon: Icon(Icons.timeline_outlined),
+            label: Text('KLAN ETKİNLİĞİ'),
+          ),
+          ButtonSegment(
+            value: _ClanSection.settings,
+            icon: Icon(Icons.settings_outlined),
+            label: Text('AYARLAR'),
+          ),
+        ],
+        selected: {_selectedClanSection},
+        onSelectionChanged: _busy
+            ? null
+            : (selection) {
+                setState(() => _selectedClanSection = selection.first);
+              },
+      ),
     );
   }
 
@@ -218,47 +438,127 @@ class _SocialScreenState extends ConsumerState<SocialScreen> {
       key: const ValueKey('social-profile-card'),
       child: Padding(
         padding: const EdgeInsets.all(18),
-        child: Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            const CircleAvatar(
-              radius: 28,
-              backgroundColor: Color(0x2238E8FF),
-              child: Icon(Icons.account_circle, color: RelayColors.cyan, size: 34),
+            Row(
+              children: [
+                const CircleAvatar(
+                  radius: 30,
+                  backgroundColor: Color(0x2238E8FF),
+                  child: Icon(
+                    Icons.account_circle,
+                    color: RelayColors.cyan,
+                    size: 38,
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        profile.displayName,
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      const Text(
+                        'HERKESE AÇIK SOSYAL PROFİL',
+                        style: TextStyle(
+                          color: RelayColors.cyan,
+                          fontSize: 9,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 0.8,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  key: const ValueKey('social-edit-profile'),
+                  tooltip: 'Profili düzenle',
+                  onPressed: _busy ? null : () => _showProfileDialog(profile),
+                  icon: const Icon(Icons.edit_outlined),
+                ),
+              ],
             ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    profile.displayName,
-                    style: const TextStyle(
-                      fontSize: 18,
+            const Divider(height: 24),
+            Text(
+              profile.statusMessage,
+              style: const TextStyle(fontSize: 14),
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                Chip(
+                  avatar: const Icon(Icons.memory, size: 17),
+                  label: Text('Favori: ${profile.favoriteModule.displayName}'),
+                ),
+                Chip(
+                  avatar: const Icon(Icons.people_alt_outlined, size: 17),
+                  label: Text('${profile.friendCount} arkadaş'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _safetyCard() {
+    return Card(
+      key: const ValueKey('social-safety-card'),
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const Row(
+              children: [
+                Icon(Icons.shield_outlined, color: RelayColors.amber),
+                SizedBox(width: 9),
+                Expanded(
+                  child: Text(
+                    'SOSYAL GÜVENLİK',
+                    style: TextStyle(
                       fontWeight: FontWeight.w900,
+                      letterSpacing: 0.7,
                     ),
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    profile.statusMessage,
-                    style: const TextStyle(color: RelayColors.muted),
-                  ),
-                  const SizedBox(height: 5),
-                  Text(
-                    '${profile.friendCount} arkadaş • Favori modül: ${profile.favoriteModule.displayName}',
-                    style: const TextStyle(
-                      color: RelayColors.cyan,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                ],
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            const Text(
+              'Durum mesajı, oyuncu adı ve klan metinleri diğer oyunculara görünür. '
+              'Telefon, e-posta, adres, parola veya gerçek kimlik bilgisi paylaşma.',
+              style: TextStyle(color: RelayColors.muted),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Oyuncu raporlama ve engelleme henüz kapalı alfa kapsamındadır. '
+              'Uygunsuz içerikleri şimdilik Alfa Geri Bildirimi üzerinden ilet.',
+              style: TextStyle(
+                color: RelayColors.amber,
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
               ),
             ),
-            IconButton(
-              key: const ValueKey('social-edit-profile'),
-              tooltip: 'Profili düzenle',
-              onPressed: _busy ? null : () => _showProfileDialog(profile),
-              icon: const Icon(Icons.edit_outlined),
+            const SizedBox(height: 12),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: FilledButton.tonalIcon(
+                key: const ValueKey('social-alpha-feedback'),
+                onPressed: _busy ? null : _openAlphaFeedback,
+                icon: const Icon(Icons.feedback_outlined),
+                label: const Text('ALFA GERİ BİLDİRİMİ'),
+              ),
             ),
           ],
         ),
@@ -275,11 +575,17 @@ class _SocialScreenState extends ConsumerState<SocialScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             _sectionTitle(Icons.person_search_outlined, 'OYUNCU ARA'),
+            const SizedBox(height: 5),
+            const Text(
+              'Görünen oyuncu adında en az iki karakter ara.',
+              style: TextStyle(color: RelayColors.muted, fontSize: 11),
+            ),
             const SizedBox(height: 10),
             Row(
               children: [
                 Expanded(
                   child: TextField(
+                    key: const ValueKey('social-player-search-input'),
                     controller: _searchController,
                     enabled: !_busy,
                     textInputAction: TextInputAction.search,
@@ -292,6 +598,8 @@ class _SocialScreenState extends ConsumerState<SocialScreen> {
                 ),
                 const SizedBox(width: 8),
                 IconButton.filled(
+                  key: const ValueKey('social-player-search-submit'),
+                  tooltip: 'Oyuncu ara',
                   onPressed: _busy || _searching ? null : _searchPlayers,
                   icon: _searching
                       ? const SizedBox(
@@ -303,11 +611,25 @@ class _SocialScreenState extends ConsumerState<SocialScreen> {
                 ),
               ],
             ),
+            if (_searchAttempted &&
+                !_searching &&
+                _searchResults.isEmpty) ...[
+              const SizedBox(height: 12),
+              const _InlineState(
+                icon: Icons.person_off_outlined,
+                message: 'Bu adla eşleşen başka bir oyuncu bulunamadı.',
+              ),
+            ],
             if (_searchResults.isNotEmpty) ...[
               const SizedBox(height: 10),
+              const Divider(),
               for (final player in _searchResults)
                 ListTile(
+                  onTap: () => _showPlayerProfile(player),
                   dense: true,
+                  leading: const CircleAvatar(
+                    child: Icon(Icons.account_circle_outlined),
+                  ),
                   title: Text(
                     player.displayName,
                     style: const TextStyle(fontWeight: FontWeight.w900),
@@ -336,7 +658,7 @@ class _SocialScreenState extends ConsumerState<SocialScreen> {
     };
   }
 
-  Widget _currentClanCard(ClanModel clan) {
+  Widget _clanSummaryCard(ClanModel clan) {
     return Card(
       key: const ValueKey('social-current-clan'),
       child: Padding(
@@ -385,7 +707,53 @@ class _SocialScreenState extends ConsumerState<SocialScreen> {
                 ),
               ],
             ),
-            const Divider(height: 24),
+            const SizedBox(height: 14),
+            LinearProgressIndicator(
+              value: clan.memberCount / 20,
+              minHeight: 7,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                Chip(
+                  avatar: const Icon(Icons.lock_open_outlined, size: 17),
+                  label: Text(clan.isOpen ? 'Açık klan' : 'Kapalı klan'),
+                ),
+                Chip(
+                  avatar: const Icon(Icons.group_outlined, size: 17),
+                  label: Text('${clan.memberCount} üye'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'Klan savaş gücü vermez. Klan savaşı, ortak kasa ve klan '
+              'bonusları kapalı alfa sonrasında değerlendirilecek.',
+              style: TextStyle(
+                color: RelayColors.muted,
+                fontSize: 11,
+                height: 1.4,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _clanMembersCard(ClanModel clan) {
+    return Card(
+      key: const ValueKey('clan-members-card'),
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _sectionTitle(Icons.group_outlined, 'ÜYELER'),
+            const SizedBox(height: 8),
             for (final member in clan.members)
               ListTile(
                 dense: true,
@@ -406,6 +774,9 @@ class _SocialScreenState extends ConsumerState<SocialScreen> {
                         : Colors.white,
                   ),
                 ),
+                subtitle: Text(
+                  '${_formatDate(member.joinedAt)} tarihinde katıldı',
+                ),
                 trailing: Text(
                   member.role == 'leader' ? 'LİDER' : 'ÜYE',
                   style: const TextStyle(
@@ -415,11 +786,104 @@ class _SocialScreenState extends ConsumerState<SocialScreen> {
                   ),
                 ),
               ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _clanActivityCard(ClanModel clan) {
+    final members = List<ClanMemberModel>.from(clan.members)
+      ..sort((left, right) => right.joinedAt.compareTo(left.joinedAt));
+    return Card(
+      key: const ValueKey('clan-activity-card'),
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _sectionTitle(Icons.timeline_outlined, 'KLAN ETKİNLİĞİ'),
             const SizedBox(height: 8),
+            const Text(
+              'Bu sürümde sunucuda ayrı bir klan etkinlik günlüğü yoktur. '
+              'Aşağıdaki akış mevcut üye katılım tarihlerinden oluşturulur.',
+              style: TextStyle(
+                color: RelayColors.muted,
+                fontSize: 11,
+                height: 1.4,
+              ),
+            ),
+            const Divider(height: 24),
+            if (members.isEmpty)
+              const _InlineState(
+                icon: Icons.hourglass_empty,
+                message: 'Henüz gösterilecek klan etkinliği yok.',
+              )
+            else
+              for (final member in members)
+                ListTile(
+                  dense: true,
+                  leading: const Icon(
+                    Icons.person_add_alt_1,
+                    color: RelayColors.cyan,
+                  ),
+                  title: Text('${member.displayName} klana katıldı'),
+                  subtitle: Text(_formatDate(member.joinedAt)),
+                ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _clanSettingsCard(
+    ClanModel clan,
+    SocialProfileModel profile,
+  ) {
+    final isLeader = clan.leaderPlayerId == profile.playerId;
+    final canLeave = !isLeader || clan.memberCount == 1;
+    return Card(
+      key: const ValueKey('clan-settings-card'),
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _sectionTitle(Icons.settings_outlined, 'KLAN AYARLARI'),
+            const SizedBox(height: 10),
+            Text(
+              isLeader
+                  ? 'Bu klanın liderisin.'
+                  : 'Bu klanın üyesisin.',
+              style: const TextStyle(fontWeight: FontWeight.w900),
+            ),
+            const SizedBox(height: 8),
+            if (!canLeave)
+              const Text(
+                'Lider, başka üyeler varken klandan ayrılamaz. Liderlik devri '
+                'henüz bu alfa sürümünde bulunmuyor.',
+                style: TextStyle(
+                  color: RelayColors.amber,
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                ),
+              )
+            else
+              const Text(
+                'Ayrılma işlemi geri alınamaz. Yeniden katılmak için klanın '
+                'açık olması gerekir.',
+                style: TextStyle(color: RelayColors.muted, fontSize: 11),
+              ),
+            const SizedBox(height: 14),
             OutlinedButton.icon(
-              onPressed: _busy ? null : _leaveClan,
+              key: const ValueKey('social-leave-clan'),
+              onPressed: _busy || !canLeave ? null : () => _leaveClan(clan),
               icon: const Icon(Icons.logout),
-              label: const Text('KLANDAN AYRIL'),
+              label: Text(
+                isLeader && clan.memberCount == 1
+                    ? 'KLANI KAPAT VE AYRIL'
+                    : 'KLANDAN AYRIL',
+              ),
             ),
           ],
         ),
@@ -437,11 +901,16 @@ class _SocialScreenState extends ConsumerState<SocialScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               _sectionTitle(Icons.travel_explore_outlined, 'AÇIK KLANLAR'),
+              const SizedBox(height: 5),
+              const Text(
+                'Katılmadan önce klan açıklamasını ve üye sayısını kontrol et.',
+                style: TextStyle(color: RelayColors.muted, fontSize: 11),
+              ),
               const SizedBox(height: 8),
               if (items.isEmpty)
-                const Text(
-                  'Henüz açık klan yok. İlk klanı sen kurabilirsin.',
-                  style: TextStyle(color: RelayColors.muted),
+                const _InlineState(
+                  icon: Icons.hub_outlined,
+                  message: 'Henüz açık klan yok. İlk klanı sen kurabilirsin.',
                 )
               else
                 for (final clan in items)
@@ -458,16 +927,26 @@ class _SocialScreenState extends ConsumerState<SocialScreen> {
                     ),
                     subtitle: Text('${clan.description} • ${clan.memberCount}/20'),
                     trailing: FilledButton.tonal(
-                      onPressed: _busy ? null : () => _joinClan(clan.clanId),
+                      onPressed: _busy ? null : () => _joinClan(clan),
                       child: const Text('KATIL'),
                     ),
                   ),
             ],
           ),
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (error, _) => Text(
-            error.toString(),
-            style: const TextStyle(color: RelayColors.coral),
+          error: (error, _) => Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                error.toString(),
+                style: const TextStyle(color: RelayColors.coral),
+              ),
+              const SizedBox(height: 8),
+              OutlinedButton(
+                onPressed: () => ref.invalidate(clanDirectoryProvider),
+                child: const Text('TEKRAR DENE'),
+              ),
+            ],
           ),
         ),
       ),
@@ -509,7 +988,11 @@ class _SocialScreenState extends ConsumerState<SocialScreen> {
       );
       return;
     }
-    setState(() => _searching = true);
+    setState(() {
+      _searching = true;
+      _searchAttempted = true;
+      _searchResults = const [];
+    });
     try {
       final results = await ref.read(relayApiProvider).searchSocialPlayers(query);
       if (mounted) setState(() => _searchResults = results);
@@ -540,25 +1023,50 @@ class _SocialScreenState extends ConsumerState<SocialScreen> {
     );
   }
 
-  Future<void> _removeFriend(String playerId) async {
+  Future<void> _removeFriend(SocialPlayerModel friend) async {
+    final confirmed = await _confirmAction(
+      title: 'Arkadaşlığı kaldır',
+      message:
+          '${friend.displayName} arkadaş listesinden çıkarılsın mı? Daha sonra yeniden istek gönderebilirsin.',
+      confirmLabel: 'ARKADAŞLIĞI KALDIR',
+      destructive: true,
+    );
+    if (!confirmed) return;
     await _runAction(
-      () => ref.read(relayApiProvider).removeFriend(playerId),
+      () => ref.read(relayApiProvider).removeFriend(friend.playerId),
       'Arkadaşlık kaldırıldı.',
     );
   }
 
-  Future<void> _joinClan(String clanId) async {
+  Future<void> _joinClan(ClanModel clan) async {
+    final confirmed = await _confirmAction(
+      title: '${clan.tag} klanına katıl',
+      message:
+          '${clan.name} klanına katılmak istediğine emin misin? Aynı anda yalnız bir klana üye olabilirsin.',
+      confirmLabel: 'KLANA KATIL',
+    );
+    if (!confirmed) return;
     await _runAction(
-      () => ref.read(relayApiProvider).joinClan(clanId),
-      'Klana katıldın.',
+      () => ref.read(relayApiProvider).joinClan(clan.clanId),
+      '${clan.name} klanına katıldın.',
       refreshClans: true,
     );
   }
 
-  Future<void> _leaveClan() async {
+  Future<void> _leaveClan(ClanModel clan) async {
+    final closesClan = clan.memberCount == 1;
+    final confirmed = await _confirmAction(
+      title: closesClan ? 'Klanı kapat' : 'Klandan ayrıl',
+      message: closesClan
+          ? '${clan.name} klanının tek üyesisin. Ayrılırsan klan kalıcı olarak kapatılır.'
+          : '${clan.name} klanından ayrılmak istediğine emin misin?',
+      confirmLabel: closesClan ? 'KLANI KAPAT' : 'KLANDAN AYRIL',
+      destructive: true,
+    );
+    if (!confirmed) return;
     await _runAction(
       () => ref.read(relayApiProvider).leaveClan(),
-      'Klan üyeliği sona erdi.',
+      closesClan ? 'Klan kapatıldı.' : 'Klan üyeliği sona erdi.',
       refreshClans: true,
     );
   }
@@ -598,32 +1106,40 @@ class _SocialScreenState extends ConsumerState<SocialScreen> {
           title: const Text('SOSYAL PROFİL'),
           content: SizedBox(
             width: 420,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: statusController,
-                  maxLength: 160,
-                  decoration: const InputDecoration(labelText: 'Durum mesajı'),
-                ),
-                const SizedBox(height: 8),
-                DropdownButtonFormField<ModuleKind>(
-                  initialValue: favoriteModule,
-                  decoration: const InputDecoration(labelText: 'Favori modül'),
-                  items: [
-                    for (final kind in ModuleKind.values)
-                      DropdownMenuItem(
-                        value: kind,
-                        child: Text(kind.displayName),
-                      ),
-                  ],
-                  onChanged: (value) {
-                    if (value != null) {
-                      setDialogState(() => favoriteModule = value);
-                    }
-                  },
-                ),
-              ],
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const _PublicTextWarning(),
+                  const SizedBox(height: 12),
+                  TextField(
+                    key: const ValueKey('social-status-message-input'),
+                    controller: statusController,
+                    maxLength: 160,
+                    minLines: 2,
+                    maxLines: 4,
+                    decoration: const InputDecoration(labelText: 'Durum mesajı'),
+                  ),
+                  const SizedBox(height: 8),
+                  DropdownButtonFormField<ModuleKind>(
+                    key: const ValueKey('social-favorite-module-input'),
+                    initialValue: favoriteModule,
+                    decoration: const InputDecoration(labelText: 'Favori modül'),
+                    items: [
+                      for (final kind in ModuleKind.values)
+                        DropdownMenuItem(
+                          value: kind,
+                          child: Text(kind.displayName),
+                        ),
+                    ],
+                    onChanged: (value) {
+                      if (value != null) {
+                        setDialogState(() => favoriteModule = value);
+                      }
+                    },
+                  ),
+                ],
+              ),
             ),
           ),
           actions: [
@@ -642,6 +1158,16 @@ class _SocialScreenState extends ConsumerState<SocialScreen> {
     final statusMessage = statusController.text.trim();
     statusController.dispose();
     if (accepted != true) return;
+    if (statusMessage.isEmpty) {
+      _showValidation('Durum mesajı boş bırakılamaz.');
+      return;
+    }
+    if (_containsPrivateContact(statusMessage)) {
+      _showValidation(
+        'Durum mesajında kişisel iletişim bilgisi veya bağlantı paylaşma.',
+      );
+      return;
+    }
     await _runAction(
       () => ref.read(relayApiProvider).updateSocialProfile(
             statusMessage: statusMessage,
@@ -661,28 +1187,41 @@ class _SocialScreenState extends ConsumerState<SocialScreen> {
         title: const Text('YENİ KLAN'),
         content: SizedBox(
           width: 420,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nameController,
-                maxLength: 48,
-                decoration: const InputDecoration(labelText: 'Klan adı'),
-              ),
-              TextField(
-                controller: tagController,
-                maxLength: 8,
-                textCapitalization: TextCapitalization.characters,
-                decoration: const InputDecoration(labelText: 'Kısa etiket'),
-              ),
-              TextField(
-                controller: descriptionController,
-                maxLength: 240,
-                minLines: 2,
-                maxLines: 4,
-                decoration: const InputDecoration(labelText: 'Açıklama'),
-              ),
-            ],
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const _PublicTextWarning(
+                  message:
+                      'Klan adı, etiketi ve açıklaması herkese açıktır. Kişisel bilgi veya iletişim adresi yazma.',
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  key: const ValueKey('social-clan-name-input'),
+                  controller: nameController,
+                  maxLength: 48,
+                  decoration: const InputDecoration(labelText: 'Klan adı'),
+                ),
+                TextField(
+                  key: const ValueKey('social-clan-tag-input'),
+                  controller: tagController,
+                  maxLength: 8,
+                  textCapitalization: TextCapitalization.characters,
+                  decoration: const InputDecoration(
+                    labelText: 'Kısa etiket',
+                    helperText: '2-8 harf, rakam veya alt çizgi',
+                  ),
+                ),
+                TextField(
+                  key: const ValueKey('social-clan-description-input'),
+                  controller: descriptionController,
+                  maxLength: 240,
+                  minLines: 2,
+                  maxLines: 4,
+                  decoration: const InputDecoration(labelText: 'Açıklama'),
+                ),
+              ],
+            ),
           ),
         ),
         actions: [
@@ -698,12 +1237,30 @@ class _SocialScreenState extends ConsumerState<SocialScreen> {
       ),
     );
     final name = nameController.text.trim();
-    final tag = tagController.text.trim();
+    final tag = tagController.text.trim().toUpperCase();
     final description = descriptionController.text.trim();
     nameController.dispose();
     tagController.dispose();
     descriptionController.dispose();
     if (accepted != true) return;
+    if (name.length < 3) {
+      _showValidation('Klan adı en az 3 karakter olmalıdır.');
+      return;
+    }
+    if (!RegExp(r'^[A-Z0-9_]{2,8}$').hasMatch(tag)) {
+      _showValidation('Klan etiketi 2-8 harf, rakam veya alt çizgi olmalıdır.');
+      return;
+    }
+    if (description.length < 3) {
+      _showValidation('Klan açıklaması en az 3 karakter olmalıdır.');
+      return;
+    }
+    if (_containsPrivateContact('$name $description')) {
+      _showValidation(
+        'Klan adı veya açıklamasında kişisel iletişim bilgisi paylaşma.',
+      );
+      return;
+    }
     await _runAction(
       () => ref.read(relayApiProvider).createClan(
             name: name,
@@ -712,6 +1269,261 @@ class _SocialScreenState extends ConsumerState<SocialScreen> {
           ),
       'Klan kuruldu.',
       refreshClans: true,
+    );
+  }
+
+  Future<void> _showPlayerProfile(SocialPlayerModel player) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 4, 20, 28),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  const CircleAvatar(
+                    radius: 28,
+                    child: Icon(Icons.account_circle_outlined, size: 34),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          player.displayName,
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                        Text(
+                          _relationshipLabel(player.relationship),
+                          style: const TextStyle(
+                            color: RelayColors.cyan,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Text(player.statusMessage),
+              const SizedBox(height: 12),
+              Chip(
+                avatar: const Icon(Icons.memory, size: 17),
+                label: Text('Favori modül: ${player.favoriteModule.displayName}'),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Bu profil yalnız sosyal kimliktir; savaş gücü veya eşleştirme avantajı vermez.',
+                style: TextStyle(color: RelayColors.muted, fontSize: 11),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<bool> _confirmAction({
+    required String title,
+    required String message,
+    required String confirmLabel,
+    bool destructive = false,
+  }) async {
+    return await showDialog<bool>(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            title: Text(title),
+            content: Text(message),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext, false),
+                child: const Text('VAZGEÇ'),
+              ),
+              FilledButton(
+                style: destructive
+                    ? FilledButton.styleFrom(
+                        backgroundColor: RelayColors.coral,
+                        foregroundColor: Colors.white,
+                      )
+                    : null,
+                onPressed: () => Navigator.pop(dialogContext, true),
+                child: Text(confirmLabel),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+  }
+
+  void _openAlphaFeedback() {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (context) => const SeasonScreen()),
+    );
+  }
+
+  void _showValidation(String message) {
+    RelayNotice.show(
+      context,
+      message,
+      tone: RelayNoticeTone.warning,
+    );
+  }
+
+  bool _containsPrivateContact(String value) {
+    final email = RegExp(r'\b[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}\b');
+    final link = RegExp(r'\b(?:https?://|www\.)\S+', caseSensitive: false);
+    final longPhone = RegExp(r'(?:\+?\d[\s().-]*){9,}');
+    return email.hasMatch(value) || link.hasMatch(value) || longPhone.hasMatch(value);
+  }
+
+  String _relationshipLabel(String relationship) {
+    return switch (relationship) {
+      'friend' => 'ARKADAŞ',
+      'outgoing' => 'ARKADAŞLIK İSTEĞİ GÖNDERİLDİ',
+      'incoming' => 'ARKADAŞLIK İSTEĞİ BEKLİYOR',
+      _ => 'OYUNCU',
+    };
+  }
+
+  String _formatDate(DateTime value) {
+    final local = value.toLocal();
+    final day = local.day.toString().padLeft(2, '0');
+    final month = local.month.toString().padLeft(2, '0');
+    return '$day.$month.${local.year}';
+  }
+}
+
+class _MetricPill extends StatelessWidget {
+  const _MetricPill({
+    required this.icon,
+    required this.value,
+    required this.label,
+    this.accent = RelayColors.cyan,
+  });
+
+  final IconData icon;
+  final String value;
+  final String label;
+  final Color accent;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      constraints: const BoxConstraints(minWidth: 126),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: accent.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: accent.withValues(alpha: 0.38)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: accent, size: 20),
+          const SizedBox(width: 8),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                value,
+                style: TextStyle(
+                  color: accent,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              Text(
+                label,
+                style: const TextStyle(
+                  color: RelayColors.muted,
+                  fontSize: 9,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _InlineState extends StatelessWidget {
+  const _InlineState({required this.icon, required this.message});
+
+  final IconData icon;
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      child: Row(
+        children: [
+          Icon(icon, color: RelayColors.muted),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              message,
+              style: const TextStyle(color: RelayColors.muted),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PublicTextWarning extends StatelessWidget {
+  const _PublicTextWarning({
+    this.message =
+        'Bu alan diğer oyunculara açıktır. Kişisel bilgi, iletişim adresi veya bağlantı paylaşma.',
+  });
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: RelayColors.amber.withValues(alpha: 0.09),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: RelayColors.amber.withValues(alpha: 0.42),
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(
+            Icons.visibility_outlined,
+            color: RelayColors.amber,
+            size: 20,
+          ),
+          const SizedBox(width: 9),
+          Expanded(
+            child: Text(
+              message,
+              style: const TextStyle(
+                color: RelayColors.amber,
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

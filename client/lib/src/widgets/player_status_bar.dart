@@ -11,10 +11,14 @@ import '../theme/relay_theme.dart';
 class PlayerStatusBar extends ConsumerWidget {
   const PlayerStatusBar({
     this.compact = false,
+    this.onTap,
+    this.showClaimBadge = false,
     super.key,
   });
 
   final bool compact;
+  final VoidCallback? onTap;
+  final bool showClaimBadge;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -38,47 +42,96 @@ class PlayerStatusBar extends ConsumerWidget {
             : math.min(330.0, math.max(220.0, screenWidth - 32.0));
     final height = compact ? 50.0 : 58.0;
 
-    return SizedBox(
-      key: const ValueKey('player-status-bar'),
-      width: width,
-      height: height,
-      child: session.when(
-        data: (guest) => progression.when(
-          data: (snapshot) => _PlayerStatusContent(
-            displayName: guest.player.displayName,
-            profile: snapshot.profile,
-            compact: compact,
-            dense: dense,
-            frame: profileFrame,
-          ),
-          loading: () => _PlayerStatusLoading(
-            displayName: guest.player.displayName,
-            compact: compact,
-            dense: dense,
-            frame: profileFrame,
-          ),
-          error: (error, stackTrace) => _PlayerStatusError(
-            displayName: guest.player.displayName,
-            compact: compact,
-            dense: dense,
-            frame: profileFrame,
-            onRetry: () => ref.invalidate(progressionProvider),
-          ),
+    final hasClaimable = showClaimBadge &&
+        (progression.asData?.value.dailyMissions.any(
+                  (mission) => mission.completed && !mission.claimed,
+                ) ==
+                true ||
+            progression.asData?.value.achievements.any(
+                  (achievement) =>
+                      achievement.unlocked && !achievement.claimed,
+                ) ==
+                true);
+    final content = session.when(
+      data: (guest) => progression.when(
+        data: (snapshot) => _PlayerStatusContent(
+          displayName: guest.player.displayName,
+          profile: snapshot.profile,
+          compact: compact,
+          dense: dense,
+          frame: profileFrame,
         ),
         loading: () => _PlayerStatusLoading(
+          displayName: guest.player.displayName,
           compact: compact,
           dense: dense,
           frame: profileFrame,
         ),
         error: (error, stackTrace) => _PlayerStatusError(
+          displayName: guest.player.displayName,
           compact: compact,
           dense: dense,
           frame: profileFrame,
-          onRetry: () {
-            ref.invalidate(guestSessionProvider);
-            ref.invalidate(progressionProvider);
-          },
+          onRetry: () => ref.invalidate(progressionProvider),
         ),
+      ),
+      loading: () => _PlayerStatusLoading(
+        compact: compact,
+        dense: dense,
+        frame: profileFrame,
+      ),
+      error: (error, stackTrace) => _PlayerStatusError(
+        compact: compact,
+        dense: dense,
+        frame: profileFrame,
+        onRetry: () {
+          ref.invalidate(guestSessionProvider);
+          ref.invalidate(progressionProvider);
+        },
+      ),
+    );
+
+    return SizedBox(
+      key: const ValueKey('player-status-bar'),
+      width: width,
+      height: height,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Positioned.fill(
+            child: onTap == null
+                ? content
+                : Semantics(
+                    button: true,
+                    label: 'Profili aç',
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        key: const ValueKey('player-status-profile-action'),
+                        borderRadius: BorderRadius.circular(compact ? 13 : 15),
+                        onTap: onTap,
+                        child: content,
+                      ),
+                    ),
+                  ),
+          ),
+          if (hasClaimable)
+            const Positioned(
+              key: ValueKey('player-status-claim-badge'),
+              right: -2,
+              top: -2,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: RelayColors.coral,
+                  shape: BoxShape.circle,
+                  border: Border.fromBorderSide(
+                    BorderSide(color: RelayColors.surface, width: 2),
+                  ),
+                ),
+                child: SizedBox(width: 12, height: 12),
+              ),
+            ),
+        ],
       ),
     );
   }

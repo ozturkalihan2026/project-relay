@@ -43,6 +43,11 @@ dönüştürür.
 | v0.6.2 rev1 | Görsel kozmetikler, ekonomi dengesi ve seviye kutlaması | Hazır |
 | v0.7.0 | Sezon, kapalı alfa ve kötüye kullanım koruması | Hazır |
 | v0.8.0 | Sosyal profil, arkadaşlık ve klan temeli | Hazır |
+| v0.8.1 | Flutter ana menü kabul testi ve temiz paketleme hotfix'i | Hazır; v0.8.2 yerel kabulüyle doğrulandı |
+| v0.8.2 | Sosyal profil, arkadaşlık ve klan arayüzlerinin ürünleştirilmesi | Hazır; yerel Flutter kabulü geçti |
+| v0.8.3 rev1 | Ana merkez düzeni ve Flutter analiz hotfix'i | Tamamlandı; `flutter analyze` temiz |
+| v0.8.3 rev2 | Profil/Koleksiyon widget test kaydırma hotfix'i | Hazır; yerel Flutter testi bekliyor |
+| v0.9.0 | Kapalı alfa yayına hazırlık, telemetri ve cihaz QA | Sıradaki |
 | v1.0.0 | Android ve web açık beta | Hedef |
 
 ## Şimdiye kadar yapılanlar
@@ -286,3 +291,50 @@ etkisi artar; koşu bittiğinde bütün etkiler sıfırlanır.
 - Güçlendiriciler yalnız kariyer koşusunda geçicidir ve koşu sonunda sıfırlanır.
 - Gerçek para, enerji kısıtı veya reklam; oyun döngüsü ölçülmeden eklenmez.
 - Canlı 1v1, asenkron model ve kariyer döngüsü dengelenmeden geliştirilmez.
+
+
+## v0.8.1 — Flutter kabul ve temiz paketleme hotfix'i
+
+- Ana menüde Oyna düğmesi görünür değilken yapılan başarısız test tıklaması düzeltildi.
+- Geri düğmesi bulunabilirliği testte açıkça doğrulandı.
+- Windows PowerShell betiği Türkçe karakterler için UTF-8 BOM ile paketlendi.
+- API, istemci ve paket sürümleri patch seviyesinde güncellendi.
+- PostgreSQL şeması, Alembic zinciri, savaş motoru, sosyal kurallar ve denge değişmedi.
+- Sunucu ve seçili denge testleri paketleme ortamında geçti.
+- Flutter SDK bulunmadığı için son `flutter analyze` + `flutter test` kabulü yerel
+  Windows geliştirme makinesinde çalıştırılacaktır.
+
+
+## v0.8.2 — Sosyal arayüz ürünleştirme
+
+- Profil, Arkadaşlar ve Klan için ayrık sosyal çalışma alanları
+- arkadaş, gelen/giden istek ve klan durumunu gösteren sosyal özet
+- giden arkadaşlık isteklerinin görünür olması
+- arama boş durumu ve dokunulabilir oyuncu profil özeti
+- arkadaş silme, klana katılma, ayrılma ve klan kapatma onayları
+- klan kapasitesi ile lider ayrılma kısıtının görünür sunumu
+- herkese açık metinler için kişisel bilgi paylaşmama uyarıları
+- raporlama/engelleme gelene kadar Alfa Geri Bildirimi yönlendirmesi
+- Komutan Sistemi ve Oyuncu Tarzı Profili fikirlerinin özellik havuzunda tutulması
+- değişmeyen Alembic başı `20260801_0009` ve savaş kuralları `0.8`
+
+## v0.8.3 — Ana merkez ve menü düzeni
+
+- üst çubukta profil, seviye, Devre Kredisi, Ayarlar ve Nasıl Oynanır
+- alınabilir görev veya başarım ödülü için profil bildirim noktası
+- ana merkezde Oyna, Klan, Koleksiyon, Mağaza ve Profil alanları
+- Oyna altında Çevrimiçi Savaş, Kariyer ve Antrenman
+- Profil altında Genel, Derece ve Sezon, Maç Geçmişi, Günlük Görevler ve Başarımlar
+- Klan altında özet, üyeler, katılım tarihli etkinlik görünümü ve ayarlar
+- Koleksiyon altında Kit ile sahip olunan Kozmetikler
+- satın alınmamış görsel içerikler için ayrı Mağaza
+- Komutan Sistemi ile Oyuncu Tarzı Profilinin uygulanmadan özellik havuzunda korunması
+- değişmeyen Alembic başı `20260801_0009` ve savaş kuralları `0.8`
+
+## v0.9.0 — Sıradaki kapalı alfa hazırlığı
+
+- anonim ürün telemetrisi ve veri saklama sınırları
+- istemci hata/crash kayıt sözleşmesi
+- API gecikmesi, yükleme süresi ve replay performansı ölçümü
+- Android ve web ekran boyutu QA matrisi
+- gerçek kapalı alfa davet, geri bildirim ve sürüm kapatma akışı

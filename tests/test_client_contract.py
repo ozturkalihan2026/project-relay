@@ -23,10 +23,10 @@ class FlutterClientContractTests(unittest.TestCase):
             CLIENT / "lib" / "src" / "widgets" / "game_manual.dart"
         ).read_text(encoding="utf-8")
 
-        self.assertIn("version: 0.8.0+42", pubspec)
-        self.assertIn("${widget.mode.title} • v0.8.0", editor)
-        self.assertIn("SOSYAL, KLAN VE DEVRE SAVAŞI • v0.8.0", main_menu)
-        self.assertIn("PROJECT RELAY • v0.8.0", manual)
+        self.assertIn("version: 0.8.3+47", pubspec)
+        self.assertIn("${widget.mode.title} • v0.8.3", editor)
+        self.assertIn("ANA MERKEZ VE MENÜ DÜZENİ • v0.8.3", main_menu)
+        self.assertIn("PROJECT RELAY • v0.8.3", manual)
         self.assertIn("audioplayers:", pubspec)
         self.assertIn("assets/sounds/", pubspec)
         self.assertIn("flame:", pubspec)
@@ -167,11 +167,11 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("fit: BoxFit.scaleDown", controls)
         self.assertIn("await tester.ensureVisible(editorBack);", widget_test)
         self.assertIn(
-            "await tester.scrollUntilVisible(recentMatchesTitle, 220);",
+            "profile-section-match-history",
             widget_test,
         )
         self.assertIn(
-            "await tester.scrollUntilVisible(careerBack, 220);",
+            "play-mode-career",
             widget_test,
         )
 
@@ -253,7 +253,7 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("alpha-feedback-submit", season)
         self.assertIn("SeasonPointChangeModel", models)
         self.assertIn("season_change", models)
-        self.assertIn("main-menu-season", main_menu)
+        self.assertIn("main-menu-profile", main_menu)
         self.assertIn("SEZON VE KAPALI ALFA", manual)
         self.assertIn("Sezon Puanı", replay)
 
@@ -467,8 +467,12 @@ class FlutterClientContractTests(unittest.TestCase):
                 self.assertIn(module_name, manual_source + models_source)
         self.assertIn("RelayApp()", widget_test)
         self.assertNotIn("MyApp()", widget_test)
+        self.assertIn("Future<void> _tapProfileSection(", widget_test)
+        self.assertIn("widget.axisDirection == AxisDirection.right", widget_test)
+        self.assertIn("collection-scroll-view", widget_test)
+        self.assertIn("tester.scrollUntilVisible(", widget_test)
 
-    def test_main_menu_separates_online_training_career_and_settings(
+    def test_main_hub_groups_play_clan_collection_store_and_profile(
         self,
     ) -> None:
         app_source = (
@@ -480,14 +484,17 @@ class FlutterClientContractTests(unittest.TestCase):
         play_mode = (
             CLIENT / "lib" / "src" / "screens" / "play_mode_screen.dart"
         ).read_text(encoding="utf-8")
-        editor = (
-            CLIENT / "lib" / "src" / "screens" / "editor_screen.dart"
+        profile = (
+            CLIENT / "lib" / "src" / "screens" / "profile_screen.dart"
         ).read_text(encoding="utf-8")
-        career = (
-            CLIENT / "lib" / "src" / "screens" / "career_screen.dart"
+        collection = (
+            CLIENT / "lib" / "src" / "screens" / "collection_screen.dart"
         ).read_text(encoding="utf-8")
-        statistics = (
-            CLIENT / "lib" / "src" / "screens" / "statistics_screen.dart"
+        social = (
+            CLIENT / "lib" / "src" / "screens" / "social_screen.dart"
+        ).read_text(encoding="utf-8")
+        status_bar = (
+            CLIENT / "lib" / "src" / "widgets" / "player_status_bar.dart"
         ).read_text(encoding="utf-8")
         settings = (
             CLIENT / "lib" / "src" / "screens" / "settings_screen.dart"
@@ -498,77 +505,54 @@ class FlutterClientContractTests(unittest.TestCase):
 
         self.assertIn("home: const MainMenuScreen()", app_source)
         self.assertIn("main-menu-play", main_menu)
-        self.assertIn("main-menu-career", main_menu)
+        self.assertIn("main-menu-clan", main_menu)
         self.assertIn("main-menu-collection", main_menu)
-        self.assertIn("main-menu-season", main_menu)
-        self.assertIn("main-menu-social", main_menu)
-        self.assertIn("main-menu-statistics", main_menu)
+        self.assertIn("main-menu-store", main_menu)
+        self.assertIn("main-menu-profile", main_menu)
         self.assertIn("main-menu-how-to-play", main_menu)
         self.assertIn("main-menu-settings", main_menu)
-        self.assertLess(
-            main_menu.index("main-menu-career"),
-            main_menu.index("main-menu-collection"),
-        )
-        self.assertLess(
-            main_menu.index("main-menu-collection"),
-            main_menu.index("main-menu-season"),
-        )
-        self.assertLess(
-            main_menu.index("main-menu-season"),
-            main_menu.index("main-menu-social"),
-        )
-        self.assertLess(
-            main_menu.index("main-menu-social"),
-            main_menu.index("main-menu-statistics"),
-        )
-        self.assertLess(
-            main_menu.index("main-menu-statistics"),
-            main_menu.index("main-menu-how-to-play"),
-        )
-        self.assertLess(
-            main_menu.index("main-menu-how-to-play"),
-            main_menu.index("main-menu-settings"),
-        )
-        self.assertIn("ref.watch(catalogsProvider)", how_to_play)
-        self.assertIn("GameManualScreen(modules: bundle.modules)", how_to_play)
-        self.assertNotIn("ÇIKIŞ", main_menu)
+        self.assertNotIn("main-menu-career", main_menu)
+        self.assertNotIn("main-menu-season", main_menu)
+        self.assertNotIn("main-menu-statistics", main_menu)
+        self.assertIn("PlayerStatusBar(", main_menu)
+        self.assertIn("showClaimBadge: true", main_menu)
+        self.assertIn("player-status-profile-action", status_bar)
+        self.assertIn("player-status-claim-badge", status_bar)
+
         self.assertIn("play-mode-online", play_mode)
+        self.assertIn("play-mode-career", play_mode)
         self.assertIn("play-mode-training", play_mode)
+        self.assertIn("const CareerScreen()", play_mode)
         self.assertIn("EditorMode.online", play_mode)
         self.assertIn("EditorMode.training", play_mode)
-        self.assertIn("EditorMode.career", editor)
-        self.assertIn("fetchCurrentBoard", editor)
-        self.assertIn("loadSavedBoard", editor)
-        self.assertIn("mode == EditorMode.online", editor)
-        self.assertIn("mode == EditorMode.career", editor)
-        self.assertIn("training-panel", editor)
-        self.assertIn("async-pvp-card", editor)
-        self.assertIn("ref.watch(progressionProvider)", career)
-        self.assertIn("OYUNCU SEVİYESİ", career)
-        self.assertIn("GÜNLÜK GÖREVLER", career)
-        self.assertIn("BOSS GÜÇLENDİRİCİ KADEMELERİ", career)
-        self.assertIn("BAŞARIMLAR", career)
-        self.assertIn("claimDailyMission", career)
-        self.assertIn("claimAchievement", career)
-        self.assertIn("ref.watch(statisticsProvider)", statistics)
-        self.assertIn("DERECE PUANI", statistics)
-        self.assertIn("HAFTALIK LİG", statistics)
-        self.assertIn("SON MAÇLAR", statistics)
-        self.assertIn("api.fetchReplay(matchId)", statistics)
-        self.assertIn("error: (error, _) => _CareerError(", statistics)
-        self.assertNotIn("error: (error, _stack)", statistics)
+
+        self.assertIn("profile-section-general", profile)
+        self.assertIn("profile-section-rating-season", profile)
+        self.assertIn("profile-section-match-history", profile)
+        self.assertIn("profile-section-daily-missions", profile)
+        self.assertIn("profile-section-achievements", profile)
+        self.assertIn("statisticsProvider", profile)
+        self.assertIn("seasonProvider", profile)
+        self.assertIn("claimDailyMission", profile)
+        self.assertIn("claimAchievement", profile)
+        self.assertIn("api.fetchReplay(matchId)", profile)
+
+        self.assertIn("CollectionScreenMode.store", collection)
+        self.assertIn("collection-section-kit", collection)
+        self.assertIn("collection-section-cosmetics", collection)
+        self.assertIn("store-intro-card", collection)
+        self.assertIn("GÖRSEL İÇERİK MAĞAZASI", collection)
+
+        self.assertIn("enum SocialSection", social)
+        self.assertIn("clan-section-selector", social)
+        self.assertIn("KLAN ÖZETİ", social)
+        self.assertIn("KLAN ETKİNLİĞİ", social)
+        self.assertIn("KLAN AYARLARI", social)
+
+        self.assertIn("ref.watch(catalogsProvider)", how_to_play)
+        self.assertIn("GameManualScreen(modules: bundle.modules)", how_to_play)
         self.assertIn("settings-replay-sound", settings)
         self.assertIn("settings-replay-speed", settings)
-        self.assertIn("play-mode-back-button", play_mode)
-        self.assertIn("settings-back-button", settings)
-        self.assertIn("SAVAŞA BAŞLA", editor)
-        self.assertIn("editor-menu-back-card", editor)
-        self.assertIn("editor-menu-back-button", editor)
-        self.assertNotIn("SUNUCU YETKİLİ SAVAŞ", editor)
-        for section_index in ("1", "2", "3", "4"):
-            self.assertIn(f"index: '{section_index}'", editor)
-        for old_index in ("01", "02", "03", "04"):
-            self.assertNotIn(f"index: '{old_index}'", editor)
 
     def test_palette_owns_module_labels_and_stats_while_board_stays_icon_only(
         self,
@@ -1171,6 +1155,80 @@ class FlutterClientContractTests(unittest.TestCase):
         )
         self.assertIn("?trailing,", editor_source)
 
+
+    def test_v083_main_hub_and_profile_consolidation_contract(self) -> None:
+        main_menu = (
+            CLIENT / "lib" / "src" / "screens" / "main_menu_screen.dart"
+        ).read_text(encoding="utf-8")
+        profile = (
+            CLIENT / "lib" / "src" / "screens" / "profile_screen.dart"
+        ).read_text(encoding="utf-8")
+        collection = (
+            CLIENT / "lib" / "src" / "screens" / "collection_screen.dart"
+        ).read_text(encoding="utf-8")
+        play_mode = (
+            CLIENT / "lib" / "src" / "screens" / "play_mode_screen.dart"
+        ).read_text(encoding="utf-8")
+        feature_pool = (
+            ROOT / "docs" / "OZELLIK_HAVUZU.md"
+        ).read_text(encoding="utf-8")
+        release = (
+            ROOT / "docs" / "V0.8.3_ANA_MERKEZ_VE_MENU_DUZENI.md"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("ANA MERKEZ VE MENÜ DÜZENİ", main_menu)
+        self.assertIn("main-menu-clan", main_menu)
+        self.assertIn("main-menu-store", main_menu)
+        self.assertIn("main-menu-profile", main_menu)
+        self.assertIn("play-mode-career", play_mode)
+        self.assertIn("DERECE VE SEZON", profile)
+        self.assertIn("GÜNLÜK GÖREVLER", profile)
+        self.assertIn("BAŞARIMLAR", profile)
+        self.assertIn("CollectionScreenMode.store", collection)
+        self.assertIn("Komutan Sistemi", feature_pool)
+        self.assertIn("devreyi kurduktan ve doğruladıktan sonra", feature_pool.lower())
+        self.assertIn("v0.8.3", release)
+
+        status_bar = (
+            CLIENT / "lib" / "src" / "widgets" / "player_status_bar.dart"
+        ).read_text(encoding="utf-8")
+        social = (
+            CLIENT / "lib" / "src" / "screens" / "social_screen.dart"
+        ).read_text(encoding="utf-8")
+        self.assertNotIn("asData?.value?.", profile)
+        self.assertNotIn("asData?.value?.", status_bar)
+        self.assertIn(
+            "_ClanSection _selectedClanSection = _ClanSection.summary;",
+            social,
+        )
+        self.assertEqual(social.count("Widget _clanSection("), 1)
+        self.assertNotIn("_ClanSection _clanSection =", social)
+
+    def test_v082_social_interface_productization_contract(self) -> None:
+        social = (
+            CLIENT / "lib" / "src" / "screens" / "social_screen.dart"
+        ).read_text(encoding="utf-8")
+        feature_pool = (
+            ROOT / "docs" / "OZELLIK_HAVUZU.md"
+        ).read_text(encoding="utf-8")
+        release = (
+            ROOT / "docs" / "V0.8.2_SOSYAL_ARAYUZ_URUNLESTIRME.md"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("SOSYAL MERKEZ", social)
+        self.assertIn("social-section-selector", social)
+        self.assertIn("social-summary-card", social)
+        self.assertIn("social-outgoing-requests", social)
+        self.assertIn("social-safety-card", social)
+        self.assertIn("social-alpha-feedback", social)
+        self.assertIn("Arkadaşlığı kaldır", social)
+        self.assertIn("Klanı kapat", social)
+        self.assertIn("Oyuncu raporlama ve engelleme henüz", social)
+        self.assertIn("Komutan Sistemi", feature_pool)
+        self.assertIn("Oyuncu devreyi kurduktan ve doğruladıktan sonra", feature_pool)
+        self.assertIn("Oyuncu Tarzı Profili", feature_pool)
+        self.assertIn("v0.8.2", release)
+
     def test_v080_social_friendship_and_clan_contract(self) -> None:
         api = (
             CLIENT / "lib" / "src" / "api" / "relay_api.dart"
@@ -1192,10 +1250,10 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("/api/v1/clans", api)
         self.assertIn("class SocialSnapshotModel", models)
         self.assertIn("class ClanModel", models)
-        self.assertIn("SOSYAL VE KLAN", social)
+        self.assertIn("SOSYAL MERKEZ", social)
         self.assertIn("social-player-search", social)
         self.assertIn("social-clan-directory", social)
-        self.assertIn("main-menu-social", main_menu)
+        self.assertIn("main-menu-clan", main_menu)
 
 
 if __name__ == "__main__":

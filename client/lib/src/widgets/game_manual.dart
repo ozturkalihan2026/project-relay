@@ -31,7 +31,7 @@ class GameManualScreen extends StatelessWidget {
               ),
             ),
             Text(
-              'PROJECT RELAY • v0.8.0',
+              'PROJECT RELAY • v0.8.3',
               style: TextStyle(
                 color: RelayColors.muted,
                 fontSize: 10,
@@ -413,8 +413,8 @@ class GameManualScreen extends StatelessWidget {
                   const SizedBox(height: 14),
                   const _ManualSection(
                     icon: Icons.groups_2_outlined,
-                    title: 'SOSYAL VE KLAN',
-                    subtitle: 'Oyuncu profili, arkadaşlar ve açık klanlar',
+                    title: 'SOSYAL MERKEZ',
+                    subtitle: 'Profil, arkadaşlık istekleri ve açık klanlar',
                     children: [
                       _ManualParagraph(
                         text: 'Sosyal profilinde kısa bir durum mesajı ve '
@@ -438,6 +438,12 @@ class GameManualScreen extends StatelessWidget {
                         text: 'Bir oyuncu aynı anda yalnızca bir klana üye olur. '
                             'Lider, klanında başka üyeler varken ayrılamaz; '
                             'üyelik kuralları sunucu tarafından doğrulanır.',
+                      ),
+                      _ManualParagraph(
+                        text: 'Durum mesajı ve klan metinleri herkese açıktır. '
+                            'Kişisel bilgi veya iletişim adresi paylaşma. '
+                            'Raporlama ve engelleme tamamlanana kadar uygunsuz '
+                            'içerikleri Alfa Geri Bildirimi ile ilet.',
                       ),
                     ],
                   ),

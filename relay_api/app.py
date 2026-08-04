@@ -701,10 +701,12 @@ def create_app(
         resolved_settings,
     )
     resolved_competitive = competitive_service or CompetitiveService(
-        resolved_database
+        resolved_database,
+        clock=match_service.clock,
     )
     resolved_progression = progression_service or ProgressionService(
-        resolved_database
+        resolved_database,
+        clock=match_service.clock,
     )
     resolved_career = career_service or CareerRunService(
         resolved_database,
@@ -730,7 +732,7 @@ def create_app(
         title="Project Relay API",
         version=API_VERSION,
         description=(
-            "Project Relay v0.8.0 sosyal yapı ve klan temeli API'si. "
+            "Project Relay v0.8.3 ana merkez, profil ve kozmetik gezinme düzeni; sosyal yapı ve klan temeli API'si. "
             "Arkadaşlık istekleri, oyuncu profilleri, açık klan keşfi ve "
             "sunucu yetkili üyelik kuralları birlikte doğrulanır."
         ),

@@ -1,3 +1,61 @@
+## v0.8.3 rev2 — Widget test kaydırma hotfix'i
+
+- Profilin yatay bölüm seçicisindeki ekran dışında kalan Günlük Görevler ve
+  Başarımlar seçenekleri, testte açık yatay kaydırma ile görünür hâle getirilir.
+- Koleksiyon Kozmetik bölümündeki geç oluşturulan Ana Menüye Dön düğmesi,
+  `collection-scroll-view` üzerinde `scrollUntilVisible` ile bulunur.
+- Uyarıları `warnIfMissed: false` ile gizlemek yerine gerçek kullanıcı
+  etkileşimi taklit edilir.
+- Flutter istemci yapı numarası `0.8.3+47` oldu; API, veritabanı, savaş
+  kuralları ve ürün davranışı değişmedi.
+
+## v0.8.3 rev1 — Flutter analiz hotfix'i
+
+- Profil ve üst oyuncu çubuğundaki gereksiz ikinci null-aware erişimler kaldırıldı.
+- Klan alt bölüm durum değişkeni, `_clanSection` ekran oluşturma metoduyla ad
+  çakışmayacak biçimde `_selectedClanSection` olarak yeniden adlandırıldı.
+- Flutter istemci yapı numarası `0.8.3+46` oldu; API, veritabanı şeması, savaş
+  kuralları ve ürün davranışı değişmedi.
+- Analyzer regresyonlarını kaynak sözleşmesinde tekrar oluşmayacak şekilde
+  koruyan kontroller eklendi.
+
+## v0.8.3 — Ana Merkez ve Menü Düzeni
+
+- Ana menü Oyna, Klan, Koleksiyon, Mağaza ve Profil alanlarında toplandı.
+- Ayarlar ile Nasıl Oynanır üst çubuk simgelerine taşındı.
+- Profil alanı derece, sezon, maç geçmişi, günlük görev ve başarımları birleştirdi.
+- Alınabilir görev veya başarım ödülü için profil bildirim noktası eklendi.
+- Kariyer, Oyna ekranındaki savaş türleri arasına taşındı.
+- Koleksiyon Kit/Kozmetik olarak ayrıldı; satın alınmamış içerikler Mağazaya taşındı.
+- Klan ekranı özet, üyeler, etkinlik ve ayarlar alt bölümlerine ayrıldı.
+- Komutan Sistemi ve Oyuncu Tarzı Profili yalnız özellik havuzunda kaldı.
+- API `0.8.3`, istemci `0.8.3+45`; şema ve savaş kuralları değişmedi.
+
+## v0.8.2 — Sosyal Arayüz Ürünleştirme
+
+- Sosyal Merkez Profil, Arkadaşlar ve Klan çalışma alanlarına ayrıldı.
+- Sosyal özet kartı, giden istekler ve boş arama sonucu eklendi.
+- Oyuncu profil özeti ile arkadaş/klan işlemlerine onay adımları eklendi.
+- Klan kapasitesi ve liderin ayrılamama kuralı arayüzde görünür hâle geldi.
+- Herkese açık metinler için kişisel bilgi paylaşmama uyarıları eklendi.
+- Raporlama/engelleme henüz yokken Alfa Geri Bildirimi yönlendirmesi eklendi.
+- Komutan Sistemi ve Oyuncu Tarzı Profili özellik havuzuna kaydedildi.
+- API `0.8.2`, istemci `0.8.2+44`; şema ve savaş kuralları değişmedi.
+
+## v0.8.1 — Flutter kabul ve paketleme hotfix'i
+
+- Ana menü gezinme widget testinde görünür olmayan **Oyna** düğmesi tıklanmadan
+  önce `ensureVisible` ile kaydırılır ve yerleşimin tamamlanması beklenir.
+- Oyna ekranındaki geri düğmesi için `findsOneWidget` doğrulaması ve ek
+  `pumpAndSettle` adımı eklendi.
+- Windows PowerShell 5.1 uyumluluğu için `bootstrap_client.ps1` UTF-8 BOM ile
+  paketlenir; Türkçe hata metinleri bozulmadan gösterilir.
+- API `0.8.1`, istemci `0.8.1+43`; Alembic başı `20260801_0009`, savaş
+  kuralları `0.8`, modül dengesi ve ürün davranışı değişmedi.
+- 138 normal Python testi ile uzun stres testi hariç 5 denge regresyonu geçti.
+- Gerçek `flutter analyze` ve `flutter test`, Flutter SDK bulunmadığı için paketleme
+  ortamında çalıştırılamadı; Windows kabul komutu belgede korunur.
+
 ## v0.8.0 — Sosyal yapı ve klan temeli
 
 - Oyuncu sosyal profili, durum mesajı ve favori modül

@@ -1,4 +1,4 @@
-# Project Relay — API Sözleşmesi v0.8.0
+# Project Relay — API Sözleşmesi v0.8.3
 
 Bu sürüm, Flutter/Flame istemcisinin kullandığı kalıcı asenkron PvP
 protokolüdür. Bütün yollar `/api/v1` altında sürümlenir. Etkileşimli Swagger
@@ -457,3 +457,27 @@ tarafından reddedilir.
 Bir oyuncu aynı anda yalnızca bir klana üye olabilir. Açık klanlar en fazla 20
 üyeye sahiptir. Lider, başka üyeler varken klanı terk edemez. Klan üyeliği
 savaş gücü, derece veya ödül çarpanı vermez.
+
+
+## v0.8.1 uyumluluk notu
+
+v0.8.1 bir QA ve paketleme hotfix'idir. HTTP yolları, istek/yanıt alanları,
+PostgreSQL şeması ve Alembic başı değişmemiştir. Sağlık ve OpenAPI sürüm alanı
+`0.8.1`, Flutter istemci bildirimi `0.8.1` olur; savaş `rules_version` değeri
+`0.8` olarak kalır.
+
+
+## v0.8.2 uyumluluk notu
+
+v0.8.2 sosyal istemciyi ürünleştirir; HTTP yolları, istek/yanıt alanları,
+PostgreSQL şeması ve Alembic başı değişmemiştir. Sağlık ve OpenAPI sürüm alanı
+`0.8.2`, Flutter istemci bildirimi `0.8.2` olur; savaş `rules_version` değeri
+`0.8` olarak kalır. Raporlama, engelleme ve liderlik devri için yeni uç eklenmez.
+
+
+## v0.8.3 uyumluluk notu
+
+v0.8.3 istemci gezinmesini ve ekran gruplamasını değiştirir. HTTP yolları,
+veritabanı tabloları, sosyal/klan sözleşmeleri, koleksiyon işlemleri ve savaş
+kuralları değişmez. İstemci sürüm bildirimi `0.8.3`, API sağlık sürümü `0.8.3`
+olur.

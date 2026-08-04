@@ -1,4 +1,4 @@
-# Project Relay v0.8.0 — İstemci Mimarisi
+# Project Relay v0.8.3 — İstemci Mimarisi
 
 ## Katmanlar
 
@@ -17,10 +17,10 @@
 2. API katmanı kısa ömürlü erişim anahtarını yalnız bellekte tutar. Yetkili
    istek `401` alırsa yenileme anahtarını bir kez döndürür ve isteği yineler.
 3. Riverpod katalog sağlayıcısı modül ve bot listesini FastAPI'den alır.
-4. Ana menü Oyna, Kariyer, Koleksiyon, İstatistikler, Nasıl Oynanır ve
-   Ayarlar ekranlarını ayırır.
-   Oyun el kitabı modül kataloğunu bağımsız akışta yükler; Oyna ekranı
-   çevrimiçi ve antrenman düzenleyici kiplerinden yalnız birini açar.
+4. Ana merkez Oyna, Klan, Koleksiyon, Mağaza ve Profil alanlarını ayırır.
+   Ayarlar ile Nasıl Oynanır üst çubuk simgelerinden açılır. Oyna ekranı
+   Çevrimiçi Savaş, Kariyer ve Antrenman kiplerini birlikte sunar. Profil;
+   derece, sezon, geçmiş, günlük görev ve başarımların birleşik girişidir.
 5. Koleksiyon sağlayıcısı aktif sekizli kiti, Devre Kredisini, sahip olunan
    kozmetikleri ve kuşanılanları sunucudan alır.
 6. Kart denetleyicisi oyuncunun taslak yerleşimiyle birlikte aktif kit limitlerini
@@ -116,3 +116,46 @@ kısıtından bağımsız olarak aktif kit karşısında tekrar denetlenir.
 - `clanDirectoryProvider`, açık klanları ayrı ve yenilenebilir bir akışta getirir.
 - `SocialScreen`, profil düzenleme, oyuncu arama, arkadaşlık ve klan işlemlerini ortak merkez bildirimleriyle yürütür.
 - Bütün üyelik ve ilişki kuralları FastAPI tarafından yeniden doğrulanır.
+
+
+## v0.8.1 Flutter kabul hotfix'i
+
+Ana menü widget testi, her gezinme eyleminden önce hedef düğmenin gerçekten
+var olduğunu doğrular. Görünür alanın dışında kalabilen **Oyna** düğmesi
+`ensureVisible` ile kaydırılır, yerleşim tamamlandıktan sonra tıklanır. Oyna
+sayfasındaki geri düğmesi de aynı biçimde doğrulanır. Bu değişiklik yalnız test
+kararlılığına yöneliktir; uygulamanın gezinme davranışını değiştirmez.
+
+
+## v0.8.2 sosyal arayüz düzeni
+
+`SocialScreen`, tek uzun akış yerine Profil, Arkadaşlar ve Klan olmak üzere üç
+seçilebilir çalışma alanı kullanır. `socialProvider` profil, gelen/giden istek,
+arkadaş ve mevcut klanı tek snapshot olarak yükler. `clanDirectoryProvider` yalnız
+oyuncu klansızken açık klan keşfini besler.
+
+Yıkıcı sosyal işlemler API çağrısından önce onay ister. Herkese açık profil ve
+klan girişleri temel istemci doğrulamasından geçer. Sosyal güvenlik kartı,
+raporlama/engelleme uçları henüz bulunmadığını açıkça belirtir ve mevcut kapalı
+alfa geri bildirim ekranına yönlendirir. Bu istemci katmanı tam moderasyon veya
+sunucu yetkili içerik filtresi yerine geçmez.
+
+
+## v0.8.3 ana merkez ve profil düzeni
+
+`MainMenuScreen`, uzun dikey özellik listesini beş ürün alanında toplar.
+`PlayerStatusBar`, ana merkezde profile dokunma eylemi ve alınabilir görev/
+başarım ödülü için bildirim noktası taşır. Bildirim yalnız sunucunun
+`progressionProvider` snapshot'ından türetilir.
+
+`ProfileScreen`; genel sosyal kimlik, derece/sezon, maç geçmişi, günlük görevler
+ve başarımları tek seçilebilir akışta sunar. Ödül alma ve replay açma işlemleri
+mevcut sunucu yetkili API'leri kullanır.
+
+`CollectionScreenMode`, sahip olunan Kit/Kozmetik görünümü ile satın alınmamış
+ürünleri gösteren Mağazayı ayırır. Aynı `collectionProvider` ve satın alma/
+kuşanma uçları kullanılır; savaş gücü üreten yeni ekonomi eklenmez.
+
+`SocialScreen(initialSection: SocialSection.clan)`, ana merkezdeki Klan
+girişini doğrudan klan alanına açar. Mevcut klan verisi özet, üyeler, katılım
+tarihlerinden türetilen etkinlik ve ayrılma ayarları olarak düzenlenir.
