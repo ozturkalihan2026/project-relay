@@ -595,7 +595,7 @@ class AlphaSafetyResponse(ApiModel):
 class AlphaFeedbackRequest(ApiModel):
     category: Literal["denge", "hata", "arayuz", "diger"]
     message: str = Field(min_length=3, max_length=1200)
-    client_version: str = Field(default="0.8.3", min_length=1, max_length=24)
+    client_version: str = Field(default="0.8.4", min_length=1, max_length=24)
 
 
 class AlphaFeedbackResponse(ApiModel):

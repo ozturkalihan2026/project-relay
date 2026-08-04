@@ -45,7 +45,7 @@ void main() {
       await tester.tap(find.byKey(const ValueKey('play-mode-online')));
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
-      expect(find.textContaining('ÇEVRİMİÇİ SAVAŞ • v0.8.3'), findsOneWidget);
+      expect(find.textContaining('ÇEVRİMİÇİ SAVAŞ • v0.8.4'), findsOneWidget);
       expect(find.text('DEVREYİ KUR'), findsOneWidget);
 
       final editorBack = find.byKey(
@@ -58,7 +58,7 @@ void main() {
 
       await tester.tap(find.byKey(const ValueKey('play-mode-training')));
       await tester.pumpAndSettle();
-      expect(find.textContaining('ANTRENMAN • v0.8.3'), findsOneWidget);
+      expect(find.textContaining('ANTRENMAN • v0.8.4'), findsOneWidget);
       expect(find.byKey(const ValueKey('training-panel')), findsOneWidget);
     },
   );
@@ -78,11 +78,15 @@ void main() {
         findsOneWidget,
       );
       final profileBack = find.byKey(const ValueKey('profile-menu-back'));
+      expect(profileBack, findsOneWidget);
       await tester.ensureVisible(profileBack);
+      await tester.pumpAndSettle();
       await tester.tap(profileBack);
       await tester.pumpAndSettle();
 
-      await tester.tap(find.byKey(const ValueKey('main-menu-settings')));
+      final settings = find.byKey(const ValueKey('main-menu-settings'));
+      expect(settings, findsOneWidget);
+      await tester.tap(settings);
       await tester.pumpAndSettle();
       expect(
         find.byKey(const ValueKey('settings-replay-sound')),
@@ -104,6 +108,35 @@ void main() {
   );
 
   testWidgets(
+    'kariyer doğrudan devre düzenleme ve rakip hazırlığı gösterir',
+    (tester) async {
+      await _pumpApp(tester);
+      await tester.tap(find.byKey(const ValueKey('main-menu-play')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('play-mode-career')));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const ValueKey('career-player-board-editor')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey('career-opponent-board-preview')),
+        findsOneWidget,
+      );
+      expect(find.byKey(const ValueKey('career-run-start')), findsOneWidget);
+      expect(find.byKey(const ValueKey('career-validate-board')), findsOneWidget);
+      expect(find.byKey(const ValueKey('global-settings-action')), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('global-how-to-play-action')),
+        findsOneWidget,
+      );
+      expect(find.text('GÜNLÜK GÖREVLER'), findsNothing);
+      expect(find.text('BAŞARIMLAR'), findsNothing);
+    },
+  );
+
+  testWidgets(
     'profil derece sezon geçmiş görev ve başarımları toplar',
     (tester) async {
       await _pumpApp(tester);
@@ -113,6 +146,17 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byKey(const ValueKey('profile-general-card')), findsOneWidget);
+      expect(find.byKey(const ValueKey('social-edit-profile')), findsOneWidget);
+      expect(find.byKey(const ValueKey('profile-open-clan')), findsNothing);
+      expect(find.byKey(const ValueKey('profile-edit-social')), findsNothing);
+
+      await _tapProfileSection(
+        tester,
+        const ValueKey('profile-section-friends'),
+      );
+      expect(find.byKey(const ValueKey('social-friends-card')), findsOneWidget);
+      expect(find.byKey(const ValueKey('social-incoming-requests')), findsOneWidget);
+      expect(find.byKey(const ValueKey('social-outgoing-requests')), findsOneWidget);
 
       await _tapProfileSection(
         tester,
@@ -174,6 +218,8 @@ void main() {
       expect(find.text('KLAN'), findsWidgets);
       expect(find.byKey(const ValueKey('social-no-clan-card')), findsOneWidget);
       expect(find.byKey(const ValueKey('social-clan-directory')), findsOneWidget);
+      expect(find.byKey(const ValueKey('social-section-selector')), findsNothing);
+      expect(find.text('SOSYAL MERKEZ'), findsNothing);
       final socialBack = find.byKey(const ValueKey('social-menu-back'));
       await tester.ensureVisible(socialBack);
       await tester.tap(socialBack);
@@ -266,10 +312,13 @@ Future<void> _tapProfileSection(
   Key sectionKey,
 ) async {
   final section = find.byKey(sectionKey);
-  final horizontalScrollable = find.byWidgetPredicate(
-    (widget) =>
-        widget is Scrollable &&
-        widget.axisDirection == AxisDirection.right,
+  final horizontalScrollable = find.ancestor(
+    of: section,
+    matching: find.byWidgetPredicate(
+      (widget) =>
+          widget is Scrollable &&
+          widget.axisDirection == AxisDirection.right,
+    ),
   );
 
   expect(section, findsOneWidget);
@@ -577,6 +626,7 @@ Future<void> _pumpApp(WidgetTester tester) async {
             ],
           ),
         ),
+        careerBoardProvider.overrideWith((ref) async => null),
         careerRunProvider.overrideWith(
           (ref) async => const CareerRunSnapshot(
             runId: null,

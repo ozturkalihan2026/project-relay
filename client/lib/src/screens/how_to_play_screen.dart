@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../api/relay_api.dart';
 import '../theme/relay_theme.dart';
 import '../widgets/game_manual.dart';
+import '../widgets/app_header_actions.dart';
+
 
 class HowToPlayScreen extends ConsumerWidget {
   const HowToPlayScreen({super.key});
@@ -53,6 +55,10 @@ class _ManualCatalogState extends StatelessWidget {
             letterSpacing: 1.3,
           ),
         ),
+        actions: const [
+          AppHeaderActions(),
+          SizedBox(width: 8),
+        ],
       ),
       body: SafeArea(
         child: Center(

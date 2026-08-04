@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../api/relay_api.dart';
 import '../models/relay_models.dart';
 import '../theme/relay_theme.dart';
-import '../widgets/player_status_bar.dart';
+import '../widgets/app_header_actions.dart';
 import '../widgets/relay_notice.dart';
 import 'replay_screen.dart';
 import 'season_screen.dart';
@@ -12,6 +12,7 @@ import 'social_screen.dart';
 
 enum ProfileSection {
   general,
+  friends,
   ratingSeason,
   matchHistory,
   dailyMissions,
@@ -52,6 +53,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           (achievement) => achievement.unlocked && !achievement.claimed,
         ) ??
         false;
+    final social = ref.watch(socialProvider);
+    final incomingFriendRequests =
+        social.asData?.value.incomingRequests.length ?? 0;
 
     return Scaffold(
       appBar: AppBar(
@@ -67,13 +71,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               ),
             ),
             Text(
-              'PROJECT RELAY • v0.8.3',
+              'PROJECT RELAY • v0.8.4',
               style: TextStyle(color: RelayColors.muted, fontSize: 10),
             ),
           ],
         ),
         actions: const [
-          Center(child: PlayerStatusBar(compact: true)),
+          AppHeaderActions(),
           SizedBox(width: 8),
         ],
       ),
@@ -87,10 +91,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               _sectionSelector(
                 claimableDaily: claimableDaily,
                 claimableAchievements: claimableAchievements,
+                incomingFriendRequests: incomingFriendRequests,
               ),
               const SizedBox(height: 14),
               switch (_section) {
-                ProfileSection.general => _generalSection(),
+                ProfileSection.general => const SocialScreen(
+                    embeddedProfileOnly: true,
+                  ),
+                ProfileSection.friends => const SocialScreen(
+                    embeddedFriendsOnly: true,
+                  ),
                 ProfileSection.ratingSeason => _ratingAndSeasonSection(),
                 ProfileSection.matchHistory => _matchHistorySection(),
                 ProfileSection.dailyMissions => _dailyMissionsSection(),
@@ -115,6 +125,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   Widget _sectionSelector({
     required bool claimableDaily,
     required bool claimableAchievements,
+    required int incomingFriendRequests,
   }) {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
@@ -126,6 +137,19 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             value: ProfileSection.general,
             icon: Icon(Icons.account_circle_outlined),
             label: Text('GENEL', key: ValueKey('profile-section-general')),
+          ),
+          ButtonSegment(
+            value: ProfileSection.friends,
+            icon: _SectionIcon(
+              icon: Icons.people_alt_outlined,
+              notify: incomingFriendRequests > 0,
+            ),
+            label: Text(
+              incomingFriendRequests > 0
+                  ? 'ARKADAŞLAR ($incomingFriendRequests)'
+                  : 'ARKADAŞLAR',
+              key: const ValueKey('profile-section-friends'),
+            ),
           ),
           const ButtonSegment(
             value: ProfileSection.ratingSeason,
@@ -171,115 +195,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           setState(() => _section = selection.first);
         },
       ),
-    );
-  }
-
-  Widget _generalSection() {
-    final social = ref.watch(socialProvider);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        const PlayerStatusBar(),
-        const SizedBox(height: 12),
-        social.when(
-          data: (snapshot) => Card(
-            key: const ValueKey('profile-general-card'),
-            child: Padding(
-              padding: const EdgeInsets.all(18),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Row(
-                    children: [
-                      const CircleAvatar(
-                        radius: 28,
-                        backgroundColor: Color(0x2238E8FF),
-                        child: Icon(
-                          Icons.account_circle,
-                          color: RelayColors.cyan,
-                          size: 36,
-                        ),
-                      ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              snapshot.profile.displayName,
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w900,
-                              ),
-                            ),
-                            Text(
-                              snapshot.profile.statusMessage,
-                              style: const TextStyle(
-                                color: RelayColors.muted,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const Divider(height: 26),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      Chip(
-                        avatar: const Icon(Icons.memory, size: 17),
-                        label: Text(
-                          'Favori: ${snapshot.profile.favoriteModule.displayName}',
-                        ),
-                      ),
-                      Chip(
-                        avatar: const Icon(Icons.people_alt_outlined, size: 17),
-                        label: Text('${snapshot.friends.length} arkadaş'),
-                      ),
-                      Chip(
-                        avatar: const Icon(Icons.hub_outlined, size: 17),
-                        label: Text(snapshot.clan?.tag ?? 'Klan yok'),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 14),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      FilledButton.tonalIcon(
-                        key: const ValueKey('profile-edit-social'),
-                        onPressed: () => _openSocial(SocialSection.profile),
-                        icon: const Icon(Icons.edit_outlined),
-                        label: const Text('SOSYAL PROFİLİ DÜZENLE'),
-                      ),
-                      OutlinedButton.icon(
-                        key: const ValueKey('profile-open-friends'),
-                        onPressed: () => _openSocial(SocialSection.friends),
-                        icon: const Icon(Icons.people_alt_outlined),
-                        label: const Text('ARKADAŞLAR'),
-                      ),
-                      OutlinedButton.icon(
-                        key: const ValueKey('profile-open-clan'),
-                        onPressed: () => _openSocial(SocialSection.clan),
-                        icon: const Icon(Icons.hub_outlined),
-                        label: const Text('KLAN'),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-          loading: () => const _LoadingCard('Profil bilgileri yükleniyor.'),
-          error: (error, _) => _ErrorCard(
-            message: error.toString(),
-            onRetry: () => ref.invalidate(socialProvider),
-          ),
-        ),
-      ],
     );
   }
 
@@ -695,14 +610,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     } finally {
       if (mounted) setState(() => _loadingMatchId = null);
     }
-  }
-
-  void _openSocial(SocialSection section) {
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (context) => SocialScreen(initialSection: section),
-      ),
-    );
   }
 
   void _openSeason() {

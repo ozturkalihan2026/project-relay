@@ -22,11 +22,18 @@ class FlutterClientContractTests(unittest.TestCase):
         manual = (
             CLIENT / "lib" / "src" / "widgets" / "game_manual.dart"
         ).read_text(encoding="utf-8")
+        widget_test = (CLIENT / "test" / "widget_test.dart").read_text(
+            encoding="utf-8"
+        )
 
-        self.assertIn("version: 0.8.3+47", pubspec)
-        self.assertIn("${widget.mode.title} • v0.8.3", editor)
-        self.assertIn("ANA MERKEZ VE MENÜ DÜZENİ • v0.8.3", main_menu)
-        self.assertIn("PROJECT RELAY • v0.8.3", manual)
+        self.assertIn("version: 0.8.4+50", pubspec)
+        self.assertIn("await tester.ensureVisible(profileBack);", widget_test)
+        self.assertIn("await tester.pumpAndSettle();\n      await tester.tap(profileBack);", widget_test)
+        self.assertIn("final horizontalScrollable = find.ancestor(", widget_test)
+        self.assertNotIn("final horizontalScrollable = find.byWidgetPredicate(\n    (widget)", widget_test)
+        self.assertIn("${widget.mode.title} • v0.8.4", editor)
+        self.assertIn("ANA MERKEZ VE MENÜ DÜZENİ • v0.8.4", main_menu)
+        self.assertIn("PROJECT RELAY • v0.8.4", manual)
         self.assertIn("audioplayers:", pubspec)
         self.assertIn("assets/sounds/", pubspec)
         self.assertIn("flame:", pubspec)
@@ -199,8 +206,9 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("class CareerRunSnapshot", models)
         self.assertIn("class CareerOpponentPreview", models)
         self.assertIn("careerRunProvider", api)
-        self.assertIn("TAM DEVRE ÖN İZLEMESİ", career)
-        self.assertIn("DEVREMİ DÜZENLE", career)
+        self.assertIn("career-player-board-editor", career)
+        self.assertIn("career-opponent-board-preview", career)
+        self.assertIn("ModulePalette(", career)
         self.assertIn("BOSS ÖNCESİ GÜÇLENDİRİCİ MAĞAZASI", career)
         self.assertIn("GÜÇLENDİRİCİ ALMADAN BOSS’A İLERLE", career)
         self.assertIn("SAVAŞ ÖDÜLÜ", replay)
@@ -543,7 +551,7 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("store-intro-card", collection)
         self.assertIn("GÖRSEL İÇERİK MAĞAZASI", collection)
 
-        self.assertIn("enum SocialSection", social)
+        self.assertIn("enum _ClanSection", social)
         self.assertIn("clan-section-selector", social)
         self.assertIn("KLAN ÖZETİ", social)
         self.assertIn("KLAN ETKİNLİĞİ", social)
@@ -1045,7 +1053,7 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("editor-menu-back-button", editor_source)
         self.assertIn("ANTRENMAN RAKİPLERİ", editor_source)
         self.assertIn("mode == EditorMode.online", editor_source)
-        self.assertIn("PlayerStatusBar(compact: true)", editor_source)
+        self.assertIn("AppHeaderActions()", editor_source)
         self.assertIn("süresi dolan erişim", session_test)
 
     def test_combat_sounds_are_distinct_local_waveforms(self) -> None:
@@ -1156,44 +1164,54 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("?trailing,", editor_source)
 
 
-    def test_v083_main_hub_and_profile_consolidation_contract(self) -> None:
+    def test_v084_profile_clan_header_and_career_preparation_contract(self) -> None:
         main_menu = (
             CLIENT / "lib" / "src" / "screens" / "main_menu_screen.dart"
         ).read_text(encoding="utf-8")
         profile = (
             CLIENT / "lib" / "src" / "screens" / "profile_screen.dart"
         ).read_text(encoding="utf-8")
-        collection = (
-            CLIENT / "lib" / "src" / "screens" / "collection_screen.dart"
+        social = (
+            CLIENT / "lib" / "src" / "screens" / "social_screen.dart"
         ).read_text(encoding="utf-8")
-        play_mode = (
-            CLIENT / "lib" / "src" / "screens" / "play_mode_screen.dart"
+        career = (
+            CLIENT / "lib" / "src" / "screens" / "career_screen.dart"
+        ).read_text(encoding="utf-8")
+        header = (
+            CLIENT / "lib" / "src" / "widgets" / "app_header_actions.dart"
         ).read_text(encoding="utf-8")
         feature_pool = (
             ROOT / "docs" / "OZELLIK_HAVUZU.md"
         ).read_text(encoding="utf-8")
         release = (
-            ROOT / "docs" / "V0.8.3_ANA_MERKEZ_VE_MENU_DUZENI.md"
+            ROOT / "docs" / "V0.8.4_PROFIL_KLAN_VE_KARIYER_HAZIRLIK.md"
         ).read_text(encoding="utf-8")
 
-        self.assertIn("ANA MERKEZ VE MENÜ DÜZENİ", main_menu)
         self.assertIn("main-menu-clan", main_menu)
-        self.assertIn("main-menu-store", main_menu)
-        self.assertIn("main-menu-profile", main_menu)
-        self.assertIn("play-mode-career", play_mode)
-        self.assertIn("DERECE VE SEZON", profile)
-        self.assertIn("GÜNLÜK GÖREVLER", profile)
-        self.assertIn("BAŞARIMLAR", profile)
-        self.assertIn("CollectionScreenMode.store", collection)
+        self.assertIn("ProfileSection.friends", profile)
+        self.assertIn("profile-section-friends", profile)
+        self.assertIn("embeddedProfileOnly: true", profile)
+        self.assertIn("embeddedFriendsOnly: true", profile)
+        self.assertNotIn("profile-open-clan", profile)
+        self.assertNotIn("profile-edit-social", profile)
+        self.assertIn("KLAN ÖZETİ", social)
+        self.assertNotIn("SOSYAL MERKEZ", social)
+        self.assertNotIn("social-section-selector", social)
+        self.assertIn("AppHeaderActions", header)
+        self.assertIn("/profile", header)
+        self.assertIn("/settings", header)
+        self.assertIn("/how-to-play", header)
+        self.assertIn("career-player-board-editor", career)
+        self.assertIn("career-opponent-board-preview", career)
+        self.assertIn("KOŞUYU BAŞLAT", career)
+        self.assertNotIn("title: 'GÜNLÜK GÖREVLER'", career)
+        self.assertNotIn("title: 'BAŞARIMLAR'", career)
         self.assertIn("Komutan Sistemi", feature_pool)
         self.assertIn("devreyi kurduktan ve doğruladıktan sonra", feature_pool.lower())
-        self.assertIn("v0.8.3", release)
+        self.assertIn("v0.8.4", release)
 
         status_bar = (
             CLIENT / "lib" / "src" / "widgets" / "player_status_bar.dart"
-        ).read_text(encoding="utf-8")
-        social = (
-            CLIENT / "lib" / "src" / "screens" / "social_screen.dart"
         ).read_text(encoding="utf-8")
         self.assertNotIn("asData?.value?.", profile)
         self.assertNotIn("asData?.value?.", status_bar)
@@ -1203,6 +1221,9 @@ class FlutterClientContractTests(unittest.TestCase):
         )
         self.assertEqual(social.count("Widget _clanSection("), 1)
         self.assertNotIn("_ClanSection _clanSection =", social)
+        self.assertNotIn("class _MetricPill", social)
+        self.assertNotIn("this.trailing", career)
+        self.assertNotIn("final String? trailing", career)
 
     def test_v082_social_interface_productization_contract(self) -> None:
         social = (
@@ -1215,9 +1236,9 @@ class FlutterClientContractTests(unittest.TestCase):
             ROOT / "docs" / "V0.8.2_SOSYAL_ARAYUZ_URUNLESTIRME.md"
         ).read_text(encoding="utf-8")
 
-        self.assertIn("SOSYAL MERKEZ", social)
-        self.assertIn("social-section-selector", social)
-        self.assertIn("social-summary-card", social)
+        self.assertIn("embeddedProfileOnly", social)
+        self.assertIn("embeddedFriendsOnly", social)
+        self.assertNotIn("SOSYAL MERKEZ", social)
         self.assertIn("social-outgoing-requests", social)
         self.assertIn("social-safety-card", social)
         self.assertIn("social-alpha-feedback", social)
@@ -1250,7 +1271,6 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("/api/v1/clans", api)
         self.assertIn("class SocialSnapshotModel", models)
         self.assertIn("class ClanModel", models)
-        self.assertIn("SOSYAL MERKEZ", social)
         self.assertIn("social-player-search", social)
         self.assertIn("social-clan-directory", social)
         self.assertIn("main-menu-clan", main_menu)

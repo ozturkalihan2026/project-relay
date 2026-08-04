@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../state/app_settings.dart';
 import '../theme/relay_theme.dart';
+import '../widgets/app_header_actions.dart';
+
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -21,6 +23,10 @@ class SettingsScreen extends ConsumerWidget {
             letterSpacing: 1.5,
           ),
         ),
+        actions: const [
+          AppHeaderActions(),
+          SizedBox(width: 8),
+        ],
       ),
       body: SafeArea(
         child: Center(

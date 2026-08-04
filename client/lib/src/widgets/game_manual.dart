@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../models/relay_models.dart';
 import '../theme/relay_theme.dart';
+import 'app_header_actions.dart';
 import 'manual_circuit_demo.dart';
 import 'module_visuals.dart';
 
@@ -31,7 +32,7 @@ class GameManualScreen extends StatelessWidget {
               ),
             ),
             Text(
-              'PROJECT RELAY • v0.8.3',
+              'PROJECT RELAY • v0.8.4',
               style: TextStyle(
                 color: RelayColors.muted,
                 fontSize: 10,
@@ -39,6 +40,10 @@ class GameManualScreen extends StatelessWidget {
             ),
           ],
         ),
+        actions: const [
+          AppHeaderActions(),
+          SizedBox(width: 8),
+        ],
       ),
       body: SafeArea(
         child: SingleChildScrollView(

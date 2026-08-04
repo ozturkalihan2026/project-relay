@@ -1,4 +1,4 @@
-# Project Relay — API Sözleşmesi v0.8.3
+# Project Relay — API Sözleşmesi v0.8.4
 
 Bu sürüm, Flutter/Flame istemcisinin kullandığı kalıcı asenkron PvP
 protokolüdür. Bütün yollar `/api/v1` altında sürümlenir. Etkileşimli Swagger
@@ -481,3 +481,12 @@ v0.8.3 istemci gezinmesini ve ekran gruplamasını değiştirir. HTTP yolları,
 veritabanı tabloları, sosyal/klan sözleşmeleri, koleksiyon işlemleri ve savaş
 kuralları değişmez. İstemci sürüm bildirimi `0.8.3`, API sağlık sürümü `0.8.3`
 olur.
+
+
+## v0.8.4 uyumluluk notu
+
+v0.8.4 Profil/Klan yerleşimini ve Kariyer hazırlık arayüzünü değiştirir. HTTP
+yolları, istek/yanıt alanları, PostgreSQL şeması, Alembic başı ve savaş
+kuralları değişmez. Kariyer ekranı mevcut `/career-board` doğrulama/kaydetme ve
+`/career-run/start` uçlarını aynı çalışma alanından çağırır. İstemci sürüm
+bildirimi `0.8.4`, API sağlık sürümü `0.8.4`, `rules_version` değeri `0.8` olur.

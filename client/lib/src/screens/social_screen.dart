@@ -4,21 +4,21 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../api/relay_api.dart';
 import '../models/relay_models.dart';
 import '../theme/relay_theme.dart';
-import '../widgets/player_status_bar.dart';
+import '../widgets/app_header_actions.dart';
 import '../widgets/relay_notice.dart';
 import 'season_screen.dart';
-
-enum SocialSection { profile, friends, clan }
 
 enum _ClanSection { summary, members, activity, settings }
 
 class SocialScreen extends ConsumerStatefulWidget {
   const SocialScreen({
-    this.initialSection = SocialSection.profile,
+    this.embeddedProfileOnly = false,
+    this.embeddedFriendsOnly = false,
     super.key,
   });
 
-  final SocialSection initialSection;
+  final bool embeddedProfileOnly;
+  final bool embeddedFriendsOnly;
 
   @override
   ConsumerState<SocialScreen> createState() => _SocialScreenState();
@@ -27,17 +27,10 @@ class SocialScreen extends ConsumerStatefulWidget {
 class _SocialScreenState extends ConsumerState<SocialScreen> {
   final TextEditingController _searchController = TextEditingController();
   List<SocialPlayerModel> _searchResults = const [];
-  late SocialSection _section;
   _ClanSection _selectedClanSection = _ClanSection.summary;
   bool _busy = false;
   bool _searching = false;
   bool _searchAttempted = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _section = widget.initialSection;
-  }
 
   @override
   void dispose() {
@@ -49,29 +42,64 @@ class _SocialScreenState extends ConsumerState<SocialScreen> {
   Widget build(BuildContext context) {
     final social = ref.watch(socialProvider);
     final clans = ref.watch(clanDirectoryProvider);
+
+    if (widget.embeddedProfileOnly) {
+      return social.when(
+        data: (snapshot) => _profileSection(snapshot),
+        loading: () => const _MessageCard(
+          icon: Icons.account_circle_outlined,
+          title: 'Profil yükleniyor',
+          message: 'Sosyal profil bilgileri sunucudan alınıyor.',
+        ),
+        error: (error, _) => _MessageCard(
+          icon: Icons.error_outline,
+          title: 'Profil alınamadı',
+          message: error.toString(),
+          actionLabel: 'TEKRAR DENE',
+          onAction: () => ref.invalidate(socialProvider),
+        ),
+      );
+    }
+
+    if (widget.embeddedFriendsOnly) {
+      return social.when(
+        data: _friendsSection,
+        loading: () => const _MessageCard(
+          icon: Icons.people_alt_outlined,
+          title: 'Arkadaşlar yükleniyor',
+          message: 'Arkadaşlık bilgileri sunucudan alınıyor.',
+        ),
+        error: (error, _) => _MessageCard(
+          icon: Icons.error_outline,
+          title: 'Arkadaşlar alınamadı',
+          message: error.toString(),
+          actionLabel: 'TEKRAR DENE',
+          onAction: () => ref.invalidate(socialProvider),
+        ),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
-        title: Column(
+        title: const Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              widget.initialSection == SocialSection.clan
-                  ? 'KLAN'
-                  : 'SOSYAL MERKEZ',
-              style: const TextStyle(
+              'KLAN',
+              style: TextStyle(
                 fontWeight: FontWeight.w900,
                 letterSpacing: 1.1,
               ),
             ),
-            const Text(
-              'PROJECT RELAY • v0.8.3',
+            Text(
+              'PROJECT RELAY • v0.8.4',
               style: TextStyle(color: RelayColors.muted, fontSize: 10),
             ),
           ],
         ),
         actions: const [
-          Center(child: PlayerStatusBar(compact: true)),
-          SizedBox(width: 10),
+          AppHeaderActions(),
+          SizedBox(width: 8),
         ],
       ),
       body: SafeArea(
@@ -82,15 +110,15 @@ class _SocialScreenState extends ConsumerState<SocialScreen> {
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 36),
             children: [
               social.when(
-                data: (snapshot) => _socialContent(snapshot, clans),
+                data: (snapshot) => _clanSection(snapshot, clans),
                 loading: () => const _MessageCard(
-                  icon: Icons.groups_outlined,
-                  title: 'Sosyal bilgiler yükleniyor',
-                  message: 'Arkadaşlar ve klan durumu sunucudan alınıyor.',
+                  icon: Icons.hub_outlined,
+                  title: 'Klan bilgileri yükleniyor',
+                  message: 'Klan durumu sunucudan alınıyor.',
                 ),
                 error: (error, _) => _MessageCard(
                   icon: Icons.error_outline,
-                  title: 'Sosyal bilgiler alınamadı',
+                  title: 'Klan bilgileri alınamadı',
                   message: error.toString(),
                   actionLabel: 'TEKRAR DENE',
                   onAction: () => ref.invalidate(socialProvider),
@@ -106,110 +134,6 @@ class _SocialScreenState extends ConsumerState<SocialScreen> {
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _socialContent(
-    SocialSnapshotModel snapshot,
-    AsyncValue<List<ClanModel>> clans,
-  ) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        _summaryCard(snapshot),
-        const SizedBox(height: 12),
-        _sectionSelector(snapshot),
-        const SizedBox(height: 14),
-        switch (_section) {
-          SocialSection.profile => _profileSection(snapshot),
-          SocialSection.friends => _friendsSection(snapshot),
-          SocialSection.clan => _clanSection(snapshot, clans),
-        },
-      ],
-    );
-  }
-
-  Widget _summaryCard(SocialSnapshotModel snapshot) {
-    return Card(
-      key: const ValueKey('social-summary-card'),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Wrap(
-          spacing: 10,
-          runSpacing: 10,
-          alignment: WrapAlignment.center,
-          children: [
-            _MetricPill(
-              icon: Icons.people_alt_outlined,
-              value: '${snapshot.friends.length}',
-              label: 'ARKADAŞ',
-            ),
-            _MetricPill(
-              icon: Icons.mark_email_unread_outlined,
-              value: '${snapshot.incomingRequests.length}',
-              label: 'GELEN İSTEK',
-              accent: snapshot.incomingRequests.isNotEmpty
-                  ? RelayColors.amber
-                  : RelayColors.cyan,
-            ),
-            _MetricPill(
-              icon: Icons.send_outlined,
-              value: '${snapshot.outgoingRequests.length}',
-              label: 'BEKLEYEN',
-            ),
-            _MetricPill(
-              icon: Icons.hub_outlined,
-              value: snapshot.clan?.tag ?? '—',
-              label: snapshot.clan == null ? 'KLAN YOK' : 'KLAN',
-              accent: snapshot.clan == null
-                  ? RelayColors.muted
-                  : RelayColors.amber,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _sectionSelector(SocialSnapshotModel snapshot) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: SegmentedButton<SocialSection>(
-        key: const ValueKey('social-section-selector'),
-        showSelectedIcon: false,
-        segments: [
-          const ButtonSegment(
-            value: SocialSection.profile,
-            icon: Icon(Icons.account_circle_outlined),
-            label: Text(
-              'PROFİL',
-              key: ValueKey('social-section-profile'),
-            ),
-          ),
-          ButtonSegment(
-            value: SocialSection.friends,
-            icon: const Icon(Icons.people_alt_outlined),
-            label: Text(
-              'ARKADAŞLAR ${snapshot.friends.length}',
-              key: const ValueKey('social-section-friends'),
-            ),
-          ),
-          ButtonSegment(
-            value: SocialSection.clan,
-            icon: const Icon(Icons.hub_outlined),
-            label: Text(
-              snapshot.clan == null ? 'KLAN' : 'KLAN ${snapshot.clan!.tag}',
-              key: const ValueKey('social-section-clan'),
-            ),
-          ),
-        ],
-        selected: {_section},
-        onSelectionChanged: _busy
-            ? null
-            : (selection) {
-                setState(() => _section = selection.first);
-              },
       ),
     );
   }
@@ -435,7 +359,7 @@ class _SocialScreenState extends ConsumerState<SocialScreen> {
 
   Widget _profileCard(SocialProfileModel profile) {
     return Card(
-      key: const ValueKey('social-profile-card'),
+      key: const ValueKey('profile-general-card'),
       child: Padding(
         padding: const EdgeInsets.all(18),
         child: Column(
@@ -1400,61 +1324,6 @@ class _SocialScreenState extends ConsumerState<SocialScreen> {
     final day = local.day.toString().padLeft(2, '0');
     final month = local.month.toString().padLeft(2, '0');
     return '$day.$month.${local.year}';
-  }
-}
-
-class _MetricPill extends StatelessWidget {
-  const _MetricPill({
-    required this.icon,
-    required this.value,
-    required this.label,
-    this.accent = RelayColors.cyan,
-  });
-
-  final IconData icon;
-  final String value;
-  final String label;
-  final Color accent;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      constraints: const BoxConstraints(minWidth: 126),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: accent.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: accent.withValues(alpha: 0.38)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, color: accent, size: 20),
-          const SizedBox(width: 8),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                value,
-                style: TextStyle(
-                  color: accent,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-              Text(
-                label,
-                style: const TextStyle(
-                  color: RelayColors.muted,
-                  fontSize: 9,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: 0.5,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
   }
 }
 

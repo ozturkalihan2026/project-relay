@@ -1,3 +1,38 @@
+## v0.8.4 rev2 — Üst erişim ve profil sekmesi widget test hotfix'i
+
+- Profil ekranındaki **Ana Menüye Dön** düğmesi testte görünür hâle getirildikten
+  sonra kaydırma animasyonunun tamamlanması beklenir.
+- Ana menüye dönüş doğrulanmadan Ayarlar eylemine basılmaz.
+- Profil bölüm seçimi, ekrandaki bütün yatay kaydırıcıları aramak yerine seçilen
+  sekmenin gerçek yatay `Scrollable` atasını hedefler.
+- Genel profil içindeki düzenlenebilir metin alanının yatay kaydırıcısı artık
+  bölüm seçiciyle karıştırılmaz.
+- Flutter istemci yapı numarası `0.8.4+50` oldu; API, veritabanı, savaş kuralları
+  ve ürün davranışı değişmedi.
+
+## v0.8.4 rev1 — Flutter analiz temizliği
+
+- Kariyer bölüm kartındaki hiç kullanılmayan `trailing` parametresi kaldırıldı.
+- Sosyal ekranın artık çağrılmayan `_MetricPill` bileşeni ve kullanılmayan `accent`
+  parametresi kaldırıldı.
+- Flutter istemci yapı numarası `0.8.4+49` oldu; API, veritabanı şeması, savaş
+  kuralları ve ürün davranışı değişmedi.
+
+## v0.8.4 — Profil, Klan ve Doğrudan Kariyer Hazırlığı
+
+- Arkadaşlık akışı Profil içindeki ayrı **Arkadaşlar** sekmesine taşındı.
+- Profil Genel bölümündeki yinelenen oyuncu/kredi çubuğu, büyük sosyal merkez
+  düğmeleri ve Klan kısayolu kaldırıldı.
+- Klan ekranı yalnız özet, üyeler, etkinlik ve ayarlara indirildi.
+- Günlük görev ve başarımlar Kariyer ekranından kaldırıldı; ödül alma eylemleri
+  Profil içinde korundu.
+- Ortak üst sağ Profil/Ayarlar/Nasıl Oynanır eylemleri ana oyun ekranlarına
+  eklendi.
+- Kariyer hazırlığı doğrudan düzenlenebilir oyuncu devresi ve rakip devre
+  görünümüne dönüştürüldü. Koşu ve savaş öncesinde devre doğrulanıp kaydedilir.
+- API `0.8.4`, Flutter `0.8.4+48`; şema, savaş kuralları ve denge değişmedi.
+- Komutan Sistemi özellik havuzunda kaldı.
+
 ## v0.8.3 rev2 — Widget test kaydırma hotfix'i
 
 - Profilin yatay bölüm seçicisindeki ekran dışında kalan Günlük Görevler ve

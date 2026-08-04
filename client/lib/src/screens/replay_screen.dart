@@ -13,6 +13,7 @@ import '../state/app_settings.dart';
 import '../theme/cosmetic_visuals.dart';
 import '../theme/relay_theme.dart';
 import '../widgets/relay_notice.dart';
+import '../widgets/app_header_actions.dart';
 import '../widgets/replay_attack_overlay.dart';
 import '../widgets/replay_event_feed.dart';
 import '../widgets/replay_playback_controls.dart';
@@ -206,6 +207,11 @@ class _ReplayScreenState extends ConsumerState<ReplayScreen> {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 4, 16, 28),
           children: [
+            const Align(
+              alignment: Alignment.centerRight,
+              child: AppHeaderActions(),
+            ),
+            const SizedBox(height: 6),
             if (widget.battleModeLabel != null) ...[
               Center(
                 child: Text(

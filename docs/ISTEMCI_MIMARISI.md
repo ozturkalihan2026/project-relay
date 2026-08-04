@@ -1,4 +1,4 @@
-# Project Relay v0.8.3 — İstemci Mimarisi
+# Project Relay v0.8.4 — İstemci Mimarisi
 
 ## Katmanlar
 
@@ -156,6 +156,23 @@ mevcut sunucu yetkili API'leri kullanır.
 ürünleri gösteren Mağazayı ayırır. Aynı `collectionProvider` ve satın alma/
 kuşanma uçları kullanılır; savaş gücü üreten yeni ekonomi eklenmez.
 
-`SocialScreen(initialSection: SocialSection.clan)`, ana merkezdeki Klan
-girişini doğrudan klan alanına açar. Mevcut klan verisi özet, üyeler, katılım
+`SocialScreen`, ana merkezdeki Klan girişini doğrudan sade klan alanına açar. Mevcut klan verisi özet, üyeler, katılım
 tarihlerinden türetilen etkinlik ve ayrılma ayarları olarak düzenlenir.
+
+
+## v0.8.4 profil, klan ve kariyer hazırlığı
+
+`ProfileScreen`, Genel'in ardından ayrı Arkadaşlar sekmesi kullanır. Genel,
+`SocialScreen(embeddedProfileOnly: true)` ile yalnız sosyal kimliği; Arkadaşlar
+ise `embeddedFriendsOnly: true` ile istek, liste ve aramayı gömer. Bağımsız
+`SocialScreen` yalnız klan işlevlerini gösterir.
+
+`AppHeaderActions`, `PlayerStatusBar` profil eylemini ve Ayarlar/Nasıl Oynanır
+adlandırılmış rotalarını ortaklaştırır. Replay gibi AppBar kullanmayan ekranlar
+aynı bileşeni içerik başında gösterir.
+
+`CareerScreen`, `boardControllerProvider`, `ModulePalette` ve `CircuitBoard`
+ile kariyer devresini kendi içinde düzenler. Aktif koşunun rakip devresi aynı
+çalışma alanında gösterilir. Koşu başlatma ve her savaş eylemi önce güncel
+kartı doğrular ve `/api/v1/me/career-board` üzerinden kaydeder; ardından mevcut
+kariyer uçlarını kullanır.

@@ -55,6 +55,11 @@ final careerRunProvider = FutureProvider<CareerRunSnapshot>((ref) async {
   return ref.watch(relayApiProvider).fetchCareerRun();
 });
 
+final careerBoardProvider = FutureProvider.autoDispose<SavedBoard?>((ref) async {
+  await ref.watch(guestSessionProvider.future);
+  return ref.watch(relayApiProvider).fetchCareerBoard();
+});
+
 final collectionProvider = FutureProvider.autoDispose<CollectionSnapshot>((ref) async {
   await ref.watch(guestSessionProvider.future);
   return ref.watch(relayApiProvider).fetchCollection();
@@ -297,7 +302,7 @@ class RelayApi {
       {
         'category': category,
         'message': message,
-        'client_version': '0.8.3',
+        'client_version': '0.8.4',
       },
       authorized: true,
     );

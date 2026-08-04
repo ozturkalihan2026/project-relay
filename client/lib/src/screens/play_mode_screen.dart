@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../theme/relay_theme.dart';
-import '../widgets/player_status_bar.dart';
+import '../widgets/app_header_actions.dart';
 import 'career_screen.dart';
 import 'editor_screen.dart';
 
@@ -21,7 +21,7 @@ class PlayModeScreen extends StatelessWidget {
           ),
         ),
         actions: const [
-          Center(child: PlayerStatusBar(compact: true)),
+          AppHeaderActions(),
           SizedBox(width: 8),
         ],
       ),

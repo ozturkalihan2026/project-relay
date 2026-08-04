@@ -5,7 +5,7 @@ import '../api/relay_api.dart';
 import '../models/relay_models.dart';
 import '../theme/relay_theme.dart';
 import '../widgets/module_visuals.dart';
-import '../widgets/player_status_bar.dart';
+import '../widgets/app_header_actions.dart';
 import '../widgets/relay_notice.dart';
 
 enum CollectionScreenMode { collection, store }
@@ -55,14 +55,14 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen> {
               ),
             ),
             const Text(
-              'PROJECT RELAY • v0.8.3',
+              'PROJECT RELAY • v0.8.4',
               style: TextStyle(color: RelayColors.muted, fontSize: 10),
             ),
           ],
         ),
         actions: const [
-          Center(child: PlayerStatusBar(compact: true)),
-          SizedBox(width: 10),
+          AppHeaderActions(),
+          SizedBox(width: 8),
         ],
       ),
       body: SafeArea(

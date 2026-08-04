@@ -10,7 +10,7 @@ import '../theme/cosmetic_visuals.dart';
 import '../theme/relay_theme.dart';
 import '../widgets/circuit_board.dart';
 import '../widgets/module_palette.dart';
-import '../widgets/player_status_bar.dart';
+import '../widgets/app_header_actions.dart';
 import '../widgets/relay_notice.dart';
 import 'replay_screen.dart';
 
@@ -77,7 +77,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
               ),
             ),
             Text(
-              '${widget.mode.title} • v0.8.3',
+              '${widget.mode.title} • v0.8.4',
               style: const TextStyle(
                 color: RelayColors.muted,
                 fontSize: 10,
@@ -87,8 +87,8 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
           ],
         ),
         actions: [
-          const Center(child: PlayerStatusBar(compact: true)),
-          const SizedBox(width: 6),
+          const AppHeaderActions(),
+          const SizedBox(width: 4),
           IconButton(
             tooltip: 'Katalogları yenile',
             onPressed: () => ref.invalidate(catalogsProvider),

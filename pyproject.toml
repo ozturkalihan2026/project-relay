@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "project-relay-server"
-version = "0.8.3"
-description = "Project Relay v0.8.3 main hub, profile consolidation and cosmetic navigation API"
+version = "0.8.4"
+description = "Project Relay v0.8.4 profile, clan and inline career preparation API"
 requires-python = ">=3.11"
 dependencies = [
     "fastapi>=0.140,<1",

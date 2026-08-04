@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../api/relay_api.dart';
 import '../models/relay_models.dart';
 import '../theme/relay_theme.dart';
-import '../widgets/player_status_bar.dart';
+import '../widgets/app_header_actions.dart';
 import '../widgets/relay_notice.dart';
 import 'replay_screen.dart';
 
@@ -32,7 +32,7 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
           ),
         ),
         actions: const [
-          Center(child: PlayerStatusBar(compact: true)),
+          AppHeaderActions(),
           SizedBox(width: 8),
         ],
       ),

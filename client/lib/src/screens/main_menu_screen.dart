@@ -88,9 +88,7 @@ class MainMenuScreen extends StatelessWidget {
                                         'Klan özeti, üyeler, etkinlik ve ayarlar',
                                     onPressed: () => _open(
                                       context,
-                                      const SocialScreen(
-                                        initialSection: SocialSection.clan,
-                                      ),
+                                      const SocialScreen(),
                                     ),
                                   ),
                                 ),
@@ -136,7 +134,7 @@ class MainMenuScreen extends StatelessWidget {
                                     accent: RelayColors.coral,
                                     title: 'PROFİL',
                                     subtitle:
-                                        'Genel, derece, sezon, maçlar, görevler ve başarımlar',
+                                        'Genel, arkadaşlar, derece, sezon, maçlar, görevler ve başarımlar',
                                     onPressed: () => _open(
                                       context,
                                       const ProfileScreen(),
@@ -149,7 +147,7 @@ class MainMenuScreen extends StatelessWidget {
                         ),
                         const SizedBox(height: 20),
                         const Text(
-                          'ANA MERKEZ VE MENÜ DÜZENİ • v0.8.3',
+                          'ANA MERKEZ VE MENÜ DÜZENİ • v0.8.4',
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             color: RelayColors.muted,

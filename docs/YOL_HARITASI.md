@@ -47,6 +47,7 @@ dönüştürür.
 | v0.8.2 | Sosyal profil, arkadaşlık ve klan arayüzlerinin ürünleştirilmesi | Hazır; yerel Flutter kabulü geçti |
 | v0.8.3 rev1 | Ana merkez düzeni ve Flutter analiz hotfix'i | Tamamlandı; `flutter analyze` temiz |
 | v0.8.3 rev2 | Profil/Koleksiyon widget test kaydırma hotfix'i | Hazır; yerel Flutter testi bekliyor |
+| v0.8.4 | Profil/Arkadaşlar ayrımı, sade Klan, ortak üst erişim ve doğrudan Kariyer hazırlığı | rev1 analiz hotfix hazır; yerel Flutter kabulü bekliyor |
 | v0.9.0 | Kapalı alfa yayına hazırlık, telemetri ve cihaz QA | Sıradaki |
 | v1.0.0 | Android ve web açık beta | Hedef |
 
@@ -338,3 +339,14 @@ etkisi artar; koşu bittiğinde bütün etkiler sıfırlanır.
 - API gecikmesi, yükleme süresi ve replay performansı ölçümü
 - Android ve web ekran boyutu QA matrisi
 - gerçek kapalı alfa davet, geri bildirim ve sürüm kapatma akışı
+
+
+## v0.8.4 — Profil, Klan ve Kariyer hazırlığı
+
+- Profil Genel ve Arkadaşlar ayrı sekmelerdir.
+- Günlük görev/başarım ödülleri Profil içinde alınır; Kariyer içinde yinelenmez.
+- Klan ekranı sosyal profil ve arkadaşlık kısayolları olmadan sadeleşir.
+- Etkin profil, Ayarlar ve Nasıl Oynanır erişimi oyun ekranlarında ortaklaşır.
+- Kariyer devresi ve koşu rakibi aynı hazırlık ekranında gösterilir; oyuncu
+  devresi bu alanda düzenlenir ve savaş öncesi sunucuya kaydedilir.
+- Komutan Sistemi uygulanmaz ve özellik havuzunda kalır.

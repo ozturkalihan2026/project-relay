@@ -732,7 +732,7 @@ def create_app(
         title="Project Relay API",
         version=API_VERSION,
         description=(
-            "Project Relay v0.8.3 ana merkez, profil ve kozmetik gezinme düzeni; sosyal yapı ve klan temeli API'si. "
+            "Project Relay v0.8.4 profil, klan ve doğrudan kariyer hazırlığı düzeni; sosyal yapı ve klan temeli API'si. "
             "Arkadaşlık istekleri, oyuncu profilleri, açık klan keşfi ve "
             "sunucu yetkili üyelik kuralları birlikte doğrulanır."
         ),

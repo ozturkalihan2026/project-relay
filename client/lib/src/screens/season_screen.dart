@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../api/relay_api.dart';
 import '../models/relay_models.dart';
 import '../theme/relay_theme.dart';
-import '../widgets/player_status_bar.dart';
+import '../widgets/app_header_actions.dart';
 import '../widgets/relay_notice.dart';
 
 class SeasonScreen extends ConsumerStatefulWidget {
@@ -42,14 +42,14 @@ class _SeasonScreenState extends ConsumerState<SeasonScreen> {
               ),
             ),
             Text(
-              'PROJECT RELAY • v0.8.3',
+              'PROJECT RELAY • v0.8.4',
               style: TextStyle(color: RelayColors.muted, fontSize: 10),
             ),
           ],
         ),
         actions: const [
-          Center(child: PlayerStatusBar(compact: true)),
-          SizedBox(width: 10),
+          AppHeaderActions(),
+          SizedBox(width: 8),
         ],
       ),
       body: SafeArea(
