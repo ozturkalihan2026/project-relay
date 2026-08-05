@@ -26,28 +26,36 @@ class FlutterClientContractTests(unittest.TestCase):
             encoding="utf-8"
         )
 
-        self.assertIn("version: 0.8.4+50", pubspec)
+        self.assertIn("version: 0.8.9+61", pubspec)
         self.assertIn("await tester.ensureVisible(profileBack);", widget_test)
         self.assertIn("await tester.pumpAndSettle();\n      await tester.tap(profileBack);", widget_test)
         self.assertIn("final horizontalScrollable = find.ancestor(", widget_test)
         self.assertNotIn("final horizontalScrollable = find.byWidgetPredicate(\n    (widget)", widget_test)
-        self.assertIn("${widget.mode.title} • v0.8.4", editor)
-        self.assertIn("ANA MERKEZ VE MENÜ DÜZENİ • v0.8.4", main_menu)
-        self.assertIn("PROJECT RELAY • v0.8.4", manual)
+        self.assertIn("${widget.mode.title} • v0.8.9", editor)
+        self.assertIn("ANA MERKEZ VE MENÜ DÜZENİ • v0.8.9", main_menu)
+        self.assertIn("PROJECT RELAY • v0.8.9", manual)
         self.assertIn("audioplayers:", pubspec)
         self.assertIn("assets/sounds/", pubspec)
         self.assertIn("flame:", pubspec)
         self.assertIn("flutter_riverpod:", pubspec)
         self.assertIn("flutter_secure_storage:", pubspec)
+        self.assertNotIn("ProviderListenable<BoardEditorState>", editor)
+        self.assertIn(
+            "NotifierProvider<BoardController, BoardEditorState> get _boardProvider",
+            editor,
+        )
+        self.assertNotIn("_boardNotifierProvider", editor)
 
     def test_module_palette_stack_has_finite_height(self) -> None:
         palette = (
             CLIENT / "lib" / "src" / "widgets" / "module_palette.dart"
         ).read_text(encoding="utf-8")
 
-        self.assertIn("height: 66,", palette)
+        self.assertIn("height: dense ? 46 : compact ? 44 : 66,", palette)
         self.assertIn("math.min(235.0, compactTileWidth)", palette)
         self.assertIn("alignment: WrapAlignment.center", palette)
+        self.assertIn("this.compact = false", palette)
+        self.assertIn("compact: true", (CLIENT / "lib" / "src" / "screens" / "editor_screen.dart").read_text(encoding="utf-8"))
         self.assertIn("child: Stack(", palette)
         self.assertNotIn("BoxConstraints(minHeight: 74)", palette)
 
@@ -106,7 +114,7 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertNotIn("SUNUCU YETKİLİ SAVAŞ", editor)
 
         # v0.4.11 + v0.4.13: sonlu Stack; v0.6.0 UI rev1 kompakt palet.
-        self.assertIn("height: 66,", palette)
+        self.assertIn("height: dense ? 46 : compact ? 44 : 66,", palette)
         self.assertIn("child: Stack(", palette)
         self.assertIn("math.min(235.0, compactTileWidth)", palette)
         self.assertIn("alignment: WrapAlignment.center", palette)
@@ -208,7 +216,14 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("careerRunProvider", api)
         self.assertIn("career-player-board-editor", career)
         self.assertIn("career-opponent-board-preview", career)
+        self.assertIn("vertical: true", career)
+        self.assertIn("career-module-selection-card", career)
+        self.assertIn("returnToPreviousMenu(context)", career)
         self.assertIn("ModulePalette(", career)
+        self.assertIn("career-module-selection-card", career)
+        self.assertIn("width: 470", career)
+        self.assertIn("run.status == 'failed'", career)
+        self.assertIn("? _idle(context)", career)
         self.assertIn("BOSS ÖNCESİ GÜÇLENDİRİCİ MAĞAZASI", career)
         self.assertIn("GÜÇLENDİRİCİ ALMADAN BOSS’A İLERLE", career)
         self.assertIn("SAVAŞ ÖDÜLÜ", replay)
@@ -236,10 +251,10 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("player-status-credits", status)
         self.assertIn("player-status-xp", status)
         self.assertIn("DEVRE KREDİSİ", status)
-        self.assertIn("height: 66,", palette)
-        self.assertIn("fontSize: 13", palette)
-        self.assertIn("fontSize: 9.5", palette)
-        self.assertIn("size: 24", palette)
+        self.assertIn("height: dense ? 46 : compact ? 44 : 66,", palette)
+        self.assertIn("fontSize: dense ? 10.5 : compact ? 10 : 13", palette)
+        self.assertIn("fontSize: dense ? 7.5 : compact ? 7.5 : 9.5", palette)
+        self.assertIn("size: dense ? 18 : compact ? 18 : 24", palette)
         self.assertGreaterEqual(editor.count("_EditorMenuBackCard(busy: busy)"), 3)
         self.assertIn("void loadSavedBoard(SavedBoard saved)", board_controller)
 
@@ -257,12 +272,16 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("/api/v1/alpha/feedback", api)
         self.assertIn("class SeasonSnapshotModel", models)
         self.assertIn("class AlphaSafetySnapshotModel", models)
-        self.assertIn("SEZON VE KAPALI ALFA", season)
-        self.assertIn("alpha-feedback-submit", season)
+        alpha_feedback = (CLIENT / "lib" / "src" / "screens" / "alpha_feedback_screen.dart").read_text(encoding="utf-8")
+        settings = (CLIENT / "lib" / "src" / "screens" / "settings_screen.dart").read_text(encoding="utf-8")
+        self.assertIn("İSTATİSTİKLER", season)
+        self.assertIn("statistics-section-season", season)
+        self.assertIn("statistics-section-weekly-league", season)
+        self.assertIn("alpha-feedback-submit", alpha_feedback)
+        self.assertIn("settings-alpha-feedback", settings)
         self.assertIn("SeasonPointChangeModel", models)
         self.assertIn("season_change", models)
         self.assertIn("main-menu-profile", main_menu)
-        self.assertIn("SEZON VE KAPALI ALFA", manual)
         self.assertIn("Sezon Puanı", replay)
 
     def test_v062_collection_and_controlled_kit_contract(self) -> None:
@@ -295,7 +314,10 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("saveControlledKit", api)
         self.assertIn("KONTROLLÜ SEKİZLİ KİT", collection)
         self.assertIn("GÜÇ DEĞİL, KİMLİK VE HAZIRLIK", collection)
-        self.assertIn("main-menu-collection", main_menu)
+        self.assertIn("main-menu-store", main_menu)
+        self.assertIn("profile-section-cosmetics", (CLIENT / "lib" / "src" / "screens" / "profile_screen.dart").read_text(encoding="utf-8"))
+        self.assertIn("profile-cosmetic-section-selector", (CLIENT / "lib" / "src" / "screens" / "profile_screen.dart").read_text(encoding="utf-8"))
+        self.assertIn("editor-open-kit-builder", (CLIENT / "lib" / "src" / "screens" / "editor_screen.dart").read_text(encoding="utf-8"))
         self.assertIn("void applyKit(ControlledKit kit)", controller)
         self.assertIn("remainingFor(ModuleKind kind)", controller)
         self.assertIn("remainingByKind", palette)
@@ -303,6 +325,34 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("ref.read(collectionProvider.future)", (
             CLIENT / "lib" / "src" / "screens" / "editor_screen.dart"
         ).read_text(encoding="utf-8"))
+
+    def test_back_navigation_distinguishes_previous_and_main_menu(self) -> None:
+        navigation = (
+            CLIENT / "lib" / "src" / "navigation" / "navigation_actions.dart"
+        ).read_text(encoding="utf-8")
+        editor = (
+            CLIENT / "lib" / "src" / "screens" / "editor_screen.dart"
+        ).read_text(encoding="utf-8")
+        career = (
+            CLIENT / "lib" / "src" / "screens" / "career_screen.dart"
+        ).read_text(encoding="utf-8")
+        profile = (
+            CLIENT / "lib" / "src" / "screens" / "profile_screen.dart"
+        ).read_text(encoding="utf-8")
+        store = (
+            CLIENT / "lib" / "src" / "screens" / "collection_screen.dart"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("popUntil((route) => route.isFirst)", navigation)
+        self.assertIn("maybePop()", navigation)
+        self.assertIn("MENÜYE DÖN", editor)
+        self.assertIn("returnToPreviousMenu(context)", editor)
+        self.assertIn("MENÜYE DÖN", career)
+        self.assertIn("returnToPreviousMenu(context)", career)
+        self.assertIn("ANA MENÜYE DÖN", profile)
+        self.assertIn("returnToMainMenu(context)", profile)
+        self.assertIn("ANA MENÜYE DÖN", store)
+        self.assertIn("returnToMainMenu(context)", store)
 
     def test_session_api_mocks_encode_turkish_json_as_utf8(self) -> None:
         session_test = (
@@ -357,6 +407,11 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("if ($LASTEXITCODE -ne 0)", powershell)
         self.assertIn("Invoke-Flutter analyze", powershell)
         self.assertIn("Invoke-Flutter test", powershell)
+        self.assertIn("test/widget_test_support_test.dart", powershell)
+        self.assertIn("test/widget_test.dart", powershell)
+        self.assertIn("--concurrency=1", powershell)
+        self.assertIn("test/widget_test_support_test.dart", bash)
+        self.assertIn("test/widget_test.dart", bash)
         self.assertIn("flutter run -d edge", powershell)
         self.assertIn(
             'rm -rf "$client_root/lib" "$client_root/test"',
@@ -365,6 +420,42 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn(
             'cp -a "$client_root/assets" "$backup_root/assets"',
             bash,
+        )
+
+    def test_widget_navigation_tests_use_strict_unique_scroll_review(self) -> None:
+        support = (
+            CLIENT / "test" / "widget_test_support.dart"
+        ).read_text(encoding="utf-8")
+        support_test = (
+            CLIENT / "test" / "widget_test_support_test.dart"
+        ).read_text(encoding="utf-8")
+        widget_test = (
+            CLIENT / "test" / "widget_test.dart"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("WidgetController.hitTestWarningShouldBeFatal = true", support)
+        self.assertIn("findUniqueScrollableWithin", support)
+        self.assertIn("physicsMatches", support)
+        self.assertIn("target.hitTestable()", support)
+        self.assertIn("initialTargetCount <= 1", support)
+        self.assertIn("Kaydırma tamamlandığında hedef", support)
+        self.assertNotIn(
+            "expect(target, findsOneWidget, reason: 'Kaydırılacak hedef benzersiz olmalıdır.')",
+            support,
+        )
+        self.assertIn("ListView.builder", support_test)
+        self.assertIn("expect(target, findsNothing)", support_test)
+        self.assertIn("tembel oluşturulan hedefi bulur", support_test)
+        self.assertIn("AlwaysScrollableScrollPhysics", support_test)
+        self.assertIn("NeverScrollableScrollPhysics", support_test)
+        self.assertIn("setUpAll(enableStrictWidgetTestMode)", widget_test)
+        self.assertIn("physics is AlwaysScrollableScrollPhysics", widget_test)
+        self.assertNotIn(
+            "widget.axisDirection == AxisDirection.down,\n"
+            "        ),\n"
+            "      );\n"
+            "      expect(careerScrollable, findsOneWidget)",
+            widget_test,
         )
 
     def test_powershell_bootstrap_keeps_platforms_in_one_argument(self) -> None:
@@ -477,8 +568,8 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertNotIn("MyApp()", widget_test)
         self.assertIn("Future<void> _tapProfileSection(", widget_test)
         self.assertIn("widget.axisDirection == AxisDirection.right", widget_test)
-        self.assertIn("collection-scroll-view", widget_test)
-        self.assertIn("tester.scrollUntilVisible(", widget_test)
+        self.assertIn("store-scroll-view", widget_test)
+        self.assertIn("profile-section-cosmetics", widget_test)
 
     def test_main_hub_groups_play_clan_collection_store_and_profile(
         self,
@@ -491,6 +582,9 @@ class FlutterClientContractTests(unittest.TestCase):
         ).read_text(encoding="utf-8")
         play_mode = (
             CLIENT / "lib" / "src" / "screens" / "play_mode_screen.dart"
+        ).read_text(encoding="utf-8")
+        career = (
+            CLIENT / "lib" / "src" / "screens" / "career_screen.dart"
         ).read_text(encoding="utf-8")
         profile = (
             CLIENT / "lib" / "src" / "screens" / "profile_screen.dart"
@@ -514,14 +608,14 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("home: const MainMenuScreen()", app_source)
         self.assertIn("main-menu-play", main_menu)
         self.assertIn("main-menu-clan", main_menu)
-        self.assertIn("main-menu-collection", main_menu)
+        self.assertIn("main-menu-statistics", main_menu)
         self.assertIn("main-menu-store", main_menu)
         self.assertIn("main-menu-profile", main_menu)
         self.assertIn("main-menu-how-to-play", main_menu)
         self.assertIn("main-menu-settings", main_menu)
         self.assertNotIn("main-menu-career", main_menu)
         self.assertNotIn("main-menu-season", main_menu)
-        self.assertNotIn("main-menu-statistics", main_menu)
+        self.assertNotIn("main-menu-collection", main_menu)
         self.assertIn("PlayerStatusBar(", main_menu)
         self.assertIn("showClaimBadge: true", main_menu)
         self.assertIn("player-status-profile-action", status_bar)
@@ -531,23 +625,34 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("play-mode-career", play_mode)
         self.assertIn("play-mode-training", play_mode)
         self.assertIn("const CareerScreen()", play_mode)
+        self.assertIn("career-scroll-view", career)
+        self.assertIn("career-back-button", career)
         self.assertIn("EditorMode.online", play_mode)
         self.assertIn("EditorMode.training", play_mode)
 
         self.assertIn("profile-section-general", profile)
-        self.assertIn("profile-section-rating-season", profile)
+        self.assertIn("profile-section-cosmetics", profile)
         self.assertIn("profile-section-match-history", profile)
         self.assertIn("profile-section-daily-missions", profile)
         self.assertIn("profile-section-achievements", profile)
         self.assertIn("statisticsProvider", profile)
         self.assertIn("seasonProvider", profile)
+        self.assertIn("profile-rating-card", profile)
+        self.assertIn("profile-cosmetics-card", profile)
+        self.assertIn("profile-cosmetic-section-module", profile)
+        self.assertIn("profile-cosmetic-section-board", profile)
+        self.assertIn("profile-cosmetic-section-profile", profile)
         self.assertIn("claimDailyMission", profile)
         self.assertIn("claimAchievement", profile)
         self.assertIn("api.fetchReplay(matchId)", profile)
 
         self.assertIn("CollectionScreenMode.store", collection)
-        self.assertIn("collection-section-kit", collection)
-        self.assertIn("collection-section-cosmetics", collection)
+        self.assertIn("kitOnly", collection)
+        self.assertIn("kit-save-and-return", collection)
+        self.assertIn("_saveKitAndReturn", collection)
+        self.assertIn("Navigator.of(context).maybePop()", collection)
+        self.assertIn("showSaveButton: false", collection)
+        self.assertIn("store-section-selector", collection)
         self.assertIn("store-intro-card", collection)
         self.assertIn("GÖRSEL İÇERİK MAĞAZASI", collection)
 
@@ -578,8 +683,8 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("final columnCount = constraints.maxWidth >= 720", palette_source)
         self.assertIn("? 4", palette_source)
         self.assertIn("textAlign: TextAlign.center", palette_source)
-        self.assertIn("fontSize: 13", palette_source)
-        self.assertIn("size: 24", palette_source)
+        self.assertIn("fontSize: dense ? 10.5 : compact ? 10 : 13", palette_source)
+        self.assertIn("size: dense ? 18 : compact ? 18 : 24", palette_source)
         self.assertIn("module-icon-${module.id}", board_source)
         self.assertNotIn("module-name-${module.id}", board_source)
         self.assertNotIn("module-stat-badges-${module.id}", board_source)
@@ -960,7 +1065,7 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("SONRAKİ SAVAŞ", career_battle)
         self.assertIn("BOSS HAZIRLIĞINA GEÇ", career_battle)
         self.assertIn("KOŞUYU TAMAMLA", career_battle)
-        self.assertIn("KARİYER SONUCUNA DÖN", career_battle)
+        self.assertIn("KARİYER EKRANINA DÖN", career_battle)
         self.assertIn("primaryActionRequiresCompletion: true", career_battle)
         self.assertIn("primaryActionLabel", controls)
         self.assertIn("primaryActionEnabled", controls)
@@ -1186,6 +1291,9 @@ class FlutterClientContractTests(unittest.TestCase):
         release = (
             ROOT / "docs" / "V0.8.4_PROFIL_KLAN_VE_KARIYER_HAZIRLIK.md"
         ).read_text(encoding="utf-8")
+        widget_test = (
+            CLIENT / "test" / "widget_test.dart"
+        ).read_text(encoding="utf-8")
 
         self.assertIn("main-menu-clan", main_menu)
         self.assertIn("ProfileSection.friends", profile)
@@ -1203,12 +1311,19 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("/how-to-play", header)
         self.assertIn("career-player-board-editor", career)
         self.assertIn("career-opponent-board-preview", career)
+        self.assertIn("vertical: true", career)
+        self.assertIn("career-module-selection-card", career)
+        self.assertIn("returnToPreviousMenu(context)", career)
         self.assertIn("KOŞUYU BAŞLAT", career)
         self.assertNotIn("title: 'GÜNLÜK GÖREVLER'", career)
         self.assertNotIn("title: 'BAŞARIMLAR'", career)
         self.assertIn("Komutan Sistemi", feature_pool)
         self.assertIn("devreyi kurduktan ve doğruladıktan sonra", feature_pool.lower())
         self.assertIn("v0.8.4", release)
+        self.assertIn("ÇEVRİMİÇİ SAVAŞ • v0.8.9", widget_test)
+        self.assertIn("ANTRENMAN • v0.8.9", widget_test)
+        self.assertNotIn("ÇEVRİMİÇİ SAVAŞ • v0.8.4", widget_test)
+        self.assertNotIn("ANTRENMAN • v0.8.4", widget_test)
 
         status_bar = (
             CLIENT / "lib" / "src" / "widgets" / "player_status_bar.dart"
@@ -1240,11 +1355,13 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("embeddedFriendsOnly", social)
         self.assertNotIn("SOSYAL MERKEZ", social)
         self.assertIn("social-outgoing-requests", social)
-        self.assertIn("social-safety-card", social)
-        self.assertIn("social-alpha-feedback", social)
+        settings = (CLIENT / "lib" / "src" / "screens" / "settings_screen.dart").read_text(encoding="utf-8")
+        alpha_feedback = (CLIENT / "lib" / "src" / "screens" / "alpha_feedback_screen.dart").read_text(encoding="utf-8")
+        self.assertNotIn("social-safety-card", social)
+        self.assertIn("settings-alpha-feedback", settings)
+        self.assertIn("alpha-feedback-submit", alpha_feedback)
         self.assertIn("Arkadaşlığı kaldır", social)
         self.assertIn("Klanı kapat", social)
-        self.assertIn("Oyuncu raporlama ve engelleme henüz", social)
         self.assertIn("Komutan Sistemi", feature_pool)
         self.assertIn("Oyuncu devreyi kurduktan ve doğruladıktan sonra", feature_pool)
         self.assertIn("Oyuncu Tarzı Profili", feature_pool)

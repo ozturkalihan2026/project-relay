@@ -2,8 +2,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/relay_models.dart';
 
-final boardControllerProvider =
+final onlineBoardControllerProvider =
     NotifierProvider<BoardController, BoardEditorState>(BoardController.new);
+final trainingBoardControllerProvider =
+    NotifierProvider<BoardController, BoardEditorState>(BoardController.new);
+final careerBoardControllerProvider =
+    NotifierProvider<BoardController, BoardEditorState>(BoardController.new);
+
+final boardControllerProvider = onlineBoardControllerProvider;
 
 const maxBoardModules = 6;
 

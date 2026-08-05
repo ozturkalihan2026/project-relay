@@ -1,3 +1,98 @@
+## v0.8.9 — Üç Kartlı Kariyer Hazırlığı ve Yenilgi Dönüş Akışı
+
+- Kariyer hazırlığı üç bağımsız alana ayrıldı: Modül Seç, Senin Devren ve Koşu Rakibi.
+- Oyuncu ve rakip devre kartları aynı 470 px kapsayıcı ve 430 px devre ölçeğine bağlandı.
+- Yenilgide savaş ekranı düğmesi `KARİYER EKRANINA DÖN` oldu; terminal sonuç kartı atlanarak doğrudan yeni koşu hazırlığı gösteriliyor.
+- Zaferde mevcut `SONRAKİ SAVAŞ` / boss hazırlığı akışı korunuyor.
+- Çevrimiçi Savaş ve Antrenman modül kartları 66 px'ten 44 px'e indirildi.
+- Widget ve kaynak sözleşmeleri yeni yerleşim, dönüş metni ve kompakt palet ölçüsünü doğrulayacak şekilde güncellendi.
+
+## v0.8.8 rev2 — Sıkı widget test gözden geçirme mekanizması
+
+## v0.8.8 rev3 — Lazy widget kaydırma kabul hotfix'i
+
+- Widget test kaydırma yardımcısının, `ListView` tarafından henüz oluşturulmamış
+  hedefleri kaydırma öncesinde zorunlu olarak araması kaldırıldı.
+- `scrollIntoView`, kaydırmadan önce yalnızca olası yinelenen hedefleri denetliyor;
+  hedefi `scrollUntilVisible` ile tembel olarak oluşturtuyor ve kaydırma sonunda
+  benzersiz/hit-test edilebilir olduğunu doğruluyor.
+- İç içe kaydırıcı yanında listenin en sonunda tembel oluşturulan düğmeyi bulan
+  doğrudan regresyon testi eklendi.
+- Kaynak sözleşmesi, eski hatalı ön koşulun yeniden eklenmesini engelleyecek
+  kontrollerle genişletildi.
+- Flutter istemci yapı numarası `0.8.8+60` oldu. Oyun davranışı, API,
+  veritabanı ve denge değerleri değiştirilmedi.
+
+- Kariyer testinde yalnız eksene göre seçilen iki dikey `Scrollable` arasındaki
+  belirsizlik giderildi; dış kariyer kaydırıcısı artık
+  `AlwaysScrollableScrollPhysics` filtresiyle benzersiz seçilir.
+- Ortak `widget_test_support.dart` yardımcıları eklendi. Kaydırılacak hedef,
+  kaydırıcı ve hit-test sonucu her etkileşimden önce doğrulanır.
+- Widget testlerinde hit-test uyarıları artık ölümcül test hatasıdır; görünmeyen
+  veya kapalı düğmelere yapılan tap çağrıları sessiz uyarı olarak geçemez.
+- İç içe `Scrollable` alanlarında doğru kaydırıcının seçildiğini doğrulayan ayrı
+  regresyon testi eklendi.
+- Windows ve Bash bootstrap akışları, tam test paketinden önce navigasyon/widget
+  kabul testlerini tek iş parçacığında ve ayrıntılı raporla çalıştırır.
+- Flutter istemci yapı numarası `0.8.8+59` oldu; oyun davranışı, API, veritabanı
+  ve denge değiştirilmedi.
+
+## v0.8.8 rev1 — Kariyer widget testi ve Başlangıç Sekizlisi kaydetme akışı
+
+- Kariyer widget testi, ekranın altında henüz oluşturulmamış `MENÜYE DÖN`
+  düğmesini doğrudan aramak yerine kariyer kaydırma alanında görünür hâle getirir.
+- Başlangıç Sekizlisi ekranındaki **Ana Menüye Dön** düğmesi kaldırıldı.
+- Kit düzenleme ekranının altındaki yeni **KAYDET** düğmesi sekizliyi sunucuya
+  kaydeder ve başarılı kayıt sonrasında oyuncuyu açıldığı savaş hazırlık ekranına
+  geri döndürür.
+- Başlangıç Sekizlisi ekranında yinelenen iç `SEKİZLİ KİTİ KAYDET` düğmesi
+  gizlendi; tek kayıt eylemi ekranın altında bırakıldı.
+- Flutter istemci yapı numarası `0.8.8+58` oldu; API, veritabanı, savaş
+  kuralları ve denge değiştirilmedi.
+
+## v0.8.8 — Dönüş Davranışları, Kompakt Mağaza ve Kariyer Yerleşimi
+
+- Çevrimiçi Savaş, Kariyer ve Antrenman hazırlık ekranlarındaki **Menüye Dön**
+  eylemi bir önceki Oyna menüsüne döner.
+- Profil, Klan, İstatistikler, Mağaza, Ayarlar, Nasıl Oynanır ve Alfa Geri
+  Bildirimi ekranlarındaki **Ana Menüye Dön** eylemi rota yığınını temizleyerek
+  doğrudan ana merkeze döner.
+- Mağaza kartları daha küçük ön izleme, yoğun düğme ve 2–6 sütunlu esnek grid ile
+  yaklaşık yarı alana indirildi.
+- Profil > Kozmetik alanı Modül, Devre Kartı ve Profil alt sekmelerine ayrıldı;
+  satın alınmış içerikler buradan kuşanılmaya devam eder.
+- Kariyer modül paleti oyuncu devresinin soluna, yukarıdan aşağıya tek sütun ve
+  yoğun kartlarla taşındı. Oyuncu devresi ile koşu rakibi aynı satırda ve aynı
+  430 px kart ölçeğinde gösterilir.
+- Flutter istemci `0.8.8+57`; API, veritabanı şeması, savaş kuralları ve denge
+  değiştirilmedi.
+
+## v0.8.7 rev1 — Flutter analiz hotfix'i
+
+- Haftalık lig lider tablosunda modelde bulunmayan `matches` alanı kaldırıldı.
+  Toplam maç sayısı `wins + draws + losses` üzerinden hesaplanıyor.
+- Profil ve İstatistikler ekranlarındaki `_MetricBox` bileşenlerinden hiçbir
+  çağrıda kullanılmayan `accent` parametresi kaldırıldı.
+- Flutter istemci yapı numarası `0.8.7+56` oldu; API, veritabanı, savaş
+  kuralları ve ürün davranışı değişmedi.
+
+## v0.8.5 rev2 — Widget test sürüm beklentisi hotfix'i
+
+- Ana merkez widget testindeki Çevrimiçi Savaş ve Antrenman başlık beklentileri
+  eski `v0.8.4` değerinden gerçek istemci başlığı olan `v0.8.5` değerine taşındı.
+- Sürüm metni uyuşmazlığının tekrarını engelleyen kaynak sözleşme kontrolü eklendi.
+- Flutter istemci yapı numarası `0.8.5+53` oldu; API, veritabanı, savaş
+  kuralları ve ürün davranışı değişmedi.
+
+## v0.8.5 rev1 — Riverpod sağlayıcı türü hotfix'i
+
+- Editör modlarına göre ayrı devre durumunu seçen getter, kullanılan Riverpod
+  sürümünde dışa açık olmayan `ProviderListenable` yerine doğrudan
+  `NotifierProvider<BoardController, BoardEditorState>` döndürür.
+- Çevrimiçi, Antrenman ve Kariyer devre durumlarının ayrılığı korunur.
+- Flutter istemci yapı numarası `0.8.5+52` oldu; API, veritabanı, savaş
+  kuralları ve ürün davranışı değişmedi.
+
 ## v0.8.4 rev2 — Üst erişim ve profil sekmesi widget test hotfix'i
 
 - Profil ekranındaki **Ana Menüye Dön** düğmesi testte görünür hâle getirildikten

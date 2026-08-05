@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../api/relay_api.dart';
 import '../models/relay_models.dart';
+import '../navigation/navigation_actions.dart';
 import '../state/board_controller.dart';
 import '../theme/cosmetic_visuals.dart';
 import '../theme/relay_theme.dart';
@@ -11,6 +12,7 @@ import '../widgets/circuit_board.dart';
 import '../widgets/module_palette.dart';
 import '../widgets/relay_notice.dart';
 import 'career_battle_screen.dart';
+import 'collection_screen.dart';
 
 class CareerScreen extends ConsumerStatefulWidget {
   const CareerScreen({super.key});
@@ -33,7 +35,7 @@ class _CareerScreenState extends ConsumerState<CareerScreen> {
     final catalogs = ref.watch(catalogsProvider);
     final careerBoard = ref.watch(careerBoardProvider);
     final collection = ref.watch(collectionProvider);
-    final editorState = ref.watch(boardControllerProvider);
+    final editorState = ref.watch(careerBoardControllerProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -98,13 +100,13 @@ class _CareerScreenState extends ConsumerState<CareerScreen> {
                       visuals: _visuals,
                       busy: _runBusy,
                       onPaletteSelected: ref
-                          .read(boardControllerProvider.notifier)
+                          .read(careerBoardControllerProvider.notifier)
                           .selectPalette,
                       onBoardModuleReturned: _returnModuleToPalette,
                       onCellTap: _tapCell,
                       onModuleDropped: _dropModule,
                       onRotateModule: ref
-                          .read(boardControllerProvider.notifier)
+                          .read(careerBoardControllerProvider.notifier)
                           .rotateAt,
                       onReset: _resetCareerBoard,
                       onValidate: _validateCareerBoard,
@@ -112,6 +114,7 @@ class _CareerScreenState extends ConsumerState<CareerScreen> {
                     return RefreshIndicator(
                       onRefresh: _refreshAll,
                       child: ListView(
+                        key: const ValueKey('career-scroll-view'),
                         padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
                         children: [
                           _ProgressCard(profile: snapshot.profile),
@@ -170,9 +173,9 @@ class _CareerScreenState extends ConsumerState<CareerScreen> {
                             key: const ValueKey('career-back-button'),
                             onPressed: _runBusy
                                 ? null
-                                : () => Navigator.of(context).pop(),
+                                : () => returnToPreviousMenu(context),
                             icon: const Icon(Icons.arrow_back),
-                            label: const Text('ANA MENÜYE DÖN'),
+                            label: const Text('MENÜYE DÖN'),
                           ),
                         ],
                       ),
@@ -200,7 +203,7 @@ class _CareerScreenState extends ConsumerState<CareerScreen> {
     if (_loadedBoardSignature == signature) return;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || _loadedBoardSignature == signature) return;
-      final controller = ref.read(boardControllerProvider.notifier);
+      final controller = ref.read(careerBoardControllerProvider.notifier);
       controller.applyKit(collection.kit);
       if (savedBoard == null) {
         controller.reset();
@@ -232,7 +235,7 @@ class _CareerScreenState extends ConsumerState<CareerScreen> {
 
   void _tapCell(int index) {
     try {
-      ref.read(boardControllerProvider.notifier).tapCell(index);
+      ref.read(careerBoardControllerProvider.notifier).tapCell(index);
     } on StateError catch (error) {
       _showError(error.toString().replaceFirst('Bad state: ', ''));
     }
@@ -240,7 +243,7 @@ class _CareerScreenState extends ConsumerState<CareerScreen> {
 
   void _dropModule(int index, ModuleDragData data) {
     try {
-      ref.read(boardControllerProvider.notifier).dropModule(index, data);
+      ref.read(careerBoardControllerProvider.notifier).dropModule(index, data);
     } on StateError catch (error) {
       _showError(error.toString().replaceFirst('Bad state: ', ''));
     }
@@ -249,7 +252,7 @@ class _CareerScreenState extends ConsumerState<CareerScreen> {
   void _returnModuleToPalette(ModuleDragData data) {
     final sourceCell = data.sourceCell;
     if (!data.isFromBoard || sourceCell == null) return;
-    ref.read(boardControllerProvider.notifier).removeModuleAt(sourceCell);
+    ref.read(careerBoardControllerProvider.notifier).removeModuleAt(sourceCell);
     RelayNotice.show(
       context,
       'Modül kariyer devresinden kaldırıldı.',
@@ -258,7 +261,7 @@ class _CareerScreenState extends ConsumerState<CareerScreen> {
   }
 
   void _resetCareerBoard() {
-    ref.read(boardControllerProvider.notifier).reset();
+    ref.read(careerBoardControllerProvider.notifier).reset();
     RelayNotice.show(
       context,
       'Kariyer devresi başlangıç düzenine döndürüldü.',
@@ -270,10 +273,10 @@ class _CareerScreenState extends ConsumerState<CareerScreen> {
     if (_runBusy) return;
     setState(() => _runAction = 'validate');
     try {
-      final state = ref.read(boardControllerProvider);
+      final state = ref.read(careerBoardControllerProvider);
       final validation =
           await ref.read(relayApiProvider).validateBoard(state.board);
-      ref.read(boardControllerProvider.notifier).applyValidation(validation);
+      ref.read(careerBoardControllerProvider.notifier).applyValidation(validation);
       if (mounted) {
         final unpowered = validation.unpoweredIds.length;
         RelayNotice.show(
@@ -297,9 +300,9 @@ class _CareerScreenState extends ConsumerState<CareerScreen> {
 
   Future<SavedBoard> _validateAndSaveCareerBoard() async {
     final api = ref.read(relayApiProvider);
-    final state = ref.read(boardControllerProvider);
+    final state = ref.read(careerBoardControllerProvider);
     final validation = await api.validateBoard(state.board);
-    ref.read(boardControllerProvider.notifier).applyValidation(validation);
+    ref.read(careerBoardControllerProvider.notifier).applyValidation(validation);
     final saved = await api.saveCareerBoard(state.board);
     ref.invalidate(careerBoardProvider);
     return saved;
@@ -479,13 +482,79 @@ class _CareerInlineEditor extends StatelessWidget {
             ? RelayColors.mint
             : RelayColors.amber;
 
-    return Container(
-      key: const ValueKey('career-player-board-editor'),
-      padding: const EdgeInsets.all(14),
+    final moduleCard = Container(
+      key: const ValueKey('career-module-selection-card'),
+      width: 188,
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0x1517CDE3),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0x5538E8FF)),
+        color: RelayColors.cyan.withValues(alpha: 0.07),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: RelayColors.cyan.withValues(alpha: 0.42)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Row(
+            children: [
+              Icon(Icons.view_module_outlined, color: RelayColors.cyan),
+              SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'MODÜL SEÇ',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 0.7,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          const Text(
+            'Modülleri devreye sürükle veya seçip hücreye dokun.',
+            style: TextStyle(color: RelayColors.muted, fontSize: 9.5),
+          ),
+          const SizedBox(height: 10),
+          ModulePalette(
+            vertical: true,
+            modules: modules,
+            selectedKind: state.selectedKind,
+            onSelected: onPaletteSelected,
+            onBoardModuleReturned: onBoardModuleReturned,
+            remainingByKind: {
+              for (final module in modules)
+                module.kind: state.remainingFor(module.kind),
+            },
+          ),
+          const SizedBox(height: 8),
+          TextButton.icon(
+            key: const ValueKey('career-open-kit-builder'),
+            onPressed: busy
+                ? null
+                : () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (context) =>
+                            const CollectionScreen(kitOnly: true),
+                      ),
+                    ),
+            icon: const Icon(Icons.tune),
+            label: const Text(
+              'BAŞLANGIÇ SEKİZLİSİNİ DEĞİŞTİR',
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ],
+      ),
+    );
+
+    final boardCard = Container(
+      key: const ValueKey('career-player-board-editor'),
+      width: 470,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: RelayColors.cyan.withValues(alpha: 0.07),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: RelayColors.cyan.withValues(alpha: 0.42)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -506,7 +575,7 @@ class _CareerInlineEditor extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      'Modülleri burada düzenle; savaş öncesinde otomatik kaydedilir.',
+                      'Savaş öncesinde otomatik kaydedilir.',
                       style: TextStyle(
                         color: RelayColors.muted,
                         fontSize: 10,
@@ -531,20 +600,9 @@ class _CareerInlineEditor extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 10),
-          ModulePalette(
-            modules: modules,
-            selectedKind: state.selectedKind,
-            onSelected: onPaletteSelected,
-            onBoardModuleReturned: onBoardModuleReturned,
-            remainingByKind: {
-              for (final module in modules)
-                module.kind: state.remainingFor(module.kind),
-            },
-          ),
-          const SizedBox(height: 10),
           Center(
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 500),
+              constraints: const BoxConstraints(maxWidth: 430),
               child: CircuitBoard(
                 placements: state.placements,
                 specs: specs,
@@ -579,6 +637,29 @@ class _CareerInlineEditor extends StatelessWidget {
           ),
         ],
       ),
+    );
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth >= 670) {
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              moduleCard,
+              const SizedBox(width: 12),
+              boardCard,
+            ],
+          );
+        }
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            moduleCard,
+            const SizedBox(height: 12),
+            boardCard,
+          ],
+        );
+      },
     );
   }
 }
@@ -620,9 +701,11 @@ class _CareerRunCard extends StatelessWidget {
             ? _active(context)
             : run.status == 'awaiting_booster'
                 ? _boosterChoice()
-                : run.isTerminal
-                    ? _terminal()
-                    : _idle(context),
+                : run.status == 'failed'
+                    ? _idle(context)
+                    : run.isTerminal
+                        ? _terminal()
+                        : _idle(context),
       ),
     );
   }
@@ -653,13 +736,14 @@ class _CareerRunCard extends StatelessWidget {
         const SizedBox(height: 14),
         LayoutBuilder(
           builder: (context, constraints) {
-            if (constraints.maxWidth >= 980) {
-              return Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
+            if (constraints.maxWidth >= 1180) {
+              return Wrap(
+                alignment: WrapAlignment.center,
+                spacing: 14,
+                runSpacing: 14,
                 children: [
-                  Expanded(flex: 6, child: playerEditor),
-                  const SizedBox(width: 14),
-                  const Expanded(flex: 4, child: opponentPreview),
+                  SizedBox(width: 670, child: playerEditor),
+                  const SizedBox(width: 470, child: opponentPreview),
                 ],
               );
             }
@@ -727,13 +811,14 @@ class _CareerRunCard extends StatelessWidget {
         const SizedBox(height: 14),
         LayoutBuilder(
           builder: (context, constraints) {
-            if (constraints.maxWidth >= 980) {
-              return Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
+            if (constraints.maxWidth >= 1180) {
+              return Wrap(
+                alignment: WrapAlignment.center,
+                spacing: 14,
+                runSpacing: 14,
                 children: [
-                  Expanded(flex: 6, child: playerEditor),
-                  const SizedBox(width: 14),
-                  Expanded(flex: 4, child: opponentPreview),
+                  SizedBox(width: 670, child: playerEditor),
+                  SizedBox(width: 470, child: opponentPreview),
                 ],
               );
             }
@@ -1000,7 +1085,7 @@ class _CareerBoardPreview extends StatelessWidget {
           const SizedBox(height: 10),
           if (draft == null)
             Container(
-              height: 250,
+              height: 430,
               alignment: Alignment.center,
               decoration: BoxDecoration(
                 color: RelayColors.surface.withValues(alpha: 0.45),
@@ -1028,7 +1113,7 @@ class _CareerBoardPreview extends StatelessWidget {
           else
             Center(
               child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 390),
+                constraints: const BoxConstraints(maxWidth: 430),
                 child: IgnorePointer(
                   child: CircuitBoard(
                     placements: placements,

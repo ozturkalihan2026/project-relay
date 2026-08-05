@@ -50,6 +50,12 @@ try {
 
     Invoke-Flutter pub get
     Invoke-Flutter analyze
+
+    # Navigasyon, görünürlük ve kaydırma hatalarını önce küçük ve anlaşılır
+    # bir kabul paketiyle yakala. Bu testlerde hit-test uyarıları ölümcüldür.
+    Invoke-Flutter test --concurrency=1 --reporter=expanded test/widget_test_support_test.dart test/widget_test.dart
+
+    # İzole widget kabulünden sonra tüm istemci regresyonlarını çalıştır.
     Invoke-Flutter test
 }
 finally {

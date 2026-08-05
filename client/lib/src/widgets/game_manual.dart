@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/relay_models.dart';
+import '../navigation/navigation_actions.dart';
 import '../theme/relay_theme.dart';
 import 'app_header_actions.dart';
 import 'manual_circuit_demo.dart';
@@ -32,7 +33,7 @@ class GameManualScreen extends StatelessWidget {
               ),
             ),
             Text(
-              'PROJECT RELAY • v0.8.4',
+              'PROJECT RELAY • v0.8.9',
               style: TextStyle(
                 color: RelayColors.muted,
                 fontSize: 10,
@@ -535,7 +536,7 @@ class GameManualScreen extends StatelessWidget {
                   const SizedBox(height: 22),
                   FilledButton.icon(
                     key: const Key('manual-bottom-back-button'),
-                    onPressed: () => Navigator.of(context).pop(),
+                    onPressed: () => returnToMainMenu(context),
                     icon: const Icon(Icons.arrow_back),
                     label: const Padding(
                       padding: EdgeInsets.symmetric(vertical: 13),

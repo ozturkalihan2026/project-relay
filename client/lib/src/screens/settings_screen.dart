@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../navigation/navigation_actions.dart';
 import '../state/app_settings.dart';
+import 'alpha_feedback_screen.dart';
 import '../theme/relay_theme.dart';
 import '../widgets/app_header_actions.dart';
 
@@ -138,10 +140,37 @@ class SettingsScreen extends ConsumerWidget {
                       ),
                     ),
                   ),
+                  const SizedBox(height: 12),
+                  Card(
+                    child: ListTile(
+                      key: const ValueKey('settings-alpha-feedback'),
+                      leading: const Icon(
+                        Icons.feedback_outlined,
+                        color: RelayColors.cyan,
+                      ),
+                      title: const Text(
+                        'Alfa geri bildirimi',
+                        style: TextStyle(fontWeight: FontWeight.w800),
+                      ),
+                      subtitle: const Text(
+                        'Denge, hata ve arayüz geri bildirimlerini buradan gönder.',
+                        style: TextStyle(
+                          color: RelayColors.muted,
+                          fontSize: 11,
+                        ),
+                      ),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (context) => const AlphaFeedbackScreen(),
+                        ),
+                      ),
+                    ),
+                  ),
                   const SizedBox(height: 22),
                   OutlinedButton.icon(
                     key: const ValueKey('settings-back-button'),
-                    onPressed: () => Navigator.of(context).pop(),
+                    onPressed: () => returnToMainMenu(context),
                     icon: const Icon(Icons.arrow_back),
                     label: const Text('ANA MENÜYE DÖN'),
                   ),

@@ -1,34 +1,34 @@
-# Project Relay v0.8.4 — Profil, Klan ve Kariyer Hazırlığı
+# Project Relay v0.8.9 — Kariyer Hazırlığı ve Kompakt Modül Paleti
 
 Project Relay; oyuncuların merkezî çekirdek çevresine yönlü bağlantılarla modül
 yerleştirip sunucu yetkili, deterministik devre savaşları yaptığı Flutter +
 FastAPI projesidir.
 
-## v0.8.4 odak noktası
+## v0.8.9 odak noktası
 
-- Profil içeriğinin tek yerde toplanması ve **Arkadaşlar** bölümünün Genel'in
-  yanına ayrı sekme olarak eklenmesi
-- Sosyal Merkez kabuğunun kaldırılması; profil düzenleme ve arkadaşlıkların
-  Profil içinde, klanın yalnız Klan ekranında sunulması
-- Günlük görev ve başarım ödüllerinin Profil ekranında alınması; Kariyer
-  ekranından yinelenen görev/başarım alanlarının kaldırılması
-- Bütün ana oyun ekranlarında etkin profil kartı, Ayarlar ve Nasıl Oynanır
-  erişimi sağlayan ortak üst sağ eylem alanı
-- Kariyer hazırlığının ayrı düz metin sayfası yerine doğrudan düzenlenebilir
-  oyuncu devresi ve karşı koşu devresiyle aynı ekranda yapılması
-- Kariyer savaşı başlamadan önce güncel devrenin doğrulanıp sunucuya kaydedilmesi
-- Komutan Sistemi ve Oyuncu Tarzı Profilinin uygulanmadan özellik havuzunda
-  korunması
+- Kariyerde modül seçimi, oyuncu devresi ve koşu rakibi üç ayrı karttır.
+- Oyuncu ve rakip devreleri aynı görsel ölçekte gösterilir.
+- Kariyer yenilgisi doğrudan yeni koşu hazırlığına döner.
+- Çevrimiçi ve Antrenman modül paletleri üçte bir daha kısa kartlar kullanır.
 
-API ve istemci sürümleri `0.8.4` / `0.8.4+50` olarak güncellendi. PostgreSQL
-şeması, Alembic başı `20260801_0009`, savaş kuralları `0.8` ve oyun dengesi
-değişmedi.
+- Savaş hazırlıklarında **Menüye Dön** ile Oyna menüsüne, diğer ürün
+  ekranlarında **Ana Menüye Dön** ile doğrudan ana merkeze dönüş
+- Mağazada daha küçük kareye yakın kozmetik kartları ve yüksek yoğunluklu grid
+- Profil > Kozmetik altında Modül, Devre Kartı ve Profil kategori sekmeleri
+- Kariyerde solda tek sütun modül paleti, yanında oyuncu devresi ve aynı satırda
+  eşit ölçekli koşu rakibi devresi
+- Çevrimiçi, Antrenman ve Kariyer için ayrı devre durumlarının korunması
+- Komutan Sistemi ile Oyuncu Tarzı Profilinin özellik havuzunda tutulması
 
-Ayrıntılı sürüm belgesi:
-[docs/V0.8.4_PROFIL_KLAN_VE_KARIYER_HAZIRLIK.md](docs/V0.8.4_PROFIL_KLAN_VE_KARIYER_HAZIRLIK.md)
+Sunucu API sürümü değiştirilmedi; Flutter istemci sürümü `0.8.8+59`'dir.
+PostgreSQL şeması, Alembic başı `20260801_0009`, savaş kuralları `0.8` ve oyun
+dengesi değişmedi.
 
-Test raporu:
-[docs/V0.8.4_TEST_RAPORU.md](docs/V0.8.4_TEST_RAPORU.md)
+Güncel kapsam belgesi:
+[docs/V0.8.8_MENU_MAGAZA_PROFIL_KARIYER.md](docs/V0.8.8_MENU_MAGAZA_PROFIL_KARIYER.md)
+
+Güncel test raporu:
+[docs/V0.8.8_TEST_RAPORU.md](docs/V0.8.8_TEST_RAPORU.md)
 
 Özellik havuzu:
 [docs/OZELLIK_HAVUZU.md](docs/OZELLIK_HAVUZU.md)

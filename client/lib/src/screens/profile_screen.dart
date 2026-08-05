@@ -1,22 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../navigation/navigation_actions.dart';
 import '../api/relay_api.dart';
 import '../models/relay_models.dart';
 import '../theme/relay_theme.dart';
 import '../widgets/app_header_actions.dart';
 import '../widgets/relay_notice.dart';
 import 'replay_screen.dart';
-import 'season_screen.dart';
 import 'social_screen.dart';
+
+enum _ProfileCosmeticSection { module, board, profile }
 
 enum ProfileSection {
   general,
   friends,
-  ratingSeason,
+  cosmetics,
   matchHistory,
   dailyMissions,
   achievements,
+  seasonRewards,
 }
 
 class ProfileScreen extends ConsumerStatefulWidget {
@@ -35,6 +38,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   late ProfileSection _section;
   String? _claimingId;
   String? _loadingMatchId;
+  _ProfileCosmeticSection _cosmeticSection =
+      _ProfileCosmeticSection.module;
 
   @override
   void initState() {
@@ -54,6 +59,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         ) ??
         false;
     final social = ref.watch(socialProvider);
+    final claimableSeasonRewards = ref.watch(seasonProvider).asData?.value.tiers.any((tier) => tier.unlocked && !tier.claimed) ?? false;
     final incomingFriendRequests =
         social.asData?.value.incomingRequests.length ?? 0;
 
@@ -71,7 +77,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               ),
             ),
             Text(
-              'PROJECT RELAY • v0.8.4',
+              'PROJECT RELAY • v0.8.9',
               style: TextStyle(color: RelayColors.muted, fontSize: 10),
             ),
           ],
@@ -92,25 +98,25 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                 claimableDaily: claimableDaily,
                 claimableAchievements: claimableAchievements,
                 incomingFriendRequests: incomingFriendRequests,
+                claimableSeasonRewards: claimableSeasonRewards,
               ),
               const SizedBox(height: 14),
               switch (_section) {
-                ProfileSection.general => const SocialScreen(
-                    embeddedProfileOnly: true,
-                  ),
+                ProfileSection.general => _generalSection(),
                 ProfileSection.friends => const SocialScreen(
                     embeddedFriendsOnly: true,
                   ),
-                ProfileSection.ratingSeason => _ratingAndSeasonSection(),
+                ProfileSection.cosmetics => _cosmeticsSection(),
                 ProfileSection.matchHistory => _matchHistorySection(),
                 ProfileSection.dailyMissions => _dailyMissionsSection(),
                 ProfileSection.achievements => _achievementsSection(),
+                ProfileSection.seasonRewards => _seasonRewardsSection(),
               },
               const SizedBox(height: 18),
               OutlinedButton.icon(
                 key: const ValueKey('profile-menu-back'),
                 onPressed: _claimingId == null && _loadingMatchId == null
-                    ? () => Navigator.of(context).maybePop()
+                    ? () => returnToMainMenu(context)
                     : null,
                 icon: const Icon(Icons.arrow_back),
                 label: const Text('ANA MENÜYE DÖN'),
@@ -126,6 +132,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     required bool claimableDaily,
     required bool claimableAchievements,
     required int incomingFriendRequests,
+    required bool claimableSeasonRewards,
   }) {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
@@ -152,11 +159,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             ),
           ),
           const ButtonSegment(
-            value: ProfileSection.ratingSeason,
-            icon: Icon(Icons.military_tech_outlined),
+            value: ProfileSection.cosmetics,
+            icon: Icon(Icons.palette_outlined),
             label: Text(
-              'DERECE VE SEZON',
-              key: ValueKey('profile-section-rating-season'),
+              'KOZMETİK',
+              key: ValueKey('profile-section-cosmetics'),
             ),
           ),
           const ButtonSegment(
@@ -189,6 +196,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               key: ValueKey('profile-section-achievements'),
             ),
           ),
+          ButtonSegment(
+            value: ProfileSection.seasonRewards,
+            icon: _SectionIcon(
+              icon: Icons.card_giftcard_outlined,
+              notify: claimableSeasonRewards,
+            ),
+            label: const Text(
+              'SEZON ÖDÜLLERİ',
+              key: ValueKey('profile-section-season-rewards'),
+            ),
+          ),
         ],
         selected: {_section},
         onSelectionChanged: (selection) {
@@ -198,115 +216,51 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
   }
 
-  Widget _ratingAndSeasonSection() {
+  Widget _generalSection() {
     final statistics = ref.watch(statisticsProvider);
-    final season = ref.watch(seasonProvider);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        const SocialScreen(embeddedProfileOnly: true),
+        const SizedBox(height: 12),
         statistics.when(
-          data: (snapshot) => Column(
-            children: [
-              Card(
-                key: const ValueKey('profile-rating-card'),
-                child: Padding(
-                  padding: const EdgeInsets.all(18),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
+          data: (snapshot) => Card(
+            key: const ValueKey('profile-rating-card'),
+            child: Padding(
+              padding: const EdgeInsets.all(18),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const _CardTitle(
+                    icon: Icons.military_tech_outlined,
+                    title: 'DERECE',
+                  ),
+                  const SizedBox(height: 14),
+                  Wrap(
+                    spacing: 10,
+                    runSpacing: 10,
                     children: [
-                      const _CardTitle(
-                        icon: Icons.military_tech_outlined,
-                        title: 'DERECE',
+                      _MetricBox(
+                        value: '${snapshot.profile.rating}',
+                        label: 'DERECE',
                       ),
-                      const SizedBox(height: 14),
-                      Wrap(
-                        spacing: 10,
-                        runSpacing: 10,
-                        children: [
-                          _MetricBox(
-                            value: '${snapshot.profile.rating}',
-                            label: 'DERECE',
-                          ),
-                          _MetricBox(
-                            value: '${snapshot.profile.peakRating}',
-                            label: 'ZİRVE',
-                          ),
-                          _MetricBox(
-                            value: '${snapshot.profile.ratedMatches}',
-                            label: 'MAÇ',
-                          ),
-                          _MetricBox(
-                            value:
-                                '${(snapshot.profile.winRate * 100).round()}%',
-                            label: 'KAZANMA',
-                          ),
-                        ],
+                      _MetricBox(
+                        value: '${snapshot.profile.peakRating}',
+                        label: 'ZİRVE',
+                      ),
+                      _MetricBox(
+                        value: '${snapshot.profile.ratedMatches}',
+                        label: 'MAÇ',
+                      ),
+                      _MetricBox(
+                        value: '${(snapshot.profile.winRate * 100).round()}%',
+                        label: 'KAZANMA',
                       ),
                     ],
                   ),
-                ),
+                ],
               ),
-              const SizedBox(height: 12),
-              Card(
-                key: const ValueKey('profile-weekly-league-card'),
-                child: Padding(
-                  padding: const EdgeInsets.all(18),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      const _CardTitle(
-                        icon: Icons.calendar_view_week,
-                        title: 'HAFTALIK LİG',
-                      ),
-                      const SizedBox(height: 12),
-                      Wrap(
-                        spacing: 10,
-                        runSpacing: 10,
-                        children: [
-                          _MetricBox(
-                            value: '${snapshot.league.points}',
-                            label: 'PUAN',
-                          ),
-                          _MetricBox(
-                            value: snapshot.league.position == 0
-                                ? '—'
-                                : '#${snapshot.league.position}',
-                            label: 'SIRA',
-                          ),
-                          _MetricBox(
-                            value: '${snapshot.league.participantCount}',
-                            label: 'OYUNCU',
-                          ),
-                        ],
-                      ),
-                      if (snapshot.leaderboard.isNotEmpty) ...[
-                        const Divider(height: 26),
-                        for (final standing
-                            in snapshot.leaderboard.take(5))
-                          ListTile(
-                            dense: true,
-                            leading: Text(
-                              '#${standing.position}',
-                              style: const TextStyle(
-                                color: RelayColors.amber,
-                                fontWeight: FontWeight.w900,
-                              ),
-                            ),
-                            title: Text(standing.displayName),
-                            trailing: Text(
-                              '${standing.points} puan',
-                              style: const TextStyle(
-                                color: RelayColors.cyan,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                          ),
-                      ],
-                    ],
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
           loading: () => const _LoadingCard('Derece bilgileri yükleniyor.'),
           error: (error, _) => _ErrorCard(
@@ -314,74 +268,135 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             onRetry: () => ref.invalidate(statisticsProvider),
           ),
         ),
-        const SizedBox(height: 12),
-        season.when(
-          data: (snapshot) {
-            final availableRewards = snapshot.tiers
-                .where((tier) => tier.unlocked && !tier.claimed)
-                .length;
-            return Card(
-              key: const ValueKey('profile-season-card'),
-              child: Padding(
-                padding: const EdgeInsets.all(18),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    const _CardTitle(
-                      icon: Icons.auto_awesome,
-                      title: 'SEZON',
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      snapshot.season.title,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Wrap(
-                      spacing: 10,
-                      runSpacing: 10,
-                      children: [
-                        _MetricBox(
-                          value: '${snapshot.entry.points}',
-                          label: 'SEZON PUANI',
-                        ),
-                        _MetricBox(
-                          value: snapshot.entry.position == 0
-                              ? '—'
-                              : '#${snapshot.entry.position}',
-                          label: 'SIRA',
-                        ),
-                        _MetricBox(
-                          value: '$availableRewards',
-                          label: 'ALINABİLİR ÖDÜL',
-                          accent: availableRewards > 0
-                              ? RelayColors.amber
-                              : RelayColors.cyan,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 14),
-                    FilledButton.tonalIcon(
-                      key: const ValueKey('profile-open-season'),
-                      onPressed: _openSeason,
-                      icon: const Icon(Icons.open_in_new),
-                      label: const Text('SEZON YOLU VE ALFA GERİ BİLDİRİMİ'),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-          loading: () => const _LoadingCard('Sezon bilgileri yükleniyor.'),
-          error: (error, _) => _ErrorCard(
-            message: error.toString(),
-            onRetry: () => ref.invalidate(seasonProvider),
-          ),
-        ),
       ],
+    );
+  }
+
+  Widget _cosmeticsSection() {
+    final collection = ref.watch(collectionProvider);
+    return collection.when(
+      data: (snapshot) {
+        final selectedCategory = switch (_cosmeticSection) {
+          _ProfileCosmeticSection.module => 'module_skin',
+          _ProfileCosmeticSection.board => 'board_theme',
+          _ProfileCosmeticSection.profile => 'profile_frame',
+        };
+        final ownedItems = snapshot.cosmetics
+            .where(
+              (item) => item.owned && item.category == selectedCategory,
+            )
+            .toList(growable: false);
+        return Card(
+          key: const ValueKey('profile-cosmetics-card'),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const _CardTitle(
+                  icon: Icons.palette_outlined,
+                  title: 'KOZMETİK',
+                ),
+                const SizedBox(height: 6),
+                const Text(
+                  'Mağazadan aldığın kozmetikleri kategoriye göre görüntüle ve kuşan.',
+                  style: TextStyle(color: RelayColors.muted, fontSize: 11),
+                ),
+                const SizedBox(height: 12),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: SegmentedButton<_ProfileCosmeticSection>(
+                    key: const ValueKey('profile-cosmetic-section-selector'),
+                    showSelectedIcon: false,
+                    segments: const [
+                      ButtonSegment(
+                        value: _ProfileCosmeticSection.module,
+                        icon: Icon(Icons.memory_outlined),
+                        label: Text(
+                          'MODÜL',
+                          key: ValueKey('profile-cosmetic-section-module'),
+                        ),
+                      ),
+                      ButtonSegment(
+                        value: _ProfileCosmeticSection.board,
+                        icon: Icon(Icons.grid_4x4_outlined),
+                        label: Text(
+                          'DEVRE KARTI',
+                          key: ValueKey('profile-cosmetic-section-board'),
+                        ),
+                      ),
+                      ButtonSegment(
+                        value: _ProfileCosmeticSection.profile,
+                        icon: Icon(Icons.account_box_outlined),
+                        label: Text(
+                          'PROFİL',
+                          key: ValueKey('profile-cosmetic-section-profile'),
+                        ),
+                      ),
+                    ],
+                    selected: {_cosmeticSection},
+                    onSelectionChanged: _claimingId == null
+                        ? (selection) {
+                            setState(
+                              () => _cosmeticSection = selection.first,
+                            );
+                          }
+                        : null,
+                  ),
+                ),
+                const SizedBox(height: 14),
+                if (ownedItems.isEmpty)
+                  _EmptyState(
+                    icon: selectedCategory == 'module_skin'
+                        ? Icons.memory_outlined
+                        : selectedCategory == 'board_theme'
+                            ? Icons.grid_4x4_outlined
+                            : Icons.account_box_outlined,
+                    message:
+                        'Bu kategoride sahip olduğun kozmetik yok. Mağazadan satın aldıkların burada görünür.',
+                  )
+                else
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      final columns = constraints.maxWidth >= 980
+                          ? 4
+                          : constraints.maxWidth >= 700
+                              ? 3
+                              : 2;
+                      const spacing = 10.0;
+                      final width =
+                          (constraints.maxWidth - spacing * (columns - 1)) /
+                              columns;
+                      return Wrap(
+                        spacing: spacing,
+                        runSpacing: spacing,
+                        children: [
+                          for (final item in ownedItems)
+                            SizedBox(
+                              width: width,
+                              child: _ProfileCosmeticCard(
+                                item: item,
+                                busy: _claimingId != null,
+                                onEquip: () => _equipCosmetic(
+                                  item.id,
+                                  item.displayName,
+                                ),
+                              ),
+                            ),
+                        ],
+                      );
+                    },
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
+      loading: () => const _LoadingCard('Kozmetik koleksiyonu yükleniyor.'),
+      error: (error, _) => _ErrorCard(
+        message: error.toString(),
+        onRetry: () => ref.invalidate(collectionProvider),
+      ),
     );
   }
 
@@ -518,6 +533,78 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
   }
 
+
+  Widget _seasonRewardsSection() {
+    final season = ref.watch(seasonProvider);
+    return season.when(
+      data: (snapshot) => _GoalSection(
+        key: const ValueKey('profile-season-rewards-card'),
+        icon: Icons.card_giftcard_outlined,
+        title: 'SEZON ÖDÜLLERİ',
+        emptyMessage: 'Bu sezon için ödül bulunmuyor.',
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(4, 0, 4, 8),
+            child: Text(
+              snapshot.season.title,
+              style: const TextStyle(color: RelayColors.cyan, fontWeight: FontWeight.w900),
+            ),
+          ),
+          for (final tier in snapshot.tiers)
+            Card(
+              color: RelayColors.surface.withValues(alpha: 0.66),
+              child: ListTile(
+                leading: CircleAvatar(
+                  backgroundColor: tier.claimed
+                      ? RelayColors.mint.withValues(alpha: 0.18)
+                      : tier.unlocked
+                          ? RelayColors.amber.withValues(alpha: 0.18)
+                          : const Color(0xFF183440),
+                  child: Text(
+                    '${tier.tier}',
+                    style: TextStyle(
+                      color: tier.claimed
+                          ? RelayColors.mint
+                          : tier.unlocked
+                              ? RelayColors.amber
+                              : RelayColors.muted,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
+                title: Text(
+                  tier.title,
+                  style: const TextStyle(fontWeight: FontWeight.w900),
+                ),
+                subtitle: Text(
+                  '${tier.requiredPoints} SP • +${tier.rewardXp} XP • +${tier.rewardCredits} DK',
+                ),
+                trailing: tier.claimed
+                    ? const Chip(label: Text('ALINDI'))
+                    : FilledButton.tonal(
+                        onPressed: !tier.unlocked || _claimingId != null
+                            ? null
+                            : () => _claimSeasonReward(tier.tier),
+                        child: _claimingId == 'season:${tier.tier}'
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : Text(tier.unlocked ? 'ÖDÜL AL' : 'KİLİTLİ'),
+                      ),
+              ),
+            ),
+        ],
+      ),
+      loading: () => const _LoadingCard('Sezon ödülleri yükleniyor.'),
+      error: (error, _) => _ErrorCard(
+        message: error.toString(),
+        onRetry: () => ref.invalidate(seasonProvider),
+      ),
+    );
+  }
+
   Future<void> _refresh() async {
     ref.invalidate(guestSessionProvider);
     ref.invalidate(progressionProvider);
@@ -548,6 +635,34 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       action: () =>
           ref.read(relayApiProvider).claimAchievement(achievementId),
     );
+  }
+
+  Future<void> _claimSeasonReward(int tier) async {
+    await _claimReward(
+      id: 'season:$tier',
+      action: () => ref.read(relayApiProvider).claimSeasonTier(tier),
+    );
+    ref.invalidate(seasonProvider);
+  }
+
+  Future<void> _equipCosmetic(String cosmeticId, String displayName) async {
+    if (_claimingId != null) return;
+    setState(() => _claimingId = 'cosmetic:$cosmeticId');
+    try {
+      await ref.read(relayApiProvider).equipCosmetic(cosmeticId);
+      ref.invalidate(collectionProvider);
+      if (!mounted) return;
+      RelayNotice.show(
+        context,
+        '$displayName kuşanıldı.',
+        tone: RelayNoticeTone.success,
+      );
+    } on RelayApiException catch (error) {
+      if (!mounted) return;
+      RelayNotice.show(context, error.message, tone: RelayNoticeTone.error);
+    } finally {
+      if (mounted) setState(() => _claimingId = null);
+    }
   }
 
   Future<void> _claimReward({
@@ -612,12 +727,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     }
   }
 
-  void _openSeason() {
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(builder: (context) => const SeasonScreen()),
-    );
-  }
-
   String _formatDate(DateTime value) {
     final local = value.toLocal();
     return '${local.day.toString().padLeft(2, '0')}.'
@@ -642,6 +751,92 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         'loss' => RelayColors.coral,
         _ => RelayColors.amber,
       };
+}
+
+class _ProfileCosmeticCard extends StatelessWidget {
+  const _ProfileCosmeticCard({
+    required this.item,
+    required this.busy,
+    required this.onEquip,
+  });
+
+  final CosmeticItem item;
+  final bool busy;
+  final VoidCallback onEquip;
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = _hexColor(item.accentHex);
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: RelayColors.surface.withValues(alpha: 0.72),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: item.equipped
+              ? RelayColors.mint.withValues(alpha: 0.8)
+              : accent.withValues(alpha: 0.5),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Container(
+            height: 68,
+            decoration: BoxDecoration(
+              color: accent.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: accent.withValues(alpha: 0.65)),
+            ),
+            child: Center(
+              child: Icon(
+                item.category == 'module_skin'
+                    ? Icons.memory
+                    : item.category == 'board_theme'
+                        ? Icons.grid_on
+                        : Icons.person_outline,
+                color: accent,
+                size: 28,
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Text(
+            item.displayName,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontWeight: FontWeight.w900),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            item.description,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(color: RelayColors.muted, fontSize: 10),
+          ),
+          const SizedBox(height: 10),
+          if (item.equipped)
+            FilledButton.tonalIcon(
+              onPressed: null,
+              icon: const Icon(Icons.check_circle_outline),
+              label: const Text('KUŞANILDI'),
+            )
+          else
+            OutlinedButton.icon(
+              onPressed: busy ? null : onEquip,
+              icon: const Icon(Icons.checkroom_outlined),
+              label: const Text('KUŞAN'),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+Color _hexColor(String value) {
+  final normalized = value.replaceFirst('#', '');
+  final parsed = int.tryParse(normalized, radix: 16) ?? 0x38E8FF;
+  return Color(0xFF000000 | parsed);
 }
 
 class _SectionIcon extends StatelessWidget {
@@ -713,12 +908,10 @@ class _MetricBox extends StatelessWidget {
   const _MetricBox({
     required this.value,
     required this.label,
-    this.accent = RelayColors.cyan,
   });
 
   final String value;
   final String label;
-  final Color accent;
 
   @override
   Widget build(BuildContext context) {
@@ -726,17 +919,19 @@ class _MetricBox extends StatelessWidget {
       constraints: const BoxConstraints(minWidth: 104),
       padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 10),
       decoration: BoxDecoration(
-        color: accent.withValues(alpha: 0.09),
+        color: RelayColors.cyan.withValues(alpha: 0.09),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: accent.withValues(alpha: 0.35)),
+        border: Border.all(
+          color: RelayColors.cyan.withValues(alpha: 0.35),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             value,
-            style: TextStyle(
-              color: accent,
+            style: const TextStyle(
+              color: RelayColors.cyan,
               fontSize: 18,
               fontWeight: FontWeight.w900,
             ),

@@ -1,7 +1,7 @@
 name: project_relay_client
-description: Project Relay v0.8.4 profile, clan and inline career preparation client
+description: Project Relay v0.8.9 three-card career preparation and compact module palette client
 publish_to: none
-version: 0.8.4+50
+version: 0.8.9+61
 
 environment:
   sdk: ">=3.11.0 <4.0.0"

@@ -13,6 +13,8 @@ class ModulePalette extends StatelessWidget {
     required this.onSelected,
     required this.onBoardModuleReturned,
     required this.remainingByKind,
+    this.vertical = false,
+    this.compact = false,
     super.key,
   });
 
@@ -21,6 +23,8 @@ class ModulePalette extends StatelessWidget {
   final ValueChanged<ModuleKind> onSelected;
   final ValueChanged<ModuleDragData> onBoardModuleReturned;
   final Map<ModuleKind, int> remainingByKind;
+  final bool vertical;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -84,6 +88,26 @@ class ModulePalette extends StatelessWidget {
                 builder: (context, constraints) {
                   const spacing = 5.0;
                   const runSpacing = 4.0;
+                  if (vertical) {
+                    return Column(
+                      children: [
+                        for (var index = 0; index < modules.length; index++) ...[
+                          _PaletteItem(
+                            module: modules[index],
+                            selected: modules[index].kind == selectedKind,
+                            width: constraints.maxWidth,
+                            remaining:
+                                remainingByKind[modules[index].kind] ?? 0,
+                            dense: true,
+                            compact: false,
+                            onTap: () => onSelected(modules[index].kind),
+                          ),
+                          if (index < modules.length - 1)
+                            const SizedBox(height: runSpacing),
+                        ],
+                      ],
+                    );
+                  }
                   final columnCount = constraints.maxWidth >= 720
                       ? 4
                       : constraints.maxWidth >= 520
@@ -108,6 +132,8 @@ class ModulePalette extends StatelessWidget {
                           selected: module.kind == selectedKind,
                           width: tileWidth,
                           remaining: remainingByKind[module.kind] ?? 0,
+                          dense: false,
+                          compact: compact,
                           onTap: () => onSelected(module.kind),
                         ),
                     ],
@@ -128,6 +154,8 @@ class _PaletteItem extends StatelessWidget {
     required this.selected,
     required this.width,
     required this.remaining,
+    required this.dense,
+    required this.compact,
     required this.onTap,
   });
 
@@ -135,6 +163,8 @@ class _PaletteItem extends StatelessWidget {
   final bool selected;
   final double width;
   final int remaining;
+  final bool dense;
+  final bool compact;
   final VoidCallback onTap;
 
   @override
@@ -154,6 +184,8 @@ class _PaletteItem extends StatelessWidget {
             selected: selected,
             width: width,
             remaining: remaining,
+            dense: dense,
+            compact: compact,
             onTap: disabled ? null : onTap,
           ),
         ),
@@ -162,6 +194,8 @@ class _PaletteItem extends StatelessWidget {
           selected: selected,
           width: width,
           remaining: remaining,
+          dense: dense,
+          compact: compact,
           onTap: disabled ? null : onTap,
         ),
       ),
@@ -175,6 +209,8 @@ class _PaletteTile extends StatelessWidget {
     required this.selected,
     required this.width,
     required this.remaining,
+    required this.dense,
+    required this.compact,
     required this.onTap,
   });
 
@@ -182,6 +218,8 @@ class _PaletteTile extends StatelessWidget {
   final bool selected;
   final double width;
   final int remaining;
+  final bool dense;
+  final bool compact;
   final VoidCallback? onTap;
 
   @override
@@ -206,8 +244,11 @@ class _PaletteTile extends StatelessWidget {
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 160),
             width: width,
-            height: 66,
-            padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 3),
+            height: dense ? 46 : compact ? 44 : 66,
+            padding: EdgeInsets.symmetric(
+              horizontal: dense ? 4 : compact ? 4 : 5,
+              vertical: dense ? 2 : compact ? 1 : 3,
+            ),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
@@ -273,17 +314,17 @@ class _PaletteTile extends StatelessWidget {
                               Icon(
                                 moduleIcon(module.kind),
                                 color: color,
-                                size: 24,
+                                size: dense ? 18 : compact ? 18 : 24,
                               ),
-                              const SizedBox(width: 6),
+                              SizedBox(width: dense ? 4 : 6),
                               Flexible(
                                 child: Text(
                                   module.displayName,
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                   textAlign: TextAlign.center,
-                                  style: const TextStyle(
-                                    fontSize: 13,
+                                  style: TextStyle(
+                                    fontSize: dense ? 10.5 : compact ? 10 : 13,
                                     fontWeight: FontWeight.w900,
                                   ),
                                 ),
@@ -291,18 +332,18 @@ class _PaletteTile extends StatelessWidget {
                             ],
                           ),
                         ),
-                        const SizedBox(height: 3),
+                        SizedBox(height: dense ? 1 : compact ? 1 : 3),
                         Text(
                           _moduleStatistics(module),
                           key: ValueKey(
                             'palette-module-properties-${module.kind.wireValue}',
                           ),
-                          maxLines: 2,
+                          maxLines: dense || compact ? 1 : 2,
                           overflow: TextOverflow.ellipsis,
                           textAlign: TextAlign.center,
-                          style: const TextStyle(
+                          style: TextStyle(
                             color: RelayColors.muted,
-                            fontSize: 9.5,
+                            fontSize: dense ? 7.5 : compact ? 7.5 : 9.5,
                             height: 1.15,
                             fontWeight: FontWeight.w700,
                           ),

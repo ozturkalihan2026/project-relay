@@ -48,6 +48,11 @@ dönüştürür.
 | v0.8.3 rev1 | Ana merkez düzeni ve Flutter analiz hotfix'i | Tamamlandı; `flutter analyze` temiz |
 | v0.8.3 rev2 | Profil/Koleksiyon widget test kaydırma hotfix'i | Hazır; yerel Flutter testi bekliyor |
 | v0.8.4 | Profil/Arkadaşlar ayrımı, sade Klan, ortak üst erişim ve doğrudan Kariyer hazırlığı | rev1 analiz hotfix hazır; yerel Flutter kabulü bekliyor |
+| v0.8.5 | Savaş modlarına ayrı devre durumu ve ölçeklenebilir mağaza sekmeleri | Tamamlandı |
+| v0.8.6 | Profil ilerleme/ikon, sezon ödülleri, Ayarlar altında alfa geri bildirimi | Tamamlandı |
+| v0.8.7 | Profil kozmetik kuşanma, İstatistikler alt menüleri ve kompakt mağaza | rev1 yerel analiz düzeltmesi tamamlandı |
+| v0.8.8 | Menü dönüş semantiği, yarı boy mağaza kartları ve yatay Kariyer hazırlığı | Hazır; yerel Flutter kabulü bekliyor |
+| v0.8.9 | Üç kartlı Kariyer hazırlığı, yenilgide doğrudan hazırlığa dönüş ve kompakt savaş modülü paletleri | Hazır; yerel Flutter kabulü bekliyor |
 | v0.9.0 | Kapalı alfa yayına hazırlık, telemetri ve cihaz QA | Sıradaki |
 | v1.0.0 | Android ve web açık beta | Hedef |
 

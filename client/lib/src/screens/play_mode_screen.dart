@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../navigation/navigation_actions.dart';
 import '../theme/relay_theme.dart';
 import '../widgets/app_header_actions.dart';
 import 'career_screen.dart';
@@ -93,7 +94,7 @@ class PlayModeScreen extends StatelessWidget {
                   const SizedBox(height: 22),
                   OutlinedButton.icon(
                     key: const ValueKey('play-mode-back-button'),
-                    onPressed: () => Navigator.of(context).pop(),
+                    onPressed: () => returnToMainMenu(context),
                     icon: const Icon(Icons.arrow_back),
                     label: const Text('ANA MENÜYE DÖN'),
                   ),

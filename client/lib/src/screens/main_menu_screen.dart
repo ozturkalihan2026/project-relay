@@ -7,6 +7,7 @@ import 'how_to_play_screen.dart';
 import 'play_mode_screen.dart';
 import 'profile_screen.dart';
 import 'settings_screen.dart';
+import 'season_screen.dart';
 import 'social_screen.dart';
 
 class MainMenuScreen extends StatelessWidget {
@@ -96,16 +97,16 @@ class MainMenuScreen extends StatelessWidget {
                                   width: itemWidth,
                                   child: _HubCard(
                                     key: const ValueKey(
-                                      'main-menu-collection',
+                                      'main-menu-statistics',
                                     ),
-                                    icon: Icons.inventory_2_outlined,
+                                    icon: Icons.query_stats_outlined,
                                     accent: RelayColors.cyan,
-                                    title: 'KOLEKSİYON',
+                                    title: 'İSTATİSTİKLER',
                                     subtitle:
-                                        'Kontrollü sekizli kit ve sahip olduğun kozmetikler',
+                                        'Sezon ve haftalık lig verilerini alt sekmelerle görüntüle',
                                     onPressed: () => _open(
                                       context,
-                                      const CollectionScreen(),
+                                      const SeasonScreen(),
                                     ),
                                   ),
                                 ),
@@ -117,7 +118,7 @@ class MainMenuScreen extends StatelessWidget {
                                     accent: RelayColors.mint,
                                     title: 'MAĞAZA',
                                     subtitle:
-                                        'Devre Kredisiyle yalnız görsel içerik satın al',
+                                        'Modül, devre kartı ve profil kozmetiklerini tek sayfada incele',
                                     onPressed: () => _open(
                                       context,
                                       const CollectionScreen(
@@ -134,7 +135,7 @@ class MainMenuScreen extends StatelessWidget {
                                     accent: RelayColors.coral,
                                     title: 'PROFİL',
                                     subtitle:
-                                        'Genel, arkadaşlar, derece, sezon, maçlar, görevler ve başarımlar',
+                                        'Genel, arkadaşlar, kozmetik, ödüller, maçlar, görevler ve başarımlar',
                                     onPressed: () => _open(
                                       context,
                                       const ProfileScreen(),
@@ -147,7 +148,7 @@ class MainMenuScreen extends StatelessWidget {
                         ),
                         const SizedBox(height: 20),
                         const Text(
-                          'ANA MERKEZ VE MENÜ DÜZENİ • v0.8.4',
+                          'ANA MERKEZ VE MENÜ DÜZENİ • v0.8.9',
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             color: RelayColors.muted,

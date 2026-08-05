@@ -5,7 +5,11 @@ import 'package:project_relay_client/src/api/relay_api.dart';
 import 'package:project_relay_client/src/app.dart';
 import 'package:project_relay_client/src/models/relay_models.dart';
 
+import 'widget_test_support.dart';
+
 void main() {
+  setUpAll(enableStrictWidgetTestMode);
+
   testWidgets(
     'ana merkez sade menüyü ve üç oyun kipini açar',
     (tester) async {
@@ -23,7 +27,7 @@ void main() {
       );
       expect(find.byKey(const ValueKey('main-menu-play')), findsOneWidget);
       expect(find.byKey(const ValueKey('main-menu-clan')), findsOneWidget);
-      expect(find.byKey(const ValueKey('main-menu-collection')), findsOneWidget);
+      expect(find.byKey(const ValueKey('main-menu-statistics')), findsOneWidget);
       expect(find.byKey(const ValueKey('main-menu-store')), findsOneWidget);
       expect(find.byKey(const ValueKey('main-menu-profile')), findsOneWidget);
       expect(find.byKey(const ValueKey('main-menu-settings')), findsOneWidget);
@@ -32,7 +36,6 @@ void main() {
         findsOneWidget,
       );
       expect(find.text('SEZON VE ALFA'), findsNothing);
-      expect(find.text('İSTATİSTİKLER'), findsNothing);
 
       await tester.tap(find.byKey(const ValueKey('main-menu-play')));
       await tester.pumpAndSettle();
@@ -45,8 +48,14 @@ void main() {
       await tester.tap(find.byKey(const ValueKey('play-mode-online')));
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
-      expect(find.textContaining('ÇEVRİMİÇİ SAVAŞ • v0.8.4'), findsOneWidget);
+      expect(find.textContaining('ÇEVRİMİÇİ SAVAŞ • v0.8.9'), findsOneWidget);
       expect(find.text('DEVREYİ KUR'), findsOneWidget);
+      expect(
+        tester.getSize(
+          find.byKey(const ValueKey('palette-module-generator')),
+        ).height,
+        44,
+      );
 
       final editorBack = find.byKey(
         const ValueKey('editor-menu-back-button'),
@@ -58,8 +67,14 @@ void main() {
 
       await tester.tap(find.byKey(const ValueKey('play-mode-training')));
       await tester.pumpAndSettle();
-      expect(find.textContaining('ANTRENMAN • v0.8.4'), findsOneWidget);
+      expect(find.textContaining('ANTRENMAN • v0.8.9'), findsOneWidget);
       expect(find.byKey(const ValueKey('training-panel')), findsOneWidget);
+      expect(
+        tester.getSize(
+          find.byKey(const ValueKey('palette-module-generator')),
+        ).height,
+        44,
+      );
     },
   );
 
@@ -117,6 +132,10 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(
+        find.byKey(const ValueKey('career-module-selection-card')),
+        findsOneWidget,
+      );
+      expect(
         find.byKey(const ValueKey('career-player-board-editor')),
         findsOneWidget,
       );
@@ -125,6 +144,21 @@ void main() {
         findsOneWidget,
       );
       expect(find.byKey(const ValueKey('career-run-start')), findsOneWidget);
+      final careerBack = find.byKey(const ValueKey('career-back-button'));
+      final careerScrollable = findUniqueScrollableWithin(
+        root: find.byKey(const ValueKey('career-scroll-view')),
+        axisDirection: AxisDirection.down,
+        physicsMatches: (physics) => physics is AlwaysScrollableScrollPhysics,
+        description: 'kariyer ana dikey kaydırıcısı',
+      );
+      await scrollIntoView(
+        tester: tester,
+        target: careerBack,
+        scrollable: careerScrollable,
+        delta: 320,
+      );
+      expect(careerBack, findsOneWidget);
+      expect(find.text('MENÜYE DÖN'), findsOneWidget);
       expect(find.byKey(const ValueKey('career-validate-board')), findsOneWidget);
       expect(find.byKey(const ValueKey('global-settings-action')), findsOneWidget);
       expect(
@@ -149,6 +183,7 @@ void main() {
       expect(find.byKey(const ValueKey('social-edit-profile')), findsOneWidget);
       expect(find.byKey(const ValueKey('profile-open-clan')), findsNothing);
       expect(find.byKey(const ValueKey('profile-edit-social')), findsNothing);
+      expect(find.byKey(const ValueKey('profile-rating-card')), findsOneWidget);
 
       await _tapProfileSection(
         tester,
@@ -160,14 +195,31 @@ void main() {
 
       await _tapProfileSection(
         tester,
-        const ValueKey('profile-section-rating-season'),
+        const ValueKey('profile-section-cosmetics'),
       );
-      expect(find.byKey(const ValueKey('profile-rating-card')), findsOneWidget);
+      expect(find.byKey(const ValueKey('profile-cosmetics-card')), findsOneWidget);
       expect(
-        find.byKey(const ValueKey('profile-weekly-league-card')),
+        find.byKey(const ValueKey('profile-cosmetic-section-selector')),
         findsOneWidget,
       );
-      expect(find.byKey(const ValueKey('profile-season-card')), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('profile-cosmetic-section-module')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey('profile-cosmetic-section-board')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey('profile-cosmetic-section-profile')),
+        findsOneWidget,
+      );
+
+      await _tapProfileSection(
+        tester,
+        const ValueKey('profile-section-season-rewards'),
+      );
+      expect(find.byKey(const ValueKey('profile-season-rewards-card')), findsOneWidget);
 
       await _tapProfileSection(
         tester,
@@ -207,7 +259,7 @@ void main() {
   );
 
   testWidgets(
-    'klan koleksiyon ve mağaza ana merkezden ayrık açılır',
+    'klan istatistikler ve mağaza ana merkezden ayrık açılır',
     (tester) async {
       await _pumpApp(tester);
 
@@ -225,40 +277,18 @@ void main() {
       await tester.tap(socialBack);
       await tester.pumpAndSettle();
 
-      final collection = find.byKey(const ValueKey('main-menu-collection'));
-      await tester.ensureVisible(collection);
-      await tester.tap(collection);
+      final statistics = find.byKey(const ValueKey('main-menu-statistics'));
+      await tester.ensureVisible(statistics);
+      await tester.tap(statistics);
       await tester.pumpAndSettle();
-      expect(find.text('KOLEKSİYON'), findsOneWidget);
-      expect(
-        find.byKey(const ValueKey('collection-section-selector')),
-        findsOneWidget,
+      expect(find.text('İSTATİSTİKLER'), findsOneWidget);
+      expect(find.byKey(const ValueKey('season-summary-card')), findsOneWidget);
+      expect(find.byKey(const ValueKey('season-leaderboard-card')), findsOneWidget);
+      final statisticsBack = find.byKey(
+        const ValueKey('season-menu-back'),
       );
-      expect(find.byKey(const ValueKey('controlled-kit-card')), findsOneWidget);
-      await tester.tap(
-        find.byKey(const ValueKey('collection-section-cosmetics')),
-      );
-      await tester.pumpAndSettle();
-      expect(find.text('MODÜL KAPLAMALARI'), findsOneWidget);
-      final collectionBack = find.byKey(
-        const ValueKey('collection-menu-back'),
-      );
-      final collectionScrollable = find.descendant(
-        of: find.byKey(const ValueKey('collection-scroll-view')),
-        matching: find.byWidgetPredicate(
-          (widget) =>
-              widget is Scrollable &&
-              widget.axisDirection == AxisDirection.down,
-        ),
-      );
-      expect(collectionScrollable, findsOneWidget);
-      await tester.scrollUntilVisible(
-        collectionBack,
-        280,
-        scrollable: collectionScrollable,
-      );
-      await tester.pumpAndSettle();
-      await tester.tap(collectionBack);
+      await tester.ensureVisible(statisticsBack);
+      await tester.tap(statisticsBack);
       await tester.pumpAndSettle();
 
       final store = find.byKey(const ValueKey('main-menu-store'));
@@ -323,12 +353,12 @@ Future<void> _tapProfileSection(
 
   expect(section, findsOneWidget);
   expect(horizontalScrollable, findsOneWidget);
-  await tester.scrollUntilVisible(
-    section,
-    260,
+  await scrollIntoView(
+    tester: tester,
+    target: section,
     scrollable: horizontalScrollable,
+    delta: 260,
   );
-  await tester.pumpAndSettle();
   await tester.tap(section);
   await tester.pumpAndSettle();
 }

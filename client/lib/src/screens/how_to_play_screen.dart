@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../navigation/navigation_actions.dart';
 import '../api/relay_api.dart';
 import '../theme/relay_theme.dart';
 import '../widgets/game_manual.dart';
@@ -102,7 +103,7 @@ class _ManualCatalogState extends StatelessWidget {
                       const SizedBox(height: 20),
                       OutlinedButton.icon(
                         key: const ValueKey('manual-loading-back-button'),
-                        onPressed: () => Navigator.of(context).pop(),
+                        onPressed: () => returnToMainMenu(context),
                         icon: const Icon(Icons.arrow_back),
                         label: const Text('ANA MENÜYE DÖN'),
                       ),

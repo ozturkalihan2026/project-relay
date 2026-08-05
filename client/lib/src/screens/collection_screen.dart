@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../navigation/navigation_actions.dart';
 import '../api/relay_api.dart';
 import '../models/relay_models.dart';
 import '../theme/relay_theme.dart';
@@ -11,14 +12,17 @@ import '../widgets/relay_notice.dart';
 enum CollectionScreenMode { collection, store }
 
 enum _CollectionSection { kit, cosmetics }
+enum _StoreSection { all, module, board, profile }
 
 class CollectionScreen extends ConsumerStatefulWidget {
   const CollectionScreen({
     this.mode = CollectionScreenMode.collection,
+    this.kitOnly = false,
     super.key,
   });
 
   final CollectionScreenMode mode;
+  final bool kitOnly;
 
   @override
   ConsumerState<CollectionScreen> createState() => _CollectionScreenState();
@@ -29,6 +33,7 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen> {
   CollectionSnapshot? _snapshot;
   List<ModuleKind>? _kitSlots;
   _CollectionSection _section = _CollectionSection.kit;
+  _StoreSection _storeSection = _StoreSection.all;
   bool _busy = false;
 
   @override
@@ -48,14 +53,16 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen> {
             Text(
               widget.mode == CollectionScreenMode.store
                   ? 'MAĞAZA'
-                  : 'KOLEKSİYON',
+                  : widget.kitOnly
+                      ? 'BAŞLANGIÇ SEKİZLİSİ'
+                      : 'KOLEKSİYON',
               style: const TextStyle(
                 fontWeight: FontWeight.w900,
                 letterSpacing: 1.1,
               ),
             ),
             const Text(
-              'PROJECT RELAY • v0.8.4',
+              'PROJECT RELAY • v0.8.9',
               style: TextStyle(color: RelayColors.muted, fontSize: 10),
             ),
           ],
@@ -111,15 +118,34 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen> {
         children: [
           _CollectionHeader(credits: snapshot.credits),
           const SizedBox(height: 14),
-          if (widget.mode == CollectionScreenMode.store) ...[
+          if (widget.kitOnly) ...[
+            _KitEditor(
+              nameController: _kitNameController,
+              slots: kitSlots,
+              busy: _busy,
+              onChanged: (index, kind) {
+                setState(() {
+                  final slots = List<ModuleKind>.from(kitSlots);
+                  slots[index] = kind;
+                  _kitSlots = slots;
+                });
+              },
+              onSave: () {
+                _saveKit();
+              },
+              showSaveButton: false,
+            ),
+          ] else if (widget.mode == CollectionScreenMode.store) ...[
             const _StoreIntro(),
+            const SizedBox(height: 14),
+            _storeSectionSelector(),
             const SizedBox(height: 14),
             _cosmeticCatalog(
               snapshot,
               owned: false,
               emptyMessage:
-                  'Mağazada satın alınmamış kozmetik kalmadı. Yeni içerikler '
-                  'dengeyi değiştirmeden sonraki katalog güncellemelerinde eklenebilir.',
+                  'Bu mağaza sekmesinde satın alınmamış içerik kalmadı. Yeni içerikler '
+                  'tek sayfalı bu düzen içinde aynı sekme yapısına eklenebilir.',
             ),
           ] else ...[
             _collectionSectionSelector(),
@@ -136,7 +162,9 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen> {
                     _kitSlots = slots;
                   });
                 },
-                onSave: _saveKit,
+                onSave: () {
+                  _saveKit();
+                },
               )
             else
               _cosmeticCatalog(
@@ -148,17 +176,68 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen> {
               ),
           ],
           const SizedBox(height: 18),
-          OutlinedButton.icon(
-            key: ValueKey(
-              widget.mode == CollectionScreenMode.store
-                  ? 'store-menu-back'
-                  : 'collection-menu-back',
+          if (widget.kitOnly)
+            FilledButton.icon(
+              key: const ValueKey('kit-save-and-return'),
+              onPressed: _busy ? null : _saveKitAndReturn,
+              icon: _busy
+                  ? const SizedBox.square(
+                      dimension: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.save_outlined),
+              label: Text(_busy ? 'KAYDEDİLİYOR' : 'KAYDET'),
+            )
+          else
+            OutlinedButton.icon(
+              key: ValueKey(
+                widget.mode == CollectionScreenMode.store
+                    ? 'store-menu-back'
+                    : 'collection-menu-back',
+              ),
+              onPressed: _busy ? null : () => returnToMainMenu(context),
+              icon: const Icon(Icons.arrow_back),
+              label: const Text('ANA MENÜYE DÖN'),
             ),
-            onPressed: _busy ? null : () => Navigator.of(context).maybePop(),
-            icon: const Icon(Icons.arrow_back),
-            label: const Text('ANA MENÜYE DÖN'),
+        ],
+      ),
+    );
+  }
+
+  Widget _storeSectionSelector() {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: SegmentedButton<_StoreSection>(
+        key: const ValueKey('store-section-selector'),
+        showSelectedIcon: false,
+        segments: const [
+          ButtonSegment(
+            value: _StoreSection.all,
+            icon: Icon(Icons.grid_view_rounded),
+            label: Text('TÜMÜ', key: ValueKey('store-section-all')),
+          ),
+          ButtonSegment(
+            value: _StoreSection.module,
+            icon: Icon(Icons.memory_outlined),
+            label: Text('MODÜL', key: ValueKey('store-section-module')),
+          ),
+          ButtonSegment(
+            value: _StoreSection.board,
+            icon: Icon(Icons.dashboard_outlined),
+            label: Text('DEVRE KARTI', key: ValueKey('store-section-board')),
+          ),
+          ButtonSegment(
+            value: _StoreSection.profile,
+            icon: Icon(Icons.badge_outlined),
+            label: Text('PROFİL', key: ValueKey('store-section-profile')),
           ),
         ],
+        selected: {_storeSection},
+        onSelectionChanged: _busy
+            ? null
+            : (selection) {
+                setState(() => _storeSection = selection.first);
+              },
       ),
     );
   }
@@ -174,7 +253,7 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen> {
             value: _CollectionSection.kit,
             icon: Icon(Icons.dashboard_customize_outlined),
             label: Text(
-              'KİT',
+              'BAŞLANGIÇ 8LİSİ',
               key: ValueKey('collection-section-kit'),
             ),
           ),
@@ -204,6 +283,17 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen> {
   }) {
     final visibleItems = snapshot.cosmetics
         .where((item) => item.owned == owned)
+        .where((item) {
+          if (widget.mode != CollectionScreenMode.store) {
+            return true;
+          }
+          return switch (_storeSection) {
+            _StoreSection.all => true,
+            _StoreSection.module => item.category == 'module_skin',
+            _StoreSection.board => item.category == 'board_theme',
+            _StoreSection.profile => item.category == 'profile_frame',
+          };
+        })
         .toList(growable: false);
     if (visibleItems.isEmpty) {
       return _CollectionEmptyState(
@@ -226,11 +316,21 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen> {
             const SizedBox(height: 8),
             LayoutBuilder(
               builder: (context, constraints) {
-                final columns = constraints.maxWidth >= 960
-                    ? 3
-                    : constraints.maxWidth >= 620
-                        ? 2
-                        : 1;
+                final columns = widget.mode == CollectionScreenMode.store
+                    ? constraints.maxWidth >= 1320
+                        ? 6
+                        : constraints.maxWidth >= 1040
+                            ? 5
+                            : constraints.maxWidth >= 780
+                                ? 4
+                                : constraints.maxWidth >= 540
+                                    ? 3
+                                    : 2
+                    : constraints.maxWidth >= 960
+                        ? 3
+                        : constraints.maxWidth >= 620
+                            ? 2
+                            : 1;
                 const spacing = 10.0;
                 final width =
                     (constraints.maxWidth - spacing * (columns - 1)) / columns;
@@ -247,6 +347,7 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen> {
                         child: _CosmeticCard(
                           item: item,
                           busy: _busy,
+                          compact: widget.mode == CollectionScreenMode.store,
                           onAction: () => _cosmeticAction(item),
                         ),
                       ),
@@ -260,12 +361,12 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen> {
     );
   }
 
-  Future<void> _saveKit() async {
-    if (_busy) return;
+  Future<bool> _saveKit() async {
+    if (_busy) return false;
     final slots = _kitSlots;
     if (slots == null || slots.length != 8) {
       _notice('Kit tam olarak sekiz yuva içermelidir.', RelayNoticeTone.error);
-      return;
+      return false;
     }
     final counts = <ModuleKind, int>{};
     for (final kind in slots) {
@@ -276,7 +377,7 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen> {
         'Sekizli kit tam olarak bir Jeneratör içermelidir.',
         RelayNoticeTone.warning,
       );
-      return;
+      return false;
     }
     final excessive = counts.entries
         .where((entry) =>
@@ -289,7 +390,7 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen> {
         '${excessive.join(', ')}',
         RelayNoticeTone.warning,
       );
-      return;
+      return false;
     }
 
     setState(() => _busy = true);
@@ -298,7 +399,7 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen> {
             name: _kitNameController.text,
             moduleKinds: slots,
           );
-      if (!mounted) return;
+      if (!mounted) return false;
       setState(() {
         _snapshot = value;
         _kitSlots = List<ModuleKind>.from(value.kit.moduleKinds);
@@ -308,11 +409,19 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen> {
         'Sekizli kit kaydedildi. Editör paletleri artık bu sınırlara bağlı.',
         RelayNoticeTone.success,
       );
+      return true;
     } on RelayApiException catch (error) {
       _notice(error.message, RelayNoticeTone.error);
+      return false;
     } finally {
       if (mounted) setState(() => _busy = false);
     }
+  }
+
+  Future<void> _saveKitAndReturn() async {
+    final saved = await _saveKit();
+    if (!saved || !mounted) return;
+    Navigator.of(context).maybePop();
   }
 
   Future<void> _cosmeticAction(CosmeticItem item) async {
@@ -404,6 +513,7 @@ class _KitEditor extends StatelessWidget {
     required this.busy,
     required this.onChanged,
     required this.onSave,
+    this.showSaveButton = true,
   });
 
   final TextEditingController nameController;
@@ -411,6 +521,7 @@ class _KitEditor extends StatelessWidget {
   final bool busy;
   final void Function(int index, ModuleKind kind) onChanged;
   final VoidCallback onSave;
+  final bool showSaveButton;
 
   @override
   Widget build(BuildContext context) {
@@ -495,18 +606,20 @@ class _KitEditor extends StatelessWidget {
                 );
               },
             ),
-            const SizedBox(height: 12),
-            FilledButton.icon(
-              key: const ValueKey('save-controlled-kit'),
-              onPressed: busy ? null : onSave,
-              icon: busy
-                  ? const SizedBox.square(
-                      dimension: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.save_outlined),
-              label: Text(busy ? 'KAYDEDİLİYOR' : 'SEKİZLİ KİTİ KAYDET'),
-            ),
+            if (showSaveButton) ...[
+              const SizedBox(height: 12),
+              FilledButton.icon(
+                key: const ValueKey('save-controlled-kit'),
+                onPressed: busy ? null : onSave,
+                icon: busy
+                    ? const SizedBox.square(
+                        dimension: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.save_outlined),
+                label: Text(busy ? 'KAYDEDİLİYOR' : 'SEKİZLİ KİTİ KAYDET'),
+              ),
+            ],
           ],
         ),
       ),
@@ -562,24 +675,31 @@ class _CosmeticCard extends StatelessWidget {
     required this.item,
     required this.busy,
     required this.onAction,
+    this.compact = false,
   });
 
   final CosmeticItem item;
   final bool busy;
+  final bool compact;
   final VoidCallback onAction;
 
   @override
   Widget build(BuildContext context) {
     final accent = _hexColor(item.accentHex);
+    final previewSize = compact ? 24.0 : 54.0;
+    final titleStyle = TextStyle(
+      fontWeight: FontWeight.w900,
+      fontSize: compact ? 11 : 15,
+    );
     return Card(
       key: ValueKey('cosmetic-${item.id}'),
       child: Padding(
-        padding: const EdgeInsets.all(13),
+        padding: EdgeInsets.all(compact ? 7 : 13),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Container(
-              height: 54,
+              height: compact ? 38 : 54,
               decoration: BoxDecoration(
                 color: accent.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(12),
@@ -593,35 +713,58 @@ class _CosmeticCard extends StatelessWidget {
                           ? Icons.grid_on
                           : Icons.person_outline,
                   color: accent,
-                  size: 30,
+                  size: previewSize,
                 ),
               ),
             ),
-            const SizedBox(height: 9),
-            Text(
-              item.displayName,
-              style: const TextStyle(fontWeight: FontWeight.w900),
-            ),
+            SizedBox(height: compact ? 5 : 9),
+            Text(item.displayName, maxLines: 2, overflow: TextOverflow.ellipsis, style: titleStyle),
             const SizedBox(height: 3),
             Text(
               item.description,
-              style: const TextStyle(color: RelayColors.muted, fontSize: 10.5),
+              maxLines: compact ? 1 : 3,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(color: RelayColors.muted, fontSize: compact ? 8.2 : 10.5),
             ),
-            const SizedBox(height: 10),
+            SizedBox(height: compact ? 5 : 10),
             if (item.equipped)
               FilledButton.icon(
+                style: compact
+                    ? FilledButton.styleFrom(
+                        minimumSize: const Size.fromHeight(30),
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        visualDensity: VisualDensity.compact,
+                        textStyle: const TextStyle(fontSize: 10),
+                      )
+                    : null,
                 onPressed: null,
-                icon: Icon(Icons.check_circle_outline),
-                label: Text('KUŞANILDI'),
+                icon: const Icon(Icons.check_circle_outline),
+                label: const Text('KUŞANILDI'),
               )
             else if (item.owned)
               OutlinedButton.icon(
+                style: compact
+                    ? OutlinedButton.styleFrom(
+                        minimumSize: const Size.fromHeight(30),
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        visualDensity: VisualDensity.compact,
+                        textStyle: const TextStyle(fontSize: 10),
+                      )
+                    : null,
                 onPressed: busy ? null : onAction,
                 icon: const Icon(Icons.checkroom_outlined),
                 label: const Text('KUŞAN'),
               )
             else
               FilledButton.icon(
+                style: compact
+                    ? FilledButton.styleFrom(
+                        minimumSize: const Size.fromHeight(30),
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        visualDensity: VisualDensity.compact,
+                        textStyle: const TextStyle(fontSize: 10),
+                      )
+                    : null,
                 onPressed: busy ? null : onAction,
                 icon: const Icon(Icons.toll_outlined),
                 label: Text('${item.creditCost} KREDİ'),

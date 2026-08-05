@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../navigation/navigation_actions.dart';
 import '../api/relay_api.dart';
 import '../models/relay_models.dart';
 import '../theme/relay_theme.dart';
@@ -92,7 +93,7 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
                 const SizedBox(height: 16),
                 OutlinedButton.icon(
                   key: const ValueKey('statistics-back-button'),
-                  onPressed: () => Navigator.of(context).pop(),
+                  onPressed: () => returnToMainMenu(context),
                   icon: const Icon(Icons.arrow_back),
                   label: const Text('ANA MENÜYE DÖN'),
                 ),
@@ -561,7 +562,7 @@ class _CareerError extends StatelessWidget {
             const SizedBox(height: 8),
             OutlinedButton(
               key: const ValueKey('statistics-back-button'),
-              onPressed: () => Navigator.of(context).pop(),
+              onPressed: () => returnToMainMenu(context),
               child: const Text('ANA MENÜYE DÖN'),
             ),
           ],

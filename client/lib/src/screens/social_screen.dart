@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../navigation/navigation_actions.dart';
 import '../api/relay_api.dart';
+import '../state/profile_avatar.dart';
 import '../models/relay_models.dart';
 import '../theme/relay_theme.dart';
 import '../widgets/app_header_actions.dart';
 import '../widgets/relay_notice.dart';
-import 'season_screen.dart';
 
 enum _ClanSection { summary, members, activity, settings }
 
@@ -92,7 +93,7 @@ class _SocialScreenState extends ConsumerState<SocialScreen> {
               ),
             ),
             Text(
-              'PROJECT RELAY • v0.8.4',
+              'PROJECT RELAY • v0.8.9',
               style: TextStyle(color: RelayColors.muted, fontSize: 10),
             ),
           ],
@@ -127,7 +128,7 @@ class _SocialScreenState extends ConsumerState<SocialScreen> {
               const SizedBox(height: 18),
               OutlinedButton.icon(
                 key: const ValueKey('social-menu-back'),
-                onPressed: _busy ? null : () => Navigator.of(context).maybePop(),
+                onPressed: _busy ? null : () => returnToMainMenu(context),
                 icon: const Icon(Icons.arrow_back),
                 label: const Text('ANA MENÜYE DÖN'),
               ),
@@ -143,8 +144,6 @@ class _SocialScreenState extends ConsumerState<SocialScreen> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _profileCard(snapshot.profile),
-        const SizedBox(height: 12),
-        _safetyCard(),
       ],
     );
   }
@@ -358,6 +357,8 @@ class _SocialScreenState extends ConsumerState<SocialScreen> {
   }
 
   Widget _profileCard(SocialProfileModel profile) {
+    final progression = ref.watch(progressionProvider).asData?.value.profile;
+    final avatarIcon = ref.watch(profileAvatarProvider);
     return Card(
       key: const ValueKey('profile-general-card'),
       child: Padding(
@@ -367,13 +368,13 @@ class _SocialScreenState extends ConsumerState<SocialScreen> {
           children: [
             Row(
               children: [
-                const CircleAvatar(
+                CircleAvatar(
                   radius: 30,
-                  backgroundColor: Color(0x2238E8FF),
+                  backgroundColor: const Color(0x2238E8FF),
                   child: Icon(
-                    Icons.account_circle,
+                    avatarIcon,
                     color: RelayColors.cyan,
-                    size: 38,
+                    size: 34,
                   ),
                 ),
                 const SizedBox(width: 14),
@@ -388,16 +389,32 @@ class _SocialScreenState extends ConsumerState<SocialScreen> {
                           fontWeight: FontWeight.w900,
                         ),
                       ),
-                      const SizedBox(height: 3),
-                      const Text(
-                        'HERKESE AÇIK SOSYAL PROFİL',
-                        style: TextStyle(
-                          color: RelayColors.cyan,
-                          fontSize: 9,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 0.8,
+                      const SizedBox(height: 4),
+                      if (progression != null) ...[
+                        LinearProgressIndicator(
+                          value: progression.levelProgress,
+                          minHeight: 8,
+                          borderRadius: BorderRadius.circular(999),
+                          backgroundColor: RelayColors.surface.withValues(alpha: 0.7),
                         ),
-                      ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'SV ${progression.level} • ${progression.xpIntoLevel}/${progression.xpForNextLevel} XP',
+                          style: const TextStyle(
+                            color: RelayColors.cyan,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 0.6,
+                          ),
+                        ),
+                      ] else
+                        const Text(
+                          'Seviye ilerlemesi yükleniyor',
+                          style: TextStyle(
+                            color: RelayColors.muted,
+                            fontSize: 10,
+                          ),
+                        ),
                     ],
                   ),
                 ),
@@ -428,61 +445,6 @@ class _SocialScreenState extends ConsumerState<SocialScreen> {
                   label: Text('${profile.friendCount} arkadaş'),
                 ),
               ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _safetyCard() {
-    return Card(
-      key: const ValueKey('social-safety-card'),
-      child: Padding(
-        padding: const EdgeInsets.all(18),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const Row(
-              children: [
-                Icon(Icons.shield_outlined, color: RelayColors.amber),
-                SizedBox(width: 9),
-                Expanded(
-                  child: Text(
-                    'SOSYAL GÜVENLİK',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 0.7,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            const Text(
-              'Durum mesajı, oyuncu adı ve klan metinleri diğer oyunculara görünür. '
-              'Telefon, e-posta, adres, parola veya gerçek kimlik bilgisi paylaşma.',
-              style: TextStyle(color: RelayColors.muted),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Oyuncu raporlama ve engelleme henüz kapalı alfa kapsamındadır. '
-              'Uygunsuz içerikleri şimdilik Alfa Geri Bildirimi üzerinden ilet.',
-              style: TextStyle(
-                color: RelayColors.amber,
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: FilledButton.tonalIcon(
-                key: const ValueKey('social-alpha-feedback'),
-                onPressed: _busy ? null : _openAlphaFeedback,
-                icon: const Icon(Icons.feedback_outlined),
-                label: const Text('ALFA GERİ BİLDİRİMİ'),
-              ),
             ),
           ],
         ),
@@ -1023,6 +985,7 @@ class _SocialScreenState extends ConsumerState<SocialScreen> {
   Future<void> _showProfileDialog(SocialProfileModel profile) async {
     final statusController = TextEditingController(text: profile.statusMessage);
     var favoriteModule = profile.favoriteModule;
+    var selectedAvatar = ref.read(profileAvatarProvider);
     final accepted = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => StatefulBuilder(
@@ -1045,6 +1008,29 @@ class _SocialScreenState extends ConsumerState<SocialScreen> {
                     decoration: const InputDecoration(labelText: 'Durum mesajı'),
                   ),
                   const SizedBox(height: 8),
+                  const Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'Profil simgesi',
+                      style: TextStyle(fontWeight: FontWeight.w800),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      for (final icon in selectableProfileIcons)
+                        ChoiceChip(
+                          label: Icon(icon, color: RelayColors.cyan),
+                          selected: selectedAvatar == icon,
+                          onSelected: (_) {
+                            setDialogState(() => selectedAvatar = icon);
+                          },
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
                   DropdownButtonFormField<ModuleKind>(
                     key: const ValueKey('social-favorite-module-input'),
                     initialValue: favoriteModule,
@@ -1092,6 +1078,7 @@ class _SocialScreenState extends ConsumerState<SocialScreen> {
       );
       return;
     }
+    ref.read(profileAvatarProvider.notifier).select(selectedAvatar);
     await _runAction(
       () => ref.read(relayApiProvider).updateSocialProfile(
             statusMessage: statusMessage,
@@ -1287,12 +1274,6 @@ class _SocialScreenState extends ConsumerState<SocialScreen> {
           ),
         ) ??
         false;
-  }
-
-  void _openAlphaFeedback() {
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(builder: (context) => const SeasonScreen()),
-    );
   }
 
   void _showValidation(String message) {

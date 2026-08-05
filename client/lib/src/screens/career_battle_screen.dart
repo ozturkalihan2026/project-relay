@@ -26,7 +26,7 @@ class CareerBattleScreen extends StatelessWidget {
         'active' => 'SONRAKİ SAVAŞ',
         'awaiting_booster' => 'BOSS HAZIRLIĞINA GEÇ',
         'completed' => 'KOŞUYU TAMAMLA',
-        'failed' => 'KARİYER SONUCUNA DÖN',
+        'failed' => 'KARİYER EKRANINA DÖN',
         _ => 'KARİYERE DÖN',
       };
 

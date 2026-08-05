@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../api/relay_api.dart';
 import '../models/relay_models.dart';
+import '../navigation/navigation_actions.dart';
 import '../state/board_controller.dart';
 import '../theme/cosmetic_visuals.dart';
 import '../theme/relay_theme.dart';
@@ -12,6 +13,7 @@ import '../widgets/circuit_board.dart';
 import '../widgets/module_palette.dart';
 import '../widgets/app_header_actions.dart';
 import '../widgets/relay_notice.dart';
+import 'collection_screen.dart';
 import 'replay_screen.dart';
 
 enum EditorMode {
@@ -60,6 +62,13 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
     super.dispose();
   }
 
+  NotifierProvider<BoardController, BoardEditorState> get _boardProvider =>
+      switch (widget.mode) {
+        EditorMode.online => onlineBoardControllerProvider,
+        EditorMode.training => trainingBoardControllerProvider,
+        EditorMode.career => careerBoardControllerProvider,
+      };
+
   @override
   Widget build(BuildContext context) {
     final catalogs = ref.watch(catalogsProvider);
@@ -77,7 +86,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
               ),
             ),
             Text(
-              '${widget.mode.title} • v0.8.4',
+              '${widget.mode.title} • v0.8.9',
               style: const TextStyle(
                 color: RelayColors.muted,
                 fontSize: 10,
@@ -116,7 +125,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
     try {
       await ref.read(guestSessionProvider.future);
       final api = ref.read(relayApiProvider);
-      final controller = ref.read(boardControllerProvider.notifier);
+      final controller = ref.read(_boardProvider.notifier);
       final collection = await ref.read(collectionProvider.future);
       _visuals = EquippedVisuals.fromCollection(collection);
       controller.applyKit(collection.kit);
@@ -142,11 +151,11 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
   }
 
   Widget _buildEditor(CatalogBundle catalogs) {
-    final boardState = ref.watch(boardControllerProvider);
+    final boardState = ref.watch(_boardProvider);
     final guestSession = widget.mode != EditorMode.training
         ? ref.watch(guestSessionProvider)
         : const AsyncValue<GuestSession>.loading();
-    final controller = ref.read(boardControllerProvider.notifier);
+    final controller = ref.read(_boardProvider.notifier);
     final specs = {
       for (final module in catalogs.modules) module.kind: module,
     };
@@ -233,7 +242,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
 
   void _tapCell(int index) {
     try {
-      ref.read(boardControllerProvider.notifier).tapCell(index);
+      ref.read(_boardProvider.notifier).tapCell(index);
     } on StateError catch (error) {
       _showError(error.toString().replaceFirst('Bad state: ', ''));
     }
@@ -241,7 +250,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
 
   void _dropModule(int index, ModuleDragData data) {
     try {
-      ref.read(boardControllerProvider.notifier).dropModule(index, data);
+      ref.read(_boardProvider.notifier).dropModule(index, data);
     } on StateError catch (error) {
       _showError(error.toString().replaceFirst('Bad state: ', ''));
     }
@@ -252,7 +261,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
     if (!data.isFromBoard || sourceCell == null) {
       return;
     }
-    ref.read(boardControllerProvider.notifier).removeModuleAt(sourceCell);
+    ref.read(_boardProvider.notifier).removeModuleAt(sourceCell);
     _showNotice(
       'Modül devre kartından kaldırıldı.',
       RelayNoticeTone.info,
@@ -265,7 +274,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
     }
     setState(() => _busy = true);
     try {
-      final state = ref.read(boardControllerProvider);
+      final state = ref.read(_boardProvider);
       final validation =
           await ref.read(relayApiProvider).validateBoard(state.board);
       ref
@@ -308,7 +317,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
     setState(() => _busy = true);
     try {
       final api = ref.read(relayApiProvider);
-      final state = ref.read(boardControllerProvider);
+      final state = ref.read(_boardProvider);
       final validation = await api.validateBoard(state.board);
       ref
           .read(boardControllerProvider.notifier)
@@ -336,7 +345,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
     setState(() => _busy = true);
     try {
       final api = ref.read(relayApiProvider);
-      final state = ref.read(boardControllerProvider);
+      final state = ref.read(_boardProvider);
       final validation = await api.validateBoard(state.board);
       ref
           .read(boardControllerProvider.notifier)
@@ -364,7 +373,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
     setState(() => _busy = true);
     try {
       final api = ref.read(relayApiProvider);
-      final state = ref.read(boardControllerProvider);
+      final state = ref.read(_boardProvider);
       final validation = await api.validateBoard(state.board);
       ref
           .read(boardControllerProvider.notifier)
@@ -460,6 +469,7 @@ class _BoardPanel extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         ModulePalette(
+          compact: true,
           modules: modules,
           selectedKind: state.selectedKind,
           onSelected: onPaletteSelected,
@@ -468,6 +478,20 @@ class _BoardPanel extends StatelessWidget {
             for (final module in modules)
               module.kind: state.remainingFor(module.kind),
           },
+        ),
+        const SizedBox(height: 8),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: TextButton.icon(
+            key: const ValueKey('editor-open-kit-builder'),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (context) => const CollectionScreen(kitOnly: true),
+              ),
+            ),
+            icon: const Icon(Icons.tune),
+            label: const Text('BAŞLANGIÇ SEKİZLİSİNİ DEĞİŞTİR'),
+          ),
         ),
         const SizedBox(height: 12),
         _SectionHeader(
@@ -753,7 +777,7 @@ class _EditorMenuBackCard extends StatelessWidget {
         padding: const EdgeInsets.all(8),
         child: OutlinedButton.icon(
           key: const ValueKey('editor-menu-back-button'),
-          onPressed: busy ? null : () => Navigator.of(context).maybePop(),
+          onPressed: busy ? null : () => returnToPreviousMenu(context),
           icon: const Icon(Icons.arrow_back),
           label: const Text('MENÜYE DÖN'),
         ),
