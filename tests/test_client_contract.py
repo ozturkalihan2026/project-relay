@@ -27,14 +27,14 @@ class FlutterClientContractTests(unittest.TestCase):
             encoding="utf-8"
         )
 
-        self.assertIn("version: 0.8.10+62", pubspec)
+        self.assertIn("version: 0.8.11+63", pubspec)
         self.assertIn("await tester.ensureVisible(profileBack);", widget_test)
         self.assertIn("await tester.pumpAndSettle();\n      await tester.tap(profileBack);", widget_test)
         self.assertIn("final horizontalScrollable = find.ancestor(", widget_test)
         self.assertNotIn("final horizontalScrollable = find.byWidgetPredicate(\n    (widget)", widget_test)
-        self.assertIn("${widget.mode.title} • v0.8.10", editor)
-        self.assertIn("ANA MERKEZ VE MENÜ DÜZENİ • v0.8.10", main_menu)
-        self.assertIn("PROJECT RELAY • v0.8.10", manual)
+        self.assertIn("${widget.mode.title} • v0.8.11", editor)
+        self.assertIn("ANA MERKEZ VE MENÜ DÜZENİ • v0.8.11", main_menu)
+        self.assertIn("PROJECT RELAY • v0.8.11", manual)
         self.assertIn("audioplayers:", pubspec)
         self.assertIn("assets/sounds/", pubspec)
         self.assertIn("flame:", pubspec)
@@ -1342,8 +1342,8 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("Komutan Sistemi", feature_pool)
         self.assertIn("devreyi kurduktan ve doğruladıktan sonra", feature_pool.lower())
         self.assertIn("v0.8.4", release)
-        self.assertIn("ÇEVRİMİÇİ SAVAŞ • v0.8.10", widget_test)
-        self.assertIn("ANTRENMAN • v0.8.10", widget_test)
+        self.assertIn("ÇEVRİMİÇİ SAVAŞ • v0.8.11", widget_test)
+        self.assertIn("ANTRENMAN • v0.8.11", widget_test)
         self.assertNotIn("ÇEVRİMİÇİ SAVAŞ • v0.8.4", widget_test)
         self.assertNotIn("ANTRENMAN • v0.8.4", widget_test)
 
@@ -1430,6 +1430,39 @@ class FlutterClientContractTests(unittest.TestCase):
                         f"{path.relative_to(ROOT)}: yinelenen constructor parametreleri {duplicates}"
                     )
         self.assertEqual(failures, [], "\n".join(failures))
+
+
+    def test_v0811_arcade_tech_visual_refresh_contract(self) -> None:
+        theme = (
+            CLIENT / "lib" / "src" / "theme" / "relay_theme.dart"
+        ).read_text(encoding="utf-8")
+        app = (CLIENT / "lib" / "src" / "app.dart").read_text(encoding="utf-8")
+        main_menu = (
+            CLIENT / "lib" / "src" / "screens" / "main_menu_screen.dart"
+        ).read_text(encoding="utf-8")
+        play_mode = (
+            CLIENT / "lib" / "src" / "screens" / "play_mode_screen.dart"
+        ).read_text(encoding="utf-8")
+        status_bar = (
+            CLIENT / "lib" / "src" / "widgets" / "player_status_bar.dart"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("backgroundTop", theme)
+        self.assertIn("backgroundBottom", theme)
+        self.assertIn("magenta", theme)
+        self.assertIn("violet", theme)
+        self.assertIn("class RelayDecorations", theme)
+        self.assertIn("appBackgroundGradient", theme)
+        self.assertIn("heroPanel()", theme)
+        self.assertIn("panel({", theme)
+        self.assertIn("scaffoldBackgroundColor: Colors.transparent", theme)
+        self.assertIn("RelayDecorations.appBackground()", app)
+        self.assertIn("RelayDecorations.screenShell()", main_menu)
+        self.assertIn("RelayDecorations.heroPanel()", main_menu)
+        self.assertIn("RelayDecorations.panel(accent: accent", main_menu)
+        self.assertIn("RelayDecorations.screenShell()", play_mode)
+        self.assertIn("RelayDecorations.panel(accent: color)", play_mode)
+        self.assertIn("RelayColors.surfaceSoft", status_bar)
 
 
 if __name__ == "__main__":

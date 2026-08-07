@@ -15,6 +15,10 @@ class RelayApp extends StatelessWidget {
       title: 'Project Relay',
       debugShowCheckedModeBanner: false,
       theme: RelayTheme.dark(),
+      builder: (context, child) => DecoratedBox(
+        decoration: RelayDecorations.appBackground(),
+        child: child ?? const SizedBox.shrink(),
+      ),
       home: const MainMenuScreen(),
       routes: {
         '/profile': (context) => const ProfileScreen(),

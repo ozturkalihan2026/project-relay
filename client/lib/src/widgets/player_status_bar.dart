@@ -410,7 +410,14 @@ class _StatusShell extends StatelessWidget {
         : frame.accent.withValues(alpha: 0.62);
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: RelayColors.surface.withValues(alpha: 0.96),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color.alphaBlend(frame.accent.withValues(alpha: 0.10), RelayColors.surface),
+            Color.alphaBlend(frame.accent.withValues(alpha: 0.05), RelayColors.surfaceSoft),
+          ],
+        ),
         borderRadius: BorderRadius.circular(compact ? 13 : 15),
         border: Border.all(color: borderColor),
         boxShadow: [

@@ -54,6 +54,7 @@ dönüştürür.
 | v0.8.8 | Menü dönüş semantiği, yarı boy mağaza kartları ve yatay Kariyer hazırlığı | Hazır; yerel Flutter kabulü bekliyor |
 | v0.8.9 | Üç kartlı Kariyer hazırlığı, yenilgide doğrudan hazırlığa dönüş ve kompakt savaş modülü paletleri | Hazır; yerel Flutter kabulü bekliyor |
 | v0.8.10 | Moda özel başlangıç sekizlileri, anlık palet yenileme ve devre durumu izolasyonu | Hazır; yerel Flutter kabulü bekliyor |
+| v0.8.11 | Arcade-tech renk paleti, global atmosfer ve oyun ekranlarında görsel yenileme | Hazır; yerel Flutter kabulü bekliyor |
 | v0.9.0 | Kapalı alfa yayına hazırlık, telemetri ve cihaz QA | Sıradaki |
 | v1.0.0 | Android ve web açık beta | Hedef |
 

@@ -64,7 +64,7 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen> {
               ),
             ),
             const Text(
-              'PROJECT RELAY • v0.8.10',
+              'PROJECT RELAY • v0.8.11',
               style: TextStyle(color: RelayColors.muted, fontSize: 10),
             ),
           ],
@@ -708,9 +708,23 @@ class _CosmeticCard extends StatelessWidget {
             Container(
               height: compact ? 38 : 54,
               decoration: BoxDecoration(
-                color: accent.withValues(alpha: 0.12),
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    accent.withValues(alpha: 0.24),
+                    RelayColors.surfaceHigh.withValues(alpha: 0.74),
+                  ],
+                ),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: accent.withValues(alpha: 0.7)),
+                border: Border.all(color: accent.withValues(alpha: 0.78)),
+                boxShadow: [
+                  BoxShadow(
+                    color: accent.withValues(alpha: 0.16),
+                    blurRadius: 16,
+                    spreadRadius: -6,
+                  ),
+                ],
               ),
               child: Center(
                 child: Icon(

@@ -77,7 +77,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               ),
             ),
             Text(
-              'PROJECT RELAY • v0.8.10',
+              'PROJECT RELAY • v0.8.11',
               style: TextStyle(color: RelayColors.muted, fontSize: 10),
             ),
           ],
@@ -770,13 +770,27 @@ class _ProfileCosmeticCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: RelayColors.surface.withValues(alpha: 0.72),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            accent.withValues(alpha: item.equipped ? 0.20 : 0.12),
+            RelayColors.surfaceSoft.withValues(alpha: 0.90),
+          ],
+        ),
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
           color: item.equipped
               ? RelayColors.mint.withValues(alpha: 0.8)
               : accent.withValues(alpha: 0.5),
         ),
+        boxShadow: [
+          BoxShadow(
+            color: accent.withValues(alpha: item.equipped ? 0.18 : 0.08),
+            blurRadius: 18,
+            spreadRadius: -7,
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -784,7 +798,14 @@ class _ProfileCosmeticCard extends StatelessWidget {
           Container(
             height: 68,
             decoration: BoxDecoration(
-              color: accent.withValues(alpha: 0.12),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  accent.withValues(alpha: 0.24),
+                  RelayColors.surfaceHigh.withValues(alpha: 0.76),
+                ],
+              ),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: accent.withValues(alpha: 0.65)),
             ),

@@ -1,3 +1,14 @@
+## v0.8.11 — Arcade-Tech Görsel Yenileme
+
+- Global katmanlı arka plan gradyanı eklendi.
+- Tema renkleri daha canlı cyan, mint, amber ve coral tonlarına geçirildi.
+- Magenta ve violet destek vurgu renkleri eklendi.
+- Ana menü Oyna kartı üç renkli kahraman gradyanıyla yenilendi.
+- Ana merkez ve savaş türü kartları moda özel renkli yüzeylerle ayrıştırıldı.
+- Kartlar, butonlar, giriş alanları ve oyuncu durum çubuğu daha sıcak hale getirildi.
+- Mağaza ve Profil kozmetik ön izlemelerine renkli gradyan/parıltı eklendi.
+- API, veritabanı, savaş motoru ve modül dengesi değiştirilmedi.
+
 ## v0.8.10 — Moda Özel Sekizliler ve Devre İzolasyonu
 
 - Kariyer modül seçimi 2 sütun × 4 sıra düzene geçirildi; Doğrula eylemi Modül Seç kartına taşındı.

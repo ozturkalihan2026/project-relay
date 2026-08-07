@@ -16,154 +16,157 @@ class MainMenuScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: PlayerStatusBar(
-                        onTap: () => _open(context, const ProfileScreen()),
-                        showClaimBadge: true,
+      body: Container(
+        decoration: RelayDecorations.screenShell(),
+        child: SafeArea(
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: PlayerStatusBar(
+                          onTap: () => _open(context, const ProfileScreen()),
+                          showClaimBadge: true,
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  IconButton.filledTonal(
-                    key: const ValueKey('main-menu-settings'),
-                    tooltip: 'Ayarlar',
-                    onPressed: () => _open(context, const SettingsScreen()),
-                    icon: const Icon(Icons.settings_outlined),
-                  ),
-                  const SizedBox(width: 6),
-                  IconButton.filledTonal(
-                    key: const ValueKey('main-menu-how-to-play'),
-                    tooltip: 'Nasıl oynanır?',
-                    onPressed: () => _open(context, const HowToPlayScreen()),
-                    icon: const Icon(Icons.help_outline),
-                  ),
-                ],
+                    const SizedBox(width: 8),
+                    IconButton.filledTonal(
+                      key: const ValueKey('main-menu-settings'),
+                      tooltip: 'Ayarlar',
+                      onPressed: () => _open(context, const SettingsScreen()),
+                      icon: const Icon(Icons.settings_outlined),
+                    ),
+                    const SizedBox(width: 6),
+                    IconButton.filledTonal(
+                      key: const ValueKey('main-menu-how-to-play'),
+                      tooltip: 'Nasıl oynanır?',
+                      onPressed: () => _open(context, const HowToPlayScreen()),
+                      icon: const Icon(Icons.help_outline),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            Expanded(
-              child: Center(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(18, 18, 18, 26),
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 880),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        const _RelayMark(),
-                        const SizedBox(height: 24),
-                        _PrimaryPlayCard(
-                          onPressed: () => _open(
-                            context,
-                            const PlayModeScreen(),
+              Expanded(
+                child: Center(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(18, 18, 18, 26),
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 880),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          const _RelayMark(),
+                          const SizedBox(height: 24),
+                          _PrimaryPlayCard(
+                            onPressed: () => _open(
+                              context,
+                              const PlayModeScreen(),
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 14),
-                        LayoutBuilder(
-                          builder: (context, constraints) {
-                            final columns = constraints.maxWidth >= 680 ? 2 : 1;
-                            const spacing = 12.0;
-                            final itemWidth = columns == 1
-                                ? constraints.maxWidth
-                                : (constraints.maxWidth - spacing) / 2;
-                            return Wrap(
-                              spacing: spacing,
-                              runSpacing: spacing,
-                              children: [
-                                SizedBox(
-                                  width: itemWidth,
-                                  child: _HubCard(
-                                    key: const ValueKey('main-menu-clan'),
-                                    icon: Icons.hub_outlined,
-                                    accent: RelayColors.amber,
-                                    title: 'KLAN',
-                                    subtitle:
-                                        'Klan özeti, üyeler, etkinlik ve ayarlar',
-                                    onPressed: () => _open(
-                                      context,
-                                      const SocialScreen(),
-                                    ),
-                                  ),
-                                ),
-                                SizedBox(
-                                  width: itemWidth,
-                                  child: _HubCard(
-                                    key: const ValueKey(
-                                      'main-menu-statistics',
-                                    ),
-                                    icon: Icons.query_stats_outlined,
-                                    accent: RelayColors.cyan,
-                                    title: 'İSTATİSTİKLER',
-                                    subtitle:
-                                        'Sezon ve haftalık lig verilerini alt sekmelerle görüntüle',
-                                    onPressed: () => _open(
-                                      context,
-                                      const SeasonScreen(),
-                                    ),
-                                  ),
-                                ),
-                                SizedBox(
-                                  width: itemWidth,
-                                  child: _HubCard(
-                                    key: const ValueKey('main-menu-store'),
-                                    icon: Icons.storefront_outlined,
-                                    accent: RelayColors.mint,
-                                    title: 'MAĞAZA',
-                                    subtitle:
-                                        'Modül, devre kartı ve profil kozmetiklerini tek sayfada incele',
-                                    onPressed: () => _open(
-                                      context,
-                                      const CollectionScreen(
-                                        mode: CollectionScreenMode.store,
+                          const SizedBox(height: 14),
+                          LayoutBuilder(
+                            builder: (context, constraints) {
+                              final columns = constraints.maxWidth >= 680 ? 2 : 1;
+                              const spacing = 12.0;
+                              final itemWidth = columns == 1
+                                  ? constraints.maxWidth
+                                  : (constraints.maxWidth - spacing) / 2;
+                              return Wrap(
+                                spacing: spacing,
+                                runSpacing: spacing,
+                                children: [
+                                  SizedBox(
+                                    width: itemWidth,
+                                    child: _HubCard(
+                                      key: const ValueKey('main-menu-clan'),
+                                      icon: Icons.hub_outlined,
+                                      accent: RelayColors.amber,
+                                      title: 'KLAN',
+                                      subtitle:
+                                          'Klan özeti, üyeler, etkinlik ve ayarlar',
+                                      onPressed: () => _open(
+                                        context,
+                                        const SocialScreen(),
                                       ),
                                     ),
                                   ),
-                                ),
-                                SizedBox(
-                                  width: itemWidth,
-                                  child: _HubCard(
-                                    key: const ValueKey('main-menu-profile'),
-                                    icon: Icons.account_circle_outlined,
-                                    accent: RelayColors.coral,
-                                    title: 'PROFİL',
-                                    subtitle:
-                                        'Genel, arkadaşlar, kozmetik, ödüller, maçlar, görevler ve başarımlar',
-                                    onPressed: () => _open(
-                                      context,
-                                      const ProfileScreen(),
+                                  SizedBox(
+                                    width: itemWidth,
+                                    child: _HubCard(
+                                      key: const ValueKey(
+                                        'main-menu-statistics',
+                                      ),
+                                      icon: Icons.query_stats_outlined,
+                                      accent: RelayColors.cyan,
+                                      title: 'İSTATİSTİKLER',
+                                      subtitle:
+                                          'Sezon ve haftalık lig verilerini alt sekmelerle görüntüle',
+                                      onPressed: () => _open(
+                                        context,
+                                        const SeasonScreen(),
+                                      ),
                                     ),
                                   ),
-                                ),
-                              ],
-                            );
-                          },
-                        ),
-                        const SizedBox(height: 20),
-                        const Text(
-                          'ANA MERKEZ VE MENÜ DÜZENİ • v0.8.10',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: RelayColors.muted,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 1.1,
+                                  SizedBox(
+                                    width: itemWidth,
+                                    child: _HubCard(
+                                      key: const ValueKey('main-menu-store'),
+                                      icon: Icons.storefront_outlined,
+                                      accent: RelayColors.mint,
+                                      title: 'MAĞAZA',
+                                      subtitle:
+                                          'Modül, devre kartı ve profil kozmetiklerini tek sayfada incele',
+                                      onPressed: () => _open(
+                                        context,
+                                        const CollectionScreen(
+                                          mode: CollectionScreenMode.store,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  SizedBox(
+                                    width: itemWidth,
+                                    child: _HubCard(
+                                      key: const ValueKey('main-menu-profile'),
+                                      icon: Icons.account_circle_outlined,
+                                      accent: RelayColors.coral,
+                                      title: 'PROFİL',
+                                      subtitle:
+                                          'Genel, arkadaşlar, kozmetik, ödüller, maçlar, görevler ve başarımlar',
+                                      onPressed: () => _open(
+                                        context,
+                                        const ProfileScreen(),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              );
+                            },
                           ),
-                        ),
-                      ],
+                          const SizedBox(height: 20),
+                          const Text(
+                            'ANA MERKEZ VE MENÜ DÜZENİ • v0.8.11',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: RelayColors.muted,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 1.1,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -184,15 +187,9 @@ class _RelayMark extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        const DecoratedBox(
-          decoration: BoxDecoration(
-            color: Color(0x2238E8FF),
-            shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(color: Color(0x4438E8FF), blurRadius: 24),
-            ],
-          ),
-          child: Padding(
+        DecoratedBox(
+          decoration: RelayDecorations.accentHalo(RelayColors.magenta),
+          child: const Padding(
             padding: EdgeInsets.all(14),
             child: Icon(Icons.memory, color: RelayColors.cyan, size: 38),
           ),
@@ -241,11 +238,7 @@ class _PrimaryPlayCard extends StatelessWidget {
         onTap: onPressed,
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Color(0xFF145A68), Color(0xFF143A45)],
-            ),
-          ),
+          decoration: RelayDecorations.heroPanel(),
           child: const Row(
             children: [
               DecoratedBox(
@@ -312,54 +305,57 @@ class _HubCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onPressed,
-        child: Padding(
-          padding: const EdgeInsets.all(17),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              DecoratedBox(
-                decoration: BoxDecoration(
-                  color: accent.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: accent.withValues(alpha: 0.45)),
+      child: Container(
+        decoration: RelayDecorations.panel(accent: accent, soft: true),
+        child: InkWell(
+          onTap: onPressed,
+          child: Padding(
+            padding: const EdgeInsets.all(17),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: accent.withValues(alpha: 0.14),
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: accent.withValues(alpha: 0.45)),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Icon(icon, color: accent, size: 28),
+                  ),
                 ),
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Icon(icon, color: accent, size: 28),
-                ),
-              ),
-              const SizedBox(width: 13),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 0.7,
+                const SizedBox(width: 13),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 0.7,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 5),
-                    Text(
-                      subtitle,
-                      style: const TextStyle(
-                        color: RelayColors.muted,
-                        fontSize: 10.5,
-                        height: 1.35,
+                      const SizedBox(height: 5),
+                      Text(
+                        subtitle,
+                        style: const TextStyle(
+                          color: RelayColors.muted,
+                          fontSize: 10.5,
+                          height: 1.35,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-              const Padding(
-                padding: EdgeInsets.only(top: 13),
-                child: Icon(Icons.chevron_right, color: RelayColors.muted),
-              ),
-            ],
+                Padding(
+                  padding: const EdgeInsets.only(top: 13),
+                  child: Icon(Icons.chevron_right, color: accent),
+                ),
+              ],
+            ),
           ),
         ),
       ),
