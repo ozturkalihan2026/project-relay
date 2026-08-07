@@ -159,7 +159,7 @@ class MainMenuScreen extends StatelessWidget {
                           ),
                           const SizedBox(height: 20),
                           const Text(
-                            'ANA MERKEZ VE MENÜ DÜZENİ • v0.8.16',
+                            'ANA MERKEZ VE MENÜ DÜZENİ • v0.8.17',
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               color: RelayColors.muted,

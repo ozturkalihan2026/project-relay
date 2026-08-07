@@ -38,7 +38,7 @@ class _AlphaFeedbackScreenState extends ConsumerState<AlphaFeedbackScreen> {
               'ALFA GERİ BİLDİRİMİ',
               style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1.1),
             ),
-            Text('PROJECT RELAY • v0.8.16', style: TextStyle(color: RelayColors.muted, fontSize: 10)),
+            Text('PROJECT RELAY • v0.8.17', style: TextStyle(color: RelayColors.muted, fontSize: 10)),
           ],
         ),
         actions: const [AppHeaderActions(), SizedBox(width: 8)],

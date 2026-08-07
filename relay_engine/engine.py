@@ -744,10 +744,10 @@ class CircuitBattleEngine:
     def _tiebreak_score(self, board: _BoardState) -> tuple[float, ...]:
         metrics = self._tiebreak_metrics(board)
         return (
-            metrics["core_hp_ratio"],
             metrics["surviving_modules"],
-            metrics["module_hp_ratio"],
             metrics["total_damage"],
+            metrics["module_hp_ratio"],
+            metrics["core_hp_ratio"],
             metrics["damage_efficiency"],
             -metrics["total_heat"],
         )
@@ -775,10 +775,10 @@ class CircuitBattleEngine:
         left_metrics = self._tiebreak_metrics(states[Side.LEFT])
         right_metrics = self._tiebreak_metrics(states[Side.RIGHT])
         preferences = {
-            "core_hp_ratio": "higher",
             "surviving_modules": "higher",
-            "module_hp_ratio": "higher",
             "total_damage": "higher",
+            "module_hp_ratio": "higher",
+            "core_hp_ratio": "higher",
             "damage_efficiency": "higher",
             "total_heat": "lower",
         }

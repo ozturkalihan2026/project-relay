@@ -1,3 +1,9 @@
+## v0.8.17
+- Kariyer hazırlığında Modül Seç, Senin Devren ve Koşu Rakibi kartları 430 px dış panel standardında; devreler 390 px maksimum ölçüde sabitlendi.
+- Senin Devren ile Koşu Rakibi arasındaki yatay boşluk 22 px yapıldı.
+- Süre sonu eşitlik bozma sırası: hayatta kalan modül sayısı → verilen toplam hasar → kalan modül can oranı → çekirdek can oranı → hasar verimliliği → düşük ısı.
+- Kariyer rakiplerinin en az üç güvenilir karşı stratejiye sahip olması regresyon testiyle güvenceye alındı.
+
 ## v0.8.16
 - Ana menüdeki arka plan çekirdeği oyun amblemiyle aynı 8 girişli devre amblemine dönüştürüldü; enerji akımları bu girişlerde birleşiyor.
 - Kariyer Modül Seç, Senin Devren ve Koşu Rakibi kartları aynı 430px/500px kart ailesine yaklaştırıldı.

@@ -14,6 +14,14 @@ import '../widgets/relay_notice.dart';
 import 'career_battle_screen.dart';
 import 'collection_screen.dart';
 
+const double _careerPanelWidth = 430;
+const double _careerPanelHeight = 500;
+const double _careerBoardMaxWidth = 390;
+const double _careerModuleBoardGap = 12;
+const double _careerPlayerOpponentGap = 22;
+const double _careerPlayerEditorWidth =
+    (_careerPanelWidth * 2) + _careerModuleBoardGap;
+
 class CareerScreen extends ConsumerStatefulWidget {
   const CareerScreen({super.key});
 
@@ -508,8 +516,8 @@ class _CareerInlineEditor extends StatelessWidget {
 
     final moduleCard = Container(
       key: const ValueKey('career-module-selection-card'),
-      width: 430,
-      height: 500,
+      width: _careerPanelWidth,
+      height: _careerPanelHeight,
       padding: const EdgeInsets.all(12),
       decoration: RelayDecorations.panel(
         accent: RelayColors.mint,
@@ -589,8 +597,8 @@ class _CareerInlineEditor extends StatelessWidget {
 
     final boardCard = Container(
       key: const ValueKey('career-player-board-editor'),
-      width: 430,
-      height: 500,
+      width: _careerPanelWidth,
+      height: _careerPanelHeight,
       padding: const EdgeInsets.all(12),
       decoration: RelayDecorations.panel(
         accent: RelayColors.cyan,
@@ -642,7 +650,7 @@ class _CareerInlineEditor extends StatelessWidget {
           const SizedBox(height: 10),
           Center(
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 390),
+              constraints: const BoxConstraints(maxWidth: _careerBoardMaxWidth),
               child: CircuitBoard(
                 placements: state.placements,
                 specs: specs,
@@ -662,12 +670,12 @@ class _CareerInlineEditor extends StatelessWidget {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        if (constraints.maxWidth >= 872) {
+        if (constraints.maxWidth >= _careerPlayerEditorWidth) {
           return Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               moduleCard,
-              const SizedBox(width: 12),
+              const SizedBox(width: _careerModuleBoardGap),
               boardCard,
             ],
           );
@@ -760,11 +768,11 @@ class _CareerRunCard extends StatelessWidget {
             if (constraints.maxWidth >= 1360) {
               return Wrap(
                 alignment: WrapAlignment.center,
-                spacing: 14,
+                spacing: _careerPlayerOpponentGap,
                 runSpacing: 14,
                 children: [
-                  SizedBox(width: 872, child: playerEditor),
-                  const SizedBox(width: 430, child: opponentPreview),
+                  SizedBox(width: _careerPlayerEditorWidth, child: playerEditor),
+                  const SizedBox(width: _careerPanelWidth, child: opponentPreview),
                 ],
               );
             }
@@ -835,11 +843,11 @@ class _CareerRunCard extends StatelessWidget {
             if (constraints.maxWidth >= 1360) {
               return Wrap(
                 alignment: WrapAlignment.center,
-                spacing: 14,
+                spacing: _careerPlayerOpponentGap,
                 runSpacing: 14,
                 children: [
-                  SizedBox(width: 872, child: playerEditor),
-                  SizedBox(width: 430, child: opponentPreview),
+                  SizedBox(width: _careerPlayerEditorWidth, child: playerEditor),
+                  SizedBox(width: _careerPanelWidth, child: opponentPreview),
                 ],
               );
             }
@@ -1066,7 +1074,8 @@ class _CareerBoardPreview extends StatelessWidget {
         ? const <int, ModulePlacement>{}
         : {for (final item in draft.modules) item.cellIndex: item};
     return Container(
-      height: 500,
+      width: _careerPanelWidth,
+      height: _careerPanelHeight,
       padding: const EdgeInsets.all(12),
       decoration: RelayDecorations.panel(
         accent: accent,
@@ -1106,7 +1115,7 @@ class _CareerBoardPreview extends StatelessWidget {
           const SizedBox(height: 10),
           if (draft == null)
             Container(
-              height: 390,
+              height: _careerBoardMaxWidth,
               alignment: Alignment.center,
               decoration: BoxDecoration(
                 color: RelayColors.surface.withValues(alpha: 0.45),
@@ -1134,7 +1143,7 @@ class _CareerBoardPreview extends StatelessWidget {
           else
             Center(
               child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 390),
+                constraints: const BoxConstraints(maxWidth: _careerBoardMaxWidth),
                 child: IgnorePointer(
                   child: CircuitBoard(
                     placements: placements,

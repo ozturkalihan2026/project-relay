@@ -179,12 +179,18 @@ Maç sonucundaki `decision` alanı, sunucu kararının açıklamasıdır:
 
 ```json
 {
-  "criterion": "module_hp_ratio",
+  "criterion": "total_damage",
   "metrics": [
     {
-      "key": "core_hp_ratio",
-      "left_value": 1.0,
-      "right_value": 1.0,
+      "key": "surviving_modules",
+      "left_value": 5,
+      "right_value": 5,
+      "preferred": "higher"
+    },
+    {
+      "key": "total_damage",
+      "left_value": 126.0,
+      "right_value": 118.0,
       "preferred": "higher"
     },
     {
@@ -197,8 +203,9 @@ Maç sonucundaki `decision` alanı, sunucu kararının açıklamasıdır:
 }
 ```
 
-Gerçek yanıtta altı ölçütün tamamı sırasıyla bulunur. `criterion`, süre
-sonunda kararı veren ilk farklı ölçütü veya `core_destroyed`,
+Gerçek yanıtta altı ölçütün tamamı `surviving_modules`, `total_damage`,
+`module_hp_ratio`, `core_hp_ratio`, `damage_efficiency`, `total_heat` sırasıyla
+bulunur. `criterion`, süre sonunda kararı veren ilk farklı ölçütü veya `core_destroyed`,
 `mutual_core_destruction` ya da `exact_draw` sonucunu belirtir. İstemci bu
 alanı açıklama için kullanır; kazananı yeniden hesaplamaz.
 

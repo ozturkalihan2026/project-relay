@@ -4,6 +4,7 @@ import unittest
 from itertools import combinations
 
 from relay_api.bots import BOTS
+from relay_api.career import CAREER_STAGES
 from relay_engine import (
     BoardLayout,
     CircuitBattleEngine,
@@ -177,6 +178,35 @@ class BattleBalanceTests(unittest.TestCase):
                     BOTS[counter_id].board,
                 )
                 self.assertGreater(counter_wins, target_wins)
+
+    def test_each_career_stage_has_multiple_reliable_counter_strategies(
+        self,
+    ) -> None:
+        for stage in CAREER_STAGES:
+            opponent = BOTS[stage.bot_id].board
+            counters: list[str] = []
+            for strategy_id, strategy in BOTS.items():
+                if strategy_id == stage.bot_id:
+                    continue
+                wins = 0
+                losses = 0
+                for seed in range(1, 8):
+                    result = self.engine.simulate(
+                        strategy.board, opponent, seed=seed
+                    )
+                    if result.winner is Side.LEFT:
+                        wins += 1
+                    elif result.winner is Side.RIGHT:
+                        losses += 1
+                if wins > losses:
+                    counters.append(strategy_id)
+
+            with self.subTest(stage=stage.stage_number, bot=stage.bot_id):
+                self.assertGreaterEqual(
+                    len(counters),
+                    3,
+                    f"{stage.bot_id} kariyer rakibine karşı yeterli karşı strateji yok.",
+                )
 
     def test_pulse_spam_has_a_reliable_fortress_counter(self) -> None:
         pulse_spam = _pulse_spam_board()

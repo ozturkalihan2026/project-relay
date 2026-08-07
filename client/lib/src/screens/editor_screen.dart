@@ -100,7 +100,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
               ),
             ),
             Text(
-              '${widget.mode.title} • v0.8.16',
+              '${widget.mode.title} • v0.8.17',
               style: const TextStyle(
                 color: RelayColors.muted,
                 fontSize: 10,

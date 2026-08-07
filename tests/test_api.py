@@ -132,7 +132,7 @@ class RelayApiTests(unittest.TestCase):
         response = self.client.get("/healthz")
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["version"], "0.8.16")
+        self.assertEqual(response.json()["version"], "0.8.17")
         self.assertEqual(response.json()["rules_version"], "0.8")
         self.assertEqual(response.json()["storage"], "sqlite")
         self.assertEqual(response.json()["database"], "ok")
@@ -303,10 +303,10 @@ class RelayApiTests(unittest.TestCase):
             {
                 "core_destroyed",
                 "mutual_core_destruction",
-                "core_hp_ratio",
                 "surviving_modules",
-                "module_hp_ratio",
                 "total_damage",
+                "module_hp_ratio",
+                "core_hp_ratio",
                 "damage_efficiency",
                 "total_heat",
                 "exact_draw",
@@ -315,10 +315,10 @@ class RelayApiTests(unittest.TestCase):
         self.assertEqual(
             [metric["key"] for metric in decision["metrics"]],
             [
-                "core_hp_ratio",
                 "surviving_modules",
-                "module_hp_ratio",
                 "total_damage",
+                "module_hp_ratio",
+                "core_hp_ratio",
                 "damage_efficiency",
                 "total_heat",
             ],

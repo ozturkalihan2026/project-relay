@@ -119,10 +119,10 @@ maç berabere biter.
 
 Azami savaş süresine ulaşıldığında şu sıra kullanılır:
 
-1. Çekirdek can oranı
-2. Hayatta kalan modül sayısı
+1. Hayatta kalan modül sayısı
+2. Verilen toplam hasar
 3. Toplam modül can oranı
-4. Verilen toplam hasar
+4. Çekirdek can oranı
 5. Harcanan enerji başına hasar
 6. Daha düşük toplam ısı
 

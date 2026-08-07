@@ -11,6 +11,7 @@ from relay_engine import (
     EventType,
     ModuleKind,
     ModulePlacement,
+    Side,
 )
 from relay_engine.catalog import world_ports
 
@@ -216,10 +217,10 @@ class CircuitBattleEngineTests(unittest.TestCase):
         self.assertEqual(
             [metric.key for metric in result.decision.metrics],
             [
-                "core_hp_ratio",
                 "surviving_modules",
-                "module_hp_ratio",
                 "total_damage",
+                "module_hp_ratio",
+                "core_hp_ratio",
                 "damage_efficiency",
                 "total_heat",
             ],
@@ -230,6 +231,51 @@ class CircuitBattleEngineTests(unittest.TestCase):
             if metric.key == "total_damage"
         )
         self.assertGreater(total_damage.left_value, total_damage.right_value)
+
+    def test_timeout_prefers_damage_before_remaining_module_hp_when_losses_match(
+        self,
+    ) -> None:
+        engine = CircuitBattleEngine()
+        left = engine._create_state(simple_laser_board("LEFT"))
+        right = engine._create_state(simple_laser_board("RIGHT"))
+
+        left.total_damage = 80.0
+        right.total_damage = 60.0
+        left.modules[(0, 2)].hp = 1.0
+        right.modules[(0, 2)].hp = right.modules[(0, 2)].max_hp
+
+        winner, reason = engine._resolve_timeout(
+            {Side.LEFT: left, Side.RIGHT: right}
+        )
+
+        self.assertEqual(reason, "timeout_tiebreak")
+        self.assertEqual(winner, Side.LEFT)
+        decision = engine._build_decision(
+            {Side.LEFT: left, Side.RIGHT: right}, reason
+        )
+        self.assertEqual(decision.criterion, "total_damage")
+
+    def test_timeout_still_prefers_more_surviving_modules_before_damage(
+        self,
+    ) -> None:
+        engine = CircuitBattleEngine()
+        left = engine._create_state(simple_laser_board("LEFT"))
+        right = engine._create_state(simple_laser_board("RIGHT"))
+
+        left.total_damage = 10.0
+        right.total_damage = 999.0
+        right.modules[(0, 2)].hp = 0.0
+
+        winner, reason = engine._resolve_timeout(
+            {Side.LEFT: left, Side.RIGHT: right}
+        )
+
+        self.assertEqual(reason, "timeout_tiebreak")
+        self.assertEqual(winner, Side.LEFT)
+        decision = engine._build_decision(
+            {Side.LEFT: left, Side.RIGHT: right}, reason
+        )
+        self.assertEqual(decision.criterion, "surviving_modules")
 
     def test_core_distributes_power_to_the_other_three_gates(self) -> None:
         engine = CircuitBattleEngine()

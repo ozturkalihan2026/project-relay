@@ -35,7 +35,7 @@ class GameManualScreen extends StatelessWidget {
               ),
             ),
             Text(
-              'PROJECT RELAY • v0.8.16',
+              'PROJECT RELAY • v0.8.17',
               style: TextStyle(
                 color: RelayColors.muted,
                 fontSize: 10,
@@ -493,10 +493,11 @@ class GameManualScreen extends StatelessWidget {
                             'açılır.',
                       ),
                       _ManualParagraph(
-                        text: 'Süre biterse sırasıyla çekirdek canı, yaşayan '
-                            'modüller, toplam modül canı, verilen hasar, '
-                            'enerji verimi ve düşük ısı karşılaştırılır. '
-                            'Tam eşitlik beraberliktir.',
+                        text: 'Süre biterse önce hayatta kalan modül sayısı '
+                            'karşılaştırılır. Modül kaybı eşitse verilen toplam '
+                            'hasar, ardından kalan modül canı, çekirdek canı, '
+                            'enerji verimi ve düşük ısı dikkate alınır. Tam '
+                            'eşitlik beraberliktir.',
                       ),
                       _ManualParagraph(
                         text: 'Asenkron PvP kartınız ayrı olarak sunucuda '
