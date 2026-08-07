@@ -93,17 +93,24 @@ class _ReplayScreenState extends ConsumerState<ReplayScreen> {
         }
       },
       onEvents: (events) {
-        final attacks = events
+        final visualEvents = events
             .where(
               (event) =>
                   event.type == 'attack' ||
                   event.type == 'core_damage' ||
-                  event.type == 'shield_absorb',
+                  event.type == 'shield_absorb' ||
+                  event.type == 'shield' ||
+                  event.type == 'repair' ||
+                  event.type == 'recovered' ||
+                  event.type == 'destroyed' ||
+                  event.type == 'overheat' ||
+                  event.type == 'cool' ||
+                  event.type == 'energy_starved',
             )
             .toList(growable: false);
-        if (attacks.isNotEmpty) {
+        if (visualEvents.isNotEmpty) {
           _attackOverlayEvents.value =
-              List<BattleEvent>.unmodifiable(attacks);
+              List<BattleEvent>.unmodifiable(visualEvents);
         }
         if (_soundEnabled) {
           unawaited(_soundPlayer.playFrame(events));
@@ -208,18 +215,15 @@ class _ReplayScreenState extends ConsumerState<ReplayScreen> {
         .toDouble();
 
     return Scaffold(
+      appBar: AppBar(
+        leadingWidth: 224,
+        leading: const AppHeaderProfile(),
+        actions: const [AppHeaderActions(), SizedBox(width: 8)],
+      ),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 4, 16, 28),
           children: [
-            const Row(
-              children: [
-                AppHeaderProfile(),
-                Spacer(),
-                AppHeaderActions(),
-              ],
-            ),
-            const SizedBox(height: 6),
             if (widget.battleModeLabel != null) ...[
               Center(
                 child: Text(

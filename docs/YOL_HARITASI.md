@@ -55,6 +55,13 @@ dönüştürür.
 | v0.8.9 | Üç kartlı Kariyer hazırlığı, yenilgide doğrudan hazırlığa dönüş ve kompakt savaş modülü paletleri | Hazır; yerel Flutter kabulü bekliyor |
 | v0.8.10 | Moda özel başlangıç sekizlileri, anlık palet yenileme ve devre durumu izolasyonu | Hazır; yerel Flutter kabulü bekliyor |
 | v0.8.11 | Arcade-tech renk paleti, global atmosfer ve oyun ekranlarında görsel yenileme | Hazır; yerel Flutter kabulü bekliyor |
+| v0.8.12 | Üst bar sadeleştirme, kompakt Devre Kredisi ve kariyer ilerleme şeridi | Tamamlandı |
+| v0.8.13 | Ana menü enerji akışı, hover hareketleri ve ikinci renk turu | Tamamlandı |
+| v0.8.14 | Ortak bildirim altyapısı, seviye ödülü tetikleme ve kariyer state izolasyonu | Tamamlandı |
+| v0.8.15 | Çekirdek odaklı atmosfer, mod renkleri ve savaş çekirdeği görsel yenilemesi | Tamamlandı |
+| v0.8.16 | Amblem çekirdeği, kariyer kart dengesi ve kompakt kredi amblemi | Tamamlandı |
+| v0.8.17 | Kariyer 430/390 yerleşimi ve hasar öncelikli süre sonu tie-break | Tamamlandı |
+| v0.8.18 | Sabit üst bar, ortak kredi amblemi, sezon madalyaları ve güçlendirilmiş savaş VFX | Hazır; yerel Flutter kabulü bekliyor |
 | v0.9.0 | Kapalı alfa yayına hazırlık, telemetri ve cihaz QA | Sıradaki |
 | v1.0.0 | Android ve web açık beta | Hedef |
 

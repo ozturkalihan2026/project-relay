@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "project-relay-server"
-version = "0.8.17"
-description = "Project Relay v0.8.17 career layout and timeout tiebreak API"
+version = "0.8.18"
+description = "Project Relay v0.8.18 statistics and battle presentation API"
 requires-python = ">=3.11"
 dependencies = [
     "fastapi>=0.140,<1",

@@ -4,6 +4,7 @@ import '../navigation/navigation_actions.dart';
 import '../theme/relay_theme.dart';
 import '../widgets/app_header_actions.dart';
 import '../widgets/arcade_motion.dart';
+import '../widgets/play_mode_backdrop.dart';
 import 'career_screen.dart';
 import 'editor_screen.dart';
 
@@ -30,83 +31,88 @@ class PlayModeScreen extends StatelessWidget {
       ),
       body: Container(
         decoration: RelayDecorations.screenShell(),
-        child: SafeArea(
-          child: Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(18, 6, 18, 24),
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 760),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    const Text(
-                      'SAVAŞ TÜRÜNÜ SEÇ',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: RelayColors.muted,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 1.4,
-                      ),
-                    ),
-                    const SizedBox(height: 18),
-                    _ModeCard(
-                      key: const ValueKey('play-mode-online'),
-                      icon: Icons.public,
-                      color: RelayColors.mint,
-                      title: 'ÇEVRİMİÇİ SAVAŞ',
-                      subtitle:
-                          'Kartını kaydet, eşit modüllü gerçek oyuncu düzeniyle '
-                          'eşleş. Yeni rakip yoksa dengeli sunucu rakibi gelir.',
-                      badge: 'ASENKRON PvP',
-                      onPressed: () => _openEditor(
-                        context,
-                        EditorMode.online,
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-                    _ModeCard(
-                      key: const ValueKey('play-mode-career'),
-                      icon: Icons.route_outlined,
-                      color: RelayColors.cyan,
-                      title: 'KARİYER',
-                      subtitle:
-                          'Beş savaşlık koşuda rakip devreleri incele, geçici '
-                          'güçlendirici seç ve boss devresine ulaş.',
-                      badge: 'KOŞU MODU',
-                      onPressed: () => Navigator.of(context).push(
-                        MaterialPageRoute<void>(
-                          builder: (context) => const CareerScreen(),
+        child: Stack(
+          children: [
+            const Positioned.fill(child: PlayModeBackdrop()),
+            SafeArea(
+              child: Center(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(18, 6, 18, 24),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 760),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const Text(
+                          'SAVAŞ TÜRÜNÜ SEÇ',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: RelayColors.muted,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 1.4,
+                          ),
                         ),
-                      ),
+                        const SizedBox(height: 18),
+                        _ModeCard(
+                          key: const ValueKey('play-mode-online'),
+                          icon: Icons.public,
+                          color: RelayColors.mint,
+                          title: 'ÇEVRİMİÇİ SAVAŞ',
+                          subtitle:
+                              'Kartını kaydet, eşit modüllü gerçek oyuncu düzeniyle '
+                              'eşleş. Yeni rakip yoksa dengeli sunucu rakibi gelir.',
+                          badge: 'ASENKRON PvP',
+                          onPressed: () => _openEditor(
+                            context,
+                            EditorMode.online,
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                        _ModeCard(
+                          key: const ValueKey('play-mode-career'),
+                          icon: Icons.route_outlined,
+                          color: RelayColors.cyan,
+                          title: 'KARİYER',
+                          subtitle:
+                              'Beş savaşlık koşuda rakip devreleri incele, geçici '
+                              'güçlendirici seç ve boss devresine ulaş.',
+                          badge: 'KOŞU MODU',
+                          onPressed: () => Navigator.of(context).push(
+                            MaterialPageRoute<void>(
+                              builder: (context) => const CareerScreen(),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                        _ModeCard(
+                          key: const ValueKey('play-mode-training'),
+                          icon: Icons.smart_toy_outlined,
+                          color: RelayColors.amber,
+                          title: 'ANTRENMAN',
+                          subtitle:
+                              'Dokuz sabit rakipten birini seç, devreni kaydetmeden '
+                              'düzenini ve karşı stratejilerini sına.',
+                          badge: 'BOT SAVAŞI',
+                          onPressed: () => _openEditor(
+                            context,
+                            EditorMode.training,
+                          ),
+                        ),
+                        const SizedBox(height: 22),
+                        OutlinedButton.icon(
+                          key: const ValueKey('play-mode-back-button'),
+                          onPressed: () => returnToMainMenu(context),
+                          icon: const Icon(Icons.arrow_back),
+                          label: const Text('ANA MENÜYE DÖN'),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 14),
-                    _ModeCard(
-                      key: const ValueKey('play-mode-training'),
-                      icon: Icons.smart_toy_outlined,
-                      color: RelayColors.amber,
-                      title: 'ANTRENMAN',
-                      subtitle:
-                          'Dokuz sabit rakipten birini seç, devreni kaydetmeden '
-                          'düzenini ve karşı stratejilerini sına.',
-                      badge: 'BOT SAVAŞI',
-                      onPressed: () => _openEditor(
-                        context,
-                        EditorMode.training,
-                      ),
-                    ),
-                    const SizedBox(height: 22),
-                    OutlinedButton.icon(
-                      key: const ValueKey('play-mode-back-button'),
-                      onPressed: () => returnToMainMenu(context),
-                      icon: const Icon(Icons.arrow_back),
-                      label: const Text('ANA MENÜYE DÖN'),
-                    ),
-                  ],
+                  ),
                 ),
               ),
             ),
-          ),
+          ],
         ),
       ),
     );

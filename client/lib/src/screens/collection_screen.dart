@@ -7,6 +7,7 @@ import '../models/relay_models.dart';
 import '../theme/relay_theme.dart';
 import '../widgets/module_visuals.dart';
 import '../widgets/app_header_actions.dart';
+import '../widgets/circuit_credit_icon.dart';
 import '../widgets/relay_notice.dart';
 
 enum CollectionScreenMode { collection, store }
@@ -66,7 +67,7 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen> {
               ),
             ),
             const Text(
-              'PROJECT RELAY • v0.8.17',
+              'PROJECT RELAY • v0.8.18',
               style: TextStyle(color: RelayColors.muted, fontSize: 10),
             ),
           ],
@@ -497,11 +498,7 @@ class _CollectionHeader extends StatelessWidget {
             ),
             const SizedBox(width: 12),
             Chip(
-              avatar: const Icon(
-                Icons.toll_outlined,
-                color: RelayColors.amber,
-                size: 18,
-              ),
+              avatar: const CircuitCreditGlyph(size: 18),
               label: Text(
                 '$credits DEVRE KREDİSİ',
                 key: const ValueKey('collection-credits'),
@@ -789,7 +786,7 @@ class _CosmeticCard extends StatelessWidget {
                       )
                     : null,
                 onPressed: busy ? null : onAction,
-                icon: const Icon(Icons.toll_outlined),
+                icon: const CircuitCreditGlyph(size: 18),
                 label: Text('${item.creditCost} KREDİ'),
               ),
           ],

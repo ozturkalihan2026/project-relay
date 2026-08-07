@@ -7,6 +7,7 @@ import '../api/relay_api.dart';
 import '../models/relay_models.dart';
 import '../theme/cosmetic_visuals.dart';
 import '../theme/relay_theme.dart';
+import 'circuit_credit_icon.dart';
 
 class PlayerStatusBar extends ConsumerWidget {
   const PlayerStatusBar({
@@ -140,12 +141,10 @@ class PlayerStatusBar extends ConsumerWidget {
 class CircuitCreditButton extends ConsumerWidget {
   const CircuitCreditButton({
     required this.onTap,
-    this.compact = true,
     super.key,
   });
 
   final VoidCallback onTap;
-  final bool compact;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -163,14 +162,10 @@ class CircuitCreditButton extends ConsumerWidget {
             onTap: onTap,
             borderRadius: BorderRadius.circular(13),
             child: Container(
-              constraints: BoxConstraints(
-                minWidth: compact ? 66 : 76,
-                minHeight: compact ? 42 : 48,
-              ),
-              padding: EdgeInsets.symmetric(
-                horizontal: compact ? 7 : 9,
-                vertical: compact ? 5 : 6,
-              ),
+              key: const ValueKey('global-credit-box'),
+              width: 78,
+              height: 48,
+              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 5),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
@@ -199,67 +194,50 @@ class CircuitCreditButton extends ConsumerWidget {
                 ],
               ),
               child: Row(
-                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const _CircuitCreditGlyph(),
+                  const CircuitCreditGlyph(size: 18),
                   const SizedBox(width: 5),
-                  Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        credits == null ? '—' : '$credits',
-                        key: const ValueKey('player-status-credits'),
-                        style: const TextStyle(
-                          color: RelayColors.amber,
-                          fontSize: 11.5,
-                          height: 1,
-                          fontWeight: FontWeight.w900,
+                  Flexible(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          credits == null ? '—' : '$credits',
+                          key: const ValueKey('player-status-credits'),
+                          maxLines: 1,
+                          overflow: TextOverflow.fade,
+                          softWrap: false,
+                          style: const TextStyle(
+                            color: RelayColors.amber,
+                            fontSize: 11.5,
+                            height: 1,
+                            fontWeight: FontWeight.w900,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 2),
-                      const Text(
-                        'DEVRE KREDİSİ',
-                        style: TextStyle(
-                          color: RelayColors.muted,
-                          fontSize: 5.5,
-                          height: 1,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 0.15,
+                        const SizedBox(height: 2),
+                        const Text(
+                          'DEVRE KREDİSİ',
+                          maxLines: 1,
+                          overflow: TextOverflow.clip,
+                          softWrap: false,
+                          style: TextStyle(
+                            color: RelayColors.muted,
+                            fontSize: 5.0,
+                            height: 1,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 0.05,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ],
               ),
             ),
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _CircuitCreditGlyph extends StatelessWidget {
-  const _CircuitCreditGlyph();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 20,
-      height: 20,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: RelayColors.amber.withValues(alpha: 0.12),
-        border: Border.all(
-          color: RelayColors.amber.withValues(alpha: 0.72),
-        ),
-      ),
-      alignment: Alignment.center,
-      child: const Icon(
-        Icons.memory_rounded,
-        color: RelayColors.amber,
-        size: 12,
       ),
     );
   }

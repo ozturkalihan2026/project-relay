@@ -1,37 +1,29 @@
-# Project Relay v0.8.11 — Arcade-Tech Görsel Yenileme
+# Project Relay v0.8.18 — Sabit Üst Bar ve Savaş Sunumu
 
 Project Relay; oyuncuların merkezî çekirdek çevresine yönlü bağlantılarla
 modül yerleştirdiği, savaşların sunucuda deterministik olarak çözüldüğü Flutter
 + FastAPI strateji oyunudur.
 
-## v0.8.11 odak noktası
+## v0.8.18 odak noktası
 
-- Mevcut koyu teknik kimlik korunurken daha canlı **arcade-tech** renk sistemi
-  uygulandı.
-- Uygulamanın tüm rotalarında görünen katmanlı mavi/lacivert arka plan gradyanı
-  eklendi.
-- Cyan, mint, amber ve coral vurgularına magenta ile violet destek renkleri
-  eklendi.
-- Kart, buton, giriş alanı, ikon düğmesi, ilerleme çubuğu ve bildirim yüzeyleri
-  daha parlak ve daha sıcak hale getirildi.
-- Ana merkezde Oyna kartı üç tonlu kahraman gradyanına geçirildi; Klan,
-  İstatistikler, Mağaza ve Profil kendi vurgu renkleriyle ayrıştırıldı.
-- Oyna ekranında Çevrimiçi Savaş, Kariyer ve Antrenman kartlarının mod kimliği
-  daha belirgin hale getirildi.
-- Oyuncu durum çubuğu, mağaza ürün ön izlemeleri ve Profil kozmetik kartları
-  renkli gradyan ve düşük yoğunluklu parıltılarla yenilendi.
-- v0.8.10'daki moda özel başlangıç sekizlileri, devre izolasyonu ve oyun
-  davranışları değiştirilmedi.
+- Profil solda, Devre Kredisi/Ayarlar/Yardım sağda olacak şekilde üst bar standardı
+  tüm ana ekranlarda korunur; replay savaş ekranında üst bar scroll alanından ayrıdır.
+- Devre Kredisi için tek amblem kullanılır; üst bar, mağaza ve ödül popup'ları aynı
+  `CircuitCreditGlyph` bileşenini paylaşır.
+- İstatistiklerde sezon adı `SEZON YYYY.MM`, Project Relay amblemi ve ilk üç için
+  altın/gümüş/bronz madalya sunumu kullanılır.
+- Oyna ekranına düşük opaklıklı 4×4 devre kartı arka planı eklenmiştir.
+- Ortak savaş replay görsel katmanı saldırı izi, impact halkası/parçacıkları, kalkan,
+  onarım, aşırı ısınma, enerji yetersizliği ve devre dışı kalma geri bildirimleriyle
+  güçlendirilmiştir.
+- v0.8.17'deki kariyer kart ölçüleri ve süre sonu tie-break kuralları korunur.
 
 ## Sürüm bilgileri
 
-- Sunucu API: `0.8.17`
-- Flutter istemci: `0.8.11+63`
+- Sunucu API: `0.8.18`
+- Flutter istemci: `0.8.18+74`
 - Savaş kuralları: `0.8`
-- Alembic başı: `20260806_0010`
-
-Bu sürüm istemci ağırlıklı görsel yenilemedir. Veritabanı şeması, savaş motoru,
-modül değerleri ve sunucu sözleşmeleri değişmemiştir.
+- Alembic başı: `20260807_0011`
 
 ## Çalıştırma
 

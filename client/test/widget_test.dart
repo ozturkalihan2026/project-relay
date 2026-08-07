@@ -35,6 +35,9 @@ void main() {
         find.byKey(const ValueKey('main-menu-how-to-play')),
         findsOneWidget,
       );
+      final mainCreditBox = find.byKey(const ValueKey('global-credit-box'));
+      expect(mainCreditBox, findsOneWidget);
+      expect(tester.getSize(mainCreditBox), const Size(78, 48));
       expect(find.text('SEZON VE ALFA'), findsNothing);
 
       await tester.tap(find.byKey(const ValueKey('main-menu-play')));
@@ -44,11 +47,14 @@ void main() {
       expect(find.byKey(const ValueKey('play-mode-career')), findsOneWidget);
       expect(find.byKey(const ValueKey('play-mode-training')), findsOneWidget);
       expect(find.byKey(const ValueKey('play-mode-back-button')), findsOneWidget);
+      final playCreditBox = find.byKey(const ValueKey('global-credit-box'));
+      expect(playCreditBox, findsOneWidget);
+      expect(tester.getSize(playCreditBox), const Size(78, 48));
 
       await tester.tap(find.byKey(const ValueKey('play-mode-online')));
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
-      expect(find.textContaining('ÇEVRİMİÇİ SAVAŞ • v0.8.17'), findsOneWidget);
+      expect(find.textContaining('ÇEVRİMİÇİ SAVAŞ • v0.8.18'), findsOneWidget);
       expect(find.text('DEVREYİ KUR'), findsOneWidget);
       expect(
         tester.getSize(
@@ -67,7 +73,7 @@ void main() {
 
       await tester.tap(find.byKey(const ValueKey('play-mode-training')));
       await tester.pumpAndSettle();
-      expect(find.textContaining('ANTRENMAN • v0.8.17'), findsOneWidget);
+      expect(find.textContaining('ANTRENMAN • v0.8.18'), findsOneWidget);
       expect(find.byKey(const ValueKey('training-panel')), findsOneWidget);
       expect(
         tester.getSize(
@@ -448,7 +454,7 @@ Future<void> _pumpApp(WidgetTester tester) async {
           (ref) async => SeasonSnapshotModel(
             season: SeasonWindowModel(
               key: '2026-08',
-              title: 'ALFA SEZONU 2026.08',
+              title: 'SEZON 2026.08',
               startsAt: DateTime.utc(2026, 8, 1),
               endsAt: DateTime.utc(2026, 9, 1),
             ),

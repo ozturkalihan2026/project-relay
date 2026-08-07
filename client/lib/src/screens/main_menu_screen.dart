@@ -31,6 +31,7 @@ class MainMenuScreen extends StatelessWidget {
                       child: Align(
                         alignment: Alignment.centerLeft,
                         child: PlayerStatusBar(
+                          compact: true,
                           onTap: () => _open(context, const ProfileScreen()),
                           showClaimBadge: true,
                         ),
@@ -159,7 +160,7 @@ class MainMenuScreen extends StatelessWidget {
                           ),
                           const SizedBox(height: 20),
                           const Text(
-                            'ANA MERKEZ VE MENÜ DÜZENİ • v0.8.17',
+                            'ANA MERKEZ VE MENÜ DÜZENİ • v0.8.18',
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               color: RelayColors.muted,

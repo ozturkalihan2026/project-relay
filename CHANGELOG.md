@@ -1,3 +1,10 @@
+## v0.8.18
+- Üst bar ve Devre Kredisi bileşenleri tüm ekranlarda tekilleştirildi; savaş tekrar ekranında üst bar scroll alanından ayrıldı.
+- Devre Kredisi amblemi ödül popup ve mağaza fiyatlarında ortak kullanıma geçirildi.
+- İstatistikler sezon başlığı SEZON YYYY.MM oldu, Project Relay amblemi ve ilk üç için madalyalar eklendi.
+- Oyna ekranına düşük opaklıklı 4x4 devre kartı arka plan kompozisyonu eklendi.
+- Ortak savaş replay katmanı saldırı parlaması, impact parçacıkları ve durum geri bildirimleriyle güçlendirildi.
+
 ## v0.8.17
 - Kariyer hazırlığında Modül Seç, Senin Devren ve Koşu Rakibi kartları 430 px dış panel standardında; devreler 390 px maksimum ölçüde sabitlendi.
 - Senin Devren ile Koşu Rakibi arasındaki yatay boşluk 22 px yapıldı.

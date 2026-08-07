@@ -6,6 +6,7 @@ import '../api/relay_api.dart';
 import '../models/relay_models.dart';
 import '../theme/relay_theme.dart';
 import '../widgets/app_header_actions.dart';
+import '../widgets/relay_emblem.dart';
 
 enum _StatisticsSection { season, weeklyLeague }
 
@@ -38,7 +39,7 @@ class _SeasonScreenState extends ConsumerState<SeasonScreen> {
               ),
             ),
             Text(
-              'PROJECT RELAY • v0.8.17',
+              'PROJECT RELAY • v0.8.18',
               style: TextStyle(color: RelayColors.muted, fontSize: 10),
             ),
           ],
@@ -128,14 +129,13 @@ class _SeasonScreenState extends ConsumerState<SeasonScreen> {
             padding: const EdgeInsets.all(18),
             child: Row(
               children: [
-                const DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: Color(0x2238E8FF),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Padding(
-                    padding: EdgeInsets.all(14),
-                    child: Icon(Icons.auto_awesome, color: RelayColors.cyan, size: 32),
+                const SizedBox(
+                  width: 58,
+                  height: 58,
+                  child: RelayEmblem(
+                    size: 58,
+                    accent: RelayColors.cyan,
+                    secondary: RelayColors.violet,
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -181,16 +181,9 @@ class _SeasonScreenState extends ConsumerState<SeasonScreen> {
                     for (final item in snapshot.leaderboard)
                       ListTile(
                         dense: true,
-                        leading: CircleAvatar(
-                          radius: 16,
-                          backgroundColor: item.isCurrentPlayer ? RelayColors.cyan.withValues(alpha: 0.18) : const Color(0xFF183440),
-                          child: Text(
-                            '${item.position}',
-                            style: TextStyle(
-                              color: item.isCurrentPlayer ? RelayColors.cyan : RelayColors.muted,
-                              fontWeight: FontWeight.w900,
-                            ),
-                          ),
+                        leading: _LeaderboardRankBadge(
+                          position: item.position,
+                          isCurrentPlayer: item.isCurrentPlayer,
                         ),
                         title: Text(item.displayName, style: TextStyle(fontWeight: FontWeight.w900, color: item.isCurrentPlayer ? RelayColors.cyan : Colors.white)),
                         subtitle: Text('${item.wins} galibiyet • ${item.matches} maç'),
@@ -244,10 +237,9 @@ class _SeasonScreenState extends ConsumerState<SeasonScreen> {
                     for (final standing in snapshot.leaderboard)
                       ListTile(
                         dense: true,
-                        leading: CircleAvatar(
-                          radius: 16,
-                          backgroundColor: standing.isCurrentPlayer ? RelayColors.cyan.withValues(alpha: 0.18) : const Color(0xFF183440),
-                          child: Text('${standing.position}', style: TextStyle(color: standing.isCurrentPlayer ? RelayColors.cyan : RelayColors.muted, fontWeight: FontWeight.w900)),
+                        leading: _LeaderboardRankBadge(
+                          position: standing.position,
+                          isCurrentPlayer: standing.isCurrentPlayer,
                         ),
                         title: Text(standing.displayName, style: TextStyle(fontWeight: FontWeight.w900, color: standing.isCurrentPlayer ? RelayColors.cyan : Colors.white)),
                         subtitle: Text(
@@ -270,6 +262,72 @@ class _SeasonScreenState extends ConsumerState<SeasonScreen> {
         const SizedBox(width: 8),
         Text(title, style: const TextStyle(fontWeight: FontWeight.w900, letterSpacing: 0.7)),
       ],
+    );
+  }
+}
+
+class _LeaderboardRankBadge extends StatelessWidget {
+  const _LeaderboardRankBadge({
+    required this.position,
+    required this.isCurrentPlayer,
+  });
+
+  final int position;
+  final bool isCurrentPlayer;
+
+  @override
+  Widget build(BuildContext context) {
+    final medalColor = switch (position) {
+      1 => const Color(0xFFFFD45A),
+      2 => const Color(0xFFDCE7F2),
+      3 => const Color(0xFFD58A52),
+      _ => null,
+    };
+    if (medalColor != null) {
+      return SizedBox(
+        width: 38,
+        height: 38,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            Icon(
+              Icons.workspace_premium_rounded,
+              color: medalColor,
+              size: 36,
+              shadows: [
+                Shadow(
+                  color: medalColor.withValues(alpha: 0.28),
+                  blurRadius: 10,
+                ),
+              ],
+            ),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 5),
+              child: Text(
+                '$position',
+                style: const TextStyle(
+                  color: RelayColors.background,
+                  fontSize: 9,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+    return CircleAvatar(
+      radius: 16,
+      backgroundColor: isCurrentPlayer
+          ? RelayColors.cyan.withValues(alpha: 0.18)
+          : const Color(0xFF183440),
+      child: Text(
+        '$position',
+        style: TextStyle(
+          color: isCurrentPlayer ? RelayColors.cyan : RelayColors.muted,
+          fontWeight: FontWeight.w900,
+        ),
+      ),
     );
   }
 }

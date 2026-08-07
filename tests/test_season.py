@@ -101,6 +101,7 @@ class SeasonServiceTests(unittest.TestCase):
     def test_calendar_month_is_one_season(self) -> None:
         window = season_window(self.now)
         self.assertEqual(window.key, "2026-08")
+        self.assertEqual(window.title, "SEZON 2026.08")
         self.assertEqual(window.starts_at.day, 1)
         self.assertEqual(window.ends_at.month, 9)
 

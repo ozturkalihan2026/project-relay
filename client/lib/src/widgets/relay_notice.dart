@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../theme/relay_theme.dart';
+import 'circuit_credit_icon.dart';
 
 enum RelayNoticeTone { info, success, warning, error }
 
@@ -213,13 +214,13 @@ class _RelayRewardOverlayState extends State<_RelayRewardOverlay> {
   }
   @override
   Widget build(BuildContext context) {
-    final (color, icon) = switch (widget.kind) {
-      RelayRewardKind.xp => (RelayColors.cyan, Icons.bolt_rounded),
-      RelayRewardKind.credits => (RelayColors.amber, Icons.toll_outlined),
-      RelayRewardKind.victory => (RelayColors.mint, Icons.emoji_events_outlined),
-      RelayRewardKind.achievement => (RelayColors.violet, Icons.workspace_premium_outlined),
-      RelayRewardKind.season => (RelayColors.amber, Icons.auto_awesome),
-      RelayRewardKind.generic => (RelayColors.cyan, Icons.card_giftcard_outlined),
+    final (color, icon, creditGlyph) = switch (widget.kind) {
+      RelayRewardKind.xp => (RelayColors.cyan, Icons.bolt_rounded, false),
+      RelayRewardKind.credits => (RelayColors.amber, Icons.memory_rounded, true),
+      RelayRewardKind.victory => (RelayColors.mint, Icons.emoji_events_outlined, false),
+      RelayRewardKind.achievement => (RelayColors.violet, Icons.workspace_premium_outlined, false),
+      RelayRewardKind.season => (RelayColors.amber, Icons.auto_awesome, false),
+      RelayRewardKind.generic => (RelayColors.cyan, Icons.card_giftcard_outlined, false),
     };
     return _OverlayShell(
       scaleFrom: 0.88,
@@ -231,7 +232,7 @@ class _RelayRewardOverlayState extends State<_RelayRewardOverlay> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            _IconBadge(icon: icon, color: color, large: true),
+            _IconBadge(icon: icon, color: color, large: true, creditGlyph: creditGlyph),
             const SizedBox(height: 10),
             Text(widget.title, textAlign: TextAlign.center, style: TextStyle(color: color, fontWeight: FontWeight.w900, fontSize: 15, letterSpacing: 1.4)),
             if (widget.detail?.isNotEmpty == true) ...[
@@ -245,7 +246,7 @@ class _RelayRewardOverlayState extends State<_RelayRewardOverlay> {
                 spacing: 10,
                 children: [
                   if (widget.xp > 0) _RewardPill(icon: Icons.bolt_rounded, label: '+${widget.xp} XP', color: RelayColors.cyan),
-                  if (widget.credits > 0) _RewardPill(icon: Icons.toll_outlined, label: '+${widget.credits} DK', color: RelayColors.amber),
+                  if (widget.credits > 0) _RewardPill(label: '+${widget.credits} DK', color: RelayColors.amber, creditGlyph: true),
                 ],
               ),
             ],
@@ -326,7 +327,7 @@ class _RelayLevelUpOverlayState extends State<_RelayLevelUpOverlay> {
               spacing: 10,
               children: [
                 if (widget.xp > 0) _RewardPill(icon: Icons.bolt_rounded, label: '+${widget.xp} XP', color: RelayColors.cyan),
-                if (widget.credits > 0) _RewardPill(icon: Icons.toll_outlined, label: '+${widget.credits} DK', color: RelayColors.amber),
+                if (widget.credits > 0) _RewardPill(label: '+${widget.credits} DK', color: RelayColors.amber, creditGlyph: true),
               ],
             ),
             if (widget.unlockLabel?.isNotEmpty == true) ...[
@@ -371,10 +372,18 @@ class _OverlayShell extends StatelessWidget {
 }
 
 class _IconBadge extends StatelessWidget {
-  const _IconBadge({required this.icon, required this.color, this.large = false});
+  const _IconBadge({
+    required this.icon,
+    required this.color,
+    this.large = false,
+    this.creditGlyph = false,
+  });
+
   final IconData icon;
   final Color color;
   final bool large;
+  final bool creditGlyph;
+
   @override
   Widget build(BuildContext context) => Container(
         width: large ? 54 : 42,
@@ -383,22 +392,56 @@ class _IconBadge extends StatelessWidget {
           shape: BoxShape.circle,
           color: color.withValues(alpha: 0.13),
           border: Border.all(color: color.withValues(alpha: 0.55)),
-          boxShadow: [BoxShadow(color: color.withValues(alpha: 0.20), blurRadius: 18)],
+          boxShadow: [
+            BoxShadow(color: color.withValues(alpha: 0.20), blurRadius: 18),
+          ],
         ),
-        child: Icon(icon, color: color, size: large ? 28 : 22),
+        alignment: Alignment.center,
+        child: creditGlyph
+            ? CircuitCreditGlyph(size: large ? 30 : 24, glow: true)
+            : Icon(icon, color: color, size: large ? 28 : 22),
       );
 }
 
 class _RewardPill extends StatelessWidget {
-  const _RewardPill({required this.icon, required this.label, required this.color});
-  final IconData icon;
+  const _RewardPill({
+    required this.label,
+    required this.color,
+    this.icon,
+    this.creditGlyph = false,
+  });
+
+  final IconData? icon;
   final String label;
   final Color color;
+  final bool creditGlyph;
+
   @override
   Widget build(BuildContext context) => Container(
         padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
-        decoration: BoxDecoration(color: color.withValues(alpha: 0.10), borderRadius: BorderRadius.circular(999), border: Border.all(color: color.withValues(alpha: 0.38))),
-        child: Row(mainAxisSize: MainAxisSize.min, children: [Icon(icon, color: color, size: 16), const SizedBox(width: 5), Text(label, style: TextStyle(color: color, fontWeight: FontWeight.w900, fontSize: 11))]),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.10),
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(color: color.withValues(alpha: 0.38)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (creditGlyph)
+              const CircuitCreditGlyph(size: 17)
+            else if (icon != null)
+              Icon(icon, color: color, size: 16),
+            const SizedBox(width: 5),
+            Text(
+              label,
+              style: TextStyle(
+                color: color,
+                fontWeight: FontWeight.w900,
+                fontSize: 11,
+              ),
+            ),
+          ],
+        ),
       );
 }
 

@@ -123,7 +123,7 @@ def season_window(moment: datetime) -> SeasonWindow:
         ends_at = starts_at.replace(month=starts_at.month + 1)
     return SeasonWindow(
         key=f"{starts_at.year}-{starts_at.month:02d}",
-        title=f"ALFA SEZONU {starts_at.year}.{starts_at.month:02d}",
+        title=f"SEZON {starts_at.year}.{starts_at.month:02d}",
         starts_at=starts_at,
         ends_at=ends_at,
     )

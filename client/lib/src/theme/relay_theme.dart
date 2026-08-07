@@ -141,6 +141,7 @@ abstract final class RelayTheme {
       canvasColor: RelayColors.surface,
       fontFamily: 'Roboto',
       appBarTheme: const AppBarTheme(
+        toolbarHeight: 64,
         backgroundColor: Colors.transparent,
         foregroundColor: RelayColors.white,
         elevation: 0,
