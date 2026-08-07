@@ -1,3 +1,7 @@
+## v0.8.11 rev2
+- Dar palet regresyon testinde ModuleDragData alanı gerçek model sözleşmesine göre sourceCell olarak düzeltildi.
+- Test-model alan adı uyuşmazlığını yakalayan kaynak sözleşmesi eklendi.
+
 ## v0.8.11 rev1
 - Dar modül paleti sürükle-bırak regresyon testi gerçek Draggable eşiğini geçecek şekilde düzeltildi.
 - Drop sonrası karttan dönüş callback'i de doğrulanıyor.

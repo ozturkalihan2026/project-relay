@@ -27,7 +27,7 @@ class FlutterClientContractTests(unittest.TestCase):
             encoding="utf-8"
         )
 
-        self.assertIn("version: 0.8.11+64", pubspec)
+        self.assertIn("version: 0.8.11+65", pubspec)
         self.assertIn("await tester.ensureVisible(profileBack);", widget_test)
         self.assertIn("await tester.pumpAndSettle();\n      await tester.tap(profileBack);", widget_test)
         self.assertIn("final horizontalScrollable = find.ancestor(", widget_test)
@@ -1471,3 +1471,12 @@ class FlutterClientContractTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+def test_module_drag_data_tests_use_public_source_cell_contract():
+    model_source = (ROOT / "client/lib/src/models/relay_models.dart").read_text(encoding="utf-8")
+    layout_test = (ROOT / "client/test/module_palette_layout_test.dart").read_text(encoding="utf-8")
+
+    assert "final int? sourceCell;" in model_source
+    assert "returnedModule!.sourceCell, 7" in layout_test
+    assert "returnedModule!.cellIndex" not in layout_test

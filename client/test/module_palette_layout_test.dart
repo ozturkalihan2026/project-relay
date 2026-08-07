@@ -80,7 +80,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(returnedModule, isNotNull);
     expect(returnedModule!.isFromBoard, isTrue);
-    expect(returnedModule!.cellIndex, 7);
+    expect(returnedModule!.sourceCell, 7);
     expect(tester.takeException(), isNull);
   });
 }
