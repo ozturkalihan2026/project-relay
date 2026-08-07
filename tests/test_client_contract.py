@@ -27,7 +27,7 @@ class FlutterClientContractTests(unittest.TestCase):
             encoding="utf-8"
         )
 
-        self.assertIn("version: 0.8.19+75", pubspec)
+        self.assertIn("version: 0.8.19+76", pubspec)
         career_screen = (CLIENT / "lib/src/screens/career_screen.dart").read_text(encoding="utf-8")
         self.assertNotIn("class _Metric extends StatelessWidget", career_screen)
         self.assertIn("await tester.ensureVisible(profileBack);", widget_test)
@@ -327,6 +327,8 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("leaderboard-scrollbar", season)
         self.assertIn("thumbVisibility: true", season)
         self.assertIn("trackVisibility: true", season)
+        self.assertNotIn("key: key", season)
+        self.assertEqual(season.count("ValueKey('season-leaderboard-card')"), 2)
         self.assertIn("RelayConfirmDialog", social)
         self.assertIn("class RelayConfirmDialog", dialog)
         self.assertNotIn("Katalogları yenile", editor)

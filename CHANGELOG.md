@@ -1,3 +1,8 @@
+## v0.8.19 rev1
+- İstatistikler lider tablosunda aynı ValueKey'in hem dış `_LeaderboardCard` hem de iç `Card` üzerine aktarılması kaldırıldı.
+- `season-leaderboard-card` widget testi tekrar tek eşleşme verecek şekilde düzeltildi.
+- İstemci yapı numarası `0.8.19+76` olarak güncellendi ve aynı `key: key` regresyonunu engelleyen kaynak sözleşmesi eklendi.
+
 ## v0.8.19
 - Kariyer Modül Seç paleti büyütüldü; kontroller aşağı hizalandı ve oyuncu-rakip devre boşluğu artırıldı.
 - Tüm ikincil ekranlarda ortalanmış ortak sayfa başlığı standardı getirildi.

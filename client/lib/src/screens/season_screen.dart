@@ -289,7 +289,6 @@ class _LeaderboardCard extends StatelessWidget {
   Widget build(BuildContext context) {
     if (children.isEmpty) {
       return Card(
-        key: key,
         child: Padding(
           padding: const EdgeInsets.all(18),
           child: Text(
@@ -301,7 +300,6 @@ class _LeaderboardCard extends StatelessWidget {
     }
     final height = (children.length * 58.0).clamp(150.0, 430.0).toDouble();
     return Card(
-      key: key,
       child: SizedBox(
         height: height,
         child: Scrollbar(
