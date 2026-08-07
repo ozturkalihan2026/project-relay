@@ -64,7 +64,7 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen> {
               ),
             ),
             const Text(
-              'PROJECT RELAY • v0.8.11',
+              'PROJECT RELAY • v0.8.13',
               style: TextStyle(color: RelayColors.muted, fontSize: 10),
             ),
           ],
@@ -120,8 +120,10 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen> {
         ),
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 36),
         children: [
-          _CollectionHeader(credits: snapshot.credits),
-          const SizedBox(height: 14),
+          if (widget.mode != CollectionScreenMode.store) ...[
+            _CollectionHeader(credits: snapshot.credits),
+            const SizedBox(height: 14),
+          ],
           if (widget.kitOnly) ...[
             _KitEditor(
               nameController: _kitNameController,
@@ -140,8 +142,6 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen> {
               showSaveButton: false,
             ),
           ] else if (widget.mode == CollectionScreenMode.store) ...[
-            const _StoreIntro(),
-            const SizedBox(height: 14),
             _storeSectionSelector(),
             const SizedBox(height: 14),
             _cosmeticCatalog(
@@ -790,51 +790,6 @@ class _CosmeticCard extends StatelessWidget {
                 icon: const Icon(Icons.toll_outlined),
                 label: Text('${item.creditCost} KREDİ'),
               ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _StoreIntro extends StatelessWidget {
-  const _StoreIntro();
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      key: const ValueKey('store-intro-card'),
-      child: const Padding(
-        padding: EdgeInsets.all(18),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(Icons.storefront_outlined, color: RelayColors.amber, size: 30),
-            SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'GÖRSEL İÇERİK MAĞAZASI',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 0.8,
-                    ),
-                  ),
-                  SizedBox(height: 6),
-                  Text(
-                    'Devre Kredisi yalnız görsel kimlik için kullanılır. '
-                    'Mağaza modül hasarı, canı, enerjisi veya derece avantajı satmaz.',
-                    style: TextStyle(
-                      color: RelayColors.muted,
-                      fontSize: 11,
-                      height: 1.4,
-                    ),
-                  ),
-                ],
-              ),
-            ),
           ],
         ),
       ),

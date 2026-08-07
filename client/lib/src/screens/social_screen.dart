@@ -93,7 +93,7 @@ class _SocialScreenState extends ConsumerState<SocialScreen> {
               ),
             ),
             Text(
-              'PROJECT RELAY • v0.8.11',
+              'PROJECT RELAY • v0.8.13',
               style: TextStyle(color: RelayColors.muted, fontSize: 10),
             ),
           ],

@@ -4,8 +4,8 @@ import 'player_status_bar.dart';
 
 /// Ortak üst sağ erişim alanı.
 ///
-/// Profil kartı, Ayarlar ve Nasıl Oynanır bütün ana ekranlarda aynı yerde ve
-/// aktif kalır. Rotalar [RelayApp] içinde adlandırılmıştır.
+/// Profil kartı, Devre Kredisi, Ayarlar ve Nasıl Oynanır bütün ana ekranlarda
+/// aynı yerde ve aktif kalır. Devre Kredisi kutusu doğrudan mağazayı açar.
 class AppHeaderActions extends StatelessWidget {
   const AppHeaderActions({
     this.showClaimBadge = true,
@@ -23,6 +23,10 @@ class AppHeaderActions extends StatelessWidget {
           compact: true,
           showClaimBadge: showClaimBadge,
           onTap: () => Navigator.of(context).pushNamed('/profile'),
+        ),
+        const SizedBox(width: 6),
+        CircuitCreditButton(
+          onTap: () => Navigator.of(context).pushNamed('/store'),
         ),
         const SizedBox(width: 6),
         IconButton.filledTonal(

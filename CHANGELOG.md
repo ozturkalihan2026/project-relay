@@ -1,3 +1,24 @@
+## v0.8.13 rev1
+- Kariyer ekranında görsel sadeleştirme sonrası kullanılmayan `_Metric` yardımcı sınıfı kaldırıldı.
+- Flutter istemci yapı numarası 0.8.13+69 oldu.
+
+## v0.8.13
+- Ana menü arka planına devre yollarında akan düşük yoğunluklu elektrik akımı animasyonu eklendi.
+- Ana menü ve oyun modu kartlarına hafif hover yükselme mikro animasyonu eklendi.
+- İkinci tur renk ayarıyla arka plan, yüzey, sekme ve chip vurguları canlandırıldı.
+- Hareket azaltma tercihi desteklenir; animasyon döngüsü widget testlerini sonsuz ticker ile kilitlemez.
+
+## v0.8.12
+- Üst oyuncu kartı küçültüldü ve oyuncu adı ortalandı.
+- Devre Kredisi ayrı, tıklanabilir üst-bar kutusuna taşındı; doğrudan mağazayı açar.
+- Kariyer seviye kartı kompakt ilerleme şeridine dönüştürüldü.
+- Mağazadaki büyük açıklama/kimlik kutuları kaldırıldı.
+
+## v0.8.11 rev3
+- Dar palet taşma testi gesture zamanlamasından ayrıldı.
+- Geri-bırakma uyarısı doğrudan test edilebilir ModulePaletteReturnBanner bileşenine ayrıldı.
+- Karttan palete kaldırma davranışı BoardController testlerinde, layout güvenliği ayrı widget testinde doğrulanıyor.
+
 ## v0.8.11 rev2
 - Dar palet regresyon testinde ModuleDragData alanı gerçek model sözleşmesine göre sourceCell olarak düzeltildi.
 - Test-model alan adı uyuşmazlığını yakalayan kaynak sözleşmesi eklendi.

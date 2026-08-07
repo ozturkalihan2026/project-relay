@@ -60,30 +60,7 @@ class ModulePalette extends StatelessWidget {
               AnimatedSwitcher(
                 duration: const Duration(milliseconds: 120),
                 child: returning
-                    ? const Row(
-                        key: ValueKey('return'),
-                        children: [
-                          Icon(
-                            Icons.remove_circle_outline,
-                            color: RelayColors.coral,
-                            size: 18,
-                          ),
-                          SizedBox(width: 7),
-                          Expanded(
-                            child: Text(
-                              'BURAYA BIRAK: KARTTAN KALDIR',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                color: RelayColors.coral,
-                                fontSize: 10,
-                                fontWeight: FontWeight.w900,
-                                letterSpacing: 0.7,
-                              ),
-                            ),
-                          ),
-                        ],
-                      )
+                    ? const ModulePaletteReturnBanner()
                     : const SizedBox(
                         key: ValueKey('hint'),
                         height: 0,
@@ -151,6 +128,38 @@ class ModulePalette extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+class ModulePaletteReturnBanner extends StatelessWidget {
+  const ModulePaletteReturnBanner({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const Row(
+      key: ValueKey('return'),
+      children: [
+        Icon(
+          Icons.remove_circle_outline,
+          color: RelayColors.coral,
+          size: 18,
+        ),
+        SizedBox(width: 7),
+        Expanded(
+          child: Text(
+            'BURAYA BIRAK: KARTTAN KALDIR',
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: RelayColors.coral,
+              fontSize: 10,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 0.7,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

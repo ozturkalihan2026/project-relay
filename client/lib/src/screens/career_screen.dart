@@ -1263,67 +1263,78 @@ class _ProgressCard extends StatelessWidget {
     return Card(
       key: const ValueKey('career-progress-card'),
       child: Padding(
-        padding: const EdgeInsets.all(18),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        child: Row(
           children: [
-            Row(
-              children: [
-                const Icon(Icons.route_outlined, color: RelayColors.cyan, size: 34),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'OYUNCU SEVİYESİ',
-                        style: TextStyle(
-                          color: RelayColors.muted,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 0.8,
-                        ),
-                      ),
-                      Text(
-                        'SEVİYE ${profile.level}',
-                        style: const TextStyle(
-                          color: RelayColors.cyan,
-                          fontSize: 28,
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
-                    ],
-                  ),
+            DecoratedBox(
+              decoration: BoxDecoration(
+                color: RelayColors.cyan.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: RelayColors.cyan.withValues(alpha: 0.32),
                 ),
-                _Metric(value: '${profile.credits}', label: 'DEVRE KREDİSİ'),
-              ],
-            ),
-            const SizedBox(height: 16),
-            LinearProgressIndicator(
-              key: const ValueKey('career-level-progress'),
-              value: profile.levelProgress,
-              minHeight: 8,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            const SizedBox(height: 7),
-            Text(
-              '${profile.xpIntoLevel} / ${profile.xpForNextLevel} XP • '
-              'Toplam ${profile.totalXp} XP',
-              style: const TextStyle(
-                color: RelayColors.muted,
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
+              ),
+              child: const Padding(
+                padding: EdgeInsets.all(9),
+                child: Icon(
+                  Icons.route_outlined,
+                  color: RelayColors.cyan,
+                  size: 22,
+                ),
               ),
             ),
-            const SizedBox(height: 7),
-            const Text(
-              'Seviye kariyer koşusunu bitirmez. Yeni seviyeler profil '
-              'rozetlerini ve 10/20/30/40 eşiklerinde yalnız boss öncesi '
-              'geçici güçlendirici kademelerini açar.',
-              style: TextStyle(
-                color: RelayColors.muted,
-                fontSize: 10,
-                height: 1.35,
+            const SizedBox(width: 11),
+            SizedBox(
+              width: 82,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'KARİYER',
+                    style: TextStyle(
+                      color: RelayColors.muted,
+                      fontSize: 8,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 0.8,
+                    ),
+                  ),
+                  Text(
+                    'SV. ${profile.level}',
+                    style: const TextStyle(
+                      color: RelayColors.cyan,
+                      fontSize: 17,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(20),
+                    child: LinearProgressIndicator(
+                      key: const ValueKey('career-level-progress'),
+                      value: profile.levelProgress,
+                      minHeight: 7,
+                    ),
+                  ),
+                  const SizedBox(height: 5),
+                  Text(
+                    '${profile.xpIntoLevel}/${profile.xpForNextLevel} XP • '
+                    'Toplam ${profile.totalXp} XP',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: RelayColors.muted,
+                      fontSize: 9.5,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -1455,38 +1466,6 @@ class _BoosterRow extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-class _Metric extends StatelessWidget {
-  const _Metric({required this.value, required this.label});
-
-  final String value;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
-        Text(
-          value,
-          style: const TextStyle(
-            color: RelayColors.amber,
-            fontWeight: FontWeight.w900,
-            fontSize: 18,
-          ),
-        ),
-        Text(
-          label,
-          style: const TextStyle(
-            color: RelayColors.muted,
-            fontSize: 8,
-            fontWeight: FontWeight.w900,
-          ),
-        ),
-      ],
     );
   }
 }

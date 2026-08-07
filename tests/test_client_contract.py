@@ -27,14 +27,16 @@ class FlutterClientContractTests(unittest.TestCase):
             encoding="utf-8"
         )
 
-        self.assertIn("version: 0.8.11+65", pubspec)
+        self.assertIn("version: 0.8.13+69", pubspec)
+        career_screen = (CLIENT / "lib/src/screens/career_screen.dart").read_text(encoding="utf-8")
+        self.assertNotIn("class _Metric extends StatelessWidget", career_screen)
         self.assertIn("await tester.ensureVisible(profileBack);", widget_test)
         self.assertIn("await tester.pumpAndSettle();\n      await tester.tap(profileBack);", widget_test)
         self.assertIn("final horizontalScrollable = find.ancestor(", widget_test)
         self.assertNotIn("final horizontalScrollable = find.byWidgetPredicate(\n    (widget)", widget_test)
-        self.assertIn("${widget.mode.title} • v0.8.11", editor)
-        self.assertIn("ANA MERKEZ VE MENÜ DÜZENİ • v0.8.11", main_menu)
-        self.assertIn("PROJECT RELAY • v0.8.11", manual)
+        self.assertIn("${widget.mode.title} • v0.8.13", editor)
+        self.assertIn("ANA MERKEZ VE MENÜ DÜZENİ • v0.8.13", main_menu)
+        self.assertIn("PROJECT RELAY • v0.8.13", manual)
         self.assertIn("audioplayers:", pubspec)
         self.assertIn("assets/sounds/", pubspec)
         self.assertIn("flame:", pubspec)
@@ -250,7 +252,8 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("player-status-name", status)
         self.assertIn("player-status-level", status)
         self.assertIn("player-status-credits", status)
-        self.assertIn("player-status-xp", status)
+        self.assertIn("class CircuitCreditButton", status)
+        self.assertIn("global-credit-action", status)
         self.assertIn("DEVRE KREDİSİ", status)
         self.assertIn("height: dense ? 46 : compact ? 44 : 66,", palette)
         self.assertIn("fontSize: dense ? 10.5 : compact ? 10 : 13", palette)
@@ -561,9 +564,12 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("onBoardModuleReturned", palette_source)
         self.assertIn("BURAYA BIRAK: KARTTAN KALDIR", palette_source)
         palette_layout_test = (CLIENT / "test" / "module_palette_layout_test.dart").read_text(encoding="utf-8")
-        self.assertIn("await gesture.moveBy(const Offset(24, 0));", palette_layout_test)
-        self.assertIn("expect(returnedModule, isNotNull);", palette_layout_test)
-        self.assertIn("expect(returnedModule!.isFromBoard, isTrue);", palette_layout_test)
+        palette_source = (CLIENT / "lib" / "src" / "widgets" / "module_palette.dart").read_text(encoding="utf-8")
+        self.assertNotIn("startGesture(", palette_layout_test)
+        self.assertIn("SizedBox(\n              width: 162", palette_layout_test)
+        self.assertIn("class ModulePaletteReturnBanner", palette_source)
+        self.assertIn("ModulePaletteReturnBanner", palette_layout_test)
+        self.assertIn("expect(tester.takeException(), isNull);", palette_layout_test)
         self.assertNotIn("HowToPlayCard", editor_source)
         self.assertIn("OYUNUN AMACI NEDİR?", manual_source)
         self.assertIn("ENERJİ NASIL AKAR?", manual_source)
@@ -677,8 +683,9 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("Navigator.of(context).pop(savedKit)", collection)
         self.assertIn("showSaveButton: false", collection)
         self.assertIn("store-section-selector", collection)
-        self.assertIn("store-intro-card", collection)
-        self.assertIn("GÖRSEL İÇERİK MAĞAZASI", collection)
+        self.assertNotIn("store-intro-card", collection)
+        self.assertNotIn("GÖRSEL İÇERİK MAĞAZASI", collection)
+        self.assertIn("widget.mode != CollectionScreenMode.store", collection)
 
         self.assertIn("enum _ClanSection", social)
         self.assertIn("clan-section-selector", social)
@@ -1346,8 +1353,8 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("Komutan Sistemi", feature_pool)
         self.assertIn("devreyi kurduktan ve doğruladıktan sonra", feature_pool.lower())
         self.assertIn("v0.8.4", release)
-        self.assertIn("ÇEVRİMİÇİ SAVAŞ • v0.8.11", widget_test)
-        self.assertIn("ANTRENMAN • v0.8.11", widget_test)
+        self.assertIn("ÇEVRİMİÇİ SAVAŞ • v0.8.13", widget_test)
+        self.assertIn("ANTRENMAN • v0.8.13", widget_test)
         self.assertNotIn("ÇEVRİMİÇİ SAVAŞ • v0.8.4", widget_test)
         self.assertNotIn("ANTRENMAN • v0.8.4", widget_test)
 
@@ -1461,12 +1468,40 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("panel({", theme)
         self.assertIn("scaffoldBackgroundColor: Colors.transparent", theme)
         self.assertIn("RelayDecorations.appBackground()", app)
-        self.assertIn("RelayDecorations.screenShell()", main_menu)
+        self.assertIn("AnimatedCircuitBackground(", main_menu)
         self.assertIn("RelayDecorations.heroPanel()", main_menu)
         self.assertIn("RelayDecorations.panel(accent: accent", main_menu)
         self.assertIn("RelayDecorations.screenShell()", play_mode)
         self.assertIn("RelayDecorations.panel(accent: color)", play_mode)
         self.assertIn("RelayColors.surfaceSoft", status_bar)
+
+
+    def test_v0813_arcade_motion_contract(self) -> None:
+        background = (
+            CLIENT / "lib" / "src" / "widgets" / "animated_circuit_background.dart"
+        ).read_text(encoding="utf-8")
+        motion = (
+            CLIENT / "lib" / "src" / "widgets" / "arcade_motion.dart"
+        ).read_text(encoding="utf-8")
+        main_menu = (
+            CLIENT / "lib" / "src" / "screens" / "main_menu_screen.dart"
+        ).read_text(encoding="utf-8")
+        play_mode = (
+            CLIENT / "lib" / "src" / "screens" / "play_mode_screen.dart"
+        ).read_text(encoding="utf-8")
+        theme = (
+            CLIENT / "lib" / "src" / "theme" / "relay_theme.dart"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("class AnimatedCircuitBackground", background)
+        self.assertIn("Timer(const Duration(milliseconds: 650)", background)
+        self.assertIn("animated-circuit-background", background)
+        self.assertIn("class ArcadeHoverLift", motion)
+        self.assertIn("AnimatedCircuitBackground(", main_menu)
+        self.assertGreaterEqual(main_menu.count("ArcadeHoverLift("), 2)
+        self.assertIn("ArcadeHoverLift(", play_mode)
+        self.assertIn("segmentedButtonTheme", theme)
+        self.assertIn("electricBlue", theme)
 
 
 if __name__ == "__main__":
@@ -1478,5 +1513,6 @@ def test_module_drag_data_tests_use_public_source_cell_contract():
     layout_test = (ROOT / "client/test/module_palette_layout_test.dart").read_text(encoding="utf-8")
 
     assert "final int? sourceCell;" in model_source
-    assert "returnedModule!.sourceCell, 7" in layout_test
+    assert "ModulePaletteReturnBanner" in layout_test
+    assert "BURAYA BIRAK: KARTTAN KALDIR" in layout_test
     assert "returnedModule!.cellIndex" not in layout_test

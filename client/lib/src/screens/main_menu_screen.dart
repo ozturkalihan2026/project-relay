@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../theme/relay_theme.dart';
+import '../widgets/animated_circuit_background.dart';
+import '../widgets/arcade_motion.dart';
 import '../widgets/player_status_bar.dart';
 import 'collection_screen.dart';
 import 'how_to_play_screen.dart';
@@ -16,8 +18,7 @@ class MainMenuScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: RelayDecorations.screenShell(),
+      body: AnimatedCircuitBackground(
         child: SafeArea(
           child: Column(
             children: [
@@ -32,6 +33,13 @@ class MainMenuScreen extends StatelessWidget {
                           onTap: () => _open(context, const ProfileScreen()),
                           showClaimBadge: true,
                         ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    CircuitCreditButton(
+                      onTap: () => _open(
+                        context,
+                        const CollectionScreen(mode: CollectionScreenMode.store),
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -150,7 +158,7 @@ class MainMenuScreen extends StatelessWidget {
                           ),
                           const SizedBox(height: 20),
                           const Text(
-                            'ANA MERKEZ VE MENÜ DÜZENİ • v0.8.11',
+                            'ANA MERKEZ VE MENÜ DÜZENİ • v0.8.13',
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               color: RelayColors.muted,
@@ -231,15 +239,17 @@ class _PrimaryPlayCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        key: const ValueKey('main-menu-play'),
-        onTap: onPressed,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-          decoration: RelayDecorations.heroPanel(),
-          child: const Row(
+    return ArcadeHoverLift(
+      scale: 1.009,
+      child: Card(
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          key: const ValueKey('main-menu-play'),
+          onTap: onPressed,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+            decoration: RelayDecorations.heroPanel(),
+            child: const Row(
             children: [
               DecoratedBox(
                 decoration: BoxDecoration(
@@ -278,6 +288,7 @@ class _PrimaryPlayCard extends StatelessWidget {
               ),
               Icon(Icons.chevron_right, color: RelayColors.cyan, size: 30),
             ],
+            ),
           ),
         ),
       ),
@@ -303,10 +314,11 @@ class _HubCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      child: Container(
-        decoration: RelayDecorations.panel(accent: accent, soft: true),
+    return ArcadeHoverLift(
+      child: Card(
+        clipBehavior: Clip.antiAlias,
+        child: Container(
+          decoration: RelayDecorations.panel(accent: accent, soft: true),
         child: InkWell(
           onTap: onPressed,
           child: Padding(
@@ -356,6 +368,7 @@ class _HubCard extends StatelessWidget {
                 ),
               ],
             ),
+          ),
           ),
         ),
       ),

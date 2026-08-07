@@ -36,10 +36,10 @@ class PlayerStatusBar extends ConsumerWidget {
     final screenWidth = MediaQuery.sizeOf(context).width;
     final dense = compact && screenWidth < 720;
     final width = dense
-        ? math.min(154.0, math.max(118.0, screenWidth * 0.37))
+        ? math.min(142.0, math.max(112.0, screenWidth * 0.33))
         : compact
-            ? 258.0
-            : math.min(330.0, math.max(220.0, screenWidth - 32.0));
+            ? 214.0
+            : math.min(282.0, math.max(208.0, screenWidth - 32.0));
     final height = compact ? 50.0 : 58.0;
 
     final hasClaimable = showClaimBadge &&
@@ -137,6 +137,108 @@ class PlayerStatusBar extends ConsumerWidget {
   }
 }
 
+class CircuitCreditButton extends ConsumerWidget {
+  const CircuitCreditButton({
+    required this.onTap,
+    this.compact = true,
+    super.key,
+  });
+
+  final VoidCallback onTap;
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final progression = ref.watch(progressionProvider);
+    final credits = progression.asData?.value.profile.credits;
+    return Semantics(
+      button: true,
+      label: 'Devre Kredisi ile mağazayı aç',
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          key: const ValueKey('global-credit-action'),
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(14),
+          child: Container(
+            constraints: BoxConstraints(
+              minWidth: compact ? 82 : 94,
+              minHeight: compact ? 46 : 52,
+            ),
+            padding: EdgeInsets.symmetric(
+              horizontal: compact ? 9 : 11,
+              vertical: compact ? 6 : 7,
+            ),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Color.alphaBlend(
+                    RelayColors.amber.withValues(alpha: 0.14),
+                    RelayColors.surface,
+                  ),
+                  Color.alphaBlend(
+                    RelayColors.coral.withValues(alpha: 0.06),
+                    RelayColors.surfaceSoft,
+                  ),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: RelayColors.amber.withValues(alpha: 0.48),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: RelayColors.amber.withValues(alpha: 0.12),
+                  blurRadius: 16,
+                  spreadRadius: -5,
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.toll_outlined,
+                      color: RelayColors.amber,
+                      size: 14,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      credits == null ? '—' : '$credits',
+                      key: const ValueKey('player-status-credits'),
+                      style: const TextStyle(
+                        color: RelayColors.amber,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 2),
+                const Text(
+                  'DEVRE KREDİSİ',
+                  style: TextStyle(
+                    color: RelayColors.muted,
+                    fontSize: 6.5,
+                    height: 1,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 0.3,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _PlayerStatusContent extends StatelessWidget {
   const _PlayerStatusContent({
     required this.displayName,
@@ -168,70 +270,17 @@ class _PlayerStatusContent extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        displayName,
-                        key: const ValueKey('player-status-name'),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: dense ? 8.5 : compact ? 10 : 11,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 0.2,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 5),
-                    if (dense)
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(
-                            Icons.toll_outlined,
-                            color: RelayColors.amber,
-                            size: 12,
-                          ),
-                          const SizedBox(width: 2),
-                          Text(
-                            '${profile.credits}',
-                            key: const ValueKey('player-status-credits'),
-                            style: const TextStyle(
-                              color: RelayColors.amber,
-                              fontSize: 10,
-                              fontWeight: FontWeight.w900,
-                            ),
-                          ),
-                        ],
-                      )
-                    else
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text(
-                            '${profile.credits}',
-                            key: const ValueKey('player-status-credits'),
-                            style: const TextStyle(
-                              color: RelayColors.amber,
-                              fontSize: 11,
-                              height: 1,
-                              fontWeight: FontWeight.w900,
-                            ),
-                          ),
-                          const Text(
-                            'DEVRE KREDİSİ',
-                            style: TextStyle(
-                              color: RelayColors.muted,
-                              fontSize: 6.5,
-                              height: 1.05,
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: 0.35,
-                            ),
-                          ),
-                        ],
-                      ),
-                  ],
+                Text(
+                  displayName,
+                  key: const ValueKey('player-status-name'),
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: dense ? 8.5 : compact ? 10 : 11,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 0.2,
+                  ),
                 ),
                 SizedBox(height: compact ? 4 : 5),
                 Row(
@@ -255,18 +304,6 @@ class _PlayerStatusContent extends StatelessWidget {
                           minHeight: compact ? 5 : 6,
                           backgroundColor: const Color(0xFF234450),
                         ),
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      dense
-                          ? '${profile.xpIntoLevel}/${profile.xpForNextLevel}'
-                          : '${profile.xpIntoLevel}/${profile.xpForNextLevel} XP',
-                      key: const ValueKey('player-status-xp'),
-                      style: TextStyle(
-                        color: RelayColors.muted,
-                        fontSize: dense ? 7 : 8,
-                        fontWeight: FontWeight.w800,
                       ),
                     ),
                   ],

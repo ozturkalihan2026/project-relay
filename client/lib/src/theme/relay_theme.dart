@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 
 abstract final class RelayColors {
   static const background = Color(0xFF08111B);
-  static const backgroundTop = Color(0xFF10294A);
-  static const backgroundBottom = Color(0xFF0B1826);
+  static const backgroundTop = Color(0xFF13355F);
+  static const backgroundBottom = Color(0xFF101A31);
   static const surface = Color(0xFF142838);
-  static const surfaceSoft = Color(0xFF1C3446);
+  static const surfaceSoft = Color(0xFF203B52);
   static const surfaceHigh = Color(0xFF24495D);
   static const cyan = Color(0xFF46E7FF);
   static const mint = Color(0xFF72F0B7);
@@ -13,6 +13,8 @@ abstract final class RelayColors {
   static const coral = Color(0xFFFF7A7A);
   static const magenta = Color(0xFFFF6BD6);
   static const violet = Color(0xFFB092FF);
+  static const electricBlue = Color(0xFF6F8FFF);
+  static const lime = Color(0xFFB9FF73);
   static const muted = Color(0xFFA7C1D2);
   static const white = Color(0xFFF4FBFF);
 }
@@ -184,6 +186,34 @@ abstract final class RelayTheme {
             side: BorderSide(color: RelayColors.cyan.withValues(alpha: 0.20)),
           ),
         ),
+      ),
+      segmentedButtonTheme: SegmentedButtonThemeData(
+        style: ButtonStyle(
+          backgroundColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.selected)) {
+              return RelayColors.cyan.withValues(alpha: 0.18);
+            }
+            return RelayColors.surfaceSoft.withValues(alpha: 0.64);
+          }),
+          foregroundColor: WidgetStateProperty.resolveWith((states) {
+            return states.contains(WidgetState.selected)
+                ? RelayColors.white
+                : RelayColors.muted;
+          }),
+          side: WidgetStateProperty.resolveWith((states) {
+            return BorderSide(
+              color: states.contains(WidgetState.selected)
+                  ? RelayColors.cyan.withValues(alpha: 0.62)
+                  : RelayColors.cyan.withValues(alpha: 0.18),
+            );
+          }),
+        ),
+      ),
+      chipTheme: ChipThemeData(
+        backgroundColor: RelayColors.surfaceSoft.withValues(alpha: 0.72),
+        selectedColor: RelayColors.violet.withValues(alpha: 0.20),
+        side: BorderSide(color: RelayColors.cyan.withValues(alpha: 0.18)),
+        labelStyle: const TextStyle(color: RelayColors.white),
       ),
       progressIndicatorTheme: const ProgressIndicatorThemeData(
         color: RelayColors.cyan,

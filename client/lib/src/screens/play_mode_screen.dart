@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../navigation/navigation_actions.dart';
 import '../theme/relay_theme.dart';
 import '../widgets/app_header_actions.dart';
+import '../widgets/arcade_motion.dart';
 import 'career_screen.dart';
 import 'editor_screen.dart';
 
@@ -138,10 +139,11 @@ class _ModeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      child: Container(
-        decoration: RelayDecorations.panel(accent: color),
+    return ArcadeHoverLift(
+      child: Card(
+        clipBehavior: Clip.antiAlias,
+        child: Container(
+          decoration: RelayDecorations.panel(accent: color),
         child: InkWell(
           onTap: onPressed,
           child: Padding(
@@ -208,6 +210,7 @@ class _ModeCard extends StatelessWidget {
                 ),
               ],
             ),
+          ),
           ),
         ),
       ),

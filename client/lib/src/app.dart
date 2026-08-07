@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'screens/collection_screen.dart';
 import 'screens/how_to_play_screen.dart';
 import 'screens/main_menu_screen.dart';
 import 'screens/profile_screen.dart';
@@ -24,6 +25,9 @@ class RelayApp extends StatelessWidget {
         '/profile': (context) => const ProfileScreen(),
         '/settings': (context) => const SettingsScreen(),
         '/how-to-play': (context) => const HowToPlayScreen(),
+        '/store': (context) => const CollectionScreen(
+              mode: CollectionScreenMode.store,
+            ),
       },
     );
   }
