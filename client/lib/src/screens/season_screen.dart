@@ -19,6 +19,15 @@ class SeasonScreen extends ConsumerStatefulWidget {
 
 class _SeasonScreenState extends ConsumerState<SeasonScreen> {
   _StatisticsSection _section = _StatisticsSection.season;
+  final ScrollController _seasonLeaderboardController = ScrollController();
+  final ScrollController _weeklyLeaderboardController = ScrollController();
+
+  @override
+  void dispose() {
+    _seasonLeaderboardController.dispose();
+    _weeklyLeaderboardController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -28,22 +37,8 @@ class _SeasonScreenState extends ConsumerState<SeasonScreen> {
       appBar: AppBar(
         leadingWidth: 224,
         leading: const AppHeaderProfile(),
-        title: const Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'İSTATİSTİKLER',
-              style: TextStyle(
-                fontWeight: FontWeight.w900,
-                letterSpacing: 1.1,
-              ),
-            ),
-            Text(
-              'PROJECT RELAY • v0.8.18',
-              style: TextStyle(color: RelayColors.muted, fontSize: 10),
-            ),
-          ],
-        ),
+        centerTitle: true,
+        title: const AppHeaderTitle(pageTitle: 'İSTATİSTİKLER'),
         actions: const [AppHeaderActions(), SizedBox(width: 8)],
       ),
       body: SafeArea(
@@ -166,31 +161,36 @@ class _SeasonScreenState extends ConsumerState<SeasonScreen> {
         const SizedBox(height: 10),
         _sectionTitle(Icons.leaderboard_outlined, 'SEZON SIRALAMASI'),
         const SizedBox(height: 8),
-        Card(
+        _LeaderboardCard(
           key: const ValueKey('season-leaderboard-card'),
-          child: snapshot.leaderboard.isEmpty
-              ? const Padding(
-                  padding: EdgeInsets.all(18),
-                  child: Text(
-                    'Henüz sezon sıralamasına giren oyuncu yok. İlk gerçek oyuncu savaşını tamamladığında burada görüneceksin.',
-                    style: TextStyle(color: RelayColors.muted),
-                  ),
-                )
-              : Column(
-                  children: [
-                    for (final item in snapshot.leaderboard)
-                      ListTile(
-                        dense: true,
-                        leading: _LeaderboardRankBadge(
-                          position: item.position,
-                          isCurrentPlayer: item.isCurrentPlayer,
-                        ),
-                        title: Text(item.displayName, style: TextStyle(fontWeight: FontWeight.w900, color: item.isCurrentPlayer ? RelayColors.cyan : Colors.white)),
-                        subtitle: Text('${item.wins} galibiyet • ${item.matches} maç'),
-                        trailing: Text('${item.points} SP', style: const TextStyle(color: RelayColors.amber, fontWeight: FontWeight.w900)),
-                      ),
-                  ],
+          controller: _seasonLeaderboardController,
+          emptyMessage:
+              'Henüz sezon sıralamasına giren oyuncu yok. İlk gerçek oyuncu savaşını tamamladığında burada görüneceksin.',
+          children: [
+            for (final item in snapshot.leaderboard)
+              ListTile(
+                dense: true,
+                leading: _LeaderboardRankBadge(
+                  position: item.position,
+                  isCurrentPlayer: item.isCurrentPlayer,
                 ),
+                title: Text(
+                  item.displayName,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w900,
+                    color: item.isCurrentPlayer ? RelayColors.cyan : Colors.white,
+                  ),
+                ),
+                subtitle: Text('${item.wins} galibiyet • ${item.matches} maç'),
+                trailing: Text(
+                  '${item.points} SP',
+                  style: const TextStyle(
+                    color: RelayColors.amber,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+          ],
         ),
       ],
     );
@@ -225,31 +225,38 @@ class _SeasonScreenState extends ConsumerState<SeasonScreen> {
         const SizedBox(height: 10),
         _sectionTitle(Icons.emoji_events_outlined, 'LİG LİDER TABLOSU'),
         const SizedBox(height: 8),
-        Card(
+        _LeaderboardCard(
           key: const ValueKey('season-leaderboard-card'),
-          child: snapshot.leaderboard.isEmpty
-              ? const Padding(
-                  padding: EdgeInsets.all(18),
-                  child: Text('Bu hafta için lider tablosu henüz oluşmadı.', style: TextStyle(color: RelayColors.muted)),
-                )
-              : Column(
-                  children: [
-                    for (final standing in snapshot.leaderboard)
-                      ListTile(
-                        dense: true,
-                        leading: _LeaderboardRankBadge(
-                          position: standing.position,
-                          isCurrentPlayer: standing.isCurrentPlayer,
-                        ),
-                        title: Text(standing.displayName, style: TextStyle(fontWeight: FontWeight.w900, color: standing.isCurrentPlayer ? RelayColors.cyan : Colors.white)),
-                        subtitle: Text(
-                          '${standing.wins} galibiyet • '
-                          '${standing.wins + standing.draws + standing.losses} maç',
-                        ),
-                        trailing: Text('${standing.points} puan', style: const TextStyle(color: RelayColors.amber, fontWeight: FontWeight.w900)),
-                      ),
-                  ],
+          controller: _weeklyLeaderboardController,
+          emptyMessage: 'Bu hafta için lider tablosu henüz oluşmadı.',
+          children: [
+            for (final standing in snapshot.leaderboard)
+              ListTile(
+                dense: true,
+                leading: _LeaderboardRankBadge(
+                  position: standing.position,
+                  isCurrentPlayer: standing.isCurrentPlayer,
                 ),
+                title: Text(
+                  standing.displayName,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w900,
+                    color: standing.isCurrentPlayer ? RelayColors.cyan : Colors.white,
+                  ),
+                ),
+                subtitle: Text(
+                  '${standing.wins} galibiyet • '
+                  '${standing.wins + standing.draws + standing.losses} maç',
+                ),
+                trailing: Text(
+                  '${standing.points} puan',
+                  style: const TextStyle(
+                    color: RelayColors.amber,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+          ],
         ),
       ],
     );
@@ -262,6 +269,58 @@ class _SeasonScreenState extends ConsumerState<SeasonScreen> {
         const SizedBox(width: 8),
         Text(title, style: const TextStyle(fontWeight: FontWeight.w900, letterSpacing: 0.7)),
       ],
+    );
+  }
+}
+
+class _LeaderboardCard extends StatelessWidget {
+  const _LeaderboardCard({
+    required this.controller,
+    required this.children,
+    required this.emptyMessage,
+    super.key,
+  });
+
+  final ScrollController controller;
+  final List<Widget> children;
+  final String emptyMessage;
+
+  @override
+  Widget build(BuildContext context) {
+    if (children.isEmpty) {
+      return Card(
+        key: key,
+        child: Padding(
+          padding: const EdgeInsets.all(18),
+          child: Text(
+            emptyMessage,
+            style: const TextStyle(color: RelayColors.muted),
+          ),
+        ),
+      );
+    }
+    final height = (children.length * 58.0).clamp(150.0, 430.0).toDouble();
+    return Card(
+      key: key,
+      child: SizedBox(
+        height: height,
+        child: Scrollbar(
+          key: const ValueKey('leaderboard-scrollbar'),
+          controller: controller,
+          thumbVisibility: true,
+          trackVisibility: true,
+          child: ListView.separated(
+            controller: controller,
+            padding: const EdgeInsets.symmetric(vertical: 6),
+            itemCount: children.length,
+            itemBuilder: (context, index) => children[index],
+            separatorBuilder: (context, index) => Divider(
+              height: 1,
+              color: RelayColors.muted.withValues(alpha: 0.10),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

@@ -52,25 +52,13 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen> {
       appBar: AppBar(
         leadingWidth: 224,
         leading: const AppHeaderProfile(),
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              widget.mode == CollectionScreenMode.store
-                  ? 'MAĞAZA'
-                  : widget.kitOnly
-                      ? '${widget.kitMode.displayName.toUpperCase()} SEKİZLİSİ'
-                      : 'KOLEKSİYON',
-              style: const TextStyle(
-                fontWeight: FontWeight.w900,
-                letterSpacing: 1.1,
-              ),
-            ),
-            const Text(
-              'PROJECT RELAY • v0.8.18',
-              style: TextStyle(color: RelayColors.muted, fontSize: 10),
-            ),
-          ],
+        centerTitle: true,
+        title: AppHeaderTitle(
+          pageTitle: widget.mode == CollectionScreenMode.store
+              ? 'MAĞAZA'
+              : widget.kitOnly
+                  ? '${widget.kitMode.displayName.toUpperCase()} SEKİZLİSİ'
+                  : 'KOLEKSİYON',
         ),
         actions: const [
           AppHeaderActions(),

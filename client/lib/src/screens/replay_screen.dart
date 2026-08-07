@@ -218,6 +218,10 @@ class _ReplayScreenState extends ConsumerState<ReplayScreen> {
       appBar: AppBar(
         leadingWidth: 224,
         leading: const AppHeaderProfile(),
+        centerTitle: true,
+        title: AppHeaderTitle(
+          pageTitle: (widget.battleModeLabel ?? 'SAVAŞ').toUpperCase(),
+        ),
         actions: const [AppHeaderActions(), SizedBox(width: 8)],
       ),
       body: SafeArea(

@@ -27,13 +27,8 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
         leadingWidth: 224,
         leading: const AppHeaderProfile(),
         backgroundColor: Colors.transparent,
-        title: const Text(
-          'İSTATİSTİKLER',
-          style: TextStyle(
-            fontWeight: FontWeight.w900,
-            letterSpacing: 1.5,
-          ),
-        ),
+        centerTitle: true,
+        title: const AppHeaderTitle(pageTitle: 'İSTATİSTİKLER'),
         actions: const [
           AppHeaderActions(),
           SizedBox(width: 8),

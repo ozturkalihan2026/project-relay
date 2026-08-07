@@ -68,22 +68,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         leadingWidth: 224,
         leading: const AppHeaderProfile(),
         backgroundColor: Colors.transparent,
-        title: const Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'PROFİL',
-              style: TextStyle(
-                fontWeight: FontWeight.w900,
-                letterSpacing: 1.4,
-              ),
-            ),
-            Text(
-              'PROJECT RELAY • v0.8.18',
-              style: TextStyle(color: RelayColors.muted, fontSize: 10),
-            ),
-          ],
-        ),
+        centerTitle: true,
+        title: const AppHeaderTitle(pageTitle: 'PROFİL'),
         actions: const [
           AppHeaderActions(),
           SizedBox(width: 8),

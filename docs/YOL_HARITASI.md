@@ -364,3 +364,5 @@ etkisi artar; koşu bittiğinde bütün etkiler sıfırlanır.
 - Kariyer devresi ve koşu rakibi aynı hazırlık ekranında gösterilir; oyuncu
   devresi bu alanda düzenlenir ve savaş öncesi sunucuya kaydedilir.
 - Komutan Sistemi uygulanmaz ve özellik havuzunda kalır.
+
+| v0.8.19 | Ortak başlık, kaydırılabilir sıralamalar, modern dialoglar ve savaş VFX ikinci aşama | Hazır; yerel Flutter kabulü bekliyor |

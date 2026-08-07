@@ -18,7 +18,7 @@ const double _careerPanelWidth = 430;
 const double _careerPanelHeight = 500;
 const double _careerBoardMaxWidth = 390;
 const double _careerModuleBoardGap = 12;
-const double _careerPlayerOpponentGap = 22;
+const double _careerPlayerOpponentGap = 36;
 const double _careerPlayerEditorWidth =
     (_careerPanelWidth * 2) + _careerModuleBoardGap;
 
@@ -50,13 +50,8 @@ class _CareerScreenState extends ConsumerState<CareerScreen> {
         leadingWidth: 224,
         leading: const AppHeaderProfile(),
         backgroundColor: Colors.transparent,
-        title: const Text(
-          'KARİYER',
-          style: TextStyle(
-            fontWeight: FontWeight.w900,
-            letterSpacing: 1.5,
-          ),
-        ),
+        centerTitle: true,
+        title: const AppHeaderTitle(pageTitle: 'KARİYER'),
         actions: const [
           AppHeaderActions(),
           SizedBox(width: 8),
@@ -548,7 +543,7 @@ class _CareerInlineEditor extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           ModulePalette(
-            compact: true,
+            compact: false,
             fixedColumns: 2,
             modules: modules,
             selectedKind: state.selectedKind,
@@ -559,7 +554,7 @@ class _CareerInlineEditor extends StatelessWidget {
                 module.kind: state.remainingFor(module.kind),
             },
           ),
-          const SizedBox(height: 8),
+          const Spacer(),
           TextButton.icon(
             key: const ValueKey('career-open-kit-builder'),
             onPressed: busy ? null : onEditKit,

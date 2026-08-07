@@ -8,6 +8,7 @@ import '../models/relay_models.dart';
 import '../theme/relay_theme.dart';
 import '../widgets/app_header_actions.dart';
 import '../widgets/relay_notice.dart';
+import '../widgets/relay_dialog.dart';
 
 enum _ClanSection { summary, members, activity, settings }
 
@@ -84,22 +85,8 @@ class _SocialScreenState extends ConsumerState<SocialScreen> {
       appBar: AppBar(
         leadingWidth: 224,
         leading: const AppHeaderProfile(),
-        title: const Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'KLAN',
-              style: TextStyle(
-                fontWeight: FontWeight.w900,
-                letterSpacing: 1.1,
-              ),
-            ),
-            Text(
-              'PROJECT RELAY • v0.8.18',
-              style: TextStyle(color: RelayColors.muted, fontSize: 10),
-            ),
-          ],
-        ),
+        centerTitle: true,
+        title: const AppHeaderTitle(pageTitle: 'KLAN'),
         actions: const [
           AppHeaderActions(),
           SizedBox(width: 8),
@@ -1254,25 +1241,12 @@ class _SocialScreenState extends ConsumerState<SocialScreen> {
   }) async {
     return await showDialog<bool>(
           context: context,
-          builder: (dialogContext) => AlertDialog(
-            title: Text(title),
-            content: Text(message),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(dialogContext, false),
-                child: const Text('VAZGEÇ'),
-              ),
-              FilledButton(
-                style: destructive
-                    ? FilledButton.styleFrom(
-                        backgroundColor: RelayColors.coral,
-                        foregroundColor: Colors.white,
-                      )
-                    : null,
-                onPressed: () => Navigator.pop(dialogContext, true),
-                child: Text(confirmLabel),
-              ),
-            ],
+          barrierColor: Colors.black.withValues(alpha: 0.62),
+          builder: (dialogContext) => RelayConfirmDialog(
+            title: title,
+            message: message,
+            confirmLabel: confirmLabel,
+            destructive: destructive,
           ),
         ) ??
         false;

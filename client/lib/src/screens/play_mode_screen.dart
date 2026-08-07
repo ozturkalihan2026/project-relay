@@ -17,13 +17,8 @@ class PlayModeScreen extends StatelessWidget {
       appBar: AppBar(
         leadingWidth: 224,
         leading: const AppHeaderProfile(),
-        title: const Text(
-          'OYNA',
-          style: TextStyle(
-            fontWeight: FontWeight.w900,
-            letterSpacing: 1.5,
-          ),
-        ),
+        centerTitle: true,
+        title: const AppHeaderTitle(pageTitle: 'OYNA'),
         actions: const [
           AppHeaderActions(),
           SizedBox(width: 8),

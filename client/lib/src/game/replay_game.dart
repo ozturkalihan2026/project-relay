@@ -487,6 +487,45 @@ class RelayReplayGame extends FlameGame {
       final x = width * index / 14;
       canvas.drawLine(ui.Offset(x, 0), ui.Offset(x, height), paint);
     }
+
+    // Savaş alanını boş bir ızgara olmaktan çıkaran yavaş tarama ve enerji düğümleri.
+    final scanPhase = (_animationTime * 0.11) % 1;
+    final scanX = width * scanPhase;
+    canvas.drawRect(
+      ui.Rect.fromLTWH(scanX - 34, 0, 68, height),
+      Paint()
+        ..shader = ui.Gradient.linear(
+          ui.Offset(scanX - 34, 0),
+          ui.Offset(scanX + 34, 0),
+          [
+            Colors.transparent,
+            RelayColors.cyan.withValues(alpha: 0.055),
+            Colors.transparent,
+          ],
+        ),
+    );
+    for (var index = 0; index < 12; index += 1) {
+      final phase = ((_animationTime * (0.08 + index * 0.004)) + index * 0.137) % 1;
+      final x = width * phase;
+      final lane = (index * 37) % 9 + 1;
+      final y = height * lane / 10;
+      final color = index % 3 == 0
+          ? RelayColors.amber
+          : index % 3 == 1
+              ? RelayColors.cyan
+              : RelayColors.violet;
+      final glow = 0.55 + 0.45 * math.sin((_animationTime * 2.1) + index);
+      canvas.drawCircle(
+        ui.Offset(x, y),
+        5.5,
+        Paint()..color = color.withValues(alpha: 0.045 * glow),
+      );
+      canvas.drawCircle(
+        ui.Offset(x, y),
+        1.6,
+        Paint()..color = color.withValues(alpha: 0.42 * glow),
+      );
+    }
   }
 
   void _drawBoard(
@@ -507,6 +546,14 @@ class RelayReplayGame extends FlameGame {
     canvas.drawRRect(
       ui.RRect.fromRectAndRadius(rect, const ui.Radius.circular(10)),
       Paint()..color = visuals.board.background.withValues(alpha: 0.94),
+    );
+    final boardBreath = 0.34 + 0.16 * math.sin(_animationTime * math.pi * 1.6);
+    canvas.drawRRect(
+      ui.RRect.fromRectAndRadius(rect.inflate(1.5), const ui.Radius.circular(11)),
+      Paint()
+        ..color = color.withValues(alpha: boardBreath)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.4,
     );
     for (var row = 0; row < 4; row += 1) {
       for (var column = 0; column < 4; column += 1) {
@@ -558,6 +605,40 @@ class RelayReplayGame extends FlameGame {
       final destroyed = currentHp <= 0;
       final active = _lastEventData?.actorId == module.id ||
           _lastEventData?.targetId == module.id;
+      final isActor = _lastEventData?.actorId == module.id;
+      final isTarget = _lastEventData?.targetId == module.id;
+      if (active && !destroyed) {
+        final activeColor = isTarget && delta.hp < 0
+            ? RelayColors.coral
+            : isActor
+                ? RelayColors.amber
+                : moduleColorValue;
+        final activePulse = 0.45 + 0.35 * math.sin(_animationTime * math.pi * 5.5);
+        canvas.drawRRect(
+          ui.RRect.fromRectAndRadius(cell.inflate(4), const ui.Radius.circular(9)),
+          Paint()
+            ..color = activeColor.withValues(alpha: 0.14 * activePulse)
+            ..maskFilter = const ui.MaskFilter.blur(ui.BlurStyle.normal, 7),
+        );
+        canvas.drawRRect(
+          ui.RRect.fromRectAndRadius(cell.inflate(2), const ui.Radius.circular(8)),
+          Paint()
+            ..color = activeColor.withValues(alpha: 0.60 * activePulse)
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 2,
+        );
+      }
+      if (delta.hp < 0 && !destroyed) {
+        canvas.drawRRect(
+          ui.RRect.fromRectAndRadius(cell.deflate(2), const ui.Radius.circular(6)),
+          Paint()..color = RelayColors.coral.withValues(alpha: 0.10),
+        );
+      } else if (delta.hp > 0 && !destroyed) {
+        canvas.drawRRect(
+          ui.RRect.fromRectAndRadius(cell.deflate(2), const ui.Radius.circular(6)),
+          Paint()..color = RelayColors.mint.withValues(alpha: 0.10),
+        );
+      }
       canvas.drawRRect(
         ui.RRect.fromRectAndRadius(cell, const ui.Radius.circular(6)),
         Paint()
@@ -988,6 +1069,26 @@ class RelayReplayGame extends FlameGame {
     final coreRect = ReplayCircuitGeometry.coreRect(rect);
     final center = coreRect.center;
     final ratio = (hp / maxHp).clamp(0.0, 1.0).toDouble();
+    final criticalPulse = ratio <= 0.35
+        ? 0.45 + 0.40 * math.sin(_animationTime * math.pi * 3.6).abs()
+        : 0.0;
+    if (criticalPulse > 0) {
+      canvas.drawCircle(
+        center,
+        coreRect.shortestSide * (0.34 + 0.03 * criticalPulse),
+        Paint()
+          ..color = RelayColors.coral.withValues(alpha: 0.13 * criticalPulse)
+          ..maskFilter = const ui.MaskFilter.blur(ui.BlurStyle.normal, 12),
+      );
+      canvas.drawCircle(
+        center,
+        coreRect.shortestSide * 0.31,
+        Paint()
+          ..color = RelayColors.coral.withValues(alpha: 0.52 * criticalPulse)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2.4,
+      );
+    }
     canvas
       ..drawRRect(
         ui.RRect.fromRectAndRadius(coreRect, const ui.Radius.circular(12)),

@@ -89,35 +89,11 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
         leadingWidth: 224,
         leading: const AppHeaderProfile(),
         backgroundColor: Colors.transparent,
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'PROJECT RELAY',
-              style: TextStyle(
-                fontWeight: FontWeight.w900,
-                letterSpacing: 2,
-              ),
-            ),
-            Text(
-              '${widget.mode.title} • v0.8.18',
-              style: const TextStyle(
-                color: RelayColors.muted,
-                fontSize: 10,
-                letterSpacing: 1.1,
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          const AppHeaderActions(),
-          const SizedBox(width: 4),
-          IconButton(
-            tooltip: 'Katalogları yenile',
-            onPressed: () => ref.invalidate(catalogsProvider),
-            icon: const Icon(Icons.sync),
-          ),
-          const SizedBox(width: 8),
+        centerTitle: true,
+        title: AppHeaderTitle(pageTitle: widget.mode.title.toUpperCase()),
+        actions: const [
+          AppHeaderActions(),
+          SizedBox(width: 8),
         ],
       ),
       body: Container(

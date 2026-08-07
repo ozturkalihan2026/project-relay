@@ -31,16 +31,8 @@ class _AlphaFeedbackScreenState extends ConsumerState<AlphaFeedbackScreen> {
       appBar: AppBar(
         leadingWidth: 224,
         leading: const AppHeaderProfile(),
-        title: const Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'ALFA GERİ BİLDİRİMİ',
-              style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1.1),
-            ),
-            Text('PROJECT RELAY • v0.8.18', style: TextStyle(color: RelayColors.muted, fontSize: 10)),
-          ],
-        ),
+        centerTitle: true,
+        title: const AppHeaderTitle(pageTitle: 'ALFA GERİ BİLDİRİMİ'),
         actions: const [AppHeaderActions(), SizedBox(width: 8)],
       ),
       body: SafeArea(

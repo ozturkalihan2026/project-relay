@@ -1,3 +1,12 @@
+## v0.8.19
+- Kariyer Modül Seç paleti büyütüldü; kontroller aşağı hizalandı ve oyuncu-rakip devre boşluğu artırıldı.
+- Tüm ikincil ekranlarda ortalanmış ortak sayfa başlığı standardı getirildi.
+- Sezon ve haftalık lig sıralamaları görünür scrollbar bulunan sabit yükseklikli alanlara taşındı.
+- Çevrimiçi editörden katalog yenile düğmesi ve ana menü alt sürüm metni kaldırıldı.
+- Klan onay pencereleri yeni arcade-tech dialog tasarımına geçirildi.
+- Savaş VFX katmanı enerji yayı, şarj, impact, kalkan, onarım, yok oluş ve durum efektleriyle güçlendirildi.
+- Savaş sahnesine ambient scan/enerji düğümleri, aktif modül tepkileri ve kritik çekirdek pulse eklendi.
+
 ## v0.8.18
 - Üst bar ve Devre Kredisi bileşenleri tüm ekranlarda tekilleştirildi; savaş tekrar ekranında üst bar scroll alanından ayrıldı.
 - Devre Kredisi amblemi ödül popup ve mağaza fiyatlarında ortak kullanıma geçirildi.

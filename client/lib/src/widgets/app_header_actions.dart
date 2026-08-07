@@ -57,3 +57,48 @@ class AppHeaderActions extends StatelessWidget {
     );
   }
 }
+
+/// Tüm ikincil ekranlarda aynı merkez başlık düzenini kullanır.
+class AppHeaderTitle extends StatelessWidget {
+  const AppHeaderTitle({
+    required this.pageTitle,
+    this.version = 'v0.8.19',
+    super.key,
+  });
+
+  final String pageTitle;
+  final String version;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Text(
+          pageTitle,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            fontWeight: FontWeight.w900,
+            letterSpacing: 1.35,
+          ),
+        ),
+        const SizedBox(height: 1),
+        Text(
+          'PROJECT RELAY • $version',
+          maxLines: 1,
+          overflow: TextOverflow.fade,
+          softWrap: false,
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            color: Color(0xFFA7C1D2),
+            fontSize: 9.5,
+            letterSpacing: 0.55,
+          ),
+        ),
+      ],
+    );
+  }
+}

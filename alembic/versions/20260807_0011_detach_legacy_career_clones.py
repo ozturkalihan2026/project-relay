@@ -21,10 +21,13 @@ def upgrade() -> None:
     # kopyaları temizleyerek iki modun başlangıç durumunu kesin biçimde ayırırız.
     op.execute(
         """
-        DELETE FROM career_boards AS cb
-        USING boards AS b
-        WHERE cb.player_id = b.player_id
-          AND cb.fingerprint = b.fingerprint
+        DELETE FROM career_boards
+        WHERE EXISTS (
+            SELECT 1
+            FROM boards
+            WHERE boards.player_id = career_boards.player_id
+              AND boards.fingerprint = career_boards.fingerprint
+        )
         """
     )
 

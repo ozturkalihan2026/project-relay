@@ -51,13 +51,8 @@ class _ManualCatalogState extends StatelessWidget {
         leadingWidth: 224,
         leading: const AppHeaderProfile(),
         backgroundColor: Colors.transparent,
-        title: const Text(
-          'NASIL OYNANIR',
-          style: TextStyle(
-            fontWeight: FontWeight.w900,
-            letterSpacing: 1.3,
-          ),
-        ),
+        centerTitle: true,
+        title: const AppHeaderTitle(pageTitle: 'NASIL OYNANIR'),
         actions: const [
           AppHeaderActions(),
           SizedBox(width: 8),

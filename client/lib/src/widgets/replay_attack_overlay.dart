@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import '../game/replay_game.dart';
 import '../models/relay_models.dart';
 import '../theme/cosmetic_visuals.dart';
+import '../theme/relay_theme.dart';
 
 class ReplayAttackOverlay extends StatefulWidget {
   const ReplayAttackOverlay({
@@ -35,7 +36,7 @@ class _ReplayAttackOverlayState extends State<ReplayAttackOverlay>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 940),
+      duration: const Duration(milliseconds: 1120),
     );
     widget.events.addListener(_handleEvents);
     _handleEvents();
@@ -44,9 +45,7 @@ class _ReplayAttackOverlayState extends State<ReplayAttackOverlay>
   @override
   void didUpdateWidget(covariant ReplayAttackOverlay oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.events == widget.events) {
-      return;
-    }
+    if (oldWidget.events == widget.events) return;
     oldWidget.events.removeListener(_handleEvents);
     widget.events.addListener(_handleEvents);
     _handleEvents();
@@ -87,17 +86,16 @@ class _ReplayAttackOverlayState extends State<ReplayAttackOverlay>
     return IgnorePointer(
       child: AnimatedBuilder(
         animation: _controller,
-        builder: (context, child) {
-          return CustomPaint(
-            painter: _AttackPainter(
-              events: _events,
-              match: widget.match,
-              progress: Curves.easeOut.transform(_controller.value),
-              leftVisuals: widget.leftVisuals,
-              rightVisuals: widget.rightVisuals,
-            ),
-          );
-        },
+        builder: (context, child) => CustomPaint(
+          painter: _AttackPainter(
+            events: _events,
+            match: widget.match,
+            progress: Curves.easeOutCubic.transform(_controller.value),
+            rawProgress: _controller.value,
+            leftVisuals: widget.leftVisuals,
+            rightVisuals: widget.rightVisuals,
+          ),
+        ),
       ),
     );
   }
@@ -108,6 +106,7 @@ class _AttackPainter extends CustomPainter {
     required this.events,
     required this.match,
     required this.progress,
+    required this.rawProgress,
     required this.leftVisuals,
     required this.rightVisuals,
   });
@@ -115,23 +114,24 @@ class _AttackPainter extends CustomPainter {
   final List<BattleEvent> events;
   final MatchResponse match;
   final double progress;
+  final double rawProgress;
   final EquippedVisuals leftVisuals;
   final EquippedVisuals rightVisuals;
 
   @override
   void paint(Canvas canvas, Size size) {
-    if (events.isEmpty || progress >= 1) {
-      return;
-    }
+    if (events.isEmpty || rawProgress >= 1) return;
     final leftBoard = ReplayStageGeometry.leftBoard(size);
     final rightBoard = ReplayStageGeometry.rightBoard(size);
     final leftCore = leftBoard.center;
     final rightCore = rightBoard.center;
 
-    for (final event in events) {
-      _drawAttack(
+    _drawBattleBeat(canvas, size, leftBoard, rightBoard);
+    for (var index = 0; index < events.length; index++) {
+      _drawEvent(
         canvas,
-        event,
+        events[index],
+        eventIndex: index,
         leftBoard: leftBoard,
         rightBoard: rightBoard,
         leftCore: leftCore,
@@ -140,16 +140,59 @@ class _AttackPainter extends CustomPainter {
     }
   }
 
-  void _drawAttack(
+  void _drawBattleBeat(
+    Canvas canvas,
+    Size size,
+    Rect leftBoard,
+    Rect rightBoard,
+  ) {
+    final opacity = math.sin(rawProgress * math.pi).clamp(0.0, 1.0);
+    if (opacity <= 0) return;
+    final leftActive = events.any((event) => event.side == 'left');
+    final rightActive = events.any((event) => event.side == 'right');
+    if (leftActive) {
+      _drawBoardEdgePulse(canvas, leftBoard, leftVisuals.modules.attack, opacity);
+    }
+    if (rightActive) {
+      _drawBoardEdgePulse(canvas, rightBoard, RelayColors.coral, opacity);
+    }
+    if (events.any((event) => event.type == 'destroyed' || event.type == 'core_damage')) {
+      final wash = Paint()
+        ..shader = LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            Colors.transparent,
+            RelayColors.coral.withValues(alpha: 0.035 * opacity),
+            Colors.transparent,
+          ],
+        ).createShader(Offset.zero & size);
+      canvas.drawRect(Offset.zero & size, wash);
+    }
+  }
+
+  void _drawBoardEdgePulse(Canvas canvas, Rect board, Color color, double opacity) {
+    final inflated = board.inflate(7 + opacity * 4);
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(inflated, const Radius.circular(18)),
+      Paint()
+        ..color = color.withValues(alpha: 0.16 * opacity)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.2
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 7),
+    );
+  }
+
+  void _drawEvent(
     Canvas canvas,
     BattleEvent event, {
+    required int eventIndex,
     required Rect leftBoard,
     required Rect rightBoard,
     required Offset leftCore,
     required Offset rightCore,
   }) {
-    final actorBoard =
-        event.side == 'left' ? match.playerBoard : match.opponentBoard;
+    final actorBoard = event.side == 'left' ? match.playerBoard : match.opponentBoard;
     final actorRect = event.side == 'left' ? leftBoard : rightBoard;
     final targetOnEnemy = event.type == 'attack' ||
         event.type == 'core_damage' ||
@@ -167,172 +210,366 @@ class _AttackPainter extends CustomPainter {
     final to = event.type == 'core_damage'
         ? targetCore
         : _modulePoint(event.targetId, targetBoard, targetRect) ?? from;
-    final fade = (1 - progress).clamp(0.0, 1.0).toDouble();
+    final fade = (1 - rawProgress).clamp(0.0, 1.0).toDouble();
     final sideVisuals = event.side == 'left' ? leftVisuals : rightVisuals;
     final color = switch (event.type) {
       'shield' || 'shield_absorb' => const Color(0xFF74A7FF),
-      'repair' || 'recovered' => const Color(0xFF72F0B7),
-      'destroyed' => const Color(0xFFFF7A7A),
-      'overheat' => const Color(0xFFFFD166),
-      'cool' => const Color(0xFF46E7FF),
-      'energy_starved' => const Color(0xFFB092FF),
+      'repair' || 'recovered' => RelayColors.mint,
+      'destroyed' => RelayColors.coral,
+      'overheat' => RelayColors.amber,
+      'cool' => RelayColors.cyan,
+      'energy_starved' => RelayColors.violet,
       _ => sideVisuals.modules.attack,
     };
-    final isBeam = event.type == 'attack' || event.type == 'core_damage';
 
-    if (isBeam) {
-      final easedHead = Curves.easeOutCubic.transform(progress);
-      final head = Offset.lerp(from, to, easedHead)!;
-      final tail = Offset.lerp(
+    if (event.type == 'attack' || event.type == 'core_damage') {
+      _drawBeamEvent(
+        canvas,
+        event,
         from,
         to,
-        math.max(0.0, easedHead - 0.23),
-      )!;
-      final glowPaint = Paint()
-        ..color = color.withValues(alpha: 0.32 * fade)
-        ..strokeWidth = 11
-        ..strokeCap = StrokeCap.round
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 7);
-      canvas.drawLine(tail, head, glowPaint);
-      canvas.drawLine(
-        tail,
-        head,
-        Paint()
-          ..color = color.withValues(alpha: 0.96 * fade)
-          ..strokeWidth = 3.2 + 2.6 * fade
-          ..strokeCap = StrokeCap.round,
+        color,
+        fade,
+        eventIndex,
       );
-      canvas.drawCircle(
-        head,
-        5.5 + 4.5 * fade,
-        Paint()..color = color.withValues(alpha: 0.96 * fade),
-      );
-      if (progress > 0.58) {
-        final impactProgress = ((progress - 0.58) / 0.42).clamp(0.0, 1.0).toDouble();
-        _drawImpactBurst(
-          canvas,
-          to,
-          color,
-          impactProgress,
-          fade,
-        );
-        _drawFloatingLabel(
-          canvas,
-          event.type == 'core_damage'
-              ? '-${event.amount.toStringAsFixed(0)} ÇEKİRDEK'
-              : '-${event.amount.toStringAsFixed(0)}',
-          to + Offset(0, -18 - impactProgress * 14),
-          color,
-          fade * (1 - impactProgress * 0.45),
-        );
-      }
       return;
     }
 
-    final ringProgress = Curves.easeOut.transform(progress);
-    final radius = 10 + 30 * ringProgress;
+    switch (event.type) {
+      case 'shield':
+      case 'shield_absorb':
+        _drawShieldEvent(canvas, to, color, fade, event.type == 'shield_absorb');
+        break;
+      case 'repair':
+      case 'recovered':
+        _drawRepairEvent(canvas, to, color, fade, event);
+        break;
+      case 'destroyed':
+        _drawDestroyedEvent(canvas, to, color, fade);
+        break;
+      case 'overheat':
+        _drawHeatEvent(canvas, to, color, fade, hot: true);
+        break;
+      case 'cool':
+        _drawHeatEvent(canvas, to, color, fade, hot: false);
+        break;
+      case 'energy_starved':
+        _drawEnergyStarved(canvas, to, color, fade);
+        break;
+      default:
+        break;
+    }
+  }
+
+  void _drawBeamEvent(
+    Canvas canvas,
+    BattleEvent event,
+    Offset from,
+    Offset to,
+    Color color,
+    double fade,
+    int eventIndex,
+  ) {
+    final dx = to.dx - from.dx;
+    final dy = to.dy - from.dy;
+    final distance = math.sqrt(dx * dx + dy * dy).clamp(1.0, double.infinity);
+    final normal = Offset(-dy / distance, dx / distance);
+    final arcDirection = event.side == 'left' ? -1.0 : 1.0;
+    final control = Offset.lerp(from, to, 0.5)! +
+        normal * (18 + eventIndex * 4) * arcDirection;
+    final headT = progress.clamp(0.0, 1.0).toDouble();
+    final head = _quadratic(from, control, to, headT);
+    final tailT = math.max(0.0, headT - 0.22);
+    final tail = _quadratic(from, control, to, tailT);
+
+    final chargePhase = (rawProgress / 0.28).clamp(0.0, 1.0).toDouble();
+    final chargeFade = (1 - chargePhase * 0.42) * fade;
+    canvas.drawCircle(
+      from,
+      7 + 13 * chargePhase,
+      Paint()
+        ..color = color.withValues(alpha: 0.48 * chargeFade)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.2,
+    );
+    canvas.drawCircle(
+      from,
+      5 + 3 * (1 - chargePhase),
+      Paint()
+        ..color = color.withValues(alpha: 0.36 * chargeFade)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6),
+    );
+
+    final beamPath = Path()
+      ..moveTo(tail.dx, tail.dy)
+      ..quadraticBezierTo(control.dx, control.dy, head.dx, head.dy);
+    canvas.drawPath(
+      beamPath,
+      Paint()
+        ..color = color.withValues(alpha: 0.28 * fade)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 13
+        ..strokeCap = StrokeCap.round
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8),
+    );
+    canvas.drawPath(
+      beamPath,
+      Paint()
+        ..color = color.withValues(alpha: 0.96 * fade)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 3.4 + 2.2 * fade
+        ..strokeCap = StrokeCap.round,
+    );
+
+    for (var i = 1; i <= 5; i++) {
+      final ghostT = math.max(0.0, headT - i * 0.035);
+      final ghost = _quadratic(from, control, to, ghostT);
+      canvas.drawCircle(
+        ghost,
+        math.max(1.3, 4.6 - i * 0.55),
+        Paint()..color = color.withValues(alpha: fade * (0.48 - i * 0.065)),
+      );
+    }
+    canvas.drawCircle(
+      head,
+      7.5,
+      Paint()
+        ..color = Colors.white.withValues(alpha: 0.86 * fade)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4),
+    );
+    canvas.drawCircle(
+      head,
+      4.8,
+      Paint()..color = color.withValues(alpha: 0.98 * fade),
+    );
+
+    if (rawProgress > 0.48) {
+      final impactProgress = ((rawProgress - 0.48) / 0.52).clamp(0.0, 1.0).toDouble();
+      _drawImpactBurst(canvas, to, color, impactProgress, fade);
+      _drawTargetHitFrame(canvas, to, color, impactProgress, fade);
+      _drawFloatingLabel(
+        canvas,
+        event.type == 'core_damage'
+            ? '-${event.amount.toStringAsFixed(0)} ÇEKİRDEK'
+            : '-${event.amount.toStringAsFixed(0)}',
+        to + Offset(0, -24 - impactProgress * 18),
+        color,
+        fade * (1 - impactProgress * 0.34),
+      );
+    }
+  }
+
+  void _drawShieldEvent(Canvas canvas, Offset to, Color color, double fade, bool absorbed) {
+    final phase = Curves.easeOutBack.transform(progress.clamp(0.0, 1.0));
+    final radius = 15 + 30 * phase;
+    final path = Path();
+    for (var i = 0; i < 6; i++) {
+      final angle = -math.pi / 2 + i * math.pi / 3;
+      final point = to + Offset(math.cos(angle), math.sin(angle)) * radius;
+      if (i == 0) {
+        path.moveTo(point.dx, point.dy);
+      } else {
+        path.lineTo(point.dx, point.dy);
+      }
+    }
+    path.close();
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = color.withValues(alpha: 0.16 * fade)
+        ..style = PaintingStyle.fill,
+    );
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = color.withValues(alpha: 0.90 * fade)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.7,
+    );
+    _drawFloatingLabel(
+      canvas,
+      absorbed ? 'HASAR EMİLDİ' : 'KALKAN AKTİF',
+      to + Offset(0, -radius - 14),
+      color,
+      fade,
+    );
+  }
+
+  void _drawRepairEvent(Canvas canvas, Offset to, Color color, double fade, BattleEvent event) {
+    final phase = Curves.easeOut.transform(progress);
+    final radius = 11 + 30 * phase;
+    canvas.drawCircle(
+      to,
+      radius,
+      Paint()
+        ..color = color.withValues(alpha: 0.60 * fade)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.5,
+    );
+    for (var i = 0; i < 4; i++) {
+      final angle = i * math.pi / 2 + rawProgress * 1.8;
+      final center = to + Offset(math.cos(angle), math.sin(angle)) * (12 + 16 * phase);
+      _drawPlus(canvas, center, color.withValues(alpha: 0.82 * fade), 4.5);
+    }
+    _drawFloatingLabel(
+      canvas,
+      event.type == 'recovered'
+          ? 'TEKRAR AKTİF'
+          : '+${event.amount.toStringAsFixed(0)} ONARIM',
+      to + Offset(0, -20 - phase * 18),
+      color,
+      fade,
+    );
+  }
+
+  void _drawDestroyedEvent(Canvas canvas, Offset to, Color color, double fade) {
+    final phase = Curves.easeOutExpo.transform(progress);
+    final radius = 12 + 38 * phase;
     canvas.drawCircle(
       to,
       radius,
       Paint()
         ..color = color.withValues(alpha: 0.72 * fade)
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 2.8,
+        ..strokeWidth = 3.2,
     );
     canvas.drawCircle(
       to,
-      math.max(4.0, radius * 0.52),
+      13 * (1 - phase * 0.45),
       Paint()
-        ..color = color.withValues(alpha: 0.15 * fade)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8),
+        ..color = color.withValues(alpha: 0.42 * fade)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 9),
     );
-
-    final label = switch (event.type) {
-      'shield' => 'KALKAN',
-      'shield_absorb' => 'EMİLDİ',
-      'repair' => '+${event.amount.toStringAsFixed(0)} ONARIM',
-      'recovered' => 'TEKRAR AKTİF',
-      'destroyed' => 'DEVRE DIŞI',
-      'overheat' => 'AŞIRI ISI',
-      'cool' => 'SOĞUTMA',
-      'energy_starved' => 'ENERJİ YETERSİZ',
-      _ => '',
-    };
-    if (event.type == 'destroyed') {
-      for (var index = 0; index < 8; index++) {
-        final angle = index * math.pi / 4;
-        final start = to + Offset(math.cos(angle), math.sin(angle)) * 9;
-        final finish = to +
-            Offset(math.cos(angle), math.sin(angle)) *
-                (17 + 18 * ringProgress);
-        canvas.drawLine(
-          start,
-          finish,
-          Paint()
-            ..color = color.withValues(alpha: 0.84 * fade)
-            ..strokeWidth = 2
-            ..strokeCap = StrokeCap.round,
-        );
-      }
-    }
-    if (label.isNotEmpty) {
-      _drawFloatingLabel(
-        canvas,
-        label,
-        to + Offset(0, -18 - ringProgress * 12),
-        color,
-        fade,
+    for (var index = 0; index < 12; index++) {
+      final angle = index * math.pi / 6 + rawProgress * 0.45;
+      final start = to + Offset(math.cos(angle), math.sin(angle)) * 8;
+      final finish = to + Offset(math.cos(angle), math.sin(angle)) * (18 + 35 * phase);
+      canvas.drawLine(
+        start,
+        finish,
+        Paint()
+          ..color = (index.isEven ? color : RelayColors.amber)
+              .withValues(alpha: 0.82 * fade)
+          ..strokeWidth = index.isEven ? 2.6 : 1.5
+          ..strokeCap = StrokeCap.round,
       );
     }
+    _drawFloatingLabel(
+      canvas,
+      'DEVRE DIŞI',
+      to + Offset(0, -34 - phase * 16),
+      color,
+      fade,
+    );
   }
 
-  void _drawImpactBurst(
-    Canvas canvas,
-    Offset center,
-    Color color,
-    double impactProgress,
-    double fade,
-  ) {
-    final radius = 7 + 27 * impactProgress;
+  void _drawHeatEvent(Canvas canvas, Offset to, Color color, double fade, {required bool hot}) {
+    final phase = Curves.easeOut.transform(progress);
+    for (var i = 0; i < 6; i++) {
+      final spread = (i - 2.5) * 6.0;
+      final y = hot ? -12 - phase * (20 + i * 2) : 12 + phase * (18 + i * 2);
+      canvas.drawCircle(
+        to + Offset(spread, y),
+        2.5 + (i % 2) * 1.2,
+        Paint()..color = color.withValues(alpha: (0.72 - i * 0.07) * fade),
+      );
+    }
+    _drawFloatingLabel(
+      canvas,
+      hot ? 'AŞIRI ISI' : 'SOĞUTMA',
+      to + Offset(0, hot ? -36 : -28),
+      color,
+      fade,
+    );
+  }
+
+  void _drawEnergyStarved(Canvas canvas, Offset to, Color color, double fade) {
+    final phase = Curves.easeOut.transform(progress);
+    for (var i = 0; i < 3; i++) {
+      final radius = 10 + phase * (12 + i * 8);
+      canvas.drawArc(
+        Rect.fromCircle(center: to, radius: radius),
+        -math.pi * 0.85 + i * 0.35,
+        math.pi * 0.8,
+        false,
+        Paint()
+          ..color = color.withValues(alpha: (0.68 - i * 0.13) * fade)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2.2,
+      );
+    }
+    _drawFloatingLabel(
+      canvas,
+      'ENERJİ YETERSİZ',
+      to + Offset(0, -34 - 10 * phase),
+      color,
+      fade,
+    );
+  }
+
+  void _drawImpactBurst(Canvas canvas, Offset center, Color color, double phase, double fade) {
+    final outer = 8 + 34 * phase;
+    final inner = 4 + 20 * phase;
+    for (final entry in [(outer, 0.80), (inner, 0.48)]) {
+      canvas.drawCircle(
+        center,
+        entry.$1,
+        Paint()
+          ..color = color.withValues(alpha: entry.$2 * fade * (1 - phase * 0.35))
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = entry.$1 == outer ? 2.8 : 1.5,
+      );
+    }
     canvas.drawCircle(
       center,
-      radius,
+      6 + 7 * (1 - phase),
       Paint()
-        ..color = color.withValues(alpha: 0.78 * fade)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 2.5,
+        ..color = Colors.white.withValues(alpha: 0.78 * fade)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6),
     );
-    canvas.drawCircle(
-      center,
-      5 + 6 * (1 - impactProgress),
-      Paint()
-        ..color = color.withValues(alpha: 0.92 * fade)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5),
-    );
-    for (var index = 0; index < 6; index++) {
-      final angle = index * math.pi / 3 + 0.35;
-      final distance = 10 + 24 * impactProgress;
+    for (var index = 0; index < 8; index++) {
+      final angle = index * math.pi / 4 + 0.22;
+      final distance = 11 + 30 * phase;
       final particle = center + Offset(math.cos(angle), math.sin(angle)) * distance;
       canvas.drawCircle(
         particle,
-        1.8 + 1.6 * (1 - impactProgress),
+        1.6 + 2.2 * (1 - phase),
         Paint()..color = color.withValues(alpha: 0.78 * fade),
       );
     }
   }
 
-  void _drawFloatingLabel(
-    Canvas canvas,
-    String label,
-    Offset center,
-    Color color,
-    double opacity,
-  ) {
+  void _drawTargetHitFrame(Canvas canvas, Offset center, Color color, double phase, double fade) {
+    final extent = 11 + phase * 12;
+    final paint = Paint()
+      ..color = color.withValues(alpha: 0.82 * fade * (1 - phase * 0.25))
+      ..strokeWidth = 2
+      ..strokeCap = StrokeCap.round;
+    for (final sx in [-1.0, 1.0]) {
+      for (final sy in [-1.0, 1.0]) {
+        final corner = center + Offset(sx * extent, sy * extent);
+        canvas.drawLine(corner, corner + Offset(-sx * 7, 0), paint);
+        canvas.drawLine(corner, corner + Offset(0, -sy * 7), paint);
+      }
+    }
+  }
+
+  void _drawPlus(Canvas canvas, Offset center, Color color, double size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 2
+      ..strokeCap = StrokeCap.round;
+    canvas.drawLine(center + Offset(-size, 0), center + Offset(size, 0), paint);
+    canvas.drawLine(center + Offset(0, -size), center + Offset(0, size), paint);
+  }
+
+  void _drawFloatingLabel(Canvas canvas, String label, Offset center, Color color, double opacity) {
+    final alpha = opacity.clamp(0.0, 1.0).toDouble();
     final painter = TextPainter(
       text: TextSpan(
         text: label,
         style: TextStyle(
-          color: color.withValues(alpha: opacity.clamp(0.0, 1.0).toDouble()),
+          color: color.withValues(alpha: alpha),
           fontSize: 10.5,
           fontWeight: FontWeight.w900,
           letterSpacing: 0.6,
@@ -341,21 +578,42 @@ class _AttackPainter extends CustomPainter {
       ),
       textDirection: TextDirection.ltr,
       maxLines: 1,
-    )..layout(maxWidth: 140);
+    )..layout(maxWidth: 150);
+    final rect = RRect.fromRectAndRadius(
+      Rect.fromCenter(
+        center: center,
+        width: painter.width + 14,
+        height: painter.height + 7,
+      ),
+      const Radius.circular(8),
+    );
+    canvas.drawRRect(
+      rect,
+      Paint()..color = RelayColors.background.withValues(alpha: 0.64 * alpha),
+    );
+    canvas.drawRRect(
+      rect,
+      Paint()
+        ..color = color.withValues(alpha: 0.34 * alpha)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1,
+    );
     painter.paint(
       canvas,
       center - Offset(painter.width / 2, painter.height / 2),
     );
   }
 
-  Offset? _modulePoint(
-    String? id,
-    BoardDraft board,
-    Rect rect,
-  ) {
-    if (id == null) {
-      return null;
-    }
+  Offset _quadratic(Offset p0, Offset p1, Offset p2, double t) {
+    final u = 1 - t;
+    return Offset(
+      u * u * p0.dx + 2 * u * t * p1.dx + t * t * p2.dx,
+      u * u * p0.dy + 2 * u * t * p1.dy + t * t * p2.dy,
+    );
+  }
+
+  Offset? _modulePoint(String? id, BoardDraft board, Rect rect) {
+    if (id == null) return null;
     for (final module in board.modules) {
       if (module.id == id) {
         final cellSize = rect.width / 4;
@@ -372,6 +630,7 @@ class _AttackPainter extends CustomPainter {
   bool shouldRepaint(covariant _AttackPainter oldDelegate) {
     return oldDelegate.events != events ||
         oldDelegate.progress != progress ||
+        oldDelegate.rawProgress != rawProgress ||
         oldDelegate.match != match ||
         oldDelegate.leftVisuals.modules.id != leftVisuals.modules.id ||
         oldDelegate.rightVisuals.modules.id != rightVisuals.modules.id;

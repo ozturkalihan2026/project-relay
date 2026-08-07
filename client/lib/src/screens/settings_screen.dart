@@ -20,13 +20,8 @@ class SettingsScreen extends ConsumerWidget {
         leadingWidth: 224,
         leading: const AppHeaderProfile(),
         backgroundColor: Colors.transparent,
-        title: const Text(
-          'AYARLAR',
-          style: TextStyle(
-            fontWeight: FontWeight.w900,
-            letterSpacing: 1.5,
-          ),
-        ),
+        centerTitle: true,
+        title: const AppHeaderTitle(pageTitle: 'AYARLAR'),
         actions: const [
           AppHeaderActions(),
           SizedBox(width: 8),
