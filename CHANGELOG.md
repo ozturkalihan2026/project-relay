@@ -1,3 +1,9 @@
+## v0.8.16
+- Ana menüdeki arka plan çekirdeği oyun amblemiyle aynı 8 girişli devre amblemine dönüştürüldü; enerji akımları bu girişlerde birleşiyor.
+- Kariyer Modül Seç, Senin Devren ve Koşu Rakibi kartları aynı 430px/500px kart ailesine yaklaştırıldı.
+- Devre Kredisi kutusu kompaktlaştırıldı ve belirsiz toll simgesi yerine devre-çipi kredi amblemi kullanıldı.
+- Arcade-tech paleti daha açık yüzeyler ve daha güçlü mod vurgularıyla ikinci kez dengelendi.
+
 ## v0.8.15
 - Ana menü enerji yolları sağdaki çekirdeğe bağlanan yeni kompozisyona geçirildi.
 - Savaş alanı çekirdeği katmanlı halka, glow ve port vurgularıyla yeniden tasarlandı.

@@ -4,6 +4,7 @@ import '../theme/relay_theme.dart';
 import '../widgets/animated_circuit_background.dart';
 import '../widgets/arcade_motion.dart';
 import '../widgets/player_status_bar.dart';
+import '../widgets/relay_emblem.dart';
 import 'collection_screen.dart';
 import 'how_to_play_screen.dart';
 import 'play_mode_screen.dart';
@@ -158,7 +159,7 @@ class MainMenuScreen extends StatelessWidget {
                           ),
                           const SizedBox(height: 20),
                           const Text(
-                            'ANA MERKEZ VE MENÜ DÜZENİ • v0.8.15',
+                            'ANA MERKEZ VE MENÜ DÜZENİ • v0.8.16',
                             textAlign: TextAlign.center,
                             style: TextStyle(
                               color: RelayColors.muted,
@@ -198,8 +199,12 @@ class _RelayMark extends StatelessWidget {
         DecoratedBox(
           decoration: RelayDecorations.accentHalo(RelayColors.magenta),
           child: const Padding(
-            padding: EdgeInsets.all(14),
-            child: Icon(Icons.memory, color: RelayColors.cyan, size: 38),
+            padding: EdgeInsets.all(10),
+            child: RelayEmblem(
+              size: 52,
+              accent: RelayColors.cyan,
+              secondary: RelayColors.violet,
+            ),
           ),
         ),
         const SizedBox(width: 16),

@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../theme/relay_theme.dart';
+import 'relay_emblem.dart';
 
 class AnimatedCircuitBackground extends StatefulWidget {
   const AnimatedCircuitBackground({required this.child, this.pathCount = 16, super.key});
@@ -81,58 +82,124 @@ class _CircuitCurrentPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     if (size.isEmpty) return;
-    final core = Offset(size.width * 0.86, size.height * 0.48);
-    final coreRadius = math.min(size.width, size.height) * 0.075;
-    final colors = <Color>[RelayColors.cyan, RelayColors.mint, RelayColors.violet, RelayColors.amber, RelayColors.electricBlue];
+    final emblemCenter = Offset(size.width * 0.86, size.height * 0.49);
+    final emblemRadius = math.min(size.width, size.height) * 0.070;
+    final ports = RelayEmblemPainter.portOffsets(emblemRadius)
+        .map((offset) => emblemCenter + offset + _outwardFor(offset, emblemRadius))
+        .toList(growable: false);
+    final colors = <Color>[
+      RelayColors.cyan,
+      RelayColors.mint,
+      RelayColors.electricBlue,
+      RelayColors.amber,
+      RelayColors.violet,
+      RelayColors.coral,
+    ];
 
     for (var index = 0; index < pathCount; index++) {
-      final path = _pathFor(index, size, core, coreRadius);
+      final port = ports[index % ports.length];
+      final path = _pathFor(index, size, port);
       final color = colors[index % colors.length];
-      canvas.drawPath(path, Paint()..style=PaintingStyle.stroke..strokeWidth=1..strokeCap=StrokeCap.round..color=color.withValues(alpha:0.08));
-      final metrics = path.computeMetrics().toList(growable:false);
+      canvas.drawPath(
+        path,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1
+          ..strokeCap = StrokeCap.round
+          ..color = color.withValues(alpha: 0.095),
+      );
+      final metrics = path.computeMetrics().toList(growable: false);
       if (metrics.isEmpty) continue;
-      final metric=metrics.first;
-      final progress=(phase + index*0.113)%1.0;
-      final head=metric.length*progress;
-      final start=math.max(0.0, head-42).toDouble();
-      final end=math.min(metric.length, head+10).toDouble();
-      if (end<=start) continue;
-      final pulse=metric.extractPath(start,end);
-      canvas.drawPath(pulse, Paint()..style=PaintingStyle.stroke..strokeWidth=7..strokeCap=StrokeCap.round..color=color.withValues(alpha:0.06)..maskFilter=const MaskFilter.blur(BlurStyle.normal,8));
-      canvas.drawPath(pulse, Paint()..style=PaintingStyle.stroke..strokeWidth=1.8..strokeCap=StrokeCap.round..color=color.withValues(alpha:0.68));
-      final tangent=metric.getTangentForOffset(head.clamp(0.0,metric.length).toDouble());
-      if (tangent!=null) canvas.drawCircle(tangent.position,2.3,Paint()..color=color.withValues(alpha:0.82));
+      final metric = metrics.first;
+      final progress = (phase + index * 0.087) % 1.0;
+      final head = metric.length * progress;
+      final start = math.max(0.0, head - 46).toDouble();
+      final end = math.min(metric.length, head + 12).toDouble();
+      if (end <= start) continue;
+      final pulse = metric.extractPath(start, end);
+      canvas.drawPath(
+        pulse,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 8
+          ..strokeCap = StrokeCap.round
+          ..color = color.withValues(alpha: 0.065)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 9),
+      );
+      canvas.drawPath(
+        pulse,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.9
+          ..strokeCap = StrokeCap.round
+          ..color = color.withValues(alpha: 0.74),
+      );
+      final tangent = metric.getTangentForOffset(
+        head.clamp(0.0, metric.length).toDouble(),
+      );
+      if (tangent != null) {
+        canvas.drawCircle(
+          tangent.position,
+          2.5,
+          Paint()..color = color.withValues(alpha: 0.90),
+        );
+      }
     }
-    _drawCore(canvas, core, coreRadius);
+
+    RelayEmblemPainter.drawEmblem(
+      canvas,
+      center: emblemCenter,
+      radius: emblemRadius,
+      accent: RelayColors.cyan,
+      secondary: RelayColors.violet,
+      glow: true,
+      opacity: 0.58,
+    );
   }
 
-  Path _pathFor(int index, Size size, Offset core, double radius) {
-    final row=((index*37)%92)/100.0;
-    final startX=size.width*(0.01+((index*17)%34)/100.0);
-    final startY=size.height*(0.06+row*0.88);
-    final approachX=core.dx-radius*(1.05+(index%3)*0.18);
-    final midX=startX+(approachX-startX)*(0.45+(index%4)*0.08);
-    final targetY=core.dy + ((index%7)-3)*radius*0.18;
+  Offset _outwardFor(Offset offset, double radius) {
+    final horizontal = offset.dx.abs() > offset.dy.abs();
+    return horizontal
+        ? Offset(offset.dx.sign * radius * 0.22, 0)
+        : Offset(0, offset.dy.sign * radius * 0.22);
+  }
+
+  Path _pathFor(int index, Size size, Offset target) {
+    final side = index % 4;
+    late Offset start;
+    if (side == 0) {
+      start = Offset(
+        size.width * (0.015 + ((index * 13) % 22) / 100),
+        size.height * (0.08 + ((index * 29) % 82) / 100),
+      );
+    } else if (side == 1) {
+      start = Offset(
+        size.width * (0.18 + ((index * 17) % 38) / 100),
+        size.height * 0.04,
+      );
+    } else if (side == 2) {
+      start = Offset(
+        size.width * (0.04 + ((index * 11) % 48) / 100),
+        size.height * 0.94,
+      );
+    } else {
+      start = Offset(
+        size.width * (0.08 + ((index * 19) % 45) / 100),
+        size.height * (0.10 + ((index * 31) % 76) / 100),
+      );
+    }
+
+    final elbowX = start.dx + (target.dx - start.dx) * (0.40 + (index % 4) * 0.09);
+    final secondX = target.dx - size.width * (0.025 + (index % 3) * 0.008);
     return Path()
-      ..moveTo(startX,startY)
-      ..lineTo(midX,startY)
-      ..lineTo(midX,targetY)
-      ..lineTo(approachX,targetY);
-  }
-
-  void _drawCore(Canvas canvas, Offset center, double radius) {
-    canvas.drawCircle(center, radius*1.42, Paint()..color=RelayColors.violet.withValues(alpha:0.035)..maskFilter=const MaskFilter.blur(BlurStyle.normal,24));
-    canvas.drawCircle(center, radius*1.08, Paint()..style=PaintingStyle.stroke..strokeWidth=1.3..color=RelayColors.cyan.withValues(alpha:0.22));
-    canvas.drawCircle(center, radius*0.82, Paint()..shader=const RadialGradient(colors:[Color(0x5538E8FF),Color(0x221C4C68),Color(0x00101725)]).createShader(Rect.fromCircle(center:center,radius:radius*0.82)));
-    canvas.drawCircle(center, radius*0.52, Paint()..style=PaintingStyle.stroke..strokeWidth=2..color=RelayColors.cyan.withValues(alpha:0.65));
-    canvas.drawCircle(center, radius*0.18, Paint()..color=RelayColors.cyan.withValues(alpha:0.75)..maskFilter=const MaskFilter.blur(BlurStyle.normal,8));
-    for (var i=0;i<4;i++) {
-      final angle=math.pi/2*i;
-      final p=Offset(center.dx+math.cos(angle)*radius*0.86, center.dy+math.sin(angle)*radius*0.86);
-      canvas.drawCircle(p,3.3,Paint()..color=RelayColors.amber.withValues(alpha:0.82));
-    }
+      ..moveTo(start.dx, start.dy)
+      ..lineTo(elbowX, start.dy)
+      ..lineTo(elbowX, target.dy)
+      ..lineTo(secondX, target.dy)
+      ..lineTo(target.dx, target.dy);
   }
 
   @override
-  bool shouldRepaint(covariant _CircuitCurrentPainter oldDelegate) => oldDelegate.phase!=phase || oldDelegate.pathCount!=pathCount;
+  bool shouldRepaint(covariant _CircuitCurrentPainter oldDelegate) =>
+      oldDelegate.phase != phase || oldDelegate.pathCount != pathCount;
 }

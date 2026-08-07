@@ -79,7 +79,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               ),
             ),
             Text(
-              'PROJECT RELAY • v0.8.15',
+              'PROJECT RELAY • v0.8.16',
               style: TextStyle(color: RelayColors.muted, fontSize: 10),
             ),
           ],

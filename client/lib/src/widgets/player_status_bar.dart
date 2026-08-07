@@ -151,89 +151,115 @@ class CircuitCreditButton extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final progression = ref.watch(progressionProvider);
     final credits = progression.asData?.value.profile.credits;
-    return Semantics(
-      button: true,
-      label: 'Devre Kredisi ile mağazayı aç',
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          key: const ValueKey('global-credit-action'),
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(14),
-          child: Container(
-            constraints: BoxConstraints(
-              minWidth: compact ? 82 : 94,
-              minHeight: compact ? 46 : 52,
-            ),
-            padding: EdgeInsets.symmetric(
-              horizontal: compact ? 9 : 11,
-              vertical: compact ? 6 : 7,
-            ),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Color.alphaBlend(
-                    RelayColors.amber.withValues(alpha: 0.14),
-                    RelayColors.surface,
-                  ),
-                  Color.alphaBlend(
-                    RelayColors.coral.withValues(alpha: 0.06),
-                    RelayColors.surfaceSoft,
-                  ),
-                ],
+    return Tooltip(
+      message: 'Devre Kredisi • Mağazayı aç',
+      child: Semantics(
+        button: true,
+        label: 'Devre Kredisi ile mağazayı aç',
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            key: const ValueKey('global-credit-action'),
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(13),
+            child: Container(
+              constraints: BoxConstraints(
+                minWidth: compact ? 66 : 76,
+                minHeight: compact ? 42 : 48,
               ),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                color: RelayColors.amber.withValues(alpha: 0.48),
+              padding: EdgeInsets.symmetric(
+                horizontal: compact ? 7 : 9,
+                vertical: compact ? 5 : 6,
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: RelayColors.amber.withValues(alpha: 0.12),
-                  blurRadius: 16,
-                  spreadRadius: -5,
-                ),
-              ],
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Icons.toll_outlined,
-                      color: RelayColors.amber,
-                      size: 14,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Color.alphaBlend(
+                      RelayColors.amber.withValues(alpha: 0.18),
+                      RelayColors.surface,
                     ),
-                    const SizedBox(width: 4),
-                    Text(
-                      credits == null ? '—' : '$credits',
-                      key: const ValueKey('player-status-credits'),
-                      style: const TextStyle(
-                        color: RelayColors.amber,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w900,
-                      ),
+                    Color.alphaBlend(
+                      RelayColors.violet.withValues(alpha: 0.07),
+                      RelayColors.surfaceSoft,
                     ),
                   ],
                 ),
-                const SizedBox(height: 2),
-                const Text(
-                  'DEVRE KREDİSİ',
-                  style: TextStyle(
-                    color: RelayColors.muted,
-                    fontSize: 6.5,
-                    height: 1,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 0.3,
-                  ),
+                borderRadius: BorderRadius.circular(13),
+                border: Border.all(
+                  color: RelayColors.amber.withValues(alpha: 0.52),
                 ),
-              ],
+                boxShadow: [
+                  BoxShadow(
+                    color: RelayColors.amber.withValues(alpha: 0.11),
+                    blurRadius: 14,
+                    spreadRadius: -5,
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const _CircuitCreditGlyph(),
+                  const SizedBox(width: 5),
+                  Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        credits == null ? '—' : '$credits',
+                        key: const ValueKey('player-status-credits'),
+                        style: const TextStyle(
+                          color: RelayColors.amber,
+                          fontSize: 11.5,
+                          height: 1,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      const Text(
+                        'DEVRE KREDİSİ',
+                        style: TextStyle(
+                          color: RelayColors.muted,
+                          fontSize: 5.5,
+                          height: 1,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 0.15,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _CircuitCreditGlyph extends StatelessWidget {
+  const _CircuitCreditGlyph();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 20,
+      height: 20,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: RelayColors.amber.withValues(alpha: 0.12),
+        border: Border.all(
+          color: RelayColors.amber.withValues(alpha: 0.72),
+        ),
+      ),
+      alignment: Alignment.center,
+      child: const Icon(
+        Icons.memory_rounded,
+        color: RelayColors.amber,
+        size: 12,
       ),
     );
   }

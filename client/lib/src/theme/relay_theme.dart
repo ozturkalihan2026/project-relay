@@ -1,21 +1,21 @@
 import 'package:flutter/material.dart';
 
 abstract final class RelayColors {
-  static const background = Color(0xFF0B1725);
-  static const backgroundTop = Color(0xFF174A78);
-  static const backgroundBottom = Color(0xFF171B36);
-  static const surface = Color(0xFF173246);
-  static const surfaceSoft = Color(0xFF294A61);
-  static const surfaceHigh = Color(0xFF24495D);
-  static const cyan = Color(0xFF46E7FF);
-  static const mint = Color(0xFF72F0B7);
-  static const amber = Color(0xFFFFD166);
-  static const coral = Color(0xFFFF7A7A);
-  static const magenta = Color(0xFFFF6BD6);
-  static const violet = Color(0xFFB092FF);
-  static const electricBlue = Color(0xFF6F8FFF);
-  static const lime = Color(0xFFB9FF73);
-  static const muted = Color(0xFFA7C1D2);
+  static const background = Color(0xFF0D2233);
+  static const backgroundTop = Color(0xFF1E5D87);
+  static const backgroundBottom = Color(0xFF242046);
+  static const surface = Color(0xFF20465A);
+  static const surfaceSoft = Color(0xFF315E74);
+  static const surfaceHigh = Color(0xFF3A6D83);
+  static const cyan = Color(0xFF53E5FF);
+  static const mint = Color(0xFF7AF2C6);
+  static const amber = Color(0xFFFFD369);
+  static const coral = Color(0xFFFF8291);
+  static const magenta = Color(0xFFFF78D7);
+  static const violet = Color(0xFFB99BFF);
+  static const electricBlue = Color(0xFF74A7FF);
+  static const lime = Color(0xFFC4FF7D);
+  static const muted = Color(0xFFC0D5E0);
   static const white = Color(0xFFF4FBFF);
 }
 
@@ -45,8 +45,8 @@ abstract final class RelayDecorations {
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
         colors: [
-          Color.alphaBlend(accent.withValues(alpha: 0.13), RelayColors.backgroundTop),
-          Color.alphaBlend(accent.withValues(alpha: 0.045), RelayColors.background),
+          Color.alphaBlend(accent.withValues(alpha: 0.18), RelayColors.backgroundTop),
+          Color.alphaBlend(accent.withValues(alpha: 0.075), RelayColors.background),
           RelayColors.backgroundBottom,
         ],
         stops: const [0.0, 0.48, 1.0],
@@ -63,15 +63,15 @@ abstract final class RelayDecorations {
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
         colors: [
-          Color.alphaBlend(accent.withValues(alpha: soft ? 0.12 : 0.16), RelayColors.surface),
-          Color.alphaBlend(accent.withValues(alpha: soft ? 0.06 : 0.08), RelayColors.surfaceSoft),
+          Color.alphaBlend(accent.withValues(alpha: soft ? 0.14 : 0.20), RelayColors.surface),
+          Color.alphaBlend(accent.withValues(alpha: soft ? 0.075 : 0.105), RelayColors.surfaceSoft),
         ],
       ),
       borderRadius: BorderRadius.circular(18),
-      border: Border.all(color: accent.withValues(alpha: 0.30)),
+      border: Border.all(color: accent.withValues(alpha: 0.38)),
       boxShadow: [
         BoxShadow(
-          color: accent.withValues(alpha: 0.10),
+          color: accent.withValues(alpha: 0.13),
           blurRadius: 26,
           spreadRadius: -8,
           offset: const Offset(0, 10),
@@ -91,9 +91,9 @@ abstract final class RelayDecorations {
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
         colors: [
-          Color(0xFF1B5068),
-          Color(0xFF20375B),
-          Color(0xFF31294C),
+          Color(0xFF1C7183),
+          Color(0xFF31548C),
+          Color(0xFF543E78),
         ],
       ),
     );

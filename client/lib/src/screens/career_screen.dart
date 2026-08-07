@@ -508,19 +508,19 @@ class _CareerInlineEditor extends StatelessWidget {
 
     final moduleCard = Container(
       key: const ValueKey('career-module-selection-card'),
-      width: 356,
+      width: 430,
+      height: 500,
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: RelayColors.cyan.withValues(alpha: 0.07),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: RelayColors.cyan.withValues(alpha: 0.42)),
+      decoration: RelayDecorations.panel(
+        accent: RelayColors.mint,
+        soft: true,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const Row(
             children: [
-              Icon(Icons.view_module_outlined, color: RelayColors.cyan),
+              Icon(Icons.view_module_outlined, color: RelayColors.mint),
               SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -590,11 +590,11 @@ class _CareerInlineEditor extends StatelessWidget {
     final boardCard = Container(
       key: const ValueKey('career-player-board-editor'),
       width: 430,
+      height: 500,
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: RelayColors.cyan.withValues(alpha: 0.07),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: RelayColors.cyan.withValues(alpha: 0.42)),
+      decoration: RelayDecorations.panel(
+        accent: RelayColors.cyan,
+        soft: true,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -662,7 +662,7 @@ class _CareerInlineEditor extends StatelessWidget {
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        if (constraints.maxWidth >= 838) {
+        if (constraints.maxWidth >= 872) {
           return Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -763,7 +763,7 @@ class _CareerRunCard extends StatelessWidget {
                 spacing: 14,
                 runSpacing: 14,
                 children: [
-                  SizedBox(width: 838, child: playerEditor),
+                  SizedBox(width: 872, child: playerEditor),
                   const SizedBox(width: 430, child: opponentPreview),
                 ],
               );
@@ -838,7 +838,7 @@ class _CareerRunCard extends StatelessWidget {
                 spacing: 14,
                 runSpacing: 14,
                 children: [
-                  SizedBox(width: 838, child: playerEditor),
+                  SizedBox(width: 872, child: playerEditor),
                   SizedBox(width: 430, child: opponentPreview),
                 ],
               );
@@ -1066,11 +1066,11 @@ class _CareerBoardPreview extends StatelessWidget {
         ? const <int, ModulePlacement>{}
         : {for (final item in draft.modules) item.cellIndex: item};
     return Container(
+      height: 500,
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: accent.withValues(alpha: 0.07),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: accent.withValues(alpha: 0.42)),
+      decoration: RelayDecorations.panel(
+        accent: accent,
+        soft: true,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
