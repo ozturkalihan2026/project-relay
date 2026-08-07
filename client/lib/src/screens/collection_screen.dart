@@ -49,6 +49,8 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen> {
     final remote = ref.watch(collectionProvider);
     return Scaffold(
       appBar: AppBar(
+        leadingWidth: 224,
+        leading: const AppHeaderProfile(),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -64,7 +66,7 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen> {
               ),
             ),
             const Text(
-              'PROJECT RELAY • v0.8.13',
+              'PROJECT RELAY • v0.8.15',
               style: TextStyle(color: RelayColors.muted, fontSize: 10),
             ),
           ],

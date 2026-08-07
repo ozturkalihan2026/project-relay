@@ -1,3 +1,9 @@
+## v0.8.15
+- Ana menü enerji yolları sağdaki çekirdeğe bağlanan yeni kompozisyona geçirildi.
+- Savaş alanı çekirdeği katmanlı halka, glow ve port vurgularıyla yeniden tasarlandı.
+- Çevrimiçi, Kariyer ve Antrenman için mod bazlı renk atmosferi güçlendirildi.
+- XP, kredi, savaş sonucu, ödül ve seviye kutlamaları yeni arcade-tech kart diline geçirildi.
+
 ## v0.8.13 rev1
 - Kariyer ekranında görsel sadeleştirme sonrası kullanılmayan `_Metric` yardımcı sınıfı kaldırıldı.
 - Flutter istemci yapı numarası 0.8.13+69 oldu.

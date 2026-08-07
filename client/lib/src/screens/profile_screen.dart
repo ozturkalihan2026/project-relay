@@ -65,6 +65,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
 
     return Scaffold(
       appBar: AppBar(
+        leadingWidth: 224,
+        leading: const AppHeaderProfile(),
         backgroundColor: Colors.transparent,
         title: const Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -77,7 +79,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               ),
             ),
             Text(
-              'PROJECT RELAY • v0.8.13',
+              'PROJECT RELAY • v0.8.15',
               style: TextStyle(color: RelayColors.muted, fontSize: 10),
             ),
           ],
@@ -676,11 +678,25 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       ref.invalidate(progressionProvider);
       ref.invalidate(collectionProvider);
       if (!mounted) return;
-      RelayNotice.show(
-        context,
-        '+${reward.xp} XP • +${reward.credits} Devre Kredisi alındı.',
-        tone: RelayNoticeTone.success,
-      );
+      if (reward.levelUp) {
+        RelayNotice.showLevelUp(
+          context,
+          level: reward.levelAfter,
+          xp: reward.xp,
+          credits: reward.credits,
+          unlockLabel: levelUnlockLabel(
+            reward.levelAfter,
+            previousLevel: reward.levelBefore,
+          ),
+        );
+      } else {
+        RelayNotice.showReward(
+          context,
+          title: 'ÖDÜL ALINDI',
+          xp: reward.xp,
+          credits: reward.credits,
+        );
+      }
     } on RelayApiException catch (error) {
       if (mounted) {
         RelayNotice.show(

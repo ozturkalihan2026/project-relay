@@ -2,12 +2,9 @@ import 'package:flutter/material.dart';
 
 import 'player_status_bar.dart';
 
-/// Ortak üst sağ erişim alanı.
-///
-/// Profil kartı, Devre Kredisi, Ayarlar ve Nasıl Oynanır bütün ana ekranlarda
-/// aynı yerde ve aktif kalır. Devre Kredisi kutusu doğrudan mağazayı açar.
-class AppHeaderActions extends StatelessWidget {
-  const AppHeaderActions({
+/// Ortak üst sol profil alanı.
+class AppHeaderProfile extends StatelessWidget {
+  const AppHeaderProfile({
     this.showClaimBadge = true,
     super.key,
   });
@@ -16,15 +13,29 @@ class AppHeaderActions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        PlayerStatusBar(
+    return Padding(
+      padding: const EdgeInsets.only(left: 8),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: PlayerStatusBar(
           compact: true,
           showClaimBadge: showClaimBadge,
           onTap: () => Navigator.of(context).pushNamed('/profile'),
         ),
-        const SizedBox(width: 6),
+      ),
+    );
+  }
+}
+
+/// Ortak üst sağ erişim alanı. Profil soldadır; kredi, ayarlar ve yardım sağda kalır.
+class AppHeaderActions extends StatelessWidget {
+  const AppHeaderActions({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
         CircuitCreditButton(
           onTap: () => Navigator.of(context).pushNamed('/store'),
         ),

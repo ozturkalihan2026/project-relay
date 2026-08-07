@@ -24,6 +24,8 @@ class _StatisticsScreenState extends ConsumerState<StatisticsScreen> {
     final career = ref.watch(statisticsProvider);
     return Scaffold(
       appBar: AppBar(
+        leadingWidth: 224,
+        leading: const AppHeaderProfile(),
         backgroundColor: Colors.transparent,
         title: const Text(
           'İSTATİSTİKLER',

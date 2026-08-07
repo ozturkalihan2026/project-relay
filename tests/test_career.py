@@ -256,6 +256,13 @@ class CareerRunServiceTests(unittest.TestCase):
         self.assertEqual(advanced.opponent.stage_number, 5)
         self.assertEqual(advanced.selected_boosters, ())
 
+    def test_missing_career_board_does_not_clone_async_pvp(self) -> None:
+        career, online, _, _ = self._service([])
+        online.save_board("player-a", _board())
+
+        self.assertIsNone(career.get_board("player-a"))
+        self.assertIsNotNone(online.get_board("player-a"))
+
     def test_career_board_is_independent_from_async_pvp_board(self) -> None:
         career, online, _, _ = self._service([])
         online.save_board("player-a", _board())

@@ -499,68 +499,60 @@ class _CoreHub extends StatelessWidget {
       decoration: BoxDecoration(
         gradient: RadialGradient(
           colors: [
-            visuals.board.core.withValues(alpha: 0.45),
-            visuals.board.cell,
+            visuals.board.core.withValues(alpha: 0.48),
             visuals.board.coreSurface,
+            visuals.board.cell,
           ],
+          stops: const [0.0, 0.58, 1.0],
         ),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: visuals.board.core, width: 2),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: visuals.board.core.withValues(alpha: 0.90), width: 2),
         boxShadow: [
-          BoxShadow(
-            color: visuals.board.core.withValues(alpha: 0.42),
-            blurRadius: 22,
-          ),
+          BoxShadow(color: visuals.board.core.withValues(alpha: 0.34), blurRadius: 30, spreadRadius: -2),
+          BoxShadow(color: RelayColors.violet.withValues(alpha: 0.14), blurRadius: 20),
         ],
       ),
       child: Stack(
+        alignment: Alignment.center,
         children: [
-          Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.memory, color: visuals.board.core, size: 32),
-                SizedBox(height: 4),
-                Text(
-                  'ÇEKİRDEK',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 1,
-                  ),
-                ),
-                Text(
-                  'PASİF • 4 KAPI',
-                  style: TextStyle(
-                    color: RelayColors.muted,
-                    fontSize: 8,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ],
+          Container(
+            width: 118,
+            height: 118,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: visuals.board.core.withValues(alpha: 0.22)),
             ),
           ),
-          for (final alignment in const [
-            Alignment(-0.5, -1),
-            Alignment(1, -0.5),
-            Alignment(0.5, 1),
-            Alignment(-1, 0.5),
-          ])
+          Container(
+            width: 86,
+            height: 86,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: visuals.board.core.withValues(alpha: 0.08),
+              border: Border.all(color: visuals.board.core.withValues(alpha: 0.52), width: 1.5),
+              boxShadow: [BoxShadow(color: visuals.board.core.withValues(alpha: 0.20), blurRadius: 20)],
+            ),
+          ),
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.memory, color: visuals.board.core, size: 34),
+              const SizedBox(height: 4),
+              const Text('ÇEKİRDEK', style: TextStyle(color: RelayColors.white, fontSize: 11, fontWeight: FontWeight.w900, letterSpacing: 1.1)),
+              const Text('PASİF • 4 KAPI', style: TextStyle(color: RelayColors.muted, fontSize: 8, fontWeight: FontWeight.w700)),
+            ],
+          ),
+          for (final alignment in const [Alignment(-0.5,-1),Alignment(1,-0.5),Alignment(0.5,1),Alignment(-1,0.5)])
             Align(
               alignment: alignment,
               child: DecoratedBox(
                 decoration: BoxDecoration(
                   color: visuals.board.gate,
                   shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: visuals.board.gate.withValues(alpha: 0.6),
-                      blurRadius: 8,
-                    ),
-                  ],
+                  border: Border.all(color: RelayColors.white.withValues(alpha: 0.55), width: 1),
+                  boxShadow: [BoxShadow(color: visuals.board.gate.withValues(alpha: 0.72), blurRadius: 11)],
                 ),
-                child: const SizedBox(width: 10, height: 10),
+                child: const SizedBox(width: 11, height: 11),
               ),
             ),
         ],

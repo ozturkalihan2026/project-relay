@@ -25,6 +25,8 @@ class _SeasonScreenState extends ConsumerState<SeasonScreen> {
     final statistics = ref.watch(statisticsProvider);
     return Scaffold(
       appBar: AppBar(
+        leadingWidth: 224,
+        leading: const AppHeaderProfile(),
         title: const Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -36,7 +38,7 @@ class _SeasonScreenState extends ConsumerState<SeasonScreen> {
               ),
             ),
             Text(
-              'PROJECT RELAY • v0.8.13',
+              'PROJECT RELAY • v0.8.15',
               style: TextStyle(color: RelayColors.muted, fontSize: 10),
             ),
           ],

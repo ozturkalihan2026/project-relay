@@ -159,12 +159,17 @@ class _ReplayScreenState extends ConsumerState<ReplayScreen> {
         final seasonLine = season == null
             ? ''
             : '\n+${season.pointsGained} Sezon Puanı • Toplam ${season.totalPoints}';
-        RelayNotice.show(
+        RelayNotice.showReward(
           context,
-          '${widget.completionRewardTitle}\n+${reward.xp} XP • '
-          '+${reward.credits} Devre Kredisi • SV ${reward.levelAfter}'
-          '$seasonLine',
-          tone: RelayNoticeTone.success,
+          title: widget.completionRewardTitle,
+          xp: reward.xp,
+          credits: reward.credits,
+          kind: widget.match.result.winner == 'left'
+              ? RelayRewardKind.victory
+              : RelayRewardKind.generic,
+          detail: seasonLine.trim().isEmpty
+              ? 'SV ${reward.levelAfter}'
+              : 'SV ${reward.levelAfter} • ${seasonLine.trim()}',
           duration: const Duration(seconds: 7),
         );
       }
@@ -207,9 +212,12 @@ class _ReplayScreenState extends ConsumerState<ReplayScreen> {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 4, 16, 28),
           children: [
-            const Align(
-              alignment: Alignment.centerRight,
-              child: AppHeaderActions(),
+            const Row(
+              children: [
+                AppHeaderProfile(),
+                Spacer(),
+                AppHeaderActions(),
+              ],
             ),
             const SizedBox(height: 6),
             if (widget.battleModeLabel != null) ...[

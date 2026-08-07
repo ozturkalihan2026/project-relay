@@ -147,8 +147,8 @@ class ProgressionServiceTests(unittest.TestCase):
 
         self.assertEqual(snapshot.profile.level, 1)
         self.assertEqual(snapshot.profile.credits, 0)
-        self.assertEqual(len(snapshot.daily_missions), 3)
-        self.assertEqual(len(snapshot.achievements), 5)
+        self.assertEqual(len(snapshot.daily_missions), 6)
+        self.assertEqual(len(snapshot.achievements), 18)
         self.assertEqual(len(snapshot.boosters), 4)
         self.assertTrue(snapshot.boosters[0].unlocked)
         self.assertIn("geçici", snapshot.boosters[0].description)

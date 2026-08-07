@@ -14,6 +14,8 @@ class PlayModeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        leadingWidth: 224,
+        leading: const AppHeaderProfile(),
         title: const Text(
           'OYNA',
           style: TextStyle(

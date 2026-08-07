@@ -233,7 +233,7 @@ class CareerRunService:
         self,
         player_id: str,
         *,
-        clone_online_if_missing: bool = True,
+        clone_online_if_missing: bool = False,
     ) -> SavedBoard | None:
         with self.database.session() as session:
             record = session.scalar(
@@ -248,8 +248,6 @@ class CareerRunService:
         online_board = self.online_service.get_board(player_id)
         if online_board is None:
             return None
-        # Existing v0.6.1 players start with a one-time copy. Later edits are
-        # fully independent, so career changes never overwrite async PvP.
         return self.save_board(
             player_id,
             BoardLayout(

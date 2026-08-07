@@ -17,6 +17,8 @@ class SettingsScreen extends ConsumerWidget {
     final controller = ref.read(appSettingsProvider.notifier);
     return Scaffold(
       appBar: AppBar(
+        leadingWidth: 224,
+        leading: const AppHeaderProfile(),
         backgroundColor: Colors.transparent,
         title: const Text(
           'AYARLAR',

@@ -42,10 +42,16 @@ class SeasonTierDefinition:
 
 
 SEASON_TIERS: tuple[SeasonTierDefinition, ...] = (
-    SeasonTierDefinition(1, 12, 20, 8, "İlk Devre"),
-    SeasonTierDefinition(2, 30, 30, 12, "Kararlı Akım"),
-    SeasonTierDefinition(3, 55, 45, 18, "Yüksek Gerilim"),
-    SeasonTierDefinition(4, 90, 65, 25, "Alfa Ustası"),
+    SeasonTierDefinition(1, 8, 20, 8, "İlk Devre"),
+    SeasonTierDefinition(2, 18, 28, 10, "Kıvılcım"),
+    SeasonTierDefinition(3, 30, 36, 14, "Kararlı Akım"),
+    SeasonTierDefinition(4, 45, 48, 18, "Bağlantı Ustası"),
+    SeasonTierDefinition(5, 62, 60, 24, "Yüksek Gerilim"),
+    SeasonTierDefinition(6, 82, 75, 30, "Çekirdek Muhafızı"),
+    SeasonTierDefinition(7, 105, 90, 38, "Sinyal Avcısı"),
+    SeasonTierDefinition(8, 132, 110, 46, "Devre Komutanı"),
+    SeasonTierDefinition(9, 162, 135, 58, "Alfa Şampiyonu"),
+    SeasonTierDefinition(10, 200, 175, 75, "Sezon Çekirdeği"),
 )
 
 

@@ -25,7 +25,7 @@ modül yerleştirdiği, savaşların sunucuda deterministik olarak çözüldüğ
 
 ## Sürüm bilgileri
 
-- Sunucu API: `0.8.10`
+- Sunucu API: `0.8.15`
 - Flutter istemci: `0.8.11+63`
 - Savaş kuralları: `0.8`
 - Alembic başı: `20260806_0010`

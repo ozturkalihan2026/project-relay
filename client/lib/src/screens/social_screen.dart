@@ -82,6 +82,8 @@ class _SocialScreenState extends ConsumerState<SocialScreen> {
 
     return Scaffold(
       appBar: AppBar(
+        leadingWidth: 224,
+        leading: const AppHeaderProfile(),
         title: const Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -93,7 +95,7 @@ class _SocialScreenState extends ConsumerState<SocialScreen> {
               ),
             ),
             Text(
-              'PROJECT RELAY • v0.8.13',
+              'PROJECT RELAY • v0.8.15',
               style: TextStyle(color: RelayColors.muted, fontSize: 10),
             ),
           ],

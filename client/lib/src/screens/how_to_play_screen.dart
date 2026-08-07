@@ -48,6 +48,8 @@ class _ManualCatalogState extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        leadingWidth: 224,
+        leading: const AppHeaderProfile(),
         backgroundColor: Colors.transparent,
         title: const Text(
           'NASIL OYNANIR',

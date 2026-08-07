@@ -22,6 +22,8 @@ class GameManualScreen extends StatelessWidget {
     };
     return Scaffold(
       appBar: AppBar(
+        leadingWidth: 224,
+        leading: const AppHeaderProfile(),
         title: const Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -33,7 +35,7 @@ class GameManualScreen extends StatelessWidget {
               ),
             ),
             Text(
-              'PROJECT RELAY • v0.8.13',
+              'PROJECT RELAY • v0.8.15',
               style: TextStyle(
                 color: RelayColors.muted,
                 fontSize: 10,

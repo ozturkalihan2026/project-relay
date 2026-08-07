@@ -75,11 +75,19 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
         EditorMode.career => careerBoardControllerProvider,
       };
 
+  Color get _modeAccent => switch (widget.mode) {
+        EditorMode.online => RelayColors.electricBlue,
+        EditorMode.training => RelayColors.lime,
+        EditorMode.career => RelayColors.amber,
+      };
+
   @override
   Widget build(BuildContext context) {
     final catalogs = ref.watch(catalogsProvider);
     return Scaffold(
       appBar: AppBar(
+        leadingWidth: 224,
+        leading: const AppHeaderProfile(),
         backgroundColor: Colors.transparent,
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -92,7 +100,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
               ),
             ),
             Text(
-              '${widget.mode.title} • v0.8.13',
+              '${widget.mode.title} • v0.8.15',
               style: const TextStyle(
                 color: RelayColors.muted,
                 fontSize: 10,
@@ -112,8 +120,10 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
           const SizedBox(width: 8),
         ],
       ),
-      body: SafeArea(
-        child: catalogs.when(
+      body: Container(
+        decoration: RelayDecorations.modeShell(_modeAccent),
+        child: SafeArea(
+          child: catalogs.when(
           data: (bundle) => _loadingBoard
               ? const _LoadingPanel()
               : _buildEditor(bundle),
@@ -124,6 +134,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
           ),
         ),
       ),
+    ),
     );
   }
 

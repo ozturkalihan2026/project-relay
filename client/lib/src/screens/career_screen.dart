@@ -39,6 +39,8 @@ class _CareerScreenState extends ConsumerState<CareerScreen> {
 
     return Scaffold(
       appBar: AppBar(
+        leadingWidth: 224,
+        leading: const AppHeaderProfile(),
         backgroundColor: Colors.transparent,
         title: const Text(
           'KARİYER',
@@ -52,8 +54,10 @@ class _CareerScreenState extends ConsumerState<CareerScreen> {
           SizedBox(width: 8),
         ],
       ),
-      body: SafeArea(
-        child: progression.when(
+      body: Container(
+        decoration: RelayDecorations.modeShell(RelayColors.amber),
+        child: SafeArea(
+          child: progression.when(
           loading: () => const Center(child: CircularProgressIndicator()),
           error: (error, _) => _CareerError(
             message: error.toString(),
@@ -188,6 +192,7 @@ class _CareerScreenState extends ConsumerState<CareerScreen> {
           ),
         ),
       ),
+    ),
     );
   }
 
@@ -584,7 +589,7 @@ class _CareerInlineEditor extends StatelessWidget {
 
     final boardCard = Container(
       key: const ValueKey('career-player-board-editor'),
-      width: 470,
+      width: 430,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: RelayColors.cyan.withValues(alpha: 0.07),
@@ -637,7 +642,7 @@ class _CareerInlineEditor extends StatelessWidget {
           const SizedBox(height: 10),
           Center(
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 430),
+              constraints: const BoxConstraints(maxWidth: 390),
               child: CircuitBoard(
                 placements: state.placements,
                 specs: specs,
@@ -759,7 +764,7 @@ class _CareerRunCard extends StatelessWidget {
                 runSpacing: 14,
                 children: [
                   SizedBox(width: 838, child: playerEditor),
-                  const SizedBox(width: 470, child: opponentPreview),
+                  const SizedBox(width: 430, child: opponentPreview),
                 ],
               );
             }
@@ -834,7 +839,7 @@ class _CareerRunCard extends StatelessWidget {
                 runSpacing: 14,
                 children: [
                   SizedBox(width: 838, child: playerEditor),
-                  SizedBox(width: 470, child: opponentPreview),
+                  SizedBox(width: 430, child: opponentPreview),
                 ],
               );
             }
@@ -1101,7 +1106,7 @@ class _CareerBoardPreview extends StatelessWidget {
           const SizedBox(height: 10),
           if (draft == null)
             Container(
-              height: 430,
+              height: 390,
               alignment: Alignment.center,
               decoration: BoxDecoration(
                 color: RelayColors.surface.withValues(alpha: 0.45),
@@ -1129,7 +1134,7 @@ class _CareerBoardPreview extends StatelessWidget {
           else
             Center(
               child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 430),
+                constraints: const BoxConstraints(maxWidth: 390),
                 child: IgnorePointer(
                   child: CircuitBoard(
                     placements: placements,

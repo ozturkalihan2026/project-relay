@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
 abstract final class RelayColors {
-  static const background = Color(0xFF08111B);
-  static const backgroundTop = Color(0xFF13355F);
-  static const backgroundBottom = Color(0xFF101A31);
-  static const surface = Color(0xFF142838);
-  static const surfaceSoft = Color(0xFF203B52);
+  static const background = Color(0xFF0B1725);
+  static const backgroundTop = Color(0xFF174A78);
+  static const backgroundBottom = Color(0xFF171B36);
+  static const surface = Color(0xFF173246);
+  static const surfaceSoft = Color(0xFF294A61);
   static const surfaceHigh = Color(0xFF24495D);
   static const cyan = Color(0xFF46E7FF);
   static const mint = Color(0xFF72F0B7);
@@ -37,6 +37,21 @@ abstract final class RelayDecorations {
 
   static BoxDecoration screenShell() {
     return const BoxDecoration(gradient: appBackgroundGradient);
+  }
+
+  static BoxDecoration modeShell(Color accent) {
+    return BoxDecoration(
+      gradient: LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [
+          Color.alphaBlend(accent.withValues(alpha: 0.13), RelayColors.backgroundTop),
+          Color.alphaBlend(accent.withValues(alpha: 0.045), RelayColors.background),
+          RelayColors.backgroundBottom,
+        ],
+        stops: const [0.0, 0.48, 1.0],
+      ),
+    );
   }
 
   static BoxDecoration panel({
