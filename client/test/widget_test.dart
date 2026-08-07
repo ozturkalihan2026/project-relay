@@ -48,7 +48,7 @@ void main() {
       await tester.tap(find.byKey(const ValueKey('play-mode-online')));
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
-      expect(find.textContaining('ÇEVRİMİÇİ SAVAŞ • v0.8.9'), findsOneWidget);
+      expect(find.textContaining('ÇEVRİMİÇİ SAVAŞ • v0.8.10'), findsOneWidget);
       expect(find.text('DEVREYİ KUR'), findsOneWidget);
       expect(
         tester.getSize(
@@ -67,7 +67,7 @@ void main() {
 
       await tester.tap(find.byKey(const ValueKey('play-mode-training')));
       await tester.pumpAndSettle();
-      expect(find.textContaining('ANTRENMAN • v0.8.9'), findsOneWidget);
+      expect(find.textContaining('ANTRENMAN • v0.8.10'), findsOneWidget);
       expect(find.byKey(const ValueKey('training-panel')), findsOneWidget);
       expect(
         tester.getSize(
@@ -536,20 +536,23 @@ Future<void> _pumpApp(WidgetTester tester) async {
                 equipped: true,
               ),
             ],
-            kit: ControlledKit(
-              name: 'Dengeli Sekizli',
-              moduleKinds: const [
-                ModuleKind.generator,
-                ModuleKind.battery,
-                ModuleKind.laser,
-                ModuleKind.laser,
-                ModuleKind.pulseCannon,
-                ModuleKind.shield,
-                ModuleKind.cooler,
-                ModuleKind.repair,
-              ],
-              updatedAt: DateTime.utc(2026, 7, 31),
-            ),
+            kits: {
+              for (final mode in KitMode.values)
+                mode: ControlledKit(
+                  name: '${mode.displayName} Sekizlisi',
+                  moduleKinds: const [
+                    ModuleKind.generator,
+                    ModuleKind.battery,
+                    ModuleKind.laser,
+                    ModuleKind.laser,
+                    ModuleKind.pulseCannon,
+                    ModuleKind.shield,
+                    ModuleKind.cooler,
+                    ModuleKind.repair,
+                  ],
+                  updatedAt: DateTime.utc(2026, 7, 31),
+                ),
+            },
             equippedModuleSkinId: 'module_neon_cyan',
             equippedBoardThemeId: 'board_midnight_grid',
             equippedProfileFrameId: 'frame_signal',

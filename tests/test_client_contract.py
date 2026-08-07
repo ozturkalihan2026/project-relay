@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import re
 import unittest
 import wave
 from pathlib import Path
@@ -26,14 +27,14 @@ class FlutterClientContractTests(unittest.TestCase):
             encoding="utf-8"
         )
 
-        self.assertIn("version: 0.8.9+61", pubspec)
+        self.assertIn("version: 0.8.10+62", pubspec)
         self.assertIn("await tester.ensureVisible(profileBack);", widget_test)
         self.assertIn("await tester.pumpAndSettle();\n      await tester.tap(profileBack);", widget_test)
         self.assertIn("final horizontalScrollable = find.ancestor(", widget_test)
         self.assertNotIn("final horizontalScrollable = find.byWidgetPredicate(\n    (widget)", widget_test)
-        self.assertIn("${widget.mode.title} • v0.8.9", editor)
-        self.assertIn("ANA MERKEZ VE MENÜ DÜZENİ • v0.8.9", main_menu)
-        self.assertIn("PROJECT RELAY • v0.8.9", manual)
+        self.assertIn("${widget.mode.title} • v0.8.10", editor)
+        self.assertIn("ANA MERKEZ VE MENÜ DÜZENİ • v0.8.10", main_menu)
+        self.assertIn("PROJECT RELAY • v0.8.10", manual)
         self.assertIn("audioplayers:", pubspec)
         self.assertIn("assets/sounds/", pubspec)
         self.assertIn("flame:", pubspec)
@@ -216,7 +217,7 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("careerRunProvider", api)
         self.assertIn("career-player-board-editor", career)
         self.assertIn("career-opponent-board-preview", career)
-        self.assertIn("vertical: true", career)
+        self.assertIn("fixedColumns: 2", career)
         self.assertIn("career-module-selection-card", career)
         self.assertIn("returnToPreviousMenu(context)", career)
         self.assertIn("ModulePalette(", career)
@@ -303,6 +304,12 @@ class FlutterClientContractTests(unittest.TestCase):
         main_menu = (
             CLIENT / "lib" / "src" / "screens" / "main_menu_screen.dart"
         ).read_text(encoding="utf-8")
+        editor = (
+            CLIENT / "lib" / "src" / "screens" / "editor_screen.dart"
+        ).read_text(encoding="utf-8")
+        career = (
+            CLIENT / "lib" / "src" / "screens" / "career_screen.dart"
+        ).read_text(encoding="utf-8")
 
         self.assertIn("class ControlledKit", models)
         self.assertIn("class CosmeticItem", models)
@@ -312,6 +319,15 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("purchaseCosmetic", api)
         self.assertIn("equipCosmetic", api)
         self.assertIn("saveControlledKit", api)
+        self.assertIn("required KitMode mode", api)
+        self.assertIn("'mode': mode.wireValue", api)
+        self.assertIn("kitFor(KitMode mode)", models)
+        self.assertIn("kitMode: widget.mode.kitMode", editor)
+        self.assertIn("kitMode: KitMode.career", career)
+        self.assertIn("Navigator.of(context).pop(savedKit)", collection)
+        self.assertIn("ref.read(_boardProvider.notifier).applyKit(kit)", editor)
+        self.assertIn("careerBoardControllerProvider.notifier).applyKit(kit)", career)
+        self.assertNotIn("boardControllerProvider", editor)
         self.assertIn("KONTROLLÜ SEKİZLİ KİT", collection)
         self.assertIn("GÜÇ DEĞİL, KİMLİK VE HAZIRLIK", collection)
         self.assertIn("main-menu-store", main_menu)
@@ -408,9 +424,13 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("Invoke-Flutter analyze", powershell)
         self.assertIn("Invoke-Flutter test", powershell)
         self.assertIn("test/widget_test_support_test.dart", powershell)
+        self.assertIn("test/module_palette_layout_test.dart", powershell)
+        self.assertIn("test/board_controller_test.dart", powershell)
         self.assertIn("test/widget_test.dart", powershell)
         self.assertIn("--concurrency=1", powershell)
         self.assertIn("test/widget_test_support_test.dart", bash)
+        self.assertIn("test/module_palette_layout_test.dart", bash)
+        self.assertIn("test/board_controller_test.dart", bash)
         self.assertIn("test/widget_test.dart", bash)
         self.assertIn("flutter run -d edge", powershell)
         self.assertIn(
@@ -650,7 +670,7 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("kitOnly", collection)
         self.assertIn("kit-save-and-return", collection)
         self.assertIn("_saveKitAndReturn", collection)
-        self.assertIn("Navigator.of(context).maybePop()", collection)
+        self.assertIn("Navigator.of(context).pop(savedKit)", collection)
         self.assertIn("showSaveButton: false", collection)
         self.assertIn("store-section-selector", collection)
         self.assertIn("store-intro-card", collection)
@@ -680,7 +700,9 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("module.displayName", palette_source)
         self.assertIn("_moduleStatistics(module)", palette_source)
         self.assertIn("palette-module-properties-", palette_source)
-        self.assertIn("final columnCount = constraints.maxWidth >= 720", palette_source)
+        self.assertIn("final columnCount = fixedColumns ??", palette_source)
+        self.assertIn("overflow: TextOverflow.ellipsis", palette_source)
+        self.assertIn("BURAYA BIRAK: KARTTAN KALDIR", palette_source)
         self.assertIn("? 4", palette_source)
         self.assertIn("textAlign: TextAlign.center", palette_source)
         self.assertIn("fontSize: dense ? 10.5 : compact ? 10 : 13", palette_source)
@@ -1311,7 +1333,7 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("/how-to-play", header)
         self.assertIn("career-player-board-editor", career)
         self.assertIn("career-opponent-board-preview", career)
-        self.assertIn("vertical: true", career)
+        self.assertIn("fixedColumns: 2", career)
         self.assertIn("career-module-selection-card", career)
         self.assertIn("returnToPreviousMenu(context)", career)
         self.assertIn("KOŞUYU BAŞLAT", career)
@@ -1320,8 +1342,8 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("Komutan Sistemi", feature_pool)
         self.assertIn("devreyi kurduktan ve doğruladıktan sonra", feature_pool.lower())
         self.assertIn("v0.8.4", release)
-        self.assertIn("ÇEVRİMİÇİ SAVAŞ • v0.8.9", widget_test)
-        self.assertIn("ANTRENMAN • v0.8.9", widget_test)
+        self.assertIn("ÇEVRİMİÇİ SAVAŞ • v0.8.10", widget_test)
+        self.assertIn("ANTRENMAN • v0.8.10", widget_test)
         self.assertNotIn("ÇEVRİMİÇİ SAVAŞ • v0.8.4", widget_test)
         self.assertNotIn("ANTRENMAN • v0.8.4", widget_test)
 
@@ -1391,6 +1413,23 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("social-player-search", social)
         self.assertIn("social-clan-directory", social)
         self.assertIn("main-menu-clan", main_menu)
+
+    def test_dart_named_constructor_parameters_are_unique(self) -> None:
+        constructor_pattern = re.compile(
+            r"(?:const\s+)?[A-Za-z_]\w*\s*\(\s*\{(?P<body>.*?)\}\s*\)",
+            re.DOTALL,
+        )
+        failures: list[str] = []
+        for path in sorted(CLIENT.rglob("*.dart")):
+            source = path.read_text(encoding="utf-8")
+            for match in constructor_pattern.finditer(source):
+                names = re.findall(r"(?:required\s+)?this\.([A-Za-z_]\w*)", match.group("body"))
+                duplicates = sorted({name for name in names if names.count(name) > 1})
+                if duplicates:
+                    failures.append(
+                        f"{path.relative_to(ROOT)}: yinelenen constructor parametreleri {duplicates}"
+                    )
+        self.assertEqual(failures, [], "\n".join(failures))
 
 
 if __name__ == "__main__":

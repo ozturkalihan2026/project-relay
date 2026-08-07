@@ -527,6 +527,10 @@ class PlayerLoadoutRecord(Base):
     )
     kit_name: Mapped[str] = mapped_column(String(40), nullable=False)
     module_kinds: Mapped[list[str]] = mapped_column(JSON, nullable=False)
+    mode_kits: Mapped[dict[str, object] | None] = mapped_column(
+        JSON,
+        nullable=True,
+    )
     module_skin_id: Mapped[str] = mapped_column(String(48), nullable=False)
     board_theme_id: Mapped[str] = mapped_column(String(48), nullable=False)
     profile_frame_id: Mapped[str] = mapped_column(String(48), nullable=False)

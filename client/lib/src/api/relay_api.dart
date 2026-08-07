@@ -302,7 +302,7 @@ class RelayApi {
       {
         'category': category,
         'message': message,
-        'client_version': '0.8.6',
+        'client_version': '0.8.10',
       },
       authorized: true,
     );
@@ -453,12 +453,14 @@ class RelayApi {
   }
 
   Future<CollectionSnapshot> saveControlledKit({
+    required KitMode mode,
     required String name,
     required List<ModuleKind> moduleKinds,
   }) async {
     final payload = await _put(
       '/api/v1/me/kit',
       {
+        'mode': mode.wireValue,
         'name': name,
         'module_kinds': moduleKinds.map((kind) => kind.wireValue).toList(),
       },

@@ -1593,6 +1593,26 @@ class CareerBattleResponse {
   final CareerRunSnapshot run;
 }
 
+enum KitMode {
+  online,
+  training,
+  career;
+
+  String get wireValue => name;
+
+  String get displayName => switch (this) {
+        KitMode.online => 'Çevrimiçi Savaş',
+        KitMode.training => 'Antrenman',
+        KitMode.career => 'Kariyer',
+      };
+
+  static KitMode parse(String value) => switch (value) {
+        'training' => KitMode.training,
+        'career' => KitMode.career,
+        _ => KitMode.online,
+      };
+}
+
 class ControlledKit {
   const ControlledKit({
     required this.name,
@@ -1663,20 +1683,35 @@ class CollectionSnapshot {
     required this.playerId,
     required this.credits,
     required this.cosmetics,
-    required this.kit,
+    required this.kits,
     required this.equippedModuleSkinId,
     required this.equippedBoardThemeId,
     required this.equippedProfileFrameId,
   });
 
   factory CollectionSnapshot.fromJson(Map<String, dynamic> json) {
+    final fallbackKit = ControlledKit.fromJson(
+      json['kit'] as Map<String, dynamic>,
+    );
+    final rawKits = json['kits'];
+    final parsedKits = <KitMode, ControlledKit>{};
+    if (rawKits is Map<String, dynamic>) {
+      for (final entry in rawKits.entries) {
+        parsedKits[KitMode.parse(entry.key)] = ControlledKit.fromJson(
+          entry.value as Map<String, dynamic>,
+        );
+      }
+    }
+    for (final mode in KitMode.values) {
+      parsedKits.putIfAbsent(mode, () => fallbackKit);
+    }
     return CollectionSnapshot(
       playerId: json['player_id'] as String,
       credits: json['credits'] as int,
       cosmetics: (json['cosmetics'] as List<dynamic>)
           .map((item) => CosmeticItem.fromJson(item as Map<String, dynamic>))
           .toList(growable: false),
-      kit: ControlledKit.fromJson(json['kit'] as Map<String, dynamic>),
+      kits: parsedKits,
       equippedModuleSkinId: json['equipped_module_skin_id'] as String,
       equippedBoardThemeId: json['equipped_board_theme_id'] as String,
       equippedProfileFrameId: json['equipped_profile_frame_id'] as String,
@@ -1686,10 +1721,14 @@ class CollectionSnapshot {
   final String playerId;
   final int credits;
   final List<CosmeticItem> cosmetics;
-  final ControlledKit kit;
+  final Map<KitMode, ControlledKit> kits;
   final String equippedModuleSkinId;
   final String equippedBoardThemeId;
   final String equippedProfileFrameId;
+
+  ControlledKit get kit => kitFor(KitMode.online);
+
+  ControlledKit kitFor(KitMode mode) => kits[mode] ?? kits[KitMode.online]!;
 }
 
 class SeasonWindowModel {

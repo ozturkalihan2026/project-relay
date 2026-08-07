@@ -26,6 +26,12 @@ enum EditorMode {
         EditorMode.training => 'ANTRENMAN',
         EditorMode.career => 'KARİYER DEVRESİ',
       };
+
+  KitMode get kitMode => switch (this) {
+        EditorMode.online => KitMode.online,
+        EditorMode.training => KitMode.training,
+        EditorMode.career => KitMode.career,
+      };
 }
 
 
@@ -86,7 +92,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
               ),
             ),
             Text(
-              '${widget.mode.title} • v0.8.9',
+              '${widget.mode.title} • v0.8.10',
               style: const TextStyle(
                 color: RelayColors.muted,
                 fontSize: 10,
@@ -128,7 +134,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
       final controller = ref.read(_boardProvider.notifier);
       final collection = await ref.read(collectionProvider.future);
       _visuals = EquippedVisuals.fromCollection(collection);
-      controller.applyKit(collection.kit);
+      controller.applyKit(collection.kitFor(widget.mode.kitMode));
       final SavedBoard? saved = switch (widget.mode) {
         EditorMode.career => await api.fetchCareerBoard(),
         EditorMode.online => await api.fetchCurrentBoard(),
@@ -186,6 +192,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
               RelayNoticeTone.info,
             );
           },
+          onEditKit: _editStartingKit,
         );
         final actionPanel = _ActionPanel(
           mode: widget.mode,
@@ -240,6 +247,21 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
     );
   }
 
+  Future<void> _editStartingKit() async {
+    final kit = await Navigator.of(context).push<ControlledKit>(
+      MaterialPageRoute<ControlledKit>(
+        builder: (context) => CollectionScreen(
+          kitOnly: true,
+          kitMode: widget.mode.kitMode,
+        ),
+      ),
+    );
+    if (kit == null || !mounted) return;
+    ref.read(_boardProvider.notifier).applyKit(kit);
+    ref.invalidate(collectionProvider);
+    setState(() {});
+  }
+
   void _tapCell(int index) {
     try {
       ref.read(_boardProvider.notifier).tapCell(index);
@@ -277,9 +299,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
       final state = ref.read(_boardProvider);
       final validation =
           await ref.read(relayApiProvider).validateBoard(state.board);
-      ref
-          .read(boardControllerProvider.notifier)
-          .applyValidation(validation);
+      ref.read(_boardProvider.notifier).applyValidation(validation);
       if (mounted) {
         final unpowered = validation.unpoweredIds.length;
         _showNotice(
@@ -319,9 +339,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
       final api = ref.read(relayApiProvider);
       final state = ref.read(_boardProvider);
       final validation = await api.validateBoard(state.board);
-      ref
-          .read(boardControllerProvider.notifier)
-          .applyValidation(validation);
+      ref.read(_boardProvider.notifier).applyValidation(validation);
       await api.saveBoard(state.board);
       final match = await api.createAsyncMatch();
       await _openReplay(api, match);
@@ -347,9 +365,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
       final api = ref.read(relayApiProvider);
       final state = ref.read(_boardProvider);
       final validation = await api.validateBoard(state.board);
-      ref
-          .read(boardControllerProvider.notifier)
-          .applyValidation(validation);
+      ref.read(_boardProvider.notifier).applyValidation(validation);
       await api.saveCareerBoard(state.board);
       ref.invalidate(careerRunProvider);
       if (mounted) {
@@ -375,9 +391,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
       final api = ref.read(relayApiProvider);
       final state = ref.read(_boardProvider);
       final validation = await api.validateBoard(state.board);
-      ref
-          .read(boardControllerProvider.notifier)
-          .applyValidation(validation);
+      ref.read(_boardProvider.notifier).applyValidation(validation);
       final match = await api.createBotMatch(
         board: state.board,
         botId: _selectedBotId,
@@ -442,6 +456,7 @@ class _BoardPanel extends StatelessWidget {
     required this.onModuleDropped,
     required this.onRotateModule,
     required this.onReset,
+    required this.onEditKit,
   });
 
   final BoardEditorState state;
@@ -455,6 +470,7 @@ class _BoardPanel extends StatelessWidget {
   final ModuleDropCallback onModuleDropped;
   final ValueChanged<int> onRotateModule;
   final VoidCallback onReset;
+  final VoidCallback onEditKit;
 
   @override
   Widget build(BuildContext context) {
@@ -484,11 +500,7 @@ class _BoardPanel extends StatelessWidget {
           alignment: Alignment.centerLeft,
           child: TextButton.icon(
             key: const ValueKey('editor-open-kit-builder'),
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(
-                builder: (context) => const CollectionScreen(kitOnly: true),
-              ),
-            ),
+            onPressed: onEditKit,
             icon: const Icon(Icons.tune),
             label: const Text('BAŞLANGIÇ SEKİZLİSİNİ DEĞİŞTİR'),
           ),

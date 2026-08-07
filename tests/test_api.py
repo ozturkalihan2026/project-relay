@@ -132,7 +132,7 @@ class RelayApiTests(unittest.TestCase):
         response = self.client.get("/healthz")
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["version"], "0.8.4")
+        self.assertEqual(response.json()["version"], "0.8.10")
         self.assertEqual(response.json()["rules_version"], "0.8")
         self.assertEqual(response.json()["storage"], "sqlite")
         self.assertEqual(response.json()["database"], "ok")
@@ -231,6 +231,29 @@ class RelayApiTests(unittest.TestCase):
         )
         self.assertEqual(saved.status_code, 200, saved.text)
         self.assertEqual(saved.json()["kit"]["name"], "Savunma Sekizlisi")
+
+        career_saved = self.client.put(
+            "/api/v1/me/kit",
+            headers=headers,
+            json={
+                "mode": "career",
+                "name": "Kariyer Sekizlisi",
+                "module_kinds": [
+                    "generator",
+                    "battery",
+                    "laser",
+                    "shield",
+                    "shield",
+                    "cooler",
+                    "amplifier",
+                    "repair",
+                ],
+            },
+        )
+        self.assertEqual(career_saved.status_code, 200, career_saved.text)
+        career_payload = career_saved.json()
+        self.assertEqual(career_payload["kits"]["career"]["name"], "Kariyer Sekizlisi")
+        self.assertEqual(career_payload["kits"]["online"]["name"], "Savunma Sekizlisi")
 
         rejected = self.client.put(
             "/api/v1/me/board",

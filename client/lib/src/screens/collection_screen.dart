@@ -18,11 +18,13 @@ class CollectionScreen extends ConsumerStatefulWidget {
   const CollectionScreen({
     this.mode = CollectionScreenMode.collection,
     this.kitOnly = false,
+    this.kitMode = KitMode.online,
     super.key,
   });
 
   final CollectionScreenMode mode;
   final bool kitOnly;
+  final KitMode kitMode;
 
   @override
   ConsumerState<CollectionScreen> createState() => _CollectionScreenState();
@@ -54,7 +56,7 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen> {
               widget.mode == CollectionScreenMode.store
                   ? 'MAĞAZA'
                   : widget.kitOnly
-                      ? 'BAŞLANGIÇ SEKİZLİSİ'
+                      ? '${widget.kitMode.displayName.toUpperCase()} SEKİZLİSİ'
                       : 'KOLEKSİYON',
               style: const TextStyle(
                 fontWeight: FontWeight.w900,
@@ -62,7 +64,7 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen> {
               ),
             ),
             const Text(
-              'PROJECT RELAY • v0.8.9',
+              'PROJECT RELAY • v0.8.10',
               style: TextStyle(color: RelayColors.muted, fontSize: 10),
             ),
           ],
@@ -91,12 +93,13 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen> {
   void _adoptSnapshot(CollectionSnapshot value) {
     if (_snapshot != null) return;
     _snapshot = value;
-    _kitSlots = List<ModuleKind>.from(value.kit.moduleKinds);
-    _kitNameController.text = value.kit.name;
+    final selectedKit = value.kitFor(widget.kitMode);
+    _kitSlots = List<ModuleKind>.from(selectedKit.moduleKinds);
+    _kitNameController.text = selectedKit.name;
   }
 
   Widget _buildContent(CollectionSnapshot snapshot) {
-    final kitSlots = _kitSlots ?? snapshot.kit.moduleKinds;
+    final kitSlots = _kitSlots ?? snapshot.kitFor(widget.kitMode).moduleKinds;
     return RefreshIndicator(
       onRefresh: () async {
         ref.invalidate(collectionProvider);
@@ -104,8 +107,9 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen> {
         if (!mounted) return;
         setState(() {
           _snapshot = refreshed;
-          _kitSlots = List<ModuleKind>.from(refreshed.kit.moduleKinds);
-          _kitNameController.text = refreshed.kit.name;
+          final selectedKit = refreshed.kitFor(widget.kitMode);
+          _kitSlots = List<ModuleKind>.from(selectedKit.moduleKinds);
+          _kitNameController.text = selectedKit.name;
         });
       },
       child: ListView(
@@ -361,12 +365,12 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen> {
     );
   }
 
-  Future<bool> _saveKit() async {
-    if (_busy) return false;
+  Future<ControlledKit?> _saveKit() async {
+    if (_busy) return null;
     final slots = _kitSlots;
     if (slots == null || slots.length != 8) {
       _notice('Kit tam olarak sekiz yuva içermelidir.', RelayNoticeTone.error);
-      return false;
+      return null;
     }
     final counts = <ModuleKind, int>{};
     for (final kind in slots) {
@@ -377,7 +381,7 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen> {
         'Sekizli kit tam olarak bir Jeneratör içermelidir.',
         RelayNoticeTone.warning,
       );
-      return false;
+      return null;
     }
     final excessive = counts.entries
         .where((entry) =>
@@ -390,38 +394,41 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen> {
         '${excessive.join(', ')}',
         RelayNoticeTone.warning,
       );
-      return false;
+      return null;
     }
 
     setState(() => _busy = true);
     try {
       final value = await ref.read(relayApiProvider).saveControlledKit(
+            mode: widget.kitMode,
             name: _kitNameController.text,
             moduleKinds: slots,
           );
-      if (!mounted) return false;
+      if (!mounted) return null;
       setState(() {
         _snapshot = value;
-        _kitSlots = List<ModuleKind>.from(value.kit.moduleKinds);
+        _kitSlots = List<ModuleKind>.from(
+          value.kitFor(widget.kitMode).moduleKinds,
+        );
       });
       ref.invalidate(collectionProvider);
       _notice(
         'Sekizli kit kaydedildi. Editör paletleri artık bu sınırlara bağlı.',
         RelayNoticeTone.success,
       );
-      return true;
+      return value.kitFor(widget.kitMode);
     } on RelayApiException catch (error) {
       _notice(error.message, RelayNoticeTone.error);
-      return false;
+      return null;
     } finally {
       if (mounted) setState(() => _busy = false);
     }
   }
 
   Future<void> _saveKitAndReturn() async {
-    final saved = await _saveKit();
-    if (!saved || !mounted) return;
-    Navigator.of(context).maybePop();
+    final savedKit = await _saveKit();
+    if (savedKit == null || !mounted) return;
+    Navigator.of(context).pop(savedKit);
   }
 
   Future<void> _cosmeticAction(CosmeticItem item) async {

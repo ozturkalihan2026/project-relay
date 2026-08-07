@@ -318,6 +318,55 @@ void main() {
       expect(state.placements[0]?.kind, ModuleKind.shield);
     });
 
+    test('başlangıç sekizlisi kaydedilince palet sınırları anında değişir', () {
+      final controller = container.read(trainingBoardControllerProvider.notifier);
+      controller.applyKit(
+        ControlledKit(
+          name: 'Antrenman Savunması',
+          moduleKinds: const [
+            ModuleKind.generator,
+            ModuleKind.shield,
+            ModuleKind.shield,
+            ModuleKind.cooler,
+            ModuleKind.cooler,
+            ModuleKind.repair,
+            ModuleKind.battery,
+            ModuleKind.amplifier,
+          ],
+          updatedAt: DateTime.utc(2026, 8, 6),
+        ),
+      );
+
+      final state = container.read(trainingBoardControllerProvider);
+      expect(state.kitName, 'Antrenman Savunması');
+      expect(state.kitLimits[ModuleKind.shield], 2);
+      expect(state.kitLimits[ModuleKind.laser], isNull);
+      expect(state.remainingFor(ModuleKind.shield), 2);
+      expect(state.remainingFor(ModuleKind.laser), 0);
+    });
+
+    test('çevrimiçi antrenman ve kariyer devre durumları ayrıdır', () {
+      final online = container.read(onlineBoardControllerProvider.notifier);
+      final training = container.read(trainingBoardControllerProvider.notifier);
+      final career = container.read(careerBoardControllerProvider.notifier);
+
+      online.dropModule(7, const ModuleDragData.palette(ModuleKind.battery));
+      training.dropModule(8, const ModuleDragData.palette(ModuleKind.cooler));
+      career.dropModule(12, const ModuleDragData.palette(ModuleKind.shield));
+
+      expect(container.read(onlineBoardControllerProvider).placements[7]?.kind, ModuleKind.battery);
+      expect(container.read(onlineBoardControllerProvider).placements[8], isNull);
+      expect(container.read(onlineBoardControllerProvider).placements[12], isNull);
+
+      expect(container.read(trainingBoardControllerProvider).placements[8]?.kind, ModuleKind.cooler);
+      expect(container.read(trainingBoardControllerProvider).placements[7], isNull);
+      expect(container.read(trainingBoardControllerProvider).placements[12], isNull);
+
+      expect(container.read(careerBoardControllerProvider).placements[12]?.kind, ModuleKind.shield);
+      expect(container.read(careerBoardControllerProvider).placements[7], isNull);
+      expect(container.read(careerBoardControllerProvider).placements[8], isNull);
+    });
+
     test('kart değişince eski sunucu doğrulamasını temizler', () {
       final controller = container.read(boardControllerProvider.notifier);
       controller.applyValidation(

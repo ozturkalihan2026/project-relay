@@ -15,6 +15,7 @@ class ModulePalette extends StatelessWidget {
     required this.remainingByKind,
     this.vertical = false,
     this.compact = false,
+    this.fixedColumns,
     super.key,
   });
 
@@ -25,6 +26,7 @@ class ModulePalette extends StatelessWidget {
   final Map<ModuleKind, int> remainingByKind;
   final bool vertical;
   final bool compact;
+  final int? fixedColumns;
 
   @override
   Widget build(BuildContext context) {
@@ -67,13 +69,17 @@ class ModulePalette extends StatelessWidget {
                             size: 18,
                           ),
                           SizedBox(width: 7),
-                          Text(
-                            'BURAYA BIRAK: KARTTAN KALDIR',
-                            style: TextStyle(
-                              color: RelayColors.coral,
-                              fontSize: 10,
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: 0.7,
+                          Expanded(
+                            child: Text(
+                              'BURAYA BIRAK: KARTTAN KALDIR',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: RelayColors.coral,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 0.7,
+                              ),
                             ),
                           ),
                         ],
@@ -108,11 +114,12 @@ class ModulePalette extends StatelessWidget {
                       ],
                     );
                   }
-                  final columnCount = constraints.maxWidth >= 720
-                      ? 4
-                      : constraints.maxWidth >= 520
-                          ? 3
-                          : 2;
+                  final columnCount = fixedColumns ??
+                      (constraints.maxWidth >= 720
+                          ? 4
+                          : constraints.maxWidth >= 520
+                              ? 3
+                              : 2);
                   final computedTileWidth =
                       (constraints.maxWidth - spacing * (columnCount - 1)) /
                           columnCount;

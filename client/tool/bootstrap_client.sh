@@ -40,6 +40,8 @@ flutter analyze
 # bir kabul paketiyle yakala. Bu testlerde hit-test uyarıları ölümcüldür.
 flutter test --concurrency=1 --reporter=expanded \
   test/widget_test_support_test.dart \
+  test/module_palette_layout_test.dart \
+  test/board_controller_test.dart \
   test/widget_test.dart
 
 # İzole widget kabulünden sonra tüm istemci regresyonlarını çalıştır.

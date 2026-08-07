@@ -520,12 +520,14 @@ class CollectionResponse(ApiModel):
     credits: int
     cosmetics: list[CosmeticItemResponse]
     kit: ControlledKitResponse
+    kits: dict[str, ControlledKitResponse]
     equipped_module_skin_id: str
     equipped_board_theme_id: str
     equipped_profile_frame_id: str
 
 
 class SaveControlledKitRequest(ApiModel):
+    mode: Literal["online", "training", "career"] = "online"
     name: str = Field(min_length=1, max_length=40)
     module_kinds: list[ModuleKind] = Field(min_length=8, max_length=8)
 

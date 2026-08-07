@@ -1,37 +1,33 @@
-# Project Relay v0.8.9 — Kariyer Hazırlığı ve Kompakt Modül Paleti
+# Project Relay v0.8.10 — Moda Özel Sekizliler ve Ayrı Devre Durumları
 
-Project Relay; oyuncuların merkezî çekirdek çevresine yönlü bağlantılarla modül
-yerleştirip sunucu yetkili, deterministik devre savaşları yaptığı Flutter +
-FastAPI projesidir.
+Project Relay; oyuncuların merkezî çekirdek çevresine yönlü bağlantılarla
+modül yerleştirdiği, savaşların sunucuda deterministik olarak çözüldüğü Flutter
++ FastAPI strateji oyunudur.
 
-## v0.8.9 odak noktası
+## v0.8.10 odak noktası
 
-- Kariyerde modül seçimi, oyuncu devresi ve koşu rakibi üç ayrı karttır.
-- Oyuncu ve rakip devreleri aynı görsel ölçekte gösterilir.
-- Kariyer yenilgisi doğrudan yeni koşu hazırlığına döner.
-- Çevrimiçi ve Antrenman modül paletleri üçte bir daha kısa kartlar kullanır.
+- Kariyer modül paleti **2 sütun × 4 sıra** düzenine geçirildi.
+- Kariyer **Doğrula** düğmesi oyuncu devresinden Modül Seç kartına taşındı.
+- Çevrimiçi Savaş, Antrenman ve Kariyer için ayrı başlangıç sekizlileri eklendi.
+- Sekizli kaydedildiğinde ilgili savaş editörünün paleti sayfa yenilemeden anında
+  güncellenir.
+- Çevrimiçi, Antrenman ve Kariyer devre sağlayıcılarının birbirine veri yazması
+  engellendi.
+- Çevrimiçi ve Kariyer kayıtları sunucuda kendi mod sekizlilerine göre
+  doğrulanır.
+- Dar modül paletinde kartı geri bırakma göstergesinin taşması giderildi.
 
-- Savaş hazırlıklarında **Menüye Dön** ile Oyna menüsüne, diğer ürün
-  ekranlarında **Ana Menüye Dön** ile doğrudan ana merkeze dönüş
-- Mağazada daha küçük kareye yakın kozmetik kartları ve yüksek yoğunluklu grid
-- Profil > Kozmetik altında Modül, Devre Kartı ve Profil kategori sekmeleri
-- Kariyerde solda tek sütun modül paleti, yanında oyuncu devresi ve aynı satırda
-  eşit ölçekli koşu rakibi devresi
-- Çevrimiçi, Antrenman ve Kariyer için ayrı devre durumlarının korunması
-- Komutan Sistemi ile Oyuncu Tarzı Profilinin özellik havuzunda tutulması
+## Sürüm bilgileri
 
-Sunucu API sürümü değiştirilmedi; Flutter istemci sürümü `0.8.8+59`'dir.
-PostgreSQL şeması, Alembic başı `20260801_0009`, savaş kuralları `0.8` ve oyun
-dengesi değişmedi.
+- Sunucu API: `0.8.10`
+- Flutter istemci: `0.8.10+62`
+- Savaş kuralları: `0.8`
+- Alembic başı: `20260806_0010`
 
-Güncel kapsam belgesi:
-[docs/V0.8.8_MENU_MAGAZA_PROFIL_KARIYER.md](docs/V0.8.8_MENU_MAGAZA_PROFIL_KARIYER.md)
-
-Güncel test raporu:
-[docs/V0.8.8_TEST_RAPORU.md](docs/V0.8.8_TEST_RAPORU.md)
-
-Özellik havuzu:
-[docs/OZELLIK_HAVUZU.md](docs/OZELLIK_HAVUZU.md)
+Yeni migration, moda özel sekizlilerin saklanacağı JSON alanını ekler. Eski
+oyuncularda servis ilk koleksiyon erişiminde mevcut tek sekizliyi üç mod için
+uyumlu başlangıç değeri olarak kullanır; ilk mod kaydında bu üçlü yapı kalıcı
+hâle gelir. Sonraki kayıtlar yalnız seçilen modun sekizlisini değiştirir.
 
 ## Çalıştırma
 
@@ -43,7 +39,7 @@ docker compose up --build -d
 docker compose logs api --tail 100
 ```
 
-İstemciyi doğrulamak ve çalıştırmak için ayrı terminalde:
+İstemci kabulü ve çalıştırma:
 
 ```powershell
 cd client
@@ -56,5 +52,4 @@ Swagger belgesi servis çalışırken `http://127.0.0.1:8000/docs` adresindedir.
 ## Sonraki hedef
 
 v0.9.0 kapalı alfa hazırlığında telemetri, hata kayıtları, cihaz/ekran QA ve
-gerçek oyuncu test akışı kurulacaktır. Canlı 1v1, gerçek para, enerji kapısı,
-kalıcı savaş gücü ve özellik havuzundaki Komutan Sistemi bu sürümde bulunmaz.
+gerçek oyuncu test akışı kurulacaktır. Komutan Sistemi özellik havuzunda kalır.

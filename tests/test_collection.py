@@ -125,6 +125,30 @@ class CollectionServiceTests(unittest.TestCase):
             )
         self.assertEqual(context.exception.code, "kit_generator_invalid")
 
+    def test_mode_specific_kits_are_saved_independently(self) -> None:
+        before = self.service.snapshot("player-a")
+        online_before = before.kits["online"]
+
+        career = self.service.save_kit(
+            "player-a",
+            mode="career",
+            name="Kariyer Savunması",
+            module_kinds=[
+                ModuleKind.GENERATOR,
+                ModuleKind.BATTERY,
+                ModuleKind.SHIELD,
+                ModuleKind.SHIELD,
+                ModuleKind.COOLER,
+                ModuleKind.AMPLIFIER,
+                ModuleKind.REPAIR,
+                ModuleKind.REPAIR,
+            ],
+        )
+
+        self.assertEqual(career.kits["career"].name, "Kariyer Savunması")
+        self.assertEqual(career.kits["online"], online_before)
+        self.assertEqual(career.kits["training"], before.kits["training"])
+
     def test_saved_board_must_fit_active_kit_counts(self) -> None:
         self.service.save_kit(
             "player-a",
@@ -169,6 +193,68 @@ class CollectionServiceTests(unittest.TestCase):
         with self.assertRaises(CollectionError) as context:
             self.service.validate_board("player-a", board)
         self.assertEqual(context.exception.code, "board_exceeds_active_kit")
+
+    def test_board_validation_uses_requested_mode_kit(self) -> None:
+        self.service.save_kit(
+            "player-a",
+            mode="online",
+            name="Çift Lazer Çevrimiçi",
+            module_kinds=[
+                ModuleKind.GENERATOR,
+                ModuleKind.BATTERY,
+                ModuleKind.LASER,
+                ModuleKind.LASER,
+                ModuleKind.SHIELD,
+                ModuleKind.COOLER,
+                ModuleKind.AMPLIFIER,
+                ModuleKind.REPAIR,
+            ],
+        )
+        self.service.save_kit(
+            "player-a",
+            mode="career",
+            name="Tek Lazer Kariyer",
+            module_kinds=[
+                ModuleKind.GENERATOR,
+                ModuleKind.BATTERY,
+                ModuleKind.LASER,
+                ModuleKind.SHIELD,
+                ModuleKind.SHIELD,
+                ModuleKind.COOLER,
+                ModuleKind.AMPLIFIER,
+                ModuleKind.REPAIR,
+            ],
+        )
+        board = BoardLayout(
+            name="Çift Lazer",
+            modules=(
+                ModulePlacement(
+                    module_id="GEN",
+                    kind=ModuleKind.GENERATOR,
+                    row=0,
+                    column=1,
+                    orientation=Direction.SOUTH,
+                ),
+                ModulePlacement(
+                    module_id="L1",
+                    kind=ModuleKind.LASER,
+                    row=0,
+                    column=2,
+                    orientation=Direction.EAST,
+                ),
+                ModulePlacement(
+                    module_id="L2",
+                    kind=ModuleKind.LASER,
+                    row=0,
+                    column=3,
+                    orientation=Direction.EAST,
+                ),
+            ),
+        )
+
+        self.service.validate_board("player-a", board, mode="online")
+        with self.assertRaises(CollectionError):
+            self.service.validate_board("player-a", board, mode="career")
 
 
 if __name__ == "__main__":

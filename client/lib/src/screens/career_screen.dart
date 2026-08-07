@@ -110,6 +110,7 @@ class _CareerScreenState extends ConsumerState<CareerScreen> {
                           .rotateAt,
                       onReset: _resetCareerBoard,
                       onValidate: _validateCareerBoard,
+                      onEditKit: _editCareerKit,
                     );
                     return RefreshIndicator(
                       onRefresh: _refreshAll,
@@ -196,7 +197,7 @@ class _CareerScreenState extends ConsumerState<CareerScreen> {
   ) {
     final signature = [
       savedBoard?.fingerprint ?? 'empty',
-      collection.kit.updatedAt.toIso8601String(),
+      collection.kitFor(KitMode.career).updatedAt.toIso8601String(),
       collection.equippedBoardThemeId,
       collection.equippedModuleSkinId,
     ].join('|');
@@ -204,7 +205,7 @@ class _CareerScreenState extends ConsumerState<CareerScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || _loadedBoardSignature == signature) return;
       final controller = ref.read(careerBoardControllerProvider.notifier);
-      controller.applyKit(collection.kit);
+      controller.applyKit(collection.kitFor(KitMode.career));
       if (savedBoard == null) {
         controller.reset();
       } else {
@@ -231,6 +232,22 @@ class _CareerScreenState extends ConsumerState<CareerScreen> {
       ref.read(careerBoardProvider.future),
       ref.read(collectionProvider.future),
     ]);
+  }
+
+  Future<void> _editCareerKit() async {
+    final kit = await Navigator.of(context).push<ControlledKit>(
+      MaterialPageRoute<ControlledKit>(
+        builder: (context) => const CollectionScreen(
+          kitOnly: true,
+          kitMode: KitMode.career,
+        ),
+      ),
+    );
+    if (kit == null || !mounted) return;
+    ref.read(careerBoardControllerProvider.notifier).applyKit(kit);
+    ref.invalidate(collectionProvider);
+    _loadedBoardSignature = null;
+    setState(() {});
   }
 
   void _tapCell(int index) {
@@ -453,6 +470,7 @@ class _CareerInlineEditor extends StatelessWidget {
     required this.onRotateModule,
     required this.onReset,
     required this.onValidate,
+    required this.onEditKit,
   });
 
   final BoardEditorState state;
@@ -467,6 +485,7 @@ class _CareerInlineEditor extends StatelessWidget {
   final ValueChanged<int> onRotateModule;
   final VoidCallback onReset;
   final VoidCallback onValidate;
+  final VoidCallback onEditKit;
 
   @override
   Widget build(BuildContext context) {
@@ -484,7 +503,7 @@ class _CareerInlineEditor extends StatelessWidget {
 
     final moduleCard = Container(
       key: const ValueKey('career-module-selection-card'),
-      width: 188,
+      width: 356,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: RelayColors.cyan.withValues(alpha: 0.07),
@@ -516,7 +535,8 @@ class _CareerInlineEditor extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           ModulePalette(
-            vertical: true,
+            compact: true,
+            fixedColumns: 2,
             modules: modules,
             selectedKind: state.selectedKind,
             onSelected: onPaletteSelected,
@@ -529,19 +549,34 @@ class _CareerInlineEditor extends StatelessWidget {
           const SizedBox(height: 8),
           TextButton.icon(
             key: const ValueKey('career-open-kit-builder'),
-            onPressed: busy
-                ? null
-                : () => Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (context) =>
-                            const CollectionScreen(kitOnly: true),
-                      ),
-                    ),
+            onPressed: busy ? null : onEditKit,
             icon: const Icon(Icons.tune),
             label: const Text(
               'BAŞLANGIÇ SEKİZLİSİNİ DEĞİŞTİR',
               textAlign: TextAlign.center,
             ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Icon(Icons.circle, size: 10, color: statusColor),
+              const SizedBox(width: 7),
+              Expanded(
+                child: Text(
+                  statusText,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(color: statusColor, fontSize: 10),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          OutlinedButton.icon(
+            key: const ValueKey('career-validate-board'),
+            onPressed: busy ? null : onValidate,
+            icon: const Icon(Icons.fact_check_outlined, size: 18),
+            label: const Text('DOĞRULA'),
           ),
         ],
       ),
@@ -616,32 +651,13 @@ class _CareerInlineEditor extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              Icon(Icons.circle, size: 10, color: statusColor),
-              const SizedBox(width: 7),
-              Expanded(
-                child: Text(
-                  statusText,
-                  style: TextStyle(color: statusColor, fontSize: 11),
-                ),
-              ),
-              OutlinedButton.icon(
-                key: const ValueKey('career-validate-board'),
-                onPressed: busy ? null : onValidate,
-                icon: const Icon(Icons.fact_check_outlined, size: 18),
-                label: const Text('DOĞRULA'),
-              ),
-            ],
-          ),
         ],
       ),
     );
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        if (constraints.maxWidth >= 670) {
+        if (constraints.maxWidth >= 838) {
           return Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -736,13 +752,13 @@ class _CareerRunCard extends StatelessWidget {
         const SizedBox(height: 14),
         LayoutBuilder(
           builder: (context, constraints) {
-            if (constraints.maxWidth >= 1180) {
+            if (constraints.maxWidth >= 1360) {
               return Wrap(
                 alignment: WrapAlignment.center,
                 spacing: 14,
                 runSpacing: 14,
                 children: [
-                  SizedBox(width: 670, child: playerEditor),
+                  SizedBox(width: 838, child: playerEditor),
                   const SizedBox(width: 470, child: opponentPreview),
                 ],
               );
@@ -811,13 +827,13 @@ class _CareerRunCard extends StatelessWidget {
         const SizedBox(height: 14),
         LayoutBuilder(
           builder: (context, constraints) {
-            if (constraints.maxWidth >= 1180) {
+            if (constraints.maxWidth >= 1360) {
               return Wrap(
                 alignment: WrapAlignment.center,
                 spacing: 14,
                 runSpacing: 14,
                 children: [
-                  SizedBox(width: 670, child: playerEditor),
+                  SizedBox(width: 838, child: playerEditor),
                   SizedBox(width: 470, child: opponentPreview),
                 ],
               );

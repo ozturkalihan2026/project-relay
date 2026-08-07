@@ -557,6 +557,14 @@ def _collection_payload(snapshot: CollectionSnapshot) -> dict[str, Any]:
             "module_kinds": [kind.value for kind in snapshot.kit.module_kinds],
             "updated_at": snapshot.kit.updated_at.isoformat(),
         },
+        "kits": {
+            mode: {
+                "name": kit.name,
+                "module_kinds": [kind.value for kind in kit.module_kinds],
+                "updated_at": kit.updated_at.isoformat(),
+            }
+            for mode, kit in snapshot.kits.items()
+        },
         "equipped_module_skin_id": snapshot.equipped_module_skin_id,
         "equipped_board_theme_id": snapshot.equipped_board_theme_id,
         "equipped_profile_frame_id": snapshot.equipped_profile_frame_id,
@@ -1566,6 +1574,7 @@ def create_app(
         return _collection_payload(
             resolved_collection.save_kit(
                 player.player_id,
+                mode=request.mode,
                 name=request.name,
                 module_kinds=request.module_kinds,
             )
@@ -1607,7 +1616,9 @@ def create_app(
         player: PlayerView = Depends(current_player),
     ) -> dict[str, Any]:
         domain_board = board.to_domain()
-        resolved_collection.validate_board(player.player_id, domain_board)
+        resolved_collection.validate_board(
+            player.player_id, domain_board, mode="career"
+        )
         saved = resolved_career.save_board(
             player.player_id,
             domain_board,
@@ -1628,7 +1639,9 @@ def create_app(
         player: PlayerView = Depends(current_player),
     ) -> dict[str, Any]:
         domain_board = board.to_domain()
-        resolved_collection.validate_board(player.player_id, domain_board)
+        resolved_collection.validate_board(
+            player.player_id, domain_board, mode="online"
+        )
         saved = resolved_online.save_board(
             player.player_id,
             domain_board,

@@ -36,7 +36,7 @@ class _SeasonScreenState extends ConsumerState<SeasonScreen> {
               ),
             ),
             Text(
-              'PROJECT RELAY • v0.8.9',
+              'PROJECT RELAY • v0.8.10',
               style: TextStyle(color: RelayColors.muted, fontSize: 10),
             ),
           ],

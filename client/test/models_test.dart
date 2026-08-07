@@ -570,4 +570,57 @@ void main() {
     expect(replay.stateAt(1)!.left.modules.single.heat, 14);
     expect(replay.stateAt(1)!.left.modules.single.cooldown, 2);
   });
+  test('savaş modlarına ait başlangıç sekizlilerini ayrı ayrıştırır', () {
+    final snapshot = CollectionSnapshot.fromJson({
+      'player_id': 'player-1',
+      'credits': 0,
+      'cosmetics': <Map<String, Object?>>[],
+      'kit': {
+        'name': 'Çevrimiçi',
+        'module_kinds': [
+          'generator', 'battery', 'laser', 'pulse_cannon',
+          'shield', 'cooler', 'amplifier', 'repair',
+        ],
+        'updated_at': '2026-08-06T00:00:00+00:00',
+      },
+      'kits': {
+        'online': {
+          'name': 'Çevrimiçi',
+          'module_kinds': [
+            'generator', 'battery', 'laser', 'pulse_cannon',
+            'shield', 'cooler', 'amplifier', 'repair',
+          ],
+          'updated_at': '2026-08-06T00:00:00+00:00',
+        },
+        'training': {
+          'name': 'Antrenman',
+          'module_kinds': [
+            'generator', 'battery', 'battery', 'laser',
+            'shield', 'cooler', 'amplifier', 'repair',
+          ],
+          'updated_at': '2026-08-06T00:01:00+00:00',
+        },
+        'career': {
+          'name': 'Kariyer',
+          'module_kinds': [
+            'generator', 'battery', 'laser', 'shield',
+            'shield', 'cooler', 'repair', 'repair',
+          ],
+          'updated_at': '2026-08-06T00:02:00+00:00',
+        },
+      },
+      'equipped_module_skin_id': 'module_neon_cyan',
+      'equipped_board_theme_id': 'board_midnight_grid',
+      'equipped_profile_frame_id': 'frame_circuit_basic',
+    });
+
+    expect(snapshot.kitFor(KitMode.online).name, 'Çevrimiçi');
+    expect(snapshot.kitFor(KitMode.training).name, 'Antrenman');
+    expect(snapshot.kitFor(KitMode.career).name, 'Kariyer');
+    expect(
+      snapshot.kitFor(KitMode.career).counts[ModuleKind.repair],
+      2,
+    );
+  });
+
 }

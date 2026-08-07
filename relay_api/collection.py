@@ -22,6 +22,8 @@ from .db_models import (
 )
 
 CosmeticCategory = Literal["module_skin", "board_theme", "profile_frame"]
+KitMode = Literal["online", "training", "career"]
+KIT_MODES: tuple[KitMode, ...] = ("online", "training", "career")
 
 
 class CollectionError(Exception):
@@ -77,10 +79,14 @@ class CollectionSnapshot:
     player_id: str
     credits: int
     cosmetics: tuple[CosmeticView, ...]
-    kit: ControlledKit
+    kits: dict[KitMode, ControlledKit]
     equipped_module_skin_id: str
     equipped_board_theme_id: str
     equipped_profile_frame_id: str
+
+    @property
+    def kit(self) -> ControlledKit:
+        return self.kits["online"]
 
 
 COSMETICS: tuple[CosmeticDefinition, ...] = (
@@ -249,9 +255,12 @@ class CollectionService:
         self,
         player_id: str,
         *,
+        mode: KitMode = "online",
         name: str,
         module_kinds: list[ModuleKind],
     ) -> CollectionSnapshot:
+        if mode not in KIT_MODES:
+            raise CollectionError("kit_mode_invalid", "Geçersiz savaş modu.")
         normalized_name = name.strip()
         if not normalized_name:
             raise CollectionError("kit_name_required", "Kit adı boş olamaz.")
@@ -262,19 +271,36 @@ class CollectionService:
             progression = self._progression_record(session, player_id, now)
             loadout = self._loadout_record(session, player_id, now)
             self._ensure_starter_ownership(session, player_id, now)
-            loadout.kit_name = normalized_name[:40]
-            loadout.module_kinds = [kind.value for kind in module_kinds]
+            mode_kits = self._serialized_mode_kits(loadout)
+            mode_kits[mode] = {
+                "name": normalized_name[:40],
+                "module_kinds": [kind.value for kind in module_kinds],
+                "updated_at": now.isoformat(),
+            }
+            loadout.mode_kits = mode_kits
+            if mode == "online":
+                loadout.kit_name = normalized_name[:40]
+                loadout.module_kinds = [kind.value for kind in module_kinds]
             loadout.updated_at = now
             session.flush()
             return self._snapshot(session, progression, loadout)
 
-    def validate_board(self, player_id: str, board: BoardLayout) -> None:
-        """Reject server-saved boards that use modules outside the active kit."""
+    def validate_board(
+        self,
+        player_id: str,
+        board: BoardLayout,
+        *,
+        mode: KitMode = "online",
+    ) -> None:
+        """Reject boards that use modules outside the selected mode kit."""
+        if mode not in KIT_MODES:
+            raise CollectionError("kit_mode_invalid", "Geçersiz savaş modu.")
         now = self.clock()
         with self.database.session() as session:
             self._require_player(session, player_id)
             loadout = self._loadout_record(session, player_id, now)
-            allowed = Counter(ModuleKind(value) for value in loadout.module_kinds)
+            selected_kit = self._mode_kits(loadout)[mode]
+            allowed = Counter(selected_kit.module_kinds)
             used = Counter(module.kind for module in board.modules)
             violations = [
                 f"{kind.value}: {count}/{allowed.get(kind, 0)}"
@@ -348,13 +374,7 @@ class CollectionService:
             player_id=progression.player_id,
             credits=progression.credits,
             cosmetics=cosmetics,
-            kit=ControlledKit(
-                name=loadout.kit_name,
-                module_kinds=tuple(
-                    ModuleKind(value) for value in loadout.module_kinds
-                ),
-                updated_at=self._as_utc(loadout.updated_at),
-            ),
+            kits=self._mode_kits(loadout),
             equipped_module_skin_id=loadout.module_skin_id,
             equipped_board_theme_id=loadout.board_theme_id,
             equipped_profile_frame_id=loadout.profile_frame_id,
@@ -368,11 +388,24 @@ class CollectionService:
     ) -> PlayerLoadoutRecord:
         record = session.get(PlayerLoadoutRecord, player_id)
         if record is not None:
+            normalized = self._serialized_mode_kits(record)
+            if record.mode_kits != normalized:
+                record.mode_kits = normalized
+                record.updated_at = now
+                session.flush()
             return record
+        legacy_kinds = [
+            kind.value for kind in self._legacy_compatible_kit(session, player_id)
+        ]
         record = PlayerLoadoutRecord(
             player_id=player_id,
             kit_name="Başlangıç Sekizlisi",
-            module_kinds=[kind.value for kind in self._legacy_compatible_kit(session, player_id)],
+            module_kinds=legacy_kinds,
+            mode_kits=self._default_mode_kits(
+                name="Başlangıç Sekizlisi",
+                module_kinds=legacy_kinds,
+                updated_at=now,
+            ),
             module_skin_id=STARTER_EQUIPPED["module_skin"],
             board_theme_id=STARTER_EQUIPPED["board_theme"],
             profile_frame_id=STARTER_EQUIPPED["profile_frame"],
@@ -382,6 +415,74 @@ class CollectionService:
         session.add(record)
         session.flush()
         return record
+
+    @staticmethod
+    def _default_mode_kits(
+        *,
+        name: str,
+        module_kinds: list[str],
+        updated_at: datetime,
+    ) -> dict[str, object]:
+        return {
+            mode: {
+                "name": name,
+                "module_kinds": list(module_kinds),
+                "updated_at": updated_at.isoformat(),
+            }
+            for mode in KIT_MODES
+        }
+
+    def _serialized_mode_kits(
+        self,
+        loadout: PlayerLoadoutRecord,
+    ) -> dict[str, object]:
+        fallback = {
+            "name": loadout.kit_name,
+            "module_kinds": list(loadout.module_kinds),
+            "updated_at": self._as_utc(loadout.updated_at).isoformat(),
+        }
+        raw = loadout.mode_kits if isinstance(loadout.mode_kits, dict) else {}
+        normalized: dict[str, object] = {}
+        for mode in KIT_MODES:
+            value = raw.get(mode)
+            if not isinstance(value, dict):
+                normalized[mode] = dict(fallback)
+                continue
+            name = str(value.get("name") or fallback["name"])[:40]
+            kinds = value.get("module_kinds")
+            if not isinstance(kinds, list) or len(kinds) != KIT_SIZE:
+                kinds = list(fallback["module_kinds"])
+            updated_at = str(value.get("updated_at") or fallback["updated_at"])
+            normalized[mode] = {
+                "name": name,
+                "module_kinds": [str(kind) for kind in kinds],
+                "updated_at": updated_at,
+            }
+        return normalized
+
+    def _mode_kits(
+        self,
+        loadout: PlayerLoadoutRecord,
+    ) -> dict[KitMode, ControlledKit]:
+        serialized = self._serialized_mode_kits(loadout)
+        kits: dict[KitMode, ControlledKit] = {}
+        for mode in KIT_MODES:
+            value = serialized[mode]
+            assert isinstance(value, dict)
+            updated_raw = str(value["updated_at"])
+            try:
+                updated_at = datetime.fromisoformat(updated_raw)
+            except ValueError:
+                updated_at = loadout.updated_at
+            kits[mode] = ControlledKit(
+                name=str(value["name"]),
+                module_kinds=tuple(
+                    ModuleKind(str(kind))
+                    for kind in value["module_kinds"]
+                ),
+                updated_at=self._as_utc(updated_at),
+            )
+        return kits
 
     @staticmethod
     def _legacy_compatible_kit(

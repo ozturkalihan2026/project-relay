@@ -1,3 +1,14 @@
+## v0.8.10 — Moda Özel Sekizliler ve Devre İzolasyonu
+
+- Kariyer modül seçimi 2 sütun × 4 sıra düzene geçirildi; Doğrula eylemi Modül Seç kartına taşındı.
+- Çevrimiçi, Antrenman ve Kariyer için sunucuda ayrı başlangıç sekizlileri tutuluyor.
+- Sekizli kaydetme sonucu ilgili editöre `ControlledKit` olarak dönüyor ve palet yenileme gerektirmeden güncelleniyor.
+- Çevrimiçi, Antrenman ve Kariyer devre sağlayıcıları tüm doğrulama ve düzenleme işlemlerinde ayrı tutuluyor.
+- Çevrimiçi ve Kariyer kart kayıtları kendi mod sekizlilerine göre sunucuda denetleniyor.
+- Dar modül paletinde geri bırakma göstergesi `Expanded` ve ellipsis ile taşmasız hale getirildi.
+- Kaynak sözleşmesine yinelenen Dart constructor parametrelerini reddeden genel kontrol ve moda özel sağlayıcı kullanım denetimleri eklendi.
+- Alembic `20260806_0010`, API `0.8.10`, Flutter `0.8.10+62`.
+
 ## v0.8.9 — Üç Kartlı Kariyer Hazırlığı ve Yenilgi Dönüş Akışı
 
 - Kariyer hazırlığı üç bağımsız alana ayrıldı: Modül Seç, Senin Devren ve Koşu Rakibi.
