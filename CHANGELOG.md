@@ -1,3 +1,7 @@
+## v0.8.11 rev1
+- Dar modül paleti sürükle-bırak regresyon testi gerçek Draggable eşiğini geçecek şekilde düzeltildi.
+- Drop sonrası karttan dönüş callback'i de doğrulanıyor.
+
 ## v0.8.11 — Arcade-Tech Görsel Yenileme
 
 - Global katmanlı arka plan gradyanı eklendi.

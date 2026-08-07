@@ -27,7 +27,7 @@ class FlutterClientContractTests(unittest.TestCase):
             encoding="utf-8"
         )
 
-        self.assertIn("version: 0.8.11+63", pubspec)
+        self.assertIn("version: 0.8.11+64", pubspec)
         self.assertIn("await tester.ensureVisible(profileBack);", widget_test)
         self.assertIn("await tester.pumpAndSettle();\n      await tester.tap(profileBack);", widget_test)
         self.assertIn("final horizontalScrollable = find.ancestor(", widget_test)
@@ -560,6 +560,10 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("/$maxBoardModules MODÜL", editor_source)
         self.assertIn("onBoardModuleReturned", palette_source)
         self.assertIn("BURAYA BIRAK: KARTTAN KALDIR", palette_source)
+        palette_layout_test = (CLIENT / "test" / "module_palette_layout_test.dart").read_text(encoding="utf-8")
+        self.assertIn("await gesture.moveBy(const Offset(24, 0));", palette_layout_test)
+        self.assertIn("expect(returnedModule, isNotNull);", palette_layout_test)
+        self.assertIn("expect(returnedModule!.isFromBoard, isTrue);", palette_layout_test)
         self.assertNotIn("HowToPlayCard", editor_source)
         self.assertIn("OYUNUN AMACI NEDİR?", manual_source)
         self.assertIn("ENERJİ NASIL AKAR?", manual_source)

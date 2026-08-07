@@ -5,6 +5,7 @@ import 'package:project_relay_client/src/widgets/module_palette.dart';
 
 void main() {
   testWidgets('dar paletteye kart geri bırakılırken taşma oluşmaz', (tester) async {
+    ModuleDragData? returnedModule;
     const module = ModuleSpec(
       kind: ModuleKind.repair,
       displayName: 'Onarım',
@@ -47,7 +48,7 @@ void main() {
                     modules: const [module],
                     selectedKind: null,
                     onSelected: (_) {},
-                    onBoardModuleReturned: (_) {},
+                    onBoardModuleReturned: (data) => returnedModule = data,
                     remainingByKind: const {ModuleKind.repair: 1},
                   ),
                 ],
@@ -58,19 +59,28 @@ void main() {
       ),
     );
 
-    final gesture = await tester.startGesture(
-      tester.getCenter(find.byKey(const ValueKey('board-module-drag-source'))),
-    );
-    await gesture.moveTo(
-      tester.getCenter(find.byType(ModulePalette)),
-    );
+    final source = find.byKey(const ValueKey('board-module-drag-source'));
+    final palette = find.byType(ModulePalette);
+    final sourceCenter = tester.getCenter(source);
+    final paletteCenter = tester.getCenter(palette);
+
+    final gesture = await tester.startGesture(sourceCenter);
     await tester.pump();
+
+    // Draggable ancak dokunma sürükleme eşiği geçildikten sonra aktif olur.
+    await gesture.moveBy(const Offset(24, 0));
+    await tester.pump();
+    await gesture.moveTo(paletteCenter);
+    await tester.pump(const Duration(milliseconds: 50));
 
     expect(find.byKey(const ValueKey('return')), findsOneWidget);
     expect(tester.takeException(), isNull);
 
     await gesture.up();
     await tester.pumpAndSettle();
+    expect(returnedModule, isNotNull);
+    expect(returnedModule!.isFromBoard, isTrue);
+    expect(returnedModule!.cellIndex, 7);
     expect(tester.takeException(), isNull);
   });
 }
