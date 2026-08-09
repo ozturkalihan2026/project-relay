@@ -1,11 +1,13 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../api/relay_api.dart';
 import '../models/relay_models.dart';
 import '../theme/relay_theme.dart';
+import 'relay_dialog.dart';
 
 class ChatDockState {
   const ChatDockState({this.open = false, this.requestedIdentity});
@@ -46,6 +48,7 @@ class ChatDock extends ConsumerStatefulWidget {
 
 class _ChatDockState extends ConsumerState<ChatDock> {
   final _messageController = TextEditingController();
+  late final FocusNode _messageFocusNode;
   Timer? _pollTimer;
   final Map<String, DateTime> _lastObservedByChannel = <String, DateTime>{};
   final Map<String, int> _unreadByChannel = <String, int>{};
@@ -58,6 +61,17 @@ class _ChatDockState extends ConsumerState<ChatDock> {
   @override
   void initState() {
     super.initState();
+    _messageFocusNode = FocusNode(
+      onKeyEvent: (node, event) {
+        if (event is KeyDownEvent &&
+            event.logicalKey == LogicalKeyboardKey.enter &&
+            !HardwareKeyboard.instance.isShiftPressed) {
+          unawaited(_send());
+          return KeyEventResult.handled;
+        }
+        return KeyEventResult.ignored;
+      },
+    );
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) unawaited(_pollChatActivity(initial: true));
     });
@@ -69,6 +83,7 @@ class _ChatDockState extends ConsumerState<ChatDock> {
   @override
   void dispose() {
     _pollTimer?.cancel();
+    _messageFocusNode.dispose();
     _messageController.dispose();
     super.dispose();
   }
@@ -257,17 +272,19 @@ class _ChatDockState extends ConsumerState<ChatDock> {
         children: [
           Expanded(
             child: TextField(
+              key: const ValueKey('chat-message-input'),
               controller: _messageController,
+              focusNode: _messageFocusNode,
               enabled: _selected != null && !_sending,
               maxLength: 500,
               maxLines: 3,
               minLines: 1,
+              textInputAction: TextInputAction.newline,
               decoration: const InputDecoration(
                 counterText: '',
-                hintText: 'Mesaj yaz...',
+                hintText: 'Mesaj yaz...  •  Enter: gönder  •  Shift+Enter: yeni satır',
                 isDense: true,
               ),
-              onSubmitted: (_) => _send(),
             ),
           ),
           const SizedBox(width: 8),
@@ -414,37 +431,92 @@ class _ChatDockState extends ConsumerState<ChatDock> {
     final selected = <String>{};
     final created = await showDialog<bool>(
       context: context,
-      barrierColor: Colors.black.withValues(alpha: 0.64),
+      barrierColor: Colors.black.withValues(alpha: 0.72),
       builder: (dialogContext) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          title: const Text('YENİ SOHBET GRUBU'),
-          content: SizedBox(
-            width: 390,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(controller: nameController, maxLength: 40, decoration: const InputDecoration(labelText: 'Grup adı')),
-                const SizedBox(height: 8),
-                for (final friend in social.friends)
-                  CheckboxListTile(
-                    dense: true,
-                    value: selected.contains(friend.playerId),
-                    title: Text(friend.displayName),
-                    onChanged: (value) => setDialogState(() {
-                      if (value == true) {
-                        selected.add(friend.playerId);
-                      } else {
-                        selected.remove(friend.playerId);
-                      }
-                    }),
+        builder: (context, setDialogState) => RelayFormDialog(
+          key: const ValueKey('chat-create-group-dialog'),
+          title: 'Yeni Sohbet Grubu',
+          subtitle: 'Arkadaşlarından bir ekip seç ve özel bir iletişim kanalı oluştur.',
+          icon: Icons.groups_2_outlined,
+          accent: RelayColors.violet,
+          confirmLabel: 'GRUBU KUR',
+          confirmEnabled: selected.isNotEmpty && nameController.text.trim().isNotEmpty,
+          onConfirm: () => Navigator.pop(dialogContext, true),
+          onCancel: () => Navigator.pop(dialogContext, false),
+          child: SizedBox(
+            width: 410,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  TextField(
+                    key: const ValueKey('chat-group-name-input'),
+                    controller: nameController,
+                    maxLength: 40,
+                    decoration: const InputDecoration(
+                      labelText: 'Grup adı',
+                      prefixIcon: Icon(Icons.edit_outlined),
+                    ),
+                    onChanged: (_) => setDialogState(() {}),
                   ),
-              ],
+                  const SizedBox(height: 8),
+                  const Text(
+                    'ÜYELER',
+                    style: TextStyle(
+                      color: RelayColors.cyan,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 0.9,
+                      fontSize: 10,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  if (social.friends.isEmpty)
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: RelayColors.background.withValues(alpha: 0.30),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: RelayColors.violet.withValues(alpha: 0.20)),
+                      ),
+                      child: const Text(
+                        'Grup oluşturmak için önce arkadaş eklemelisin.',
+                        style: TextStyle(color: RelayColors.muted),
+                      ),
+                    )
+                  else
+                    for (final friend in social.friends)
+                      Container(
+                        margin: const EdgeInsets.only(bottom: 6),
+                        decoration: BoxDecoration(
+                          color: selected.contains(friend.playerId)
+                              ? RelayColors.violet.withValues(alpha: 0.14)
+                              : RelayColors.background.withValues(alpha: 0.22),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: selected.contains(friend.playerId)
+                                ? RelayColors.violet.withValues(alpha: 0.44)
+                                : RelayColors.cyan.withValues(alpha: 0.10),
+                          ),
+                        ),
+                        child: CheckboxListTile(
+                          dense: true,
+                          value: selected.contains(friend.playerId),
+                          secondary: const Icon(Icons.person_outline, color: RelayColors.cyan),
+                          title: Text(friend.displayName),
+                          onChanged: (value) => setDialogState(() {
+                            if (value == true) {
+                              selected.add(friend.playerId);
+                            } else {
+                              selected.remove(friend.playerId);
+                            }
+                          }),
+                        ),
+                      ),
+                ],
+              ),
             ),
           ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('VAZGEÇ')),
-            FilledButton(onPressed: selected.isEmpty ? null : () => Navigator.pop(dialogContext, true), child: const Text('GRUBU KUR')),
-          ],
         ),
       ),
     );

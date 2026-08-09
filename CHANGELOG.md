@@ -1,3 +1,10 @@
+## v0.8.20 rev5
+- Sosyal profil, klan kurma ve sohbet grubu oluşturma modalları yeni arcade-tech form dialog ailesine taşındı.
+- Sohbette Enter mesaj gönderir, Shift+Enter yeni satır bırakır.
+- Klan/arkadaş değişiklikleri sohbet kanallarını anında yeniler.
+- Hazırlık ve savaş çekirdeklerinde Project Relay amblemi ortaklaştırıldı.
+- Savaş çekirdeğine periyodik enerji parlaması ve modüller arası daha belirgin yönlü enerji akışı eklendi.
+
 ## v0.8.20 rev4
 - İstatistikler Sezon/Haftalık Lig sekmelerindeki gereksiz simgeler kaldırıldı.
 - Tek portlu modüllerin otomatik bağlantı yönlendirmesi dört yönde simetrik hale getirildi.

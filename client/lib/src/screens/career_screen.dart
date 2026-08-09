@@ -11,6 +11,7 @@ import '../widgets/app_header_actions.dart';
 import '../widgets/circuit_board.dart';
 import '../widgets/module_palette.dart';
 import '../widgets/relay_notice.dart';
+import '../widgets/relay_dialog.dart';
 import 'career_battle_screen.dart';
 import 'collection_screen.dart';
 
@@ -371,21 +372,12 @@ class _CareerScreenState extends ConsumerState<CareerScreen> {
     if (_runBusy) return;
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Koşuyu bırak?'),
-        content: const Text(
-          'Mevcut aşama ve bütün geçici güçlendiriciler sıfırlanacak.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('VAZGEÇ'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('KOŞUYU BIRAK'),
-          ),
-        ],
+      barrierColor: Colors.black.withValues(alpha: 0.72),
+      builder: (dialogContext) => const RelayConfirmDialog(
+        title: 'Koşuyu bırak?',
+        message: 'Mevcut aşama ve bütün geçici güçlendiriciler sıfırlanacak.',
+        confirmLabel: 'KOŞUYU BIRAK',
+        destructive: true,
       ),
     );
     if (confirmed != true) return;

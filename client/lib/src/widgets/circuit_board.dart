@@ -5,6 +5,7 @@ import '../theme/cosmetic_visuals.dart';
 import '../theme/relay_theme.dart';
 import 'module_compact_stats.dart';
 import 'module_visuals.dart';
+import 'relay_emblem.dart';
 
 typedef ModuleDropCallback = void Function(
   int cellIndex,
@@ -520,14 +521,11 @@ class _CoreHub extends StatelessWidget {
               boxShadow: [BoxShadow(color: visuals.board.core.withValues(alpha: 0.20), blurRadius: 20)],
             ),
           ),
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.memory, color: visuals.board.core, size: 34),
-              const SizedBox(height: 4),
-              const Text('ÇEKİRDEK', style: TextStyle(color: RelayColors.white, fontSize: 11, fontWeight: FontWeight.w900, letterSpacing: 1.1)),
-              const Text('PASİF • 4 KAPI', style: TextStyle(color: RelayColors.muted, fontSize: 8, fontWeight: FontWeight.w700)),
-            ],
+          RelayEmblem(
+            key: const ValueKey('board-core-emblem'),
+            size: 92,
+            accent: visuals.board.core,
+            secondary: RelayColors.violet,
           ),
           for (final alignment in const [Alignment(-0.5,-1),Alignment(1,-0.5),Alignment(0.5,1),Alignment(-1,0.5)])
             Align(

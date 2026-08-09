@@ -965,6 +965,7 @@ class _SocialScreenState extends ConsumerState<SocialScreen> {
     try {
       await action();
       ref.invalidate(socialProvider);
+      ref.invalidate(chatChannelsProvider);
       if (refreshClans) ref.invalidate(clanDirectoryProvider);
       if (!mounted) return;
       RelayNotice.show(
@@ -986,14 +987,23 @@ class _SocialScreenState extends ConsumerState<SocialScreen> {
     var selectedAvatar = ref.read(profileAvatarProvider);
     final accepted = await showDialog<bool>(
       context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.72),
       builder: (dialogContext) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          title: const Text('SOSYAL PROFİL'),
-          content: SizedBox(
-            width: 420,
+        builder: (context, setDialogState) => RelayFormDialog(
+          key: const ValueKey('social-profile-edit-dialog'),
+          title: 'Sosyal Profil',
+          subtitle: 'Oyuncu kimliğini ve herkese açık profil bilgilerini düzenle.',
+          icon: Icons.manage_accounts_outlined,
+          accent: RelayColors.cyan,
+          confirmLabel: 'KAYDET',
+          onConfirm: () => Navigator.pop(dialogContext, true),
+          onCancel: () => Navigator.pop(dialogContext, false),
+          child: SizedBox(
+            width: 440,
             child: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   const _PublicTextWarning(),
                   const SizedBox(height: 12),
@@ -1003,14 +1013,19 @@ class _SocialScreenState extends ConsumerState<SocialScreen> {
                     maxLength: 160,
                     minLines: 2,
                     maxLines: 4,
-                    decoration: const InputDecoration(labelText: 'Durum mesajı'),
+                    decoration: const InputDecoration(
+                      labelText: 'Durum mesajı',
+                      prefixIcon: Icon(Icons.chat_bubble_outline),
+                    ),
                   ),
                   const SizedBox(height: 8),
-                  const Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      'Profil simgesi',
-                      style: TextStyle(fontWeight: FontWeight.w800),
+                  const Text(
+                    'PROFİL SİMGESİ',
+                    style: TextStyle(
+                      color: RelayColors.cyan,
+                      fontWeight: FontWeight.w900,
+                      fontSize: 10,
+                      letterSpacing: 0.9,
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -1020,7 +1035,12 @@ class _SocialScreenState extends ConsumerState<SocialScreen> {
                     children: [
                       for (final icon in selectableProfileIcons)
                         ChoiceChip(
-                          label: Icon(icon, color: RelayColors.cyan),
+                          label: Icon(
+                            icon,
+                            color: selectedAvatar == icon
+                                ? RelayColors.background
+                                : RelayColors.cyan,
+                          ),
                           selected: selectedAvatar == icon,
                           onSelected: (_) {
                             setDialogState(() => selectedAvatar = icon);
@@ -1028,11 +1048,14 @@ class _SocialScreenState extends ConsumerState<SocialScreen> {
                         ),
                     ],
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 14),
                   DropdownButtonFormField<ModuleKind>(
                     key: const ValueKey('social-favorite-module-input'),
                     initialValue: favoriteModule,
-                    decoration: const InputDecoration(labelText: 'Favori modül'),
+                    decoration: const InputDecoration(
+                      labelText: 'Favori modül',
+                      prefixIcon: Icon(Icons.memory_outlined),
+                    ),
                     items: [
                       for (final kind in ModuleKind.values)
                         DropdownMenuItem(
@@ -1050,16 +1073,6 @@ class _SocialScreenState extends ConsumerState<SocialScreen> {
               ),
             ),
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext, false),
-              child: const Text('İPTAL'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(dialogContext, true),
-              child: const Text('KAYDET'),
-            ),
-          ],
         ),
       ),
     );
@@ -1092,13 +1105,22 @@ class _SocialScreenState extends ConsumerState<SocialScreen> {
     final descriptionController = TextEditingController();
     final accepted = await showDialog<bool>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('YENİ KLAN'),
-        content: SizedBox(
-          width: 420,
+      barrierColor: Colors.black.withValues(alpha: 0.72),
+      builder: (dialogContext) => RelayFormDialog(
+        key: const ValueKey('social-create-clan-dialog'),
+        title: 'Yeni Klan',
+        subtitle: 'Klan kimliğini oluştur; ad, etiket ve açıklama herkese açık görünür.',
+        icon: Icons.hub_outlined,
+        accent: RelayColors.amber,
+        confirmLabel: 'KLANI KUR',
+        onConfirm: () => Navigator.pop(dialogContext, true),
+        onCancel: () => Navigator.pop(dialogContext, false),
+        child: SizedBox(
+          width: 440,
           child: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 const _PublicTextWarning(
                   message:
@@ -1109,7 +1131,10 @@ class _SocialScreenState extends ConsumerState<SocialScreen> {
                   key: const ValueKey('social-clan-name-input'),
                   controller: nameController,
                   maxLength: 48,
-                  decoration: const InputDecoration(labelText: 'Klan adı'),
+                  decoration: const InputDecoration(
+                    labelText: 'Klan adı',
+                    prefixIcon: Icon(Icons.shield_outlined),
+                  ),
                 ),
                 TextField(
                   key: const ValueKey('social-clan-tag-input'),
@@ -1119,6 +1144,7 @@ class _SocialScreenState extends ConsumerState<SocialScreen> {
                   decoration: const InputDecoration(
                     labelText: 'Kısa etiket',
                     helperText: '2-8 harf, rakam veya alt çizgi',
+                    prefixIcon: Icon(Icons.tag),
                   ),
                 ),
                 TextField(
@@ -1127,22 +1153,15 @@ class _SocialScreenState extends ConsumerState<SocialScreen> {
                   maxLength: 240,
                   minLines: 2,
                   maxLines: 4,
-                  decoration: const InputDecoration(labelText: 'Açıklama'),
+                  decoration: const InputDecoration(
+                    labelText: 'Açıklama',
+                    prefixIcon: Icon(Icons.notes_outlined),
+                  ),
                 ),
               ],
             ),
           ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('İPTAL'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('KLANI KUR'),
-          ),
-        ],
       ),
     );
     final name = nameController.text.trim();

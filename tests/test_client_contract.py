@@ -27,7 +27,7 @@ class FlutterClientContractTests(unittest.TestCase):
             encoding="utf-8"
         )
 
-        self.assertIn("version: 0.8.20+81", pubspec)
+        self.assertIn("version: 0.8.20+82", pubspec)
         career_screen = (CLIENT / "lib/src/screens/career_screen.dart").read_text(encoding="utf-8")
         self.assertNotIn("class _Metric extends StatelessWidget", career_screen)
         self.assertIn("await tester.ensureVisible(profileBack);", widget_test)
@@ -1665,7 +1665,7 @@ def test_v0820_rev1_analyzer_regressions():
     assert theme.count("chipTheme:") == 1
     assert "separatorBuilder: (_, _)" in chat
     assert "separatorBuilder: (_, __)" not in chat
-    assert "version: 0.8.20+81" in pubspec
+    assert "version: 0.8.20+82" in pubspec
     assert 'version = "0.8.20"' in pyproject
 
 
@@ -1719,3 +1719,43 @@ def test_v0820_rev4_symmetric_auto_ports_and_clean_statistics_tabs() -> None:
     assert "eski kayıt yüklenince otomatik portlar düzeltilir" in board_test
     assert "icon: Icon(Icons.auto_awesome)" not in season
     assert "icon: Icon(Icons.calendar_view_week)" not in season
+
+
+def test_v0820_rev5_modern_chat_core_and_energy_contract() -> None:
+    chat = (CLIENT / "lib/src/widgets/chat_dock.dart").read_text(encoding="utf-8")
+    social = (CLIENT / "lib/src/screens/social_screen.dart").read_text(encoding="utf-8")
+    dialogs = (CLIENT / "lib/src/widgets/relay_dialog.dart").read_text(encoding="utf-8")
+    circuit = (CLIENT / "lib/src/widgets/circuit_board.dart").read_text(encoding="utf-8")
+    replay = (CLIENT / "lib/src/game/replay_game.dart").read_text(encoding="utf-8")
+    career = (CLIENT / "lib/src/screens/career_screen.dart").read_text(encoding="utf-8")
+    pubspec = (CLIENT / "pubspec.yaml").read_text(encoding="utf-8")
+
+    assert "version: 0.8.20+82" in pubspec
+    assert "class RelayFormDialog extends StatelessWidget" in dialogs
+    assert "RelayFormDialog(" in chat
+    assert social.count("RelayFormDialog(") >= 2
+    assert "AlertDialog(" not in chat
+    assert "AlertDialog(" not in social
+    assert "AlertDialog(" not in career
+
+    # Plain Enter sends; Shift+Enter remains available to EditableText for a newline.
+    assert "late final FocusNode _messageFocusNode" in chat
+    assert "event.logicalKey == LogicalKeyboardKey.enter" in chat
+    assert "!HardwareKeyboard.instance.isShiftPressed" in chat
+    assert "KeyEventResult.handled" in chat
+    assert "Shift+Enter: yeni satır" in chat
+
+    # Clan/friend mutations invalidate chat channels immediately.
+    assert "ref.invalidate(chatChannelsProvider);" in social
+
+    # The same Project Relay emblem is used in editor and battle cores.
+    assert "board-core-emblem" in circuit
+    assert "RelayEmblem(" in circuit
+    assert "RelayEmblemPainter.drawEmblem(" in replay
+    assert "'ÇEKİRDEK'" not in replay[replay.index("void _drawBoardCore"):replay.index("void _drawPulse", replay.index("void _drawBoardCore"))]
+
+    # Battle energy flow has a visible directional trail and powered-port pulse.
+    assert "void _drawEnergyLink(" in replay
+    assert "for (var trail = 0; trail < 4; trail += 1)" in replay
+    assert "maskFilter = const ui.MaskFilter.blur" in replay
+    assert "final portPulse" in replay

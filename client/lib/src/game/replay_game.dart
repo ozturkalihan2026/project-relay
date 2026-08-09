@@ -8,6 +8,7 @@ import '../models/relay_models.dart';
 import '../theme/cosmetic_visuals.dart';
 import '../theme/relay_theme.dart';
 import '../widgets/module_visuals.dart';
+import '../widgets/relay_emblem.dart';
 import 'replay_event_formatter.dart';
 import 'replay_timeline.dart';
 
@@ -816,6 +817,18 @@ class RelayReplayGame extends FlameGame {
         direction,
         boardRect,
       );
+      if (powered && !destroyed) {
+        final portPulse = 0.62 + 0.38 * math.sin(
+          _animationTime * math.pi * 4 + module.cellIndex * 0.7,
+        ).abs();
+        canvas.drawCircle(
+          point,
+          6.5,
+          Paint()
+            ..color = visuals.modules.accent.withValues(alpha: 0.16 * portPulse)
+            ..maskFilter = const ui.MaskFilter.blur(ui.BlurStyle.normal, 5),
+        );
+      }
       canvas
         ..drawCircle(
           point,
@@ -824,7 +837,7 @@ class RelayReplayGame extends FlameGame {
         )
         ..drawCircle(
           point,
-          2.5,
+          powered && !destroyed ? 2.9 : 2.5,
           Paint()
             ..color = destroyed
                 ? RelayColors.muted.withValues(alpha: 0.45)
@@ -911,29 +924,16 @@ class RelayReplayGame extends FlameGame {
         );
         final phase =
             ((_animationTime * 1.65 + linkIndex * 0.27) % 1).toDouble();
-        final pulse = ui.Offset.lerp(from, to, phase)!;
         final glow =
             0.65 + 0.35 * math.sin((_animationTime + linkIndex) * math.pi * 2);
 
-        canvas.drawLine(
-          from,
-          to,
-          Paint()
-            ..color = visuals.board.trace.withValues(alpha: 0.24)
-            ..strokeWidth = 2
-            ..strokeCap = StrokeCap.round,
-        );
-        canvas.drawCircle(
-          pulse,
-          6,
-          Paint()
-            ..color = visuals.board.trace.withValues(alpha: 0.16 * glow),
-        );
-        canvas.drawCircle(
-          pulse,
-          2.6,
-          Paint()
-            ..color = visuals.board.trace.withValues(alpha: 0.94 * glow),
+        _drawEnergyLink(
+          canvas,
+          from: from,
+          to: to,
+          color: visuals.board.trace,
+          phase: phase,
+          glow: glow,
         );
         linkIndex += 1;
       }
@@ -955,26 +955,80 @@ class RelayReplayGame extends FlameGame {
       final to = generatorToCore ? corePort : modulePort;
       final phase =
           ((_animationTime * 1.65 + linkIndex * 0.27) % 1).toDouble();
-      final pulse = ui.Offset.lerp(from, to, phase)!;
-      canvas.drawLine(
-        from,
-        to,
-        Paint()
-          ..color = visuals.board.gate.withValues(alpha: 0.30)
-          ..strokeWidth = 2.4
-          ..strokeCap = StrokeCap.round,
-      );
-      canvas.drawCircle(
-        pulse,
-        5.5,
-        Paint()..color = visuals.board.gate.withValues(alpha: 0.18),
-      );
-      canvas.drawCircle(
-        pulse,
-        2.5,
-        Paint()..color = visuals.board.gate.withValues(alpha: 0.96),
+      _drawEnergyLink(
+        canvas,
+        from: from,
+        to: to,
+        color: visuals.board.gate,
+        phase: phase,
+        glow: 1,
+        stronger: true,
       );
       linkIndex += 1;
+    }
+  }
+
+  void _drawEnergyLink(
+    ui.Canvas canvas, {
+    required ui.Offset from,
+    required ui.Offset to,
+    required Color color,
+    required double phase,
+    required double glow,
+    bool stronger = false,
+  }) {
+    final baseWidth = stronger ? 3.0 : 2.6;
+    canvas.drawLine(
+      from,
+      to,
+      Paint()
+        ..color = color.withValues(alpha: stronger ? 0.20 : 0.15)
+        ..strokeWidth = stronger ? 8 : 6
+        ..strokeCap = StrokeCap.round
+        ..maskFilter = const ui.MaskFilter.blur(ui.BlurStyle.normal, 5),
+    );
+    canvas.drawLine(
+      from,
+      to,
+      Paint()
+        ..color = color.withValues(alpha: stronger ? 0.48 : 0.36)
+        ..strokeWidth = baseWidth
+        ..strokeCap = StrokeCap.round,
+    );
+
+    for (var trail = 0; trail < 4; trail += 1) {
+      final trailPhase = (phase - trail * 0.085) % 1;
+      final point = ui.Offset.lerp(from, to, trailPhase)!;
+      final opacity = (1 - trail * 0.20) * glow;
+      final radius = (stronger ? 3.4 : 3.0) - trail * 0.35;
+      canvas.drawCircle(
+        point,
+        radius * 2.1,
+        Paint()
+          ..color = color.withValues(alpha: 0.10 * opacity)
+          ..maskFilter = const ui.MaskFilter.blur(ui.BlurStyle.normal, 5),
+      );
+      canvas.drawCircle(
+        point,
+        radius,
+        Paint()..color = color.withValues(alpha: 0.90 * opacity),
+      );
+    }
+
+    final direction = to - from;
+    final length = direction.distance;
+    if (length > 0.01) {
+      final unit = direction / length;
+      final head = ui.Offset.lerp(from, to, phase)!;
+      final tail = head - unit * (stronger ? 13 : 10);
+      canvas.drawLine(
+        tail,
+        head,
+        Paint()
+          ..color = RelayColors.white.withValues(alpha: 0.72 * glow)
+          ..strokeWidth = stronger ? 2.2 : 1.8
+          ..strokeCap = StrokeCap.round,
+      );
     }
   }
 
@@ -1110,13 +1164,14 @@ class RelayReplayGame extends FlameGame {
       )
       ..drawCircle(
         center,
-        coreRect.shortestSide * 0.23,
-        Paint()..color = color.withValues(alpha: 0.15),
-      )
-      ..drawCircle(
-        center,
-        coreRect.shortestSide * 0.15,
-        Paint()..color = color.withValues(alpha: 0.72),
+        coreRect.shortestSide * 0.30,
+        Paint()
+          ..color = color.withValues(
+            alpha: 0.08 +
+                0.08 *
+                    (0.5 + 0.5 * math.sin(_animationTime * math.pi * 1.8)),
+          )
+          ..maskFilter = const ui.MaskFilter.blur(ui.BlurStyle.normal, 10),
       )
       ..drawArc(
         ui.Rect.fromCircle(
@@ -1131,6 +1186,18 @@ class RelayReplayGame extends FlameGame {
           ..style = PaintingStyle.stroke
           ..strokeWidth = 4,
       );
+    final emblemPulse =
+        0.74 + 0.26 * (0.5 + 0.5 * math.sin(_animationTime * math.pi * 1.55));
+    RelayEmblemPainter.drawEmblem(
+      canvas,
+      center: center,
+      radius: coreRect.shortestSide * 0.24,
+      accent: color,
+      secondary: RelayColors.violet,
+      glow: true,
+      opacity: emblemPulse,
+    );
+
     for (final direction in RelayDirection.values) {
       final point = ReplayCircuitGeometry.corePortAnchor(direction, rect);
       canvas
@@ -1145,15 +1212,6 @@ class RelayReplayGame extends FlameGame {
           Paint()..color = visuals.board.gate,
         );
     }
-    _drawText(
-      canvas,
-      'ÇEKİRDEK',
-      ui.Offset(center.dx, coreRect.top + 7),
-      color: color,
-      size: math.max(7.0, cellSize * 0.12),
-      centered: true,
-      maxWidth: coreRect.width - 8,
-    );
     _drawText(
       canvas,
       'Can: ${hp.toStringAsFixed(0)}/${maxHp.toStringAsFixed(0)}',
