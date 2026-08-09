@@ -62,6 +62,8 @@ dönüştürür.
 | v0.8.16 | Amblem çekirdeği, kariyer kart dengesi ve kompakt kredi amblemi | Tamamlandı |
 | v0.8.17 | Kariyer 430/390 yerleşimi ve hasar öncelikli süre sonu tie-break | Tamamlandı |
 | v0.8.18 | Sabit üst bar, ortak kredi amblemi, sezon madalyaları ve güçlendirilmiş savaş VFX | Hazır; yerel Flutter kabulü bekliyor |
+| v0.8.19 | Ortak başlık, kaydırılabilir sıralamalar, modern dialoglar ve savaş VFX ikinci aşama | Tamamlandı |
+| v0.8.20 | Sohbet sistemi, savaş render/netlik düzeltmesi, otomatik port yönlendirme ve ilerleme içeriği genişletmesi | rev3 sohbet Overlay/okunmamış mesaj hotfix hazır; yerel Flutter kabulü bekliyor |
 | v0.9.0 | Kapalı alfa yayına hazırlık, telemetri ve cihaz QA | Sıradaki |
 | v1.0.0 | Android ve web açık beta | Hedef |
 
@@ -365,5 +367,3 @@ etkisi artar; koşu bittiğinde bütün etkiler sıfırlanır.
   devresi bu alanda düzenlenir ve savaş öncesi sunucuya kaydedilir.
 - Komutan Sistemi uygulanmaz ve özellik havuzunda kalır.
 
-| v0.8.19 | Ortak başlık, kaydırılabilir sıralamalar, modern dialoglar ve savaş VFX ikinci aşama | Hazır; yerel Flutter kabulü bekliyor |
-| v0.8.20 | Sohbet sistemi, savaş render/netlik düzeltmesi, otomatik port yönlendirme ve ilerleme içeriği genişletmesi | Hazır; yerel Flutter kabulü bekliyor |

@@ -63,12 +63,10 @@ class _SeasonScreenState extends ConsumerState<SeasonScreen> {
                   segments: const [
                     ButtonSegment(
                       value: _StatisticsSection.season,
-                      icon: Icon(Icons.auto_awesome),
                       label: Text('SEZON', key: ValueKey('statistics-section-season')),
                     ),
                     ButtonSegment(
                       value: _StatisticsSection.weeklyLeague,
-                      icon: Icon(Icons.calendar_view_week),
                       label: Text('HAFTALIK LİG', key: ValueKey('statistics-section-weekly-league')),
                     ),
                   ],

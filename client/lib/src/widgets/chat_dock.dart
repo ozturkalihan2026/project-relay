@@ -47,6 +47,9 @@ class ChatDock extends ConsumerStatefulWidget {
 class _ChatDockState extends ConsumerState<ChatDock> {
   final _messageController = TextEditingController();
   Timer? _pollTimer;
+  final Map<String, DateTime> _lastObservedByChannel = <String, DateTime>{};
+  final Map<String, int> _unreadByChannel = <String, int>{};
+  bool _pollingActivity = false;
   ChatChannelModel? _selected;
   List<ChatMessageModel> _messages = const [];
   bool _loadingMessages = false;
@@ -55,10 +58,11 @@ class _ChatDockState extends ConsumerState<ChatDock> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) unawaited(_pollChatActivity(initial: true));
+    });
     _pollTimer = Timer.periodic(const Duration(seconds: 5), (_) {
-      if (mounted && ref.read(chatDockProvider).open) {
-        unawaited(_loadMessages(silent: true));
-      }
+      if (mounted) unawaited(_pollChatActivity());
     });
   }
 
@@ -84,6 +88,7 @@ class _ChatDockState extends ConsumerState<ChatDock> {
         left: 14,
         bottom: 14,
         child: _CollapsedChatButton(
+          unreadCount: _unreadTotal,
           onTap: () => ref.read(chatDockProvider.notifier).toggle(),
         ),
       );
@@ -162,13 +167,25 @@ class _ChatDockState extends ConsumerState<ChatDock> {
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
         scrollDirection: Axis.horizontal,
         itemCount: channels.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 7),
+        separatorBuilder: (_, _) => const SizedBox(width: 7),
         itemBuilder: (context, index) {
           final channel = channels[index];
           final selected = _selected?.identity == channel.identity;
           return ChoiceChip(
             selected: selected,
-            label: Text(channel.title, overflow: TextOverflow.ellipsis),
+            label: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 138),
+                  child: Text(channel.title, overflow: TextOverflow.ellipsis),
+                ),
+                if ((_unreadByChannel[channel.identity] ?? 0) > 0) ...[
+                  const SizedBox(width: 5),
+                  _UnreadPill(count: _unreadByChannel[channel.identity]!),
+                ],
+              ],
+            ),
             avatar: Icon(_channelIcon(channel.type), size: 16),
             onSelected: (_) => _selectChannel(channel),
           );
@@ -281,7 +298,10 @@ class _ChatDockState extends ConsumerState<ChatDock> {
 
   Future<void> _selectChannel(ChatChannelModel channel) async {
     if (!mounted) return;
-    setState(() => _selected = channel);
+    setState(() {
+      _selected = channel;
+      _unreadByChannel[channel.identity] = 0;
+    });
     await _loadMessages();
   }
 
@@ -291,7 +311,15 @@ class _ChatDockState extends ConsumerState<ChatDock> {
     if (!silent && mounted) setState(() => _loadingMessages = true);
     try {
       final next = await ref.read(relayApiProvider).fetchChatMessages(channel);
-      if (mounted) setState(() => _messages = next);
+      if (mounted) {
+        setState(() {
+          _messages = next;
+          _rememberLatest(channel.identity, next);
+          if (ref.read(chatDockProvider).open) {
+            _unreadByChannel[channel.identity] = 0;
+          }
+        });
+      }
     } catch (_) {
       // Sohbet oyunun ana akışını kesmemeli; sonraki polling tekrar dener.
     } finally {
@@ -311,6 +339,72 @@ class _ChatDockState extends ConsumerState<ChatDock> {
     } finally {
       if (mounted) setState(() => _sending = false);
     }
+  }
+
+  int get _unreadTotal => _unreadByChannel.values.fold<int>(0, (sum, value) => sum + value);
+
+  Future<void> _pollChatActivity({bool initial = false}) async {
+    if (_pollingActivity || !mounted) return;
+    _pollingActivity = true;
+    try {
+      final channels = await ref.read(chatChannelsProvider.future);
+      final currentId = ref.read(guestSessionProvider).asData?.value.player.id;
+      final dock = ref.read(chatDockProvider);
+      for (final channel in channels) {
+        if (!mounted) return;
+        try {
+          final messages = await ref.read(relayApiProvider).fetchChatMessages(channel);
+          final previous = _lastObservedByChannel[channel.identity];
+          final latest = _latestCreatedAt(messages);
+
+          if (!initial && previous != null) {
+            final incoming = messages.where((message) {
+              return message.createdAt.isAfter(previous) &&
+                  message.senderPlayerId != currentId;
+            }).length;
+            final selectedAndVisible = dock.open && _selected?.identity == channel.identity;
+            if (incoming > 0 && !selectedAndVisible && mounted) {
+              setState(() {
+                _unreadByChannel[channel.identity] =
+                    (_unreadByChannel[channel.identity] ?? 0) + incoming;
+              });
+            }
+          }
+
+          if (latest != null) {
+            _lastObservedByChannel[channel.identity] = latest;
+          }
+
+          if (dock.open && _selected?.identity == channel.identity && mounted) {
+            setState(() {
+              _messages = messages;
+              _unreadByChannel[channel.identity] = 0;
+            });
+          }
+        } catch (_) {
+          // Bir kanalın erişim/polling hatası sohbet dock'unu veya oyunu durdurmamalı.
+        }
+      }
+    } catch (_) {
+      // Oturum veya ağ henüz hazır değilse bir sonraki polling turu tekrar dener.
+    } finally {
+      _pollingActivity = false;
+    }
+  }
+
+  void _rememberLatest(String identity, List<ChatMessageModel> messages) {
+    final latest = _latestCreatedAt(messages);
+    if (latest != null) _lastObservedByChannel[identity] = latest;
+  }
+
+  DateTime? _latestCreatedAt(List<ChatMessageModel> messages) {
+    DateTime? latest;
+    for (final message in messages) {
+      if (latest == null || message.createdAt.isAfter(latest)) {
+        latest = message.createdAt;
+      }
+    }
+    return latest;
   }
 
   Future<void> _showCreateGroup() async {
@@ -371,28 +465,108 @@ class _ChatDockState extends ConsumerState<ChatDock> {
 }
 
 class _CollapsedChatButton extends StatelessWidget {
-  const _CollapsedChatButton({required this.onTap});
+  const _CollapsedChatButton({required this.onTap, required this.unreadCount});
   final VoidCallback onTap;
+  final int unreadCount;
 
   @override
   Widget build(BuildContext context) {
+    final hasUnread = unreadCount > 0;
     return Material(
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(16),
-        child: Container(
+        child: AnimatedContainer(
+          key: const ValueKey('chat-collapsed-button'),
+          duration: const Duration(milliseconds: 220),
           width: 250,
           padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 10),
-          decoration: RelayDecorations.panel(accent: RelayColors.violet, soft: true),
-          child: const Row(
+          decoration: RelayDecorations.panel(
+            accent: hasUnread ? RelayColors.amber : RelayColors.violet,
+            soft: true,
+          ),
+          child: Row(
             children: [
-              Icon(Icons.forum_outlined, color: RelayColors.cyan, size: 20),
-              SizedBox(width: 8),
-              Expanded(child: Text('SOHBET • Açmak için tıkla', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800))),
-              Icon(Icons.chevron_right, color: RelayColors.violet),
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Icon(
+                    hasUnread ? Icons.mark_chat_unread_outlined : Icons.forum_outlined,
+                    color: hasUnread ? RelayColors.amber : RelayColors.cyan,
+                    size: 20,
+                  ),
+                  if (hasUnread)
+                    Positioned(
+                      right: -5,
+                      top: -5,
+                      child: Container(
+                        width: 8,
+                        height: 8,
+                        decoration: const BoxDecoration(
+                          color: RelayColors.coral,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(width: 9),
+              Expanded(
+                child: Text(
+                  hasUnread
+                      ? 'SOHBET • $unreadCount yeni mesaj'
+                      : 'SOHBET • Açmak için tıkla',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w900,
+                    color: hasUnread ? RelayColors.white : null,
+                  ),
+                ),
+              ),
+              if (hasUnread) ...[
+                const SizedBox(width: 7),
+                _UnreadPill(count: unreadCount),
+              ] else
+                const Icon(Icons.chevron_right, color: RelayColors.violet),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _UnreadPill extends StatelessWidget {
+  const _UnreadPill({required this.count});
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    final label = count > 99 ? '99+' : '$count';
+    return Container(
+      constraints: const BoxConstraints(minWidth: 22, minHeight: 20),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: RelayColors.coral,
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: RelayColors.white.withValues(alpha: 0.42)),
+        boxShadow: [
+          BoxShadow(
+            color: RelayColors.coral.withValues(alpha: 0.34),
+            blurRadius: 10,
+          ),
+        ],
+      ),
+      alignment: Alignment.center,
+      child: Text(
+        label,
+        style: const TextStyle(
+          color: RelayColors.white,
+          fontSize: 9,
+          fontWeight: FontWeight.w900,
         ),
       ),
     );

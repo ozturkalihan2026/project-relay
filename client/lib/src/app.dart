@@ -17,13 +17,21 @@ class RelayApp extends StatelessWidget {
       title: 'Project Relay',
       debugShowCheckedModeBanner: false,
       theme: RelayTheme.dark(),
-      builder: (context, child) => DecoratedBox(
-        decoration: RelayDecorations.appBackground(),
-        child: Stack(
-          children: [
-            Positioned.fill(child: child ?? const SizedBox.shrink()),
-            const ChatDock(),
-          ],
+      builder: (context, child) => Navigator(
+        onGenerateRoute: (_) => PageRouteBuilder<void>(
+          transitionDuration: Duration.zero,
+          reverseTransitionDuration: Duration.zero,
+          pageBuilder: (overlayContext, animation, secondaryAnimation) {
+            return DecoratedBox(
+              decoration: RelayDecorations.appBackground(),
+              child: Stack(
+                children: [
+                  Positioned.fill(child: child ?? const SizedBox.shrink()),
+                  const ChatDock(),
+                ],
+              ),
+            );
+          },
         ),
       ),
       home: const MainMenuScreen(),

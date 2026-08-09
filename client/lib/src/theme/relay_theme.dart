@@ -203,34 +203,6 @@ abstract final class RelayTheme {
           ),
         ),
       ),
-      segmentedButtonTheme: SegmentedButtonThemeData(
-        style: ButtonStyle(
-          backgroundColor: WidgetStateProperty.resolveWith((states) {
-            if (states.contains(WidgetState.selected)) {
-              return RelayColors.cyan.withValues(alpha: 0.18);
-            }
-            return RelayColors.surfaceSoft.withValues(alpha: 0.64);
-          }),
-          foregroundColor: WidgetStateProperty.resolveWith((states) {
-            return states.contains(WidgetState.selected)
-                ? RelayColors.white
-                : RelayColors.muted;
-          }),
-          side: WidgetStateProperty.resolveWith((states) {
-            return BorderSide(
-              color: states.contains(WidgetState.selected)
-                  ? RelayColors.cyan.withValues(alpha: 0.62)
-                  : RelayColors.cyan.withValues(alpha: 0.18),
-            );
-          }),
-        ),
-      ),
-      chipTheme: ChipThemeData(
-        backgroundColor: RelayColors.surfaceSoft.withValues(alpha: 0.72),
-        selectedColor: RelayColors.violet.withValues(alpha: 0.20),
-        side: BorderSide(color: RelayColors.cyan.withValues(alpha: 0.18)),
-        labelStyle: const TextStyle(color: RelayColors.white),
-      ),
       progressIndicatorTheme: const ProgressIndicatorThemeData(
         color: RelayColors.cyan,
         linearTrackColor: Color(0xFF264656),

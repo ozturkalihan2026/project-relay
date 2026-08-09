@@ -191,18 +191,163 @@ void main() {
       expect(container.read(boardControllerProvider).validation, isNull);
     });
 
-    test('tek portlu modül yerleşirken bağlantıya otomatik yönlenir', () {
+    test('tek portlu modül yalnız gerçek enerji kavşağına otomatik yönlenir', () {
       final controller = container.read(boardControllerProvider.notifier);
-      controller.dropModule(
-        3,
-        const ModuleDragData.palette(ModuleKind.cooler),
-      );
+      controller
+        ..dropModule(
+          7,
+          const ModuleDragData.palette(ModuleKind.battery),
+        )
+        ..dropModule(
+          3,
+          const ModuleDragData.palette(ModuleKind.cooler),
+        );
 
-      // Hücre 3'ün batısında lazer vardır; arka port otomatik batıya bakar.
+      // Hücre 3'ün batısındaki Lazer uç modüldür; güneydeki dört portlu
+      // Batarya gerçek enerji kavşağı olduğu için Soğutucu güneye bağlanır.
       expect(
         container.read(boardControllerProvider).placements[3]?.orientation,
+        RelayDirection.north,
+      );
+    });
+
+    test('tek portlu modüller Bataryanın dört yanında simetrik yönlenir', () {
+      const autoKinds = <ModuleKind>[
+        ModuleKind.laser,
+        ModuleKind.pulseCannon,
+        ModuleKind.shield,
+        ModuleKind.cooler,
+        ModuleKind.repair,
+      ];
+      const cases = <({int batteryCell, int moduleCell, RelayDirection expected})>[
+        (batteryCell: 14, moduleCell: 13, expected: RelayDirection.west),
+        (batteryCell: 14, moduleCell: 15, expected: RelayDirection.east),
+        (batteryCell: 7, moduleCell: 3, expected: RelayDirection.north),
+        (batteryCell: 7, moduleCell: 11, expected: RelayDirection.south),
+      ];
+
+      for (final kind in autoKinds) {
+        for (final scenario in cases) {
+          final controller = container.read(boardControllerProvider.notifier);
+          controller
+            ..reset()
+            ..dropModule(
+              scenario.batteryCell,
+              const ModuleDragData.palette(ModuleKind.battery),
+            )
+            ..dropModule(
+              scenario.moduleCell,
+              ModuleDragData.palette(kind),
+            );
+
+          expect(
+            container
+                .read(boardControllerProvider)
+                .placements[scenario.moduleCell]
+                ?.orientation,
+            scenario.expected,
+            reason:
+                '${kind.displayName} hücre ${scenario.moduleCell} yönlenemedi',
+          );
+        }
+      }
+    });
+
+    test('çekirdeğe komşu normal hücre kapı sayılmaz ve Kalkan Bataryaya bağlanır', () {
+      final controller = container.read(boardControllerProvider.notifier);
+      controller
+        ..dropModule(
+          14,
+          const ModuleDragData.palette(ModuleKind.battery),
+        )
+        ..dropModule(
+          13,
+          const ModuleDragData.palette(ModuleKind.shield),
+        )
+        ..dropModule(
+          15,
+          const ModuleDragData.palette(ModuleKind.shield),
+        );
+
+      final state = container.read(boardControllerProvider);
+      expect(state.placements[13]?.orientation, RelayDirection.west);
+      expect(state.placements[15]?.orientation, RelayDirection.east);
+    });
+
+    test('enerji kavşağı sonradan eklenince mevcut uç modül yeniden yönlenir', () {
+      final controller = container.read(boardControllerProvider.notifier);
+      controller.dropModule(
+        13,
+        const ModuleDragData.palette(ModuleKind.shield),
+      );
+      expect(
+        container.read(boardControllerProvider).placements[13]?.orientation,
         RelayDirection.east,
       );
+
+      controller.dropModule(
+        14,
+        const ModuleDragData.palette(ModuleKind.battery),
+      );
+      expect(
+        container.read(boardControllerProvider).placements[13]?.orientation,
+        RelayDirection.west,
+      );
+    });
+
+    test('tek portlu modül Jeneratörün gerçek dış portuna otomatik bağlanır', () {
+      final controller = container.read(boardControllerProvider.notifier);
+      controller.dropModule(
+        0,
+        const ModuleDragData.palette(ModuleKind.shield),
+      );
+
+      expect(
+        container.read(boardControllerProvider).placements[0]?.orientation,
+        RelayDirection.west,
+      );
+    });
+
+    test('eski kayıt yüklenince otomatik portlar düzeltilir ve doğrulama yenilenir', () {
+      final controller = container.read(boardControllerProvider.notifier);
+      controller.loadSavedBoard(
+        SavedBoard(
+          id: 'saved-auto-port',
+          fingerprint: 'legacy-orientation',
+          updatedAt: DateTime.utc(2026, 8, 9),
+          board: const BoardDraft(
+            name: 'Eski Devre',
+            modules: [
+              ModulePlacement(
+                id: 'GEN',
+                kind: ModuleKind.generator,
+                row: 0,
+                column: 1,
+                orientation: RelayDirection.south,
+              ),
+              ModulePlacement(
+                id: 'BAT',
+                kind: ModuleKind.battery,
+                row: 3,
+                column: 2,
+              ),
+              ModulePlacement(
+                id: 'SHIELD',
+                kind: ModuleKind.shield,
+                row: 3,
+                column: 1,
+                orientation: RelayDirection.east,
+              ),
+            ],
+          ),
+          poweredIds: const {'GEN', 'BAT'},
+          unpoweredIds: const {'SHIELD'},
+        ),
+      );
+
+      final state = container.read(boardControllerProvider);
+      expect(state.placements[13]?.orientation, RelayDirection.west);
+      expect(state.validation, isNull);
     });
 
     test('yalnız güçlendirici etki yönü elle döndürülür', () {
@@ -383,6 +528,11 @@ void main() {
 
     test('kart değişince eski sunucu doğrulamasını temizler', () {
       final controller = container.read(boardControllerProvider.notifier);
+      controller.dropModule(
+        7,
+        const ModuleDragData.palette(ModuleKind.amplifier),
+      );
+      controller.tapCell(7);
       controller.applyValidation(
         const BoardValidation(
           valid: true,
@@ -394,6 +544,25 @@ void main() {
       controller.rotateSelected();
 
       expect(container.read(boardControllerProvider).validation, isNull);
+    });
+
+    test('otomatik yönlü modülde döndürme no-op kalır ve doğrulama korunur', () {
+      final controller = container.read(boardControllerProvider.notifier);
+      controller.applyValidation(
+        const BoardValidation(
+          valid: true,
+          poweredIds: {'P-GEN', 'P-LASER'},
+          unpoweredIds: {},
+        ),
+      );
+
+      controller.rotateSelected();
+
+      expect(container.read(boardControllerProvider).validation, isNotNull);
+      expect(
+        container.read(boardControllerProvider).placements[2]?.orientation,
+        RelayDirection.east,
+      );
     });
   });
 }

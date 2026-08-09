@@ -974,7 +974,7 @@ class _MetricBox extends StatelessWidget {
   }
 }
 
-class _GoalSection extends StatelessWidget {
+class _GoalSection extends StatefulWidget {
   const _GoalSection({
     required this.icon,
     required this.title,
@@ -989,6 +989,19 @@ class _GoalSection extends StatelessWidget {
   final List<Widget> children;
 
   @override
+  State<_GoalSection> createState() => _GoalSectionState();
+}
+
+class _GoalSectionState extends State<_GoalSection> {
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Card(
       child: Padding(
@@ -996,19 +1009,21 @@ class _GoalSection extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _CardTitle(icon: icon, title: title),
+            _CardTitle(icon: widget.icon, title: widget.title),
             const SizedBox(height: 12),
-            if (children.isEmpty)
-              _EmptyState(icon: icon, message: emptyMessage)
+            if (widget.children.isEmpty)
+              _EmptyState(icon: widget.icon, message: widget.emptyMessage)
             else
               SizedBox(
                 height: 455,
                 child: Scrollbar(
+                  controller: _scrollController,
                   thumbVisibility: true,
                   trackVisibility: true,
                   child: ListView(
+                    controller: _scrollController,
                     padding: const EdgeInsets.only(right: 8),
-                    children: children,
+                    children: widget.children,
                   ),
                 ),
               ),

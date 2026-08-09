@@ -87,6 +87,25 @@ void main() {
   );
 
   testWidgets(
+    'sohbet dock güvenli overlay içinde açılıp kapanır',
+    (tester) async {
+      await _pumpApp(tester);
+
+      final collapsed = find.byKey(const ValueKey('chat-collapsed-button'));
+      expect(collapsed, findsOneWidget);
+      await tester.tap(collapsed);
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      expect(find.text('SOHBET'), findsOneWidget);
+
+      await tester.tap(find.byTooltip('Sohbeti kapat'));
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+      expect(collapsed, findsOneWidget);
+    },
+  );
+
+  testWidgets(
     'üst çubuk profil ayarlar ve nasıl oynanır erişimi sağlar',
     (tester) async {
       await _pumpApp(tester);
@@ -438,6 +457,7 @@ Future<void> _pumpApp(WidgetTester tester) async {
             clan: null,
           ),
         ),
+        chatChannelsProvider.overrideWith((ref) async => const <ChatChannelModel>[]),
         clanDirectoryProvider.overrideWith(
           (ref) async => const [
             ClanModel(

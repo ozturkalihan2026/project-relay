@@ -1245,7 +1245,7 @@ class _SocialScreenState extends ConsumerState<SocialScreen> {
                     FilledButton.icon(
                       onPressed: () async {
                         final session = await ref.read(guestSessionProvider.future);
-                        if (!mounted) return;
+                        if (!mounted || !sheetContext.mounted) return;
                         Navigator.pop(sheetContext);
                         ref.read(chatDockProvider.notifier).openChannel(
                               directChatIdentity(session.player.id, player.playerId),

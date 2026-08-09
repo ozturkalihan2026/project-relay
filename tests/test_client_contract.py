@@ -27,7 +27,7 @@ class FlutterClientContractTests(unittest.TestCase):
             encoding="utf-8"
         )
 
-        self.assertIn("version: 0.8.20+77", pubspec)
+        self.assertIn("version: 0.8.20+81", pubspec)
         career_screen = (CLIENT / "lib/src/screens/career_screen.dart").read_text(encoding="utf-8")
         self.assertNotIn("class _Metric extends StatelessWidget", career_screen)
         self.assertIn("await tester.ensureVisible(profileBack);", widget_test)
@@ -1648,3 +1648,74 @@ def test_v0820_chat_server_contract():
     assert "'direct'" in chat and "'clan'" in chat and "'group'" in chat
     assert 'chat_messages' in migration
     assert 'chat_group_members' in migration
+
+
+def test_v0820_rev1_analyzer_regressions():
+    social = (CLIENT / "lib/src/screens/social_screen.dart").read_text(encoding="utf-8")
+    board = (CLIENT / "lib/src/state/board_controller.dart").read_text(encoding="utf-8")
+    theme = (CLIENT / "lib/src/theme/relay_theme.dart").read_text(encoding="utf-8")
+    chat = (CLIENT / "lib/src/widgets/chat_dock.dart").read_text(encoding="utf-8")
+    pubspec = (CLIENT / "pubspec.yaml").read_text(encoding="utf-8")
+    pyproject = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
+
+    assert "!mounted || !sheetContext.mounted" in social
+    assert "final normalizedPlacements" in board
+    assert "_normalizeAutomaticOrientations(placements)" in board
+    assert theme.count("segmentedButtonTheme:") == 1
+    assert theme.count("chipTheme:") == 1
+    assert "separatorBuilder: (_, _)" in chat
+    assert "separatorBuilder: (_, __)" not in chat
+    assert "version: 0.8.20+81" in pubspec
+    assert 'version = "0.8.20"' in pyproject
+
+
+def test_profile_goal_scrollbars_use_explicit_controller() -> None:
+    profile = (CLIENT / "lib/src/screens/profile_screen.dart").read_text(encoding="utf-8")
+    assert "class _GoalSectionState extends State<_GoalSection>" in profile
+    assert "controller: _scrollController" in profile
+    assert "_scrollController.dispose();" in profile
+
+
+def test_board_rotation_contract_matches_auto_orientation_rules() -> None:
+    board_test = (CLIENT / "test/board_controller_test.dart").read_text(encoding="utf-8")
+    assert "ModuleDragData.palette(ModuleKind.amplifier)" in board_test
+    assert "otomatik yönlü modülde döndürme no-op kalır ve doğrulama korunur" in board_test
+
+
+
+def test_v0820_rev3_chat_overlay_and_unread_contract():
+    app = (CLIENT / "lib/src/app.dart").read_text(encoding="utf-8")
+    chat = (CLIENT / "lib/src/widgets/chat_dock.dart").read_text(encoding="utf-8")
+
+    # ChatDock must live below its own Navigator/Overlay rather than as a sibling
+    # of MaterialApp's route navigator. Tooltip/TextField/dialog overlays depend on it.
+    assert "builder: (context, child) => Navigator(" in app
+    assert "const ChatDock()" in app
+    assert "PageRouteBuilder<void>" in app
+
+    # Closed chat keeps a lightweight activity poll and displays only incoming
+    # messages as unread; selecting a channel clears that channel's badge.
+    assert "_pollChatActivity(initial: true)" in chat
+    assert "Timer.periodic(const Duration(seconds: 5)" in chat
+    assert "message.senderPlayerId != currentId" in chat
+    assert "_unreadByChannel[channel.identity]" in chat
+    assert "chat-collapsed-button" in chat
+    assert "mark_chat_unread_outlined" in chat
+    assert "_UnreadPill" in chat
+
+
+def test_v0820_rev4_symmetric_auto_ports_and_clean_statistics_tabs() -> None:
+    board = (CLIENT / "lib/src/state/board_controller.dart").read_text(encoding="utf-8")
+    board_test = (CLIENT / "test/board_controller_test.dart").read_text(encoding="utf-8")
+    season = (CLIENT / "lib/src/screens/season_screen.dart").read_text(encoding="utf-8")
+
+    assert "_normalizeAutomaticOrientations" in board
+    assert "_neighborCanReceiveConnection" in board
+    assert "_connectionPriority" in board
+    assert "neighborCell == null || isCoreCell(neighborCell)" in board
+    assert "tek portlu modüller Bataryanın dört yanında simetrik yönlenir" in board_test
+    assert "çekirdeğe komşu normal hücre kapı sayılmaz" in board_test
+    assert "enerji kavşağı sonradan eklenince mevcut uç modül yeniden yönlenir" in board_test
+    assert "eski kayıt yüklenince otomatik portlar düzeltilir" in board_test
+    assert "icon: Icon(Icons.auto_awesome)" not in season
+    assert "icon: Icon(Icons.calendar_view_week)" not in season

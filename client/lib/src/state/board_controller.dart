@@ -119,9 +119,13 @@ class BoardController extends Notifier<BoardEditorState> {
   BoardEditorState build() => BoardEditorState.initial();
 
   void loadSavedBoard(SavedBoard saved) {
-    final placements = <int, ModulePlacement>{
+    final rawPlacements = <int, ModulePlacement>{
       for (final module in saved.board.modules) module.cellIndex: module,
     };
+    final placements = _normalizeAutomaticOrientations(rawPlacements);
+    final orientationChanged = rawPlacements.entries.any(
+      (entry) => placements[entry.key]?.orientation != entry.value.orientation,
+    );
     int? selectedCell;
     for (final module in placements.values) {
       if (module.kind != ModuleKind.generator) {
@@ -134,11 +138,13 @@ class BoardController extends Notifier<BoardEditorState> {
       selectedCell: selectedCell,
       kitName: state.kitName,
       kitLimits: state.kitLimits,
-      validation: BoardValidation(
-        valid: true,
-        poweredIds: saved.poweredIds,
-        unpoweredIds: saved.unpoweredIds,
-      ),
+      validation: orientationChanged
+          ? null
+          : BoardValidation(
+              valid: true,
+              poweredIds: saved.poweredIds,
+              unpoweredIds: saved.unpoweredIds,
+            ),
     );
   }
 
@@ -242,20 +248,21 @@ class BoardController extends Notifier<BoardEditorState> {
         row: targetRow,
         column: targetColumn,
         orientation: source.kind == ModuleKind.generator
-            ? coreGateDirections[targetCell]
-            : _autoOrientationFor(source.kind, targetCell, placements),
+            ? coreGateDirections[targetCell] ?? source.orientation
+            : source.orientation,
       );
     if (target != null) {
       placements[sourceCell] = target.copyWith(
         row: sourceRow,
         column: sourceColumn,
         orientation: target.kind == ModuleKind.generator
-            ? coreGateDirections[sourceCell]
-            : _autoOrientationFor(target.kind, sourceCell, placements),
+            ? coreGateDirections[sourceCell] ?? target.orientation
+            : target.orientation,
       );
     }
+    final normalizedPlacements = _normalizeAutomaticOrientations(placements);
     state = state.copyWith(
-      placements: placements,
+      placements: normalizedPlacements,
       selectedCell: targetCell,
       clearSelectedKind: true,
       clearValidation: true,
@@ -270,7 +277,7 @@ class BoardController extends Notifier<BoardEditorState> {
     final placements = Map<int, ModulePlacement>.from(state.placements)
       ..remove(cellIndex);
     state = state.copyWith(
-      placements: placements,
+      placements: _normalizeAutomaticOrientations(placements),
       clearSelectedCell: true,
       clearSelectedKind: true,
       clearValidation: true,
@@ -304,12 +311,12 @@ class BoardController extends Notifier<BoardEditorState> {
       column: column,
       orientation: kind == ModuleKind.generator
           ? coreGateDirections[cellIndex]!
-          : _autoOrientationFor(kind, cellIndex, state.placements),
+          : RelayDirection.east,
     );
     final placements = Map<int, ModulePlacement>.from(state.placements)
       ..[cellIndex] = placement;
     state = state.copyWith(
-      placements: placements,
+      placements: _normalizeAutomaticOrientations(placements),
       selectedCell: cellIndex,
       clearSelectedKind: true,
       clearValidation: true,
@@ -319,19 +326,24 @@ class BoardController extends Notifier<BoardEditorState> {
   RelayDirection _autoOrientationFor(
     ModuleKind kind,
     int cellIndex,
-    Map<int, ModulePlacement> placements,
-  ) {
+    Map<int, ModulePlacement> placements, {
+    RelayDirection fallback = RelayDirection.east,
+  }) {
     if (kind == ModuleKind.generator) {
-      return coreGateDirections[cellIndex] ?? RelayDirection.east;
+      return coreGateDirections[cellIndex] ?? fallback;
     }
-    if (kind == ModuleKind.battery || kind == ModuleKind.amplifier) {
-      return RelayDirection.east;
+    if (!_usesAutomaticConnectionOrientation(kind)) {
+      return fallback;
     }
 
+    // Only the four designated gate cells connect directly to the passive core.
+    // A normal ring cell merely touching one of the reserved 2x2 core cells must
+    // never rotate toward that core cell.
     final coreDirection = coreGateDirections[cellIndex];
     if (coreDirection != null) {
       return coreDirection.opposite;
     }
+
     final row = cellIndex ~/ 4;
     final column = cellIndex % 4;
     const candidates = <RelayDirection>[
@@ -340,30 +352,114 @@ class BoardController extends Notifier<BoardEditorState> {
       RelayDirection.east,
       RelayDirection.south,
     ];
-    for (final direction in candidates) {
-      final neighborRow = row + switch (direction) {
-        RelayDirection.north => -1,
-        RelayDirection.south => 1,
-        _ => 0,
-      };
-      final neighborColumn = column + switch (direction) {
-        RelayDirection.west => -1,
-        RelayDirection.east => 1,
-        _ => 0,
-      };
-      if (neighborRow < 0 || neighborRow >= 4 || neighborColumn < 0 || neighborColumn >= 4) {
+
+    RelayDirection? bestDirection;
+    var bestScore = -1;
+    for (var index = 0; index < candidates.length; index++) {
+      final direction = candidates[index];
+      final neighborCell = _neighborCell(row, column, direction);
+      if (neighborCell == null || isCoreCell(neighborCell)) {
         continue;
       }
-      final neighborCell = neighborRow * 4 + neighborColumn;
-      if (isCoreCell(neighborCell)) {
-        return direction.opposite;
+      final neighbor = placements[neighborCell];
+      if (neighbor == null ||
+          !_neighborCanReceiveConnection(neighbor, direction.opposite)) {
+        continue;
       }
-      if (placements.containsKey(neighborCell)) {
-        return direction.opposite;
+
+      final score = _connectionPriority(neighbor.kind) * 10 - index;
+      if (score > bestScore) {
+        bestScore = score;
+        bestDirection = direction;
       }
     }
-    return RelayDirection.east;
+
+    // Single-port modules expose their local WEST/back port. To make that
+    // world port face `bestDirection`, their orientation is the opposite.
+    return bestDirection?.opposite ?? fallback;
   }
+
+  Map<int, ModulePlacement> _normalizeAutomaticOrientations(
+    Map<int, ModulePlacement> placements,
+  ) {
+    final source = Map<int, ModulePlacement>.from(placements);
+    final normalized = Map<int, ModulePlacement>.from(placements);
+    for (final entry in source.entries) {
+      final module = entry.value;
+      if (module.kind == ModuleKind.generator) {
+        final fixed = coreGateDirections[entry.key];
+        if (fixed != null && module.orientation != fixed) {
+          normalized[entry.key] = module.copyWith(orientation: fixed);
+        }
+        continue;
+      }
+      if (!_usesAutomaticConnectionOrientation(module.kind)) {
+        continue;
+      }
+      final orientation = _autoOrientationFor(
+        module.kind,
+        entry.key,
+        source,
+        fallback: module.orientation,
+      );
+      if (orientation != module.orientation) {
+        normalized[entry.key] = module.copyWith(orientation: orientation);
+      }
+    }
+    return normalized;
+  }
+
+  bool _usesAutomaticConnectionOrientation(ModuleKind kind) => switch (kind) {
+        ModuleKind.laser ||
+        ModuleKind.pulseCannon ||
+        ModuleKind.shield ||
+        ModuleKind.cooler ||
+        ModuleKind.repair => true,
+        _ => false,
+      };
+
+  int? _neighborCell(
+    int row,
+    int column,
+    RelayDirection direction,
+  ) {
+    final neighborRow = row + switch (direction) {
+      RelayDirection.north => -1,
+      RelayDirection.south => 1,
+      _ => 0,
+    };
+    final neighborColumn = column + switch (direction) {
+      RelayDirection.west => -1,
+      RelayDirection.east => 1,
+      _ => 0,
+    };
+    if (neighborRow < 0 ||
+        neighborRow >= relayBoardSize ||
+        neighborColumn < 0 ||
+        neighborColumn >= relayBoardSize) {
+      return null;
+    }
+    return neighborRow * relayBoardSize + neighborColumn;
+  }
+
+  bool _neighborCanReceiveConnection(
+    ModulePlacement neighbor,
+    RelayDirection directionTowardModule,
+  ) {
+    return switch (neighbor.kind) {
+      ModuleKind.battery || ModuleKind.amplifier => true,
+      ModuleKind.generator =>
+        directionTowardModule != neighbor.orientation.opposite,
+      _ => false,
+    };
+  }
+
+  int _connectionPriority(ModuleKind kind) => switch (kind) {
+        ModuleKind.generator => 3,
+        ModuleKind.battery => 2,
+        ModuleKind.amplifier => 1,
+        _ => 0,
+      };
 
   String _nextModuleId(ModuleKind kind, int cellIndex) {
     final base =

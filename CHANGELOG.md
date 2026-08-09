@@ -1,3 +1,24 @@
+## v0.8.20 rev4
+- İstatistikler Sezon/Haftalık Lig sekmelerindeki gereksiz simgeler kaldırıldı.
+- Tek portlu modüllerin otomatik bağlantı yönlendirmesi dört yönde simetrik hale getirildi.
+- Çekirdeğe komşu normal ring hücrelerinin yanlışlıkla çekirdek bağlantısı sayılması düzeltildi.
+- Otomatik yönlendirme artık komşu modülün karşılık veren portunu ve kavşak türünü denetliyor.
+- Sonradan Jeneratör/Batarya/Güçlendirici eklenince komşu uç modüller yeniden yönleniyor.
+
+## v0.8.20 rev3
+- Sohbet dock'u güvenli Navigator/Overlay katmanına taşındı; Tooltip, TextField ve dialog overlay hataları giderildi.
+- Sohbet kapalıyken kanallar arka planda hafif aralıklarla kontrol edilir; yeni gelen mesajlar kapalı dock üzerinde okunmamış badge olarak gösterilir.
+- Açık sohbet kanal sekmelerinde kanal bazlı okunmamış sayaç gösterilir ve kanal açıldığında temizlenir.
+
+## v0.8.20 rev2
+- Profil görev/başarım/sezon listelerindeki görünür Scrollbar alanlarına yaşam döngüsü yönetilen ScrollController eklendi.
+- BoardController döndürme regresyon testi otomatik yönlendirme kuralına göre güncellendi; yalnız Güçlendirici manuel döndürme ile doğrulamayı temizliyor.
+- Otomatik yönlenen modüllerde no-op döndürmenin mevcut doğrulamayı koruduğu ayrıca test ediliyor.
+
+## v0.8.20 rev1
+- Flutter analyzer temizliği: async BuildContext koruması, BoardController yerel değişken sırası, tema duplicate argümanları ve chat wildcard uyarısı düzeltildi.
+- Python paket metadata sürümü API ile `0.8.20` olarak eşitlendi.
+
 ## v0.8.20
 - Savaş sahnesini görünmez bırakan `ui.Gradient.linear` colorStops hatası düzeltildi.
 - Yok edilen modüllerde kırmızı X kaldırıldı; patlama ve enerji sönmesi geri bildirimi eklendi.
