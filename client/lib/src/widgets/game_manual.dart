@@ -35,7 +35,7 @@ class GameManualScreen extends StatelessWidget {
               ),
             ),
             Text(
-              'PROJECT RELAY • v0.8.19',
+              'PROJECT RELAY • v0.8.20',
               style: TextStyle(
                 color: RelayColors.muted,
                 fontSize: 10,
@@ -90,6 +90,26 @@ class GameManualScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 14),
                   const _OrientationGuide(),
+                  const SizedBox(height: 14),
+                  const _ManualSection(
+                    icon: Icons.forum_outlined,
+                    title: 'SOHBET KANALLARI',
+                    subtitle: 'Sunucu, klan, grup ve özel mesajlaşma',
+                    children: [
+                      _ManualParagraph(
+                        text: 'Sol alttaki Sohbet düğmesi tüm ekranlarda '
+                            'açılıp kapanabilir. TÜM SUNUCU herkese açık, '
+                            'KLAN yalnız klan üyelerine açıktır. Arkadaşlarla '
+                            'özel sohbet başlatabilir veya arkadaşlarından '
+                            '2-12 kişilik grup sohbeti oluşturabilirsin.',
+                      ),
+                      _ManualParagraph(
+                        text: 'Sohbet rekabetçi gücü veya savaş sonucunu '
+                            'değiştirmez. Herkese açık kanallarda kişisel '
+                            'bilgi paylaşmamak kapalı alfa güvenlik kuralıdır.',
+                      ),
+                    ],
+                  ),
                   const SizedBox(height: 14),
                   const _ManualSection(
                     icon: Icons.play_circle_outline,
@@ -704,17 +724,18 @@ class _OrientationGuide extends StatelessWidget {
       subtitle: 'Okun anlamı modülün işlevine göre açıkça gösterilir',
       children: [
         _ManualParagraph(
-          text: 'Lazer, Darbe Topu, Kalkan, Soğutucu ve Onarım Ünitesindeki '
-              'ok, enerji alan tek portun yönünü gösterir. Bu ok bağlı '
-              'devreye veya çekirdek kapısına bakmalıdır. Noktaları karşı '
-              'karşıya getirdiğinizde modül enerji ağına katılır.',
+          text: 'Lazer, Darbe Topu, Kalkan, Soğutucu ve Onarım Ünitesi '
+              'yerleştirildiğinde tek enerji portu en yakın geçerli çekirdek '
+              'kapısına veya komşu modül portuna otomatik döner. Bağlantı '
+              'yönünü ayrıca okla ayarlamanız ya da bu modülleri elle '
+              'döndürmeniz gerekmez.',
         ),
         _ManualParagraph(
           text: 'Batarya dört yönlü ve yönsüz bir kavşaktır. Güçlendiricinin '
-              'dört kenarında port bulunur; onun oku enerji girişini değil, '
-              'hangi komşu modülün güçleneceğini gösterir. Kart dışına veya '
-              'kapısız çekirdek kenarına bakan kullanılamayan uçlar '
-              'kalabalık oluşturmaması için çizilmez.',
+              'dört kenarında enerji portu bulunur; üzerindeki tek yön oku '
+              'bağlantıyı değil, hangi komşu modülün güçlendirileceğini '
+              'gösterir. Bu nedenle yalnız Güçlendirici için manuel yön '
+              'seçimi korunur.',
         ),
         _ManualParagraph(
           text: 'Jeneratör yalnızca dört çekirdek kapısına yerleşir ve ön '

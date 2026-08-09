@@ -104,11 +104,9 @@ class CircuitBoard extends StatelessWidget {
                       onTap: () => onCellTap(index),
                       onModuleDropped: (data) =>
                           onModuleDropped(index, data),
-                      onRotate: placement == null ||
-                              placement.kind == ModuleKind.generator ||
-                              placement.kind == ModuleKind.battery
-                          ? null
-                          : () => onRotateModule(index),
+                      onRotate: placement?.kind == ModuleKind.amplifier
+                          ? () => onRotateModule(index)
+                          : null,
                     ),
                   );
                 },
@@ -306,32 +304,21 @@ class _CircuitCell extends StatelessWidget {
                                 ),
                               ),
                             ),
-                            Positioned(
-                              right: 5,
-                              top: 5,
-                              child: Tooltip(
-                                message: moduleDirectionTooltip(
-                                  module.kind,
-                                  module.orientation,
-                                ),
-                                child: Icon(
-                                  module.kind == ModuleKind.battery
-                                      ? Icons.hub_outlined
-                                      : directionIcon(
-                                          moduleDisplayDirection(
-                                            module.kind,
-                                            module.orientation,
-                                          ),
-                                        ),
-                                  key: ValueKey(
-                                    'module-direction-$cellIndex',
+                            if (module.kind == ModuleKind.amplifier)
+                              Positioned(
+                                right: 5,
+                                top: 5,
+                                child: Tooltip(
+                                  message: 'Güçlendirici etki yönü',
+                                  child: Icon(
+                                    directionIcon(module.orientation),
+                                    key: ValueKey('module-direction-$cellIndex'),
+                                    color: RelayColors.violet,
+                                    size: 15,
                                   ),
-                                  color: Colors.white70,
-                                  size: 15,
                                 ),
                               ),
-                            ),
-                            if (onRotate != null)
+                            if (onRotate != null && module.kind == ModuleKind.amplifier)
                               Positioned(
                                 left: 4,
                                 top: 4,

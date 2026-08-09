@@ -27,7 +27,7 @@ class FlutterClientContractTests(unittest.TestCase):
             encoding="utf-8"
         )
 
-        self.assertIn("version: 0.8.19+76", pubspec)
+        self.assertIn("version: 0.8.20+77", pubspec)
         career_screen = (CLIENT / "lib/src/screens/career_screen.dart").read_text(encoding="utf-8")
         self.assertNotIn("class _Metric extends StatelessWidget", career_screen)
         self.assertIn("await tester.ensureVisible(profileBack);", widget_test)
@@ -36,7 +36,7 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertNotIn("final horizontalScrollable = find.byWidgetPredicate(\n    (widget)", widget_test)
         self.assertIn("AppHeaderTitle(pageTitle: widget.mode.title.toUpperCase())", editor)
         self.assertNotIn("ANA MERKEZ VE MENÜ DÜZENİ", main_menu)
-        self.assertIn("PROJECT RELAY • v0.8.19", manual)
+        self.assertIn("PROJECT RELAY • v0.8.20", manual)
         self.assertIn("audioplayers:", pubspec)
         self.assertIn("assets/sounds/", pubspec)
         self.assertIn("flame:", pubspec)
@@ -801,7 +801,7 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertNotIn("module-name-${module.id}", board_source)
         self.assertNotIn("module-stat-badges-${module.id}", board_source)
         self.assertNotIn("_ModuleStatBadges", board_source)
-        self.assertIn("if (onRotate != null)", board_source)
+        self.assertIn("module.kind == ModuleKind.amplifier", board_source)
         self.assertNotIn("if (selected && onRotate != null)", board_source)
 
     def test_module_tooltips_use_server_tactical_descriptions(self) -> None:
@@ -853,7 +853,7 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("CircuitTraceGeometry.corePortAnchor", board_source)
         self.assertNotIn("drawLine(gateCenter, coreCenter", board_source)
         self.assertIn(
-            "placement.kind == ModuleKind.battery",
+            "module.kind == ModuleKind.battery",
             board_source,
         )
         self.assertIn(
@@ -1432,7 +1432,7 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("Komutan Sistemi", feature_pool)
         self.assertIn("devreyi kurduktan ve doğruladıktan sonra", feature_pool.lower())
         self.assertIn("v0.8.4", release)
-        self.assertIn("PROJECT RELAY • v0.8.19", widget_test)
+        self.assertIn("PROJECT RELAY • v0.8.20", widget_test)
         self.assertIn("expect(find.text('ANTRENMAN'), findsOneWidget)", widget_test)
         self.assertNotIn("ÇEVRİMİÇİ SAVAŞ • v0.8.4", widget_test)
         self.assertNotIn("ANTRENMAN • v0.8.4", widget_test)
@@ -1603,3 +1603,48 @@ def test_module_drag_data_tests_use_public_source_cell_contract():
     assert "ModulePaletteReturnBanner" in layout_test
     assert "BURAYA BIRAK: KARTTAN KALDIR" in layout_test
     assert "returnedModule!.cellIndex" not in layout_test
+
+
+def test_v0820_chat_and_battle_clarity_contract():
+    chat = (ROOT / 'client/lib/src/widgets/chat_dock.dart').read_text(encoding='utf-8')
+    app = (ROOT / 'client/lib/src/app.dart').read_text(encoding='utf-8')
+    board = (ROOT / 'client/lib/src/state/board_controller.dart').read_text(encoding='utf-8')
+    circuit = (ROOT / 'client/lib/src/widgets/circuit_board.dart').read_text(encoding='utf-8')
+    replay = (ROOT / 'client/lib/src/game/replay_game.dart').read_text(encoding='utf-8')
+    overlay = (ROOT / 'client/lib/src/widgets/replay_attack_overlay.dart').read_text(encoding='utf-8')
+    profile = (ROOT / 'client/lib/src/screens/profile_screen.dart').read_text(encoding='utf-8')
+    theme = (ROOT / 'client/lib/src/theme/relay_theme.dart').read_text(encoding='utf-8')
+    backdrop = (ROOT / 'client/lib/src/widgets/play_mode_backdrop.dart').read_text(encoding='utf-8')
+
+    assert 'class ChatDock' in chat
+    assert 'TÜM SUNUCU' not in chat  # kanal adı sunucudan gelir
+    assert 'Timer.periodic(const Duration(seconds: 5)' in chat
+    assert 'const ChatDock()' in app
+    assert '_autoOrientationFor' in board
+    assert 'selected.kind != ModuleKind.amplifier' in board
+    assert 'module.kind == ModuleKind.amplifier' in circuit
+    assert "'ENERJİ SÖNDÜ'" in replay
+    assert 'Colors.transparent' in replay and '[0.0, 0.5, 1.0]' in replay
+    assert 'HASAR EMİLDİ' in overlay and 'quadraticBezierTo' in overlay
+    assert 'height: 455' in profile and 'thumbVisibility: true' in profile
+    assert 'segmentedButtonTheme' in theme
+    assert 'math.max(size.width, size.height) * 1.06' in backdrop
+
+
+def test_v0820_progression_content_contract():
+    progression = (ROOT / 'relay_api/progression.py').read_text(encoding='utf-8')
+    season = (ROOT / 'relay_api/season.py').read_text(encoding='utf-8')
+    assert progression.count('DailyMissionDefinition(') >= 10
+    assert progression.count('AchievementDefinition(') >= 28
+    assert season.count('SeasonTierDefinition(') >= 20
+    assert 'level_45' in progression and 'battle_500' in progression
+    assert 'SeasonTierDefinition(20, 700' in season
+
+
+def test_v0820_chat_server_contract():
+    chat = (ROOT / 'relay_api/chat.py').read_text(encoding='utf-8')
+    migration = (ROOT / 'alembic/versions/20260808_0012_chat_foundation.py').read_text(encoding='utf-8')
+    assert "ChatChannel('server', 'global'" in chat
+    assert "'direct'" in chat and "'clan'" in chat and "'group'" in chat
+    assert 'chat_messages' in migration
+    assert 'chat_group_members' in migration

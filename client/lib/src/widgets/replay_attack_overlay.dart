@@ -386,6 +386,26 @@ class _AttackPainter extends CustomPainter {
         ..style = PaintingStyle.stroke
         ..strokeWidth = 2.7,
     );
+    final shield = Path()
+      ..moveTo(to.dx, to.dy - radius * 0.54)
+      ..quadraticBezierTo(to.dx + radius * 0.42, to.dy - radius * 0.34, to.dx + radius * 0.34, to.dy + radius * 0.12)
+      ..quadraticBezierTo(to.dx + radius * 0.20, to.dy + radius * 0.48, to.dx, to.dy + radius * 0.62)
+      ..quadraticBezierTo(to.dx - radius * 0.20, to.dy + radius * 0.48, to.dx - radius * 0.34, to.dy + radius * 0.12)
+      ..quadraticBezierTo(to.dx - radius * 0.42, to.dy - radius * 0.34, to.dx, to.dy - radius * 0.54)
+      ..close();
+    canvas.drawPath(
+      shield,
+      Paint()
+        ..color = Colors.white.withValues(alpha: 0.12 * fade)
+        ..style = PaintingStyle.fill,
+    );
+    canvas.drawPath(
+      shield,
+      Paint()
+        ..color = Colors.white.withValues(alpha: 0.84 * fade)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.8,
+    );
     _drawFloatingLabel(
       canvas,
       absorbed ? 'HASAR EMİLDİ' : 'KALKAN AKTİF',

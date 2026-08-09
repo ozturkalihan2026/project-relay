@@ -306,7 +306,7 @@ class OnlineApiTests(unittest.TestCase):
         self.assertTrue(history.json()["items"][0]["rated"])
         self.assertGreaterEqual(league.json()["league"]["position"], 1)
         self.assertEqual(progression.json()["profile"]["matches_completed"], 1)
-        self.assertEqual(len(progression.json()["daily_missions"]), 3)
+        self.assertEqual(len(progression.json()["daily_missions"]), 10)
         self.assertEqual(statistics.json()["profile"]["rated_matches"], 1)
         self.assertEqual(
             season.json()["entry"]["points"],

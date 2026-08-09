@@ -235,6 +235,42 @@ abstract final class RelayTheme {
         color: RelayColors.cyan,
         linearTrackColor: Color(0xFF264656),
       ),
+      segmentedButtonTheme: SegmentedButtonThemeData(
+        style: ButtonStyle(
+          backgroundColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.selected)) {
+              return RelayColors.cyan.withValues(alpha: 0.18);
+            }
+            return RelayColors.surfaceSoft.withValues(alpha: 0.72);
+          }),
+          foregroundColor: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.selected)) return RelayColors.white;
+            return RelayColors.muted;
+          }),
+          side: WidgetStateProperty.resolveWith((states) {
+            final color = states.contains(WidgetState.selected)
+                ? RelayColors.cyan.withValues(alpha: 0.72)
+                : RelayColors.violet.withValues(alpha: 0.22);
+            return BorderSide(color: color, width: states.contains(WidgetState.selected) ? 1.5 : 1);
+          }),
+          shape: WidgetStatePropertyAll(
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(13)),
+          ),
+          textStyle: const WidgetStatePropertyAll(
+            TextStyle(fontWeight: FontWeight.w900, letterSpacing: 0.55, fontSize: 11),
+          ),
+          padding: const WidgetStatePropertyAll(
+            EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          ),
+        ),
+      ),
+      chipTheme: ChipThemeData(
+        backgroundColor: RelayColors.surfaceSoft.withValues(alpha: 0.76),
+        selectedColor: RelayColors.cyan.withValues(alpha: 0.18),
+        side: BorderSide(color: RelayColors.violet.withValues(alpha: 0.24)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        labelStyle: const TextStyle(color: RelayColors.white, fontWeight: FontWeight.w800),
+      ),
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
         backgroundColor: RelayColors.surfaceHigh.withValues(alpha: 0.96),

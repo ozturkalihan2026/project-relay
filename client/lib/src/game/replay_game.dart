@@ -502,6 +502,7 @@ class RelayReplayGame extends FlameGame {
             RelayColors.cyan.withValues(alpha: 0.055),
             Colors.transparent,
           ],
+          [0.0, 0.5, 1.0],
         ),
     );
     for (var index = 0; index < 12; index += 1) {
@@ -747,21 +748,27 @@ class RelayReplayGame extends FlameGame {
         Paint()..color = ratio > 0.35 ? RelayColors.mint : RelayColors.coral,
       );
       if (destroyed) {
-        canvas
-          ..drawLine(
-            cell.topLeft,
-            cell.bottomRight,
-            Paint()
-              ..color = RelayColors.coral
-              ..strokeWidth = 2,
-          )
-          ..drawLine(
-            cell.topRight,
-            cell.bottomLeft,
-            Paint()
-              ..color = RelayColors.coral
-              ..strokeWidth = 2,
-          );
+        final flicker = 0.32 + 0.22 * math.sin(_animationTime * 5.2 + cell.center.dx * 0.01);
+        canvas.drawRRect(
+          ui.RRect.fromRectAndRadius(cell.deflate(3), const ui.Radius.circular(6)),
+          Paint()..color = const Color(0xFF071017).withValues(alpha: 0.72),
+        );
+        canvas.drawCircle(
+          cell.center,
+          math.max(8.0, cellSize * 0.13),
+          Paint()
+            ..color = RelayColors.coral.withValues(alpha: 0.10 * flicker)
+            ..maskFilter = const ui.MaskFilter.blur(ui.BlurStyle.normal, 8),
+        );
+        _drawText(
+          canvas,
+          'ENERJİ SÖNDÜ',
+          ui.Offset(cell.center.dx, cell.bottom - 18),
+          color: RelayColors.muted.withValues(alpha: 0.72),
+          size: math.max(5.2, cellSize * 0.068),
+          centered: true,
+          maxWidth: cell.width - 6,
+        );
       }
     }
 

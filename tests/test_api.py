@@ -132,7 +132,7 @@ class RelayApiTests(unittest.TestCase):
         response = self.client.get("/healthz")
 
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["version"], "0.8.19")
+        self.assertEqual(response.json()["version"], "0.8.20")
         self.assertEqual(response.json()["rules_version"], "0.8")
         self.assertEqual(response.json()["storage"], "sqlite")
         self.assertEqual(response.json()["database"], "ok")
@@ -692,7 +692,7 @@ class RelayApiTests(unittest.TestCase):
 
         self.assertEqual(season.status_code, 200, season.text)
         self.assertEqual(season.json()["entry"]["points"], 0)
-        self.assertEqual(len(season.json()["tiers"]), 4)
+        self.assertEqual(len(season.json()["tiers"]), 20)
         self.assertEqual(safety.status_code, 200, safety.text)
         self.assertTrue(safety.json()["server_authoritative_results"])
         self.assertTrue(safety.json()["idempotent_rewards"])

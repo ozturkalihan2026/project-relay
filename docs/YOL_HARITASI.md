@@ -366,3 +366,4 @@ etkisi artar; koşu bittiğinde bütün etkiler sıfırlanır.
 - Komutan Sistemi uygulanmaz ve özellik havuzunda kalır.
 
 | v0.8.19 | Ortak başlık, kaydırılabilir sıralamalar, modern dialoglar ve savaş VFX ikinci aşama | Hazır; yerel Flutter kabulü bekliyor |
+| v0.8.20 | Sohbet sistemi, savaş render/netlik düzeltmesi, otomatik port yönlendirme ve ilerleme içeriği genişletmesi | Hazır; yerel Flutter kabulü bekliyor |

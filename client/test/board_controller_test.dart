@@ -191,17 +191,31 @@ void main() {
       expect(container.read(boardControllerProvider).validation, isNull);
     });
 
-    test('seçili modülü saat yönünde döndürür', () {
+    test('tek portlu modül yerleşirken bağlantıya otomatik yönlenir', () {
       final controller = container.read(boardControllerProvider.notifier);
+      controller.dropModule(
+        3,
+        const ModuleDragData.palette(ModuleKind.cooler),
+      );
 
-      controller.rotateSelected();
-
+      // Hücre 3'ün batısında lazer vardır; arka port otomatik batıya bakar.
       expect(
-        container
-            .read(boardControllerProvider)
-            .selectedPlacement
-            ?.orientation,
-        RelayDirection.south,
+        container.read(boardControllerProvider).placements[3]?.orientation,
+        RelayDirection.east,
+      );
+    });
+
+    test('yalnız güçlendirici etki yönü elle döndürülür', () {
+      final controller = container.read(boardControllerProvider.notifier);
+      controller.dropModule(
+        3,
+        const ModuleDragData.palette(ModuleKind.amplifier),
+      );
+      final before = container.read(boardControllerProvider).placements[3]!.orientation;
+      controller.rotateAt(3);
+      expect(
+        container.read(boardControllerProvider).placements[3]?.orientation,
+        before.next,
       );
     });
 

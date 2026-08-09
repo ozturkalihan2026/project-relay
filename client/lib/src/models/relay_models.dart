@@ -2143,3 +2143,60 @@ class SocialSnapshotModel {
   final List<SocialPlayerModel> friends;
   final ClanModel? clan;
 }
+
+class ChatChannelModel {
+  const ChatChannelModel({
+    required this.type,
+    required this.keyValue,
+    required this.title,
+    required this.subtitle,
+  });
+
+  factory ChatChannelModel.fromJson(Map<String, dynamic> json) {
+    return ChatChannelModel(
+      type: json['channel_type'] as String,
+      keyValue: json['channel_key'] as String,
+      title: json['title'] as String,
+      subtitle: json['subtitle'] as String? ?? '',
+    );
+  }
+
+  final String type;
+  final String keyValue;
+  final String title;
+  final String subtitle;
+
+  String get identity => '$type:$keyValue';
+}
+
+class ChatMessageModel {
+  const ChatMessageModel({
+    required this.id,
+    required this.channelType,
+    required this.channelKey,
+    required this.senderPlayerId,
+    required this.senderDisplayName,
+    required this.message,
+    required this.createdAt,
+  });
+
+  factory ChatMessageModel.fromJson(Map<String, dynamic> json) {
+    return ChatMessageModel(
+      id: json['message_id'] as String,
+      channelType: json['channel_type'] as String,
+      channelKey: json['channel_key'] as String,
+      senderPlayerId: json['sender_player_id'] as String,
+      senderDisplayName: json['sender_display_name'] as String,
+      message: json['message'] as String,
+      createdAt: DateTime.parse(json['created_at'] as String),
+    );
+  }
+
+  final String id;
+  final String channelType;
+  final String channelKey;
+  final String senderPlayerId;
+  final String senderDisplayName;
+  final String message;
+  final DateTime createdAt;
+}

@@ -81,6 +81,11 @@ final socialProvider = FutureProvider.autoDispose<SocialSnapshotModel>((ref) asy
   return ref.watch(relayApiProvider).fetchSocial();
 });
 
+final chatChannelsProvider = FutureProvider.autoDispose<List<ChatChannelModel>>((ref) async {
+  await ref.watch(guestSessionProvider.future);
+  return ref.watch(relayApiProvider).fetchChatChannels();
+});
+
 final clanDirectoryProvider = FutureProvider.autoDispose<List<ClanModel>>((ref) async {
   await ref.watch(guestSessionProvider.future);
   return ref.watch(relayApiProvider).fetchClans();
@@ -302,7 +307,7 @@ class RelayApi {
       {
         'category': category,
         'message': message,
-        'client_version': '0.8.10',
+        'client_version': '0.8.20',
       },
       authorized: true,
     );
@@ -424,6 +429,51 @@ class RelayApi {
       authorized: true,
     );
     return SocialSnapshotModel.fromJson(payload);
+  }
+
+  Future<List<ChatChannelModel>> fetchChatChannels() async {
+    final payload = await _get('/api/v1/chat/channels', authorized: true);
+    return (payload['channels'] as List<dynamic>)
+        .map((item) => ChatChannelModel.fromJson(item as Map<String, dynamic>))
+        .toList(growable: false);
+  }
+
+  Future<List<ChatMessageModel>> fetchChatMessages(ChatChannelModel channel) async {
+    final payload = await _get(
+      '/api/v1/chat/messages?channel_type=${Uri.encodeQueryComponent(channel.type)}&channel_key=${Uri.encodeQueryComponent(channel.keyValue)}&limit=80',
+      authorized: true,
+    );
+    return (payload['messages'] as List<dynamic>)
+        .map((item) => ChatMessageModel.fromJson(item as Map<String, dynamic>))
+        .toList(growable: false);
+  }
+
+  Future<ChatMessageModel> sendChatMessage({
+    required ChatChannelModel channel,
+    required String message,
+  }) async {
+    final payload = await _post(
+      '/api/v1/chat/messages',
+      {
+        'channel_type': channel.type,
+        'channel_key': channel.keyValue,
+        'message': message,
+      },
+      authorized: true,
+    );
+    return ChatMessageModel.fromJson(payload);
+  }
+
+  Future<ChatChannelModel> createChatGroup({
+    required String name,
+    required List<String> memberPlayerIds,
+  }) async {
+    final payload = await _post(
+      '/api/v1/chat/groups',
+      {'name': name, 'member_player_ids': memberPlayerIds},
+      authorized: true,
+    );
+    return ChatChannelModel.fromJson(payload);
   }
 
   Future<CollectionSnapshot> fetchCollection() async {

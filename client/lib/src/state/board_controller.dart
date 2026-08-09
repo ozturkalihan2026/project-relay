@@ -243,7 +243,7 @@ class BoardController extends Notifier<BoardEditorState> {
         column: targetColumn,
         orientation: source.kind == ModuleKind.generator
             ? coreGateDirections[targetCell]
-            : source.orientation,
+            : _autoOrientationFor(source.kind, targetCell, placements),
       );
     if (target != null) {
       placements[sourceCell] = target.copyWith(
@@ -251,7 +251,7 @@ class BoardController extends Notifier<BoardEditorState> {
         column: sourceColumn,
         orientation: target.kind == ModuleKind.generator
             ? coreGateDirections[sourceCell]
-            : target.orientation,
+            : _autoOrientationFor(target.kind, sourceCell, placements),
       );
     }
     state = state.copyWith(
@@ -304,7 +304,7 @@ class BoardController extends Notifier<BoardEditorState> {
       column: column,
       orientation: kind == ModuleKind.generator
           ? coreGateDirections[cellIndex]!
-          : RelayDirection.east,
+          : _autoOrientationFor(kind, cellIndex, state.placements),
     );
     final placements = Map<int, ModulePlacement>.from(state.placements)
       ..[cellIndex] = placement;
@@ -314,6 +314,55 @@ class BoardController extends Notifier<BoardEditorState> {
       clearSelectedKind: true,
       clearValidation: true,
     );
+  }
+
+  RelayDirection _autoOrientationFor(
+    ModuleKind kind,
+    int cellIndex,
+    Map<int, ModulePlacement> placements,
+  ) {
+    if (kind == ModuleKind.generator) {
+      return coreGateDirections[cellIndex] ?? RelayDirection.east;
+    }
+    if (kind == ModuleKind.battery || kind == ModuleKind.amplifier) {
+      return RelayDirection.east;
+    }
+
+    final coreDirection = coreGateDirections[cellIndex];
+    if (coreDirection != null) {
+      return coreDirection.opposite;
+    }
+    final row = cellIndex ~/ 4;
+    final column = cellIndex % 4;
+    const candidates = <RelayDirection>[
+      RelayDirection.west,
+      RelayDirection.north,
+      RelayDirection.east,
+      RelayDirection.south,
+    ];
+    for (final direction in candidates) {
+      final neighborRow = row + switch (direction) {
+        RelayDirection.north => -1,
+        RelayDirection.south => 1,
+        _ => 0,
+      };
+      final neighborColumn = column + switch (direction) {
+        RelayDirection.west => -1,
+        RelayDirection.east => 1,
+        _ => 0,
+      };
+      if (neighborRow < 0 || neighborRow >= 4 || neighborColumn < 0 || neighborColumn >= 4) {
+        continue;
+      }
+      final neighborCell = neighborRow * 4 + neighborColumn;
+      if (isCoreCell(neighborCell)) {
+        return direction.opposite;
+      }
+      if (placements.containsKey(neighborCell)) {
+        return direction.opposite;
+      }
+    }
+    return RelayDirection.east;
   }
 
   String _nextModuleId(ModuleKind kind, int cellIndex) {
@@ -384,8 +433,7 @@ class BoardController extends Notifier<BoardEditorState> {
     if (selected == null) {
       return;
     }
-    if (selected.kind == ModuleKind.generator ||
-        selected.kind == ModuleKind.battery) {
+    if (selected.kind != ModuleKind.amplifier) {
       return;
     }
     final placements = Map<int, ModulePlacement>.from(state.placements)

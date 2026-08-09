@@ -9,6 +9,7 @@ import '../theme/relay_theme.dart';
 import '../widgets/app_header_actions.dart';
 import '../widgets/relay_notice.dart';
 import '../widgets/relay_dialog.dart';
+import '../widgets/chat_dock.dart';
 
 enum _ClanSection { summary, members, activity, settings }
 
@@ -604,6 +605,14 @@ class _SocialScreenState extends ConsumerState<SocialScreen> {
               ],
             ),
             const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: () => ref
+                  .read(chatDockProvider.notifier)
+                  .openChannel('clan:${clan.clanId}'),
+              icon: const Icon(Icons.forum_outlined),
+              label: const Text('KLAN SOHBETİ • TÜM ÜYELERE MESAJ'),
+            ),
+            const SizedBox(height: 12),
             const Text(
               'Klan savaş gücü vermez. Klan savaşı, ortak kasa ve klan '
               'bonusları kapalı alfa sonrasında değerlendirilecek.',
@@ -1175,58 +1184,96 @@ class _SocialScreenState extends ConsumerState<SocialScreen> {
   Future<void> _showPlayerProfile(SocialPlayerModel player) async {
     await showModalBottomSheet<void>(
       context: context,
-      showDragHandle: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withValues(alpha: 0.62),
+      isScrollControlled: true,
       builder: (sheetContext) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 4, 20, 28),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 520),
+            child: Container(
+              margin: const EdgeInsets.all(18),
+              padding: const EdgeInsets.all(20),
+              decoration: RelayDecorations.panel(accent: RelayColors.violet),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const CircleAvatar(
-                    radius: 28,
-                    child: Icon(Icons.account_circle_outlined, size: 34),
+                  Row(
+                    children: [
+                      DecoratedBox(
+                        decoration: RelayDecorations.accentHalo(RelayColors.cyan),
+                        child: const Padding(
+                          padding: EdgeInsets.all(12),
+                          child: Icon(Icons.account_circle_outlined, color: RelayColors.cyan, size: 34),
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(player.displayName, style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w900)),
+                            const SizedBox(height: 3),
+                            Text(
+                              _relationshipLabel(player.relationship),
+                              style: const TextStyle(color: RelayColors.cyan, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: .8),
+                            ),
+                          ],
+                        ),
+                      ),
+                      IconButton(onPressed: () => Navigator.pop(sheetContext), icon: const Icon(Icons.close)),
+                    ],
                   ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          player.displayName,
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
-                        Text(
-                          _relationshipLabel(player.relationship),
-                          style: const TextStyle(
-                            color: RelayColors.cyan,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
-                      ],
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.all(13),
+                    decoration: BoxDecoration(
+                      color: RelayColors.surfaceHigh.withValues(alpha: .62),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: RelayColors.violet.withValues(alpha: .25)),
                     ),
+                    child: Text(player.statusMessage),
+                  ),
+                  const SizedBox(height: 12),
+                  Chip(
+                    avatar: const Icon(Icons.memory, size: 17),
+                    label: Text('Favori modül: ${player.favoriteModule.displayName}'),
+                  ),
+                  const SizedBox(height: 14),
+                  if (player.relationship == 'friend')
+                    FilledButton.icon(
+                      onPressed: () async {
+                        final session = await ref.read(guestSessionProvider.future);
+                        if (!mounted) return;
+                        Navigator.pop(sheetContext);
+                        ref.read(chatDockProvider.notifier).openChannel(
+                              directChatIdentity(session.player.id, player.playerId),
+                            );
+                      },
+                      icon: const Icon(Icons.chat_bubble_outline),
+                      label: const Text('MESAJ GÖNDER'),
+                    ),
+                  if (player.relationship != 'friend')
+                    OutlinedButton.icon(
+                      onPressed: _busy
+                          ? null
+                          : () {
+                              Navigator.pop(sheetContext);
+                              _sendFriendRequest(player.playerId);
+                            },
+                      icon: const Icon(Icons.person_add_alt_1),
+                      label: const Text('ARKADAŞLIK İSTEĞİ GÖNDER'),
+                    ),
+                  const SizedBox(height: 10),
+                  const Text(
+                    'Sosyal profil savaş gücü veya eşleştirme avantajı vermez.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: RelayColors.muted, fontSize: 10.5),
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
-              Text(player.statusMessage),
-              const SizedBox(height: 12),
-              Chip(
-                avatar: const Icon(Icons.memory, size: 17),
-                label: Text('Favori modül: ${player.favoriteModule.displayName}'),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Bu profil yalnız sosyal kimliktir; savaş gücü veya eşleştirme avantajı vermez.',
-                style: TextStyle(color: RelayColors.muted, fontSize: 11),
-              ),
-            ],
+            ),
           ),
         ),
       ),

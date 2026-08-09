@@ -1,3 +1,16 @@
+## v0.8.20
+- Savaş sahnesini görünmez bırakan `ui.Gradient.linear` colorStops hatası düzeltildi.
+- Yok edilen modüllerde kırmızı X kaldırıldı; patlama ve enerji sönmesi geri bildirimi eklendi.
+- Kalkan emişi sahne üstü kalkan animasyonu ile güçlendirildi.
+- Tek portlu modüller otomatik bağlantı yönüne geçti; yalnız Güçlendiricinin etki yönü manuel döndürülür.
+- Tüm sunucu, klan, özel ve grup kanallarını destekleyen açılır-kapanır sohbet altyapısı ve istemcisi eklendi.
+- Klan ekranına tüm üyelere mesaj/klan sohbeti, arkadaş profiline özel mesaj erişimi eklendi.
+- Günlük görevler 10, başarımlar 28, sezon ödül yolu 20 kademeye genişletildi.
+- Günlük görev, başarım ve sezon ödülleri scrollbar bulunan sabit yükseklikli listelere taşındı.
+- Profil, Klan, İstatistik ve Mağaza alt menüleri ortak yeni tasarım diline geçirildi.
+- Oyna ekranı devre kartı arka planı bütün ekranı kapsayacak şekilde yeniden kompoze edildi.
+- Alembic `20260808_0012` ile sohbet grupları, üyeleri ve mesajları kalıcılaştırıldı.
+
 ## v0.8.19 rev1
 - İstatistikler lider tablosunda aynı ValueKey'in hem dış `_LeaderboardCard` hem de iç `Card` üzerine aktarılması kaldırıldı.
 - `season-leaderboard-card` widget testi tekrar tek eşleşme verecek şekilde düzeltildi.

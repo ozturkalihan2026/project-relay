@@ -44,6 +44,7 @@ from .career import (
 from .config import Settings
 from .database import Database
 from .db_models import PlayerRecord
+from .chat import ChatError, ChatService, ChatChannel, ChatMessage
 from .online import OnlinePlayError, OnlinePlayService, SavedBoard
 from .progression import (
     ProgressionError,
@@ -87,6 +88,12 @@ from .schemas import (
     SocialSearchResponse,
     SocialSnapshotResponse,
     UpdateSocialProfileRequest,
+    ChatChannelsResponse,
+    ChatMessagesResponse,
+    ChatMessageResponse,
+    ChatChannelResponse,
+    SendChatMessageRequest,
+    CreateChatGroupRequest,
     VerifyReplayRequest,
     VerifyReplayResponse,
 )
@@ -691,6 +698,7 @@ def create_app(
     season_service: SeasonService | None = None,
     alpha_safety_service: AlphaSafetyService | None = None,
     social_service: SocialService | None = None,
+    chat_service: ChatService | None = None,
 ) -> FastAPI:
     resolved_settings = settings or Settings.from_environment()
     resolved_database = database or Database(
@@ -734,13 +742,14 @@ def create_app(
         resolved_database
     )
     resolved_social = social_service or SocialService(resolved_database)
+    resolved_chat = chat_service or ChatService(resolved_database)
     bearer = HTTPBearer(auto_error=False)
 
     application = FastAPI(
         title="Project Relay API",
         version=API_VERSION,
         description=(
-            "Project Relay v0.8.4 profil, klan ve doğrudan kariyer hazırlığı düzeni; sosyal yapı ve klan temeli API'si. "
+            "Project Relay v0.8.20 sohbet, sosyal yapı, klan ve savaş hazırlığı API'si. "
             "Arkadaşlık istekleri, oyuncu profilleri, açık klan keşfi ve "
             "sunucu yetkili üyelik kuralları birlikte doğrulanır."
         ),
@@ -763,6 +772,7 @@ def create_app(
     application.state.season_service = resolved_season
     application.state.alpha_safety_service = resolved_alpha
     application.state.social_service = resolved_social
+    application.state.chat_service = resolved_chat
 
     def current_player(
         credentials: HTTPAuthorizationCredentials | None = Depends(bearer),
@@ -1221,6 +1231,99 @@ def create_app(
         player: PlayerView = Depends(current_player),
     ) -> dict[str, Any]:
         return _career_run_payload(resolved_career.abandon(player.player_id))
+
+    def _chat_channel_payload(channel: ChatChannel) -> dict[str, Any]:
+        return {
+            "channel_type": channel.channel_type,
+            "channel_key": channel.channel_key,
+            "title": channel.title,
+            "subtitle": channel.subtitle,
+            "unread_hint": channel.unread_hint,
+        }
+
+    def _chat_message_payload(message: ChatMessage) -> dict[str, Any]:
+        return {
+            "message_id": message.message_id,
+            "channel_type": message.channel_type,
+            "channel_key": message.channel_key,
+            "sender_player_id": message.sender_player_id,
+            "sender_display_name": message.sender_display_name,
+            "message": message.message,
+            "created_at": message.created_at.isoformat(),
+        }
+
+    @application.get(
+        "/api/v1/chat/channels",
+        response_model=ChatChannelsResponse,
+        responses={401: {"model": ErrorResponse}},
+        tags=["chat"],
+    )
+    def chat_channels(player: PlayerView = Depends(current_player)) -> dict[str, Any]:
+        return {"channels": [_chat_channel_payload(item) for item in resolved_chat.channels(player.player_id)]}
+
+    @application.get(
+        "/api/v1/chat/messages",
+        response_model=ChatMessagesResponse,
+        responses={401: {"model": ErrorResponse}, 403: {"model": ErrorResponse}},
+        tags=["chat"],
+    )
+    def chat_messages(
+        channel_type: str = Query(min_length=3, max_length=16),
+        channel_key: str = Query(min_length=1, max_length=96),
+        limit: int = Query(default=80, ge=1, le=120),
+        player: PlayerView = Depends(current_player),
+    ) -> dict[str, Any]:
+        try:
+            items = resolved_chat.messages(
+                player.player_id,
+                channel_type=channel_type,
+                channel_key=channel_key,
+                limit=limit,
+            )
+        except ChatError as exc:
+            raise SocialError(exc.code, exc.message, status_code=exc.status_code) from exc
+        return {"messages": [_chat_message_payload(item) for item in items]}
+
+    @application.post(
+        "/api/v1/chat/messages",
+        response_model=ChatMessageResponse,
+        responses={401: {"model": ErrorResponse}, 403: {"model": ErrorResponse}, 409: {"model": ErrorResponse}},
+        tags=["chat"],
+    )
+    def send_chat_message(
+        request: SendChatMessageRequest,
+        player: PlayerView = Depends(current_player),
+    ) -> dict[str, Any]:
+        try:
+            item = resolved_chat.send_message(
+                player.player_id,
+                channel_type=request.channel_type,
+                channel_key=request.channel_key,
+                message=request.message,
+            )
+        except ChatError as exc:
+            raise SocialError(exc.code, exc.message, status_code=exc.status_code) from exc
+        return _chat_message_payload(item)
+
+    @application.post(
+        "/api/v1/chat/groups",
+        response_model=ChatChannelResponse,
+        responses={401: {"model": ErrorResponse}, 409: {"model": ErrorResponse}},
+        tags=["chat"],
+    )
+    def create_chat_group(
+        request: CreateChatGroupRequest,
+        player: PlayerView = Depends(current_player),
+    ) -> dict[str, Any]:
+        try:
+            channel = resolved_chat.create_group(
+                player.player_id,
+                name=request.name,
+                member_player_ids=request.member_player_ids,
+            )
+        except ChatError as exc:
+            raise SocialError(exc.code, exc.message, status_code=exc.status_code) from exc
+        return _chat_channel_payload(channel)
 
     @application.get(
         "/api/v1/me/social",

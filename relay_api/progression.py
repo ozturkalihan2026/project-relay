@@ -68,7 +68,8 @@ DAILY_MISSIONS: tuple[DailyMissionDefinition, ...] = (
         target=1,
         reward_xp=25,
         reward_credits=12,
-    ),    DailyMissionDefinition(
+    ),
+    DailyMissionDefinition(
         mission_id="double_signal",
         title="Çifte Sinyal",
         description="İki asenkron devre savaşını tamamla.",
@@ -94,6 +95,42 @@ DAILY_MISSIONS: tuple[DailyMissionDefinition, ...] = (
         target=5,
         reward_xp=55,
         reward_credits=26,
+    ),
+    DailyMissionDefinition(
+        mission_id="signal_chain",
+        title="Sinyal Zinciri",
+        description="Dört asenkron devre savaşını tamamla.",
+        metric="matches_completed",
+        target=4,
+        reward_xp=46,
+        reward_credits=22,
+    ),
+    DailyMissionDefinition(
+        mission_id="victory_triple",
+        title="Üçlü Zafer",
+        description="Üç asenkron devre savaşı kazan.",
+        metric="wins",
+        target=3,
+        reward_xp=62,
+        reward_credits=30,
+    ),
+    DailyMissionDefinition(
+        mission_id="battle_rhythm",
+        title="Savaş Ritmi",
+        description="Altı asenkron devre savaşını tamamla.",
+        metric="matches_completed",
+        target=6,
+        reward_xp=68,
+        reward_credits=32,
+    ),
+    DailyMissionDefinition(
+        mission_id="victory_current",
+        title="Zafer Akımı",
+        description="Dört asenkron devre savaşı kazan.",
+        metric="wins",
+        target=4,
+        reward_xp=82,
+        reward_credits=40,
     ),
 
 )
@@ -169,6 +206,16 @@ ACHIEVEMENTS: tuple[AchievementDefinition, ...] = (
     AchievementDefinition("level_50", "Maksimum Frekans", "Oyuncu seviyesini 50'ye çıkar.", "level", 50, 1000, 500),
     AchievementDefinition("rating_1200", "Yüksek Frekans", "Derece puanını 1200'e çıkar.", "rating", 1200, 260, 130),
     AchievementDefinition("rating_1400", "Elit Sinyal", "Derece puanını 1400'e çıkar.", "rating", 1400, 480, 240),
+    AchievementDefinition("level_15", "Seviye 15", "Oyuncu seviyesini 15'e çıkar.", "level", 15, 290, 135),
+    AchievementDefinition("level_25", "Seviye 25", "Oyuncu seviyesini 25'e çıkar.", "level", 25, 430, 205),
+    AchievementDefinition("level_35", "Seviye 35", "Oyuncu seviyesini 35'e çıkar.", "level", 35, 610, 295),
+    AchievementDefinition("level_45", "Seviye 45", "Oyuncu seviyesini 45'e çıkar.", "level", 45, 840, 410),
+    AchievementDefinition("battle_250", "Uzun Hat", "250 asenkron savaşı tamamla.", "matches_completed", 250, 720, 330),
+    AchievementDefinition("battle_500", "Kesintisiz Devre", "500 asenkron savaşı tamamla.", "matches_completed", 500, 1200, 560),
+    AchievementDefinition("wins_100", "Zafer Mühendisi", "100 asenkron zafer kazan.", "wins", 100, 760, 360),
+    AchievementDefinition("wins_250", "Savaş Çekirdeği", "250 asenkron zafer kazan.", "wins", 250, 1350, 650),
+    AchievementDefinition("rating_1600", "Usta Frekans", "Derece puanını 1600'e çıkar.", "rating", 1600, 720, 360),
+    AchievementDefinition("rating_1800", "Şampiyon Sinyali", "Derece puanını 1800'e çıkar.", "rating", 1800, 1100, 540),
 
 )
 

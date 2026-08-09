@@ -6,6 +6,7 @@ import 'screens/main_menu_screen.dart';
 import 'screens/profile_screen.dart';
 import 'screens/settings_screen.dart';
 import 'theme/relay_theme.dart';
+import 'widgets/chat_dock.dart';
 
 class RelayApp extends StatelessWidget {
   const RelayApp({super.key});
@@ -18,7 +19,12 @@ class RelayApp extends StatelessWidget {
       theme: RelayTheme.dark(),
       builder: (context, child) => DecoratedBox(
         decoration: RelayDecorations.appBackground(),
-        child: child ?? const SizedBox.shrink(),
+        child: Stack(
+          children: [
+            Positioned.fill(child: child ?? const SizedBox.shrink()),
+            const ChatDock(),
+          ],
+        ),
       ),
       home: const MainMenuScreen(),
       routes: {

@@ -1001,7 +1001,17 @@ class _GoalSection extends StatelessWidget {
             if (children.isEmpty)
               _EmptyState(icon: icon, message: emptyMessage)
             else
-              ...children,
+              SizedBox(
+                height: 455,
+                child: Scrollbar(
+                  thumbVisibility: true,
+                  trackVisibility: true,
+                  child: ListView(
+                    padding: const EdgeInsets.only(right: 8),
+                    children: children,
+                  ),
+                ),
+              ),
           ],
         ),
       ),

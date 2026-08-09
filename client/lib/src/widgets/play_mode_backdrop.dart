@@ -28,9 +28,9 @@ class _PlayModeBackdropPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     if (size.isEmpty) return;
-    final extent = math.min(size.height * 0.62, size.width * 0.38);
-    final left = size.width * 0.63;
-    final top = size.height * 0.18;
+    final extent = math.max(size.width, size.height) * 1.06;
+    final left = (size.width - extent) / 2;
+    final top = (size.height - extent) / 2;
     final board = Rect.fromLTWH(left, top, extent, extent);
     final cell = extent / 4;
 
@@ -40,13 +40,13 @@ class _PlayModeBackdropPainter extends CustomPainter {
     canvas.drawRRect(
       RRect.fromRectAndRadius(board, const Radius.circular(24)),
       Paint()
-        ..color = RelayColors.cyan.withValues(alpha: 0.025)
+        ..color = RelayColors.cyan.withValues(alpha: 0.018)
         ..style = PaintingStyle.fill,
     );
     canvas.drawRRect(
       RRect.fromRectAndRadius(board, const Radius.circular(24)),
       Paint()
-        ..color = RelayColors.cyan.withValues(alpha: 0.09)
+        ..color = RelayColors.cyan.withValues(alpha: 0.065)
         ..style = PaintingStyle.stroke
         ..strokeWidth = 1.2,
     );
@@ -62,7 +62,7 @@ class _PlayModeBackdropPainter extends CustomPainter {
         canvas.drawRRect(
           RRect.fromRectAndRadius(rect, const Radius.circular(12)),
           Paint()
-            ..color = RelayColors.cyan.withValues(alpha: 0.045)
+            ..color = RelayColors.cyan.withValues(alpha: 0.032)
             ..style = PaintingStyle.stroke
             ..strokeWidth = 1,
         );
@@ -78,13 +78,13 @@ class _PlayModeBackdropPainter extends CustomPainter {
     canvas.drawRRect(
       RRect.fromRectAndRadius(core, const Radius.circular(22)),
       Paint()
-        ..color = RelayColors.violet.withValues(alpha: 0.045)
+        ..color = RelayColors.violet.withValues(alpha: 0.032)
         ..style = PaintingStyle.fill,
     );
     canvas.drawRRect(
       RRect.fromRectAndRadius(core, const Radius.circular(22)),
       Paint()
-        ..color = RelayColors.cyan.withValues(alpha: 0.15)
+        ..color = RelayColors.cyan.withValues(alpha: 0.11)
         ..style = PaintingStyle.stroke
         ..strokeWidth = 1.4,
     );
@@ -95,7 +95,7 @@ class _PlayModeBackdropPainter extends CustomPainter {
         center,
         radius,
         Paint()
-          ..color = RelayColors.cyan.withValues(alpha: 0.08)
+          ..color = RelayColors.cyan.withValues(alpha: 0.055)
           ..style = PaintingStyle.stroke
           ..strokeWidth = 1.2,
       );
@@ -118,13 +118,13 @@ class _PlayModeBackdropPainter extends CustomPainter {
         nodes[i],
         center,
         Paint()
-          ..color = nodeColors[i].withValues(alpha: 0.075)
+          ..color = nodeColors[i].withValues(alpha: 0.050)
           ..strokeWidth = 1.2,
       );
       canvas.drawCircle(
         nodes[i],
         4,
-        Paint()..color = nodeColors[i].withValues(alpha: 0.16),
+        Paint()..color = nodeColors[i].withValues(alpha: 0.11),
       );
     }
 

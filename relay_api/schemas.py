@@ -672,3 +672,39 @@ class CreateClanRequest(ApiModel):
     name: str = Field(min_length=3, max_length=48)
     tag: str = Field(min_length=2, max_length=8)
     description: str = Field(min_length=3, max_length=240)
+
+class ChatChannelResponse(ApiModel):
+    channel_type: str
+    channel_key: str
+    title: str
+    subtitle: str
+    unread_hint: int = 0
+
+
+class ChatMessageResponse(ApiModel):
+    message_id: str
+    channel_type: str
+    channel_key: str
+    sender_player_id: str
+    sender_display_name: str
+    message: str
+    created_at: str
+
+
+class ChatChannelsResponse(ApiModel):
+    channels: list[ChatChannelResponse]
+
+
+class ChatMessagesResponse(ApiModel):
+    messages: list[ChatMessageResponse]
+
+
+class SendChatMessageRequest(ApiModel):
+    channel_type: Literal["server", "clan", "group", "direct"]
+    channel_key: str = Field(min_length=1, max_length=96)
+    message: str = Field(min_length=1, max_length=500)
+
+
+class CreateChatGroupRequest(ApiModel):
+    name: str = Field(min_length=2, max_length=40)
+    member_player_ids: list[str] = Field(min_length=1, max_length=11)

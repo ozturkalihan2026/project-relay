@@ -759,3 +759,48 @@ class ClanMemberRecord(Base):
         PrimaryKeyConstraint("clan_id", "player_id", name="pk_clan_members"),
         Index("ix_clan_members_clan_role", "clan_id", "role", "joined_at"),
     )
+
+
+class ChatGroupRecord(Base):
+    __tablename__ = "chat_groups"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True)
+    name: Mapped[str] = mapped_column(String(40), nullable=False)
+    owner_player_id: Mapped[str] = mapped_column(
+        ForeignKey("players.id", ondelete="CASCADE"), nullable=False
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class ChatGroupMemberRecord(Base):
+    __tablename__ = "chat_group_members"
+
+    group_id: Mapped[str] = mapped_column(
+        ForeignKey("chat_groups.id", ondelete="CASCADE"), nullable=False
+    )
+    player_id: Mapped[str] = mapped_column(
+        ForeignKey("players.id", ondelete="CASCADE"), nullable=False
+    )
+    joined_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+    __table_args__ = (
+        PrimaryKeyConstraint("group_id", "player_id", name="pk_chat_group_members"),
+        Index("ix_chat_group_members_player", "player_id", "joined_at"),
+    )
+
+
+class ChatMessageRecord(Base):
+    __tablename__ = "chat_messages"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True)
+    channel_type: Mapped[str] = mapped_column(String(16), nullable=False)
+    channel_key: Mapped[str] = mapped_column(String(96), nullable=False)
+    sender_player_id: Mapped[str] = mapped_column(
+        ForeignKey("players.id", ondelete="CASCADE"), nullable=False
+    )
+    message: Mapped[str] = mapped_column(String(500), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+    __table_args__ = (
+        Index("ix_chat_messages_channel_time", "channel_type", "channel_key", "created_at"),
+    )
