@@ -79,7 +79,15 @@ void main() {
       ),
     ]);
 
-    expect(channels, hasLength(2));
+    expect(channels, hasLength(3));
+    expect(
+      channels.map((channel) => channel.asset).toSet(),
+      {
+        'sounds/laser.wav',
+        'sounds/attack.wav',
+        'sounds/repair.wav',
+      },
+    );
     await soundPlayer.dispose();
     expect(channels.every((channel) => channel.isDisposed), isTrue);
 
@@ -92,7 +100,7 @@ void main() {
         amount: 5,
       ),
     ]);
-    expect(channels, hasLength(2));
+    expect(channels, hasLength(3));
   });
 }
 

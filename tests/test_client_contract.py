@@ -27,7 +27,7 @@ class FlutterClientContractTests(unittest.TestCase):
             encoding="utf-8"
         )
 
-        self.assertIn("version: 0.8.21+86", pubspec)
+        self.assertIn("version: 0.8.21+87", pubspec)
         career_screen = (CLIENT / "lib/src/screens/career_screen.dart").read_text(encoding="utf-8")
         self.assertNotIn("class _Metric extends StatelessWidget", career_screen)
         self.assertIn("await tester.ensureVisible(profileBack);", widget_test)
@@ -1658,7 +1658,7 @@ def test_v0820_rev1_analyzer_regressions():
     assert theme.count("chipTheme:") == 1
     assert "separatorBuilder: (_, _)" in chat
     assert "separatorBuilder: (_, __)" not in chat
-    assert "version: 0.8.21+86" in pubspec
+    assert "version: 0.8.21+87" in pubspec
     assert 'version = "0.8.21"' in pyproject
 
 
@@ -1723,7 +1723,7 @@ def test_v0820_rev5_modern_chat_core_and_energy_contract() -> None:
     career = (CLIENT / "lib/src/screens/career_screen.dart").read_text(encoding="utf-8")
     pubspec = (CLIENT / "pubspec.yaml").read_text(encoding="utf-8")
 
-    assert "version: 0.8.21+86" in pubspec
+    assert "version: 0.8.21+87" in pubspec
     assert "class RelayFormDialog extends StatelessWidget" in dialogs
     assert "RelayFormDialog(" in chat
     assert social.count("RelayFormDialog(") >= 2

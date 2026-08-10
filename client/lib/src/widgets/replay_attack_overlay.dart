@@ -22,7 +22,6 @@ class ReplayAttackOverlay extends StatefulWidget {
   final MatchResponse match;
   final EquippedVisuals leftVisuals;
   final EquippedVisuals rightVisuals;
-  final String? phaseCue;
 
   @override
   State<ReplayAttackOverlay> createState() => _ReplayAttackOverlayState();

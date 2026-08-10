@@ -277,10 +277,16 @@ class BattleAnalysis {
           }
           break;
         case 'overheat':
-          if (player) playerOverheats += 1; else enemyOverheats += 1;
+          if (player) {
+            playerOverheats += 1;
+          } else {
+            enemyOverheats += 1;
+          }
           break;
         case 'energy_starved':
-          if (player) playerStarved += 1;
+          if (player) {
+            playerStarved += 1;
+          }
           break;
       }
     }
