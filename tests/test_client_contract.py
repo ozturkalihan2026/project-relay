@@ -27,7 +27,7 @@ class FlutterClientContractTests(unittest.TestCase):
             encoding="utf-8"
         )
 
-        self.assertIn("version: 0.8.21+85", pubspec)
+        self.assertIn("version: 0.8.21+86", pubspec)
         career_screen = (CLIENT / "lib/src/screens/career_screen.dart").read_text(encoding="utf-8")
         self.assertNotIn("class _Metric extends StatelessWidget", career_screen)
         self.assertIn("await tester.ensureVisible(profileBack);", widget_test)
@@ -36,7 +36,7 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertNotIn("final horizontalScrollable = find.byWidgetPredicate(\n    (widget)", widget_test)
         self.assertIn("AppHeaderTitle(pageTitle: widget.mode.title.toUpperCase())", editor)
         self.assertNotIn("ANA MERKEZ VE MENÜ DÜZENİ", main_menu)
-        self.assertIn("PROJECT RELAY • v0.8.21-r3", manual)
+        self.assertIn("PROJECT RELAY • v0.8.21-r4", manual)
         self.assertIn("audioplayers:", pubspec)
         self.assertIn("assets/sounds/", pubspec)
         self.assertIn("flame:", pubspec)
@@ -1425,7 +1425,7 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("Komutan Sistemi", feature_pool)
         self.assertIn("devreyi kurduktan ve doğruladıktan sonra", feature_pool.lower())
         self.assertIn("v0.8.4", release)
-        self.assertIn("PROJECT RELAY • v0.8.21-r3", widget_test)
+        self.assertIn("PROJECT RELAY • v0.8.21-r4", widget_test)
         self.assertIn("expect(find.text('ANTRENMAN'), findsOneWidget)", widget_test)
         self.assertNotIn("ÇEVRİMİÇİ SAVAŞ • v0.8.4", widget_test)
         self.assertNotIn("ANTRENMAN • v0.8.4", widget_test)
@@ -1658,7 +1658,7 @@ def test_v0820_rev1_analyzer_regressions():
     assert theme.count("chipTheme:") == 1
     assert "separatorBuilder: (_, _)" in chat
     assert "separatorBuilder: (_, __)" not in chat
-    assert "version: 0.8.21+85" in pubspec
+    assert "version: 0.8.21+86" in pubspec
     assert 'version = "0.8.21"' in pyproject
 
 
@@ -1723,7 +1723,7 @@ def test_v0820_rev5_modern_chat_core_and_energy_contract() -> None:
     career = (CLIENT / "lib/src/screens/career_screen.dart").read_text(encoding="utf-8")
     pubspec = (CLIENT / "pubspec.yaml").read_text(encoding="utf-8")
 
-    assert "version: 0.8.21+85" in pubspec
+    assert "version: 0.8.21+86" in pubspec
     assert "class RelayFormDialog extends StatelessWidget" in dialogs
     assert "RelayFormDialog(" in chat
     assert social.count("RelayFormDialog(") >= 2
@@ -1786,3 +1786,15 @@ def test_v0821_rev3_editor_and_idle_25d_contract():
     assert 'presentation3d: true' in editor
     assert '_drawModuleMechanism' in game
     assert 'ModuleKind.cooler' in game
+
+
+def test_v0821_rev4_cinematic_final_contract():
+    overlay = (CLIENT / 'lib' / 'src' / 'widgets' / 'replay_attack_overlay.dart').read_text(encoding='utf-8')
+    sound = (CLIENT / 'lib' / 'src' / 'game' / 'event_sound_player.dart').read_text(encoding='utf-8')
+    camera = (CLIENT / 'lib' / 'src' / 'widgets' / 'battle_camera_rig.dart').read_text(encoding='utf-8')
+    assert 'JENERATÖR AÇIĞA ÇIKTI' in overlay
+    assert 'ÇEKİRDEK AÇIKTA' in overlay
+    assert 'ÇEKİRDEK ÇÖKTÜ' in overlay
+    assert '_drawCoreCollapse' in overlay
+    assert 'Future.wait(layers)' in sound
+    assert '1.35' in camera

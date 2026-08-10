@@ -304,7 +304,7 @@ class _ReplayScreenState extends ConsumerState<ReplayScreen> {
                   children: [
                     _playbackControls(complete: snapshot.complete),
                     if (snapshot.complete) ...[
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 20),
                       BattleAnalysisPanel(
                         match: widget.match,
                         replay: widget.replay,

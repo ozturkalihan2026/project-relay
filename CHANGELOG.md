@@ -1,3 +1,11 @@
+## v0.8.21 rev4
+
+- Savaş fazı sinematiği tamamlandı: son normal modül sonrası Jeneratör Açığa Çıktı, jeneratör yok oluşunda Çekirdek Açıkta, final core hitte Çekirdek Çöktü bannerları.
+- Final çekirdek patlaması ve parçacık burst güçlendirildi.
+- Kamera kritik/final darbelerde daha belirgin zoom + shake kullanır.
+- Silah sesi ile impact/core katmanları eşzamanlı oynatılır.
+- rev1 + rev2 + rev3 kapsamı tam olarak korunur.
+
 ## v0.8.21 rev3
 
 - Devre hazırlama ekranına etkileşimli 2.5D kart görünümü eklendi; sürükle-bırak hit testleri transform ile korunur.

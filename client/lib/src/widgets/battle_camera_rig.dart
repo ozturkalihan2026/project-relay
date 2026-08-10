@@ -31,7 +31,7 @@ class _BattleCameraRigState extends State<BattleCameraRig>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 420),
+      duration: const Duration(milliseconds: 560),
     );
     widget.events.addListener(_handle);
   }
@@ -49,7 +49,7 @@ class _BattleCameraRigState extends State<BattleCameraRig>
     if (events.isEmpty) return;
     _strength = events.fold<double>(0, (value, event) {
       final next = switch (event.type) {
-        'core_damage' => 1.0,
+        'core_damage' => event.tick >= widget.match.result.ticks ? 1.35 : 1.0,
         'destroyed' => 0.78,
         'attack' => _isPulse(event.actorId) ? 0.58 : 0.24,
         'shield_absorb' => 0.30,
@@ -83,7 +83,7 @@ class _BattleCameraRigState extends State<BattleCameraRig>
         final t = _controller.value;
         final fade = (1 - t).clamp(0.0, 1.0);
         final shake = math.sin(t * math.pi * 7) * 4.5 * _strength * fade;
-        final zoom = 1 + math.sin(t * math.pi) * 0.012 * _strength;
+        final zoom = 1 + math.sin(t * math.pi) * 0.018 * _strength;
         return Transform.translate(
           offset: Offset(shake, -shake * 0.28),
           child: Transform.scale(scale: zoom, child: child),

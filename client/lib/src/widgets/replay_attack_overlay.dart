@@ -22,6 +22,7 @@ class ReplayAttackOverlay extends StatefulWidget {
   final MatchResponse match;
   final EquippedVisuals leftVisuals;
   final EquippedVisuals rightVisuals;
+  final String? phaseCue;
 
   @override
   State<ReplayAttackOverlay> createState() => _ReplayAttackOverlayState();
@@ -31,6 +32,8 @@ class _ReplayAttackOverlayState extends State<ReplayAttackOverlay>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
   List<BattleEvent> _events = const [];
+  final Set<String> _destroyedIds = <String>{};
+  String? _phaseCue;
 
   @override
   void initState() {
@@ -79,6 +82,37 @@ class _ReplayAttackOverlayState extends State<ReplayAttackOverlay>
       _controller.reset();
       return;
     }
+    _phaseCue = null;
+    for (final event in _events.where((event) => event.type == 'destroyed')) {
+      final target = event.targetId;
+      if (target == null) continue;
+      _destroyedIds.add(target);
+      final enemyBoard = event.side == 'left'
+          ? widget.match.opponentBoard
+          : widget.match.playerBoard;
+      ModulePlacement? targetModule;
+      for (final module in enemyBoard.modules) {
+        if (module.id == target) {
+          targetModule = module;
+          break;
+        }
+      }
+      if (targetModule?.kind == ModuleKind.generator) {
+        _phaseCue = 'ÇEKİRDEK AÇIKTA';
+      } else {
+        final regular = enemyBoard.modules
+            .where((module) => module.kind != ModuleKind.generator)
+            .map((module) => module.id)
+            .toSet();
+        if (regular.isNotEmpty && regular.every(_destroyedIds.contains)) {
+          _phaseCue = 'JENERATÖR AÇIĞA ÇIKTI';
+        }
+      }
+    }
+    if (_events.any((event) =>
+        event.type == 'core_damage' && event.tick >= widget.match.result.ticks)) {
+      _phaseCue = 'ÇEKİRDEK ÇÖKTÜ';
+    }
     _controller.forward(from: 0);
   }
 
@@ -95,6 +129,7 @@ class _ReplayAttackOverlayState extends State<ReplayAttackOverlay>
             rawProgress: _controller.value,
             leftVisuals: widget.leftVisuals,
             rightVisuals: widget.rightVisuals,
+            phaseCue: _phaseCue,
           ),
         ),
       ),
@@ -110,6 +145,7 @@ class _AttackPainter extends CustomPainter {
     required this.rawProgress,
     required this.leftVisuals,
     required this.rightVisuals,
+    required this.phaseCue,
   });
 
   final List<BattleEvent> events;
@@ -118,6 +154,7 @@ class _AttackPainter extends CustomPainter {
   final double rawProgress;
   final EquippedVisuals leftVisuals;
   final EquippedVisuals rightVisuals;
+  final String? phaseCue;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -139,6 +176,54 @@ class _AttackPainter extends CustomPainter {
         rightCore: rightCore,
       );
     }
+    if (phaseCue != null) {
+      _drawPhaseCue(canvas, size, phaseCue!);
+    }
+  }
+
+  void _drawPhaseCue(Canvas canvas, Size size, String cue) {
+    final appear = math.sin(rawProgress * math.pi).clamp(0.0, 1.0);
+    final color = cue.contains('ÇEKİRDEK') ? RelayColors.coral : RelayColors.amber;
+    final painter = TextPainter(
+      text: TextSpan(
+        text: cue,
+        style: TextStyle(
+          color: color.withValues(alpha: appear),
+          fontSize: cue == 'ÇEKİRDEK ÇÖKTÜ' ? 25 : 19,
+          fontWeight: FontWeight.w900,
+          letterSpacing: 2.1,
+          shadows: [
+            Shadow(color: color.withValues(alpha: 0.70 * appear), blurRadius: 18),
+            const Shadow(color: Colors.black, blurRadius: 6),
+          ],
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout(maxWidth: size.width * 0.56);
+    final center = Offset(size.width / 2, size.height * 0.18);
+    final panel = RRect.fromRectAndRadius(
+      Rect.fromCenter(
+        center: center,
+        width: painter.width + 44,
+        height: painter.height + 22,
+      ),
+      const Radius.circular(14),
+    );
+    canvas.drawRRect(
+      panel,
+      Paint()..color = RelayColors.background.withValues(alpha: 0.76 * appear),
+    );
+    canvas.drawRRect(
+      panel,
+      Paint()
+        ..color = color.withValues(alpha: 0.58 * appear)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2,
+    );
+    painter.paint(
+      canvas,
+      center - Offset(painter.width / 2, painter.height / 2),
+    );
   }
 
   void _drawBattleBeat(
@@ -344,6 +429,9 @@ class _AttackPainter extends CustomPainter {
     if (rawProgress > 0.48) {
       final impactProgress = ((rawProgress - 0.48) / 0.52).clamp(0.0, 1.0).toDouble();
       _drawImpactBurst(canvas, to, color, impactProgress, fade);
+      if (event.type == 'core_damage' && event.tick >= match.result.ticks) {
+        _drawCoreCollapse(canvas, to, color, impactProgress, fade);
+      }
       _drawTargetHitFrame(canvas, to, color, impactProgress, fade);
       _drawFloatingLabel(
         canvas,
@@ -670,6 +758,37 @@ class _AttackPainter extends CustomPainter {
     }
   }
 
+  void _drawCoreCollapse(
+    Canvas canvas,
+    Offset center,
+    Color color,
+    double phase,
+    double fade,
+  ) {
+    final flash = (1 - phase).clamp(0.0, 1.0);
+    canvas.drawCircle(
+      center,
+      20 + phase * 74,
+      Paint()
+        ..color = RelayColors.white.withValues(alpha: 0.28 * fade * flash)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 18),
+    );
+    for (var i = 0; i < 18; i++) {
+      final angle = i * math.pi * 2 / 18 + phase * 0.35;
+      final distance = 16 + phase * (48 + (i % 4) * 8);
+      final point = center + Offset(math.cos(angle), math.sin(angle)) * distance;
+      canvas.drawLine(
+        center + Offset(math.cos(angle), math.sin(angle)) * 8,
+        point,
+        Paint()
+          ..color = (i.isEven ? color : RelayColors.amber)
+              .withValues(alpha: 0.82 * fade * (1 - phase * 0.35))
+          ..strokeWidth = i % 3 == 0 ? 3.2 : 1.7
+          ..strokeCap = StrokeCap.round,
+      );
+    }
+  }
+
   void _drawTargetHitFrame(Canvas canvas, Offset center, Color color, double phase, double fade) {
     final extent = 11 + phase * 12;
     final paint = Paint()
@@ -769,6 +888,7 @@ class _AttackPainter extends CustomPainter {
         oldDelegate.rawProgress != rawProgress ||
         oldDelegate.match != match ||
         oldDelegate.leftVisuals.modules.id != leftVisuals.modules.id ||
-        oldDelegate.rightVisuals.modules.id != rightVisuals.modules.id;
+        oldDelegate.rightVisuals.modules.id != rightVisuals.modules.id ||
+        oldDelegate.phaseCue != phaseCue;
   }
 }

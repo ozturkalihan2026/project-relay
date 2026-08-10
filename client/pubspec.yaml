@@ -1,7 +1,7 @@
 name: project_relay_client
-description: Project Relay v0.8.21 rev3 Battle Presentation 2.0 client
+description: Project Relay v0.8.21 rev4 Battle Presentation 2.0 client
 publish_to: none
-version: 0.8.21+85
+version: 0.8.21+86
 
 environment:
   sdk: ">=3.11.0 <4.0.0"

@@ -46,12 +46,15 @@ class EventSoundPlayer {
       if (weaponEvent) {
         final actionKey = '${event.tick}:${event.side}:${event.actorId}';
         if (playedWeapons.add(actionKey)) {
-          await _play(_weaponAsset(event), _volume(event));
+          final layers = <Future<void>>[
+            _play(_weaponAsset(event), _volume(event)),
+            if (event.type == 'attack') _play('attack.wav', 0.30),
+            if (event.type == 'core_damage') _play('core_damage.wav', 0.66),
+          ];
+          await Future.wait(layers);
         }
         if (event.type == 'shield_absorb') {
           await _play('shield_absorb.wav', 0.58);
-        } else if (event.type == 'core_damage') {
-          await _play('core_damage.wav', 0.58);
         }
         continue;
       }

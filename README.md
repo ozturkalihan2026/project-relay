@@ -1,9 +1,9 @@
-# Project Relay v0.8.21 rev3 — Battle Presentation 2.0
+# Project Relay v0.8.21 rev4 — Battle Presentation 2.0
 
 Bu sürüm v0.8.19 rev1 üzerine savaş ekranındaki gradient kaynaklı görünmezlik hatasını giderir; savaş geri bildirimini kalkan/yok oluş/enerji sönmesiyle güçlendirir; modül bağlantı yönlerini büyük ölçüde otomatikleştirir; oyun geneline açılır-kapanır sohbet sistemi ekler ve görev/başarım/sezon ödülü içeriklerini genişletir.
 
 - Sunucu API: `0.8.21`
-- Flutter istemci: `0.8.21+85`
+- Flutter istemci: `0.8.21+86`
 - Savaş kuralları: `0.8`
 - Alembic başı: `20260808_0012`
 
