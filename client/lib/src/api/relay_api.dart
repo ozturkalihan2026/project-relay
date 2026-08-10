@@ -307,7 +307,7 @@ class RelayApi {
       {
         'category': category,
         'message': message,
-        'client_version': '0.8.20',
+        'client_version': '0.8.21',
       },
       authorized: true,
     );

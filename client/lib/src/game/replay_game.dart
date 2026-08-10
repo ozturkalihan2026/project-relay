@@ -201,7 +201,7 @@ class RelayReplayGame extends FlameGame {
   late BoardReplayState _leftBoardState;
   late BoardReplayState _rightBoardState;
 
-  static const _secondsPerTick = 0.24;
+  static const _secondsPerTick = 0.28;
   double speed = 1;
   double _elapsed = 0;
   double _animationTime = 0;

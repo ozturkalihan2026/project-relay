@@ -1,3 +1,11 @@
+## v0.8.21 rev1
+
+- Battle Presentation 2.0 başladı; savaş sahnesindeki canlı olay akışı kaldırıldı.
+- Varsayılan görsel tekrar hızı 0.75× yapıldı; hız seçenekleri 0.75× / 1× / 1.25× / 1.5× / 2× oldu.
+- Savaş sonunda Özet + Savaş Analizi paneli eklendi.
+- Analiz; hasar, enerji, kalkan emişi, onarım, soğutma, aşırı ısınma, enerji açlığı ve savaşın yıldızını gösterir.
+- Sunucu savaş kuralları değiştirilmedi.
+
 ## v0.8.20 rev5
 - Sosyal profil, klan kurma ve sohbet grubu oluşturma modalları yeni arcade-tech form dialog ailesine taşındı.
 - Sohbette Enter mesaj gönderir, Shift+Enter yeni satır bırakır.

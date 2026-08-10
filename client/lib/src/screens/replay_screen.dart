@@ -15,7 +15,7 @@ import '../theme/relay_theme.dart';
 import '../widgets/relay_notice.dart';
 import '../widgets/app_header_actions.dart';
 import '../widgets/replay_attack_overlay.dart';
-import '../widgets/replay_event_feed.dart';
+import '../widgets/battle_analysis_panel.dart';
 import '../widgets/replay_playback_controls.dart';
 
 class ReplayScreen extends ConsumerStatefulWidget {
@@ -55,7 +55,7 @@ class _ReplayScreenState extends ConsumerState<ReplayScreen> {
   late final Map<ModuleKind, ModuleSpec> _moduleSpecs;
   late final ValueNotifier<List<BattleEvent>> _attackOverlayEvents;
   late RelayReplayGame _game;
-  double _speed = 1;
+  double _speed = 0.75;
   bool _playing = true;
   bool _soundEnabled = true;
   bool _rewardNoticeShown = false;
@@ -209,7 +209,6 @@ class _ReplayScreenState extends ConsumerState<ReplayScreen> {
       _ => RelayColors.amber,
     };
     final mediaSize = MediaQuery.sizeOf(context);
-    final useInlineEventFeed = mediaSize.width >= 1500;
     final stageHeight = (mediaSize.height - 130)
         .clamp(540.0, 620.0)
         .toDouble();
@@ -273,89 +272,44 @@ class _ReplayScreenState extends ConsumerState<ReplayScreen> {
               clipBehavior: Clip.antiAlias,
               child: SizedBox(
                 height: stageHeight,
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    final stageSize = Size(
-                      constraints.maxWidth,
-                      constraints.maxHeight,
-                    );
-                    final leftBoard = ReplayStageGeometry.leftBoard(stageSize);
-                    final feedInset = leftBoard.right + 14;
-                    return Stack(
-                      children: [
-                        Positioned.fill(
-                          child: GameWidget<RelayReplayGame>(
-                            key: ValueKey(_game),
-                            game: _game,
-                          ),
-                        ),
-                        if (useInlineEventFeed)
-                          Positioned(
-                            left: feedInset,
-                            right: feedInset,
-                            top: 48,
-                            bottom: 24,
-                            child: Center(
-                              child: ConstrainedBox(
-                                constraints:
-                                    const BoxConstraints(maxWidth: 540),
-                                child:
-                                    ValueListenableBuilder<ReplaySnapshot>(
-                                  valueListenable: _snapshot,
-                                  builder: (context, snapshot, child) {
-                                    return ReplayEventFeed(
-                                      events: widget.replay.events,
-                                      visibleTick: snapshot.tick,
-                                      formatter: _formatter,
-                                      match: widget.match,
-                                      replay: widget.replay,
-                                      complete: snapshot.complete,
-                                      currentLeftHp: snapshot.leftHp,
-                                      currentRightHp: snapshot.rightHp,
-                                      compact: true,
-                                      controls: _playbackControls(
-                                        complete: snapshot.complete,
-                                      ),
-                                    );
-                                  },
-                                ),
-                              ),
-                            ),
-                          ),
-                        Positioned.fill(
-                          child: ReplayAttackOverlay(
-                            events: _attackOverlayEvents,
-                            match: widget.match,
-                            leftVisuals: _leftVisuals,
-                          ),
-                        ),
-                      ],
-                    );
-                  },
+                child: Stack(
+                  children: [
+                    Positioned.fill(
+                      child: GameWidget<RelayReplayGame>(
+                        key: ValueKey(_game),
+                        game: _game,
+                      ),
+                    ),
+                    Positioned.fill(
+                      child: ReplayAttackOverlay(
+                        events: _attackOverlayEvents,
+                        match: widget.match,
+                        leftVisuals: _leftVisuals,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
-            if (!useInlineEventFeed) ...[
-              const SizedBox(height: 16),
-              ValueListenableBuilder<ReplaySnapshot>(
-                valueListenable: _snapshot,
-                builder: (context, snapshot, child) {
-                  return ReplayEventFeed(
-                    events: widget.replay.events,
-                    visibleTick: snapshot.tick,
-                    formatter: _formatter,
-                    match: widget.match,
-                    replay: widget.replay,
-                    complete: snapshot.complete,
-                    currentLeftHp: snapshot.leftHp,
-                    currentRightHp: snapshot.rightHp,
-                    controls: _playbackControls(
-                      complete: snapshot.complete,
-                    ),
-                  );
-                },
-              ),
-            ],
+            const SizedBox(height: 12),
+            ValueListenableBuilder<ReplaySnapshot>(
+              valueListenable: _snapshot,
+              builder: (context, snapshot, child) {
+                return Column(
+                  children: [
+                    _playbackControls(complete: snapshot.complete),
+                    if (snapshot.complete) ...[
+                      const SizedBox(height: 16),
+                      BattleAnalysisPanel(
+                        match: widget.match,
+                        replay: widget.replay,
+                        modules: widget.modules,
+                      ),
+                    ],
+                  ],
+                );
+              },
+            ),
           ],
         ),
       ),

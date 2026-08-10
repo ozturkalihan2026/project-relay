@@ -27,7 +27,7 @@ class FlutterClientContractTests(unittest.TestCase):
             encoding="utf-8"
         )
 
-        self.assertIn("version: 0.8.20+82", pubspec)
+        self.assertIn("version: 0.8.21+83", pubspec)
         career_screen = (CLIENT / "lib/src/screens/career_screen.dart").read_text(encoding="utf-8")
         self.assertNotIn("class _Metric extends StatelessWidget", career_screen)
         self.assertIn("await tester.ensureVisible(profileBack);", widget_test)
@@ -36,7 +36,7 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertNotIn("final horizontalScrollable = find.byWidgetPredicate(\n    (widget)", widget_test)
         self.assertIn("AppHeaderTitle(pageTitle: widget.mode.title.toUpperCase())", editor)
         self.assertNotIn("ANA MERKEZ VE MENÜ DÜZENİ", main_menu)
-        self.assertIn("PROJECT RELAY • v0.8.20", manual)
+        self.assertIn("PROJECT RELAY • v0.8.21-r1", manual)
         self.assertIn("audioplayers:", pubspec)
         self.assertIn("assets/sounds/", pubspec)
         self.assertIn("flame:", pubspec)
@@ -125,8 +125,6 @@ class FlutterClientContractTests(unittest.TestCase):
         # v0.4.12 + v0.4.13: tek ekran savaş geometrisi ve güçlü etiketler.
         self.assertIn("maxBoardExtent = 488", replay_game)
         self.assertIn("clamp(540.0, 620.0)", replay_screen)
-        self.assertIn("leftBoard.right + 14", replay_screen)
-        self.assertIn("BoxConstraints(maxWidth: 540)", replay_screen)
         self.assertIn("size: 14,", replay_game)
         self.assertIn("fontWeight: FontWeight.w900", replay_game)
         self.assertIn("width: 220,", controls)
@@ -476,7 +474,7 @@ class FlutterClientContractTests(unittest.TestCase):
         ).read_text(encoding="utf-8")
 
         self.assertIn(
-            "const supportedReplaySpeeds = <double>[0.25, 0.5, 1, 2];",
+            "const supportedReplaySpeeds = <double>[0.75, 1, 1.25, 1.5, 2];",
             settings,
         )
         self.assertIn("supportedReplaySpeeds.contains(speed)", settings)
@@ -979,15 +977,12 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertNotIn("_moduleCode", replay_game)
         self.assertIn("height: stageHeight", replay_screen)
         self.assertIn("clamp(540.0, 620.0)", replay_screen)
-        self.assertIn("maxWidth: 540", replay_screen)
-        self.assertIn("mediaSize.width >= 1500", replay_screen)
         self.assertIn("appBar: AppBar(", replay_screen)
         self.assertIn("onNewGame: _primaryAction", replay_screen)
         self.assertIn("_togglePlayback", replay_screen)
-        self.assertIn("ReplayEventFeed", replay_screen)
         self.assertIn("ReplayAttackOverlay", replay_screen)
-        self.assertIn("useInlineEventFeed", replay_screen)
-        self.assertIn("compact: true", replay_screen)
+        self.assertIn("BattleAnalysisPanel", replay_screen)
+        self.assertNotIn("ReplayEventFeed(", replay_screen)
         self.assertNotIn("Savaş Tekrarı", replay_screen)
         self.assertNotIn("DropdownButton<double>", replay_screen)
         self.assertNotIn("IconButton.filledTonal", replay_screen)
@@ -996,8 +991,6 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("SUNUCU SONUCU", event_feed)
         self.assertIn("live-server-metrics", event_feed)
         self.assertIn("CANLI • ADIM $visibleTick/${result.ticks}", event_feed)
-        self.assertIn("currentLeftHp: snapshot.leftHp", replay_screen)
-        self.assertIn("currentRightHp: snapshot.rightHp", replay_screen)
         self.assertIn("if (widget.compact)", event_feed)
         self.assertIn("Expanded(child: eventList)", event_feed)
         self.assertIn("height: compact ? 150 : 182", event_feed)
@@ -1432,7 +1425,7 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("Komutan Sistemi", feature_pool)
         self.assertIn("devreyi kurduktan ve doğruladıktan sonra", feature_pool.lower())
         self.assertIn("v0.8.4", release)
-        self.assertIn("PROJECT RELAY • v0.8.20", widget_test)
+        self.assertIn("PROJECT RELAY • v0.8.21-r1", widget_test)
         self.assertIn("expect(find.text('ANTRENMAN'), findsOneWidget)", widget_test)
         self.assertNotIn("ÇEVRİMİÇİ SAVAŞ • v0.8.4", widget_test)
         self.assertNotIn("ANTRENMAN • v0.8.4", widget_test)
@@ -1665,8 +1658,8 @@ def test_v0820_rev1_analyzer_regressions():
     assert theme.count("chipTheme:") == 1
     assert "separatorBuilder: (_, _)" in chat
     assert "separatorBuilder: (_, __)" not in chat
-    assert "version: 0.8.20+82" in pubspec
-    assert 'version = "0.8.20"' in pyproject
+    assert "version: 0.8.21+83" in pubspec
+    assert 'version = "0.8.21"' in pyproject
 
 
 def test_profile_goal_scrollbars_use_explicit_controller() -> None:
@@ -1730,7 +1723,7 @@ def test_v0820_rev5_modern_chat_core_and_energy_contract() -> None:
     career = (CLIENT / "lib/src/screens/career_screen.dart").read_text(encoding="utf-8")
     pubspec = (CLIENT / "pubspec.yaml").read_text(encoding="utf-8")
 
-    assert "version: 0.8.20+82" in pubspec
+    assert "version: 0.8.21+83" in pubspec
     assert "class RelayFormDialog extends StatelessWidget" in dialogs
     assert "RelayFormDialog(" in chat
     assert social.count("RelayFormDialog(") >= 2
@@ -1759,3 +1752,14 @@ def test_v0820_rev5_modern_chat_core_and_energy_contract() -> None:
     assert "for (var trail = 0; trail < 4; trail += 1)" in replay
     assert "maskFilter = const ui.MaskFilter.blur" in replay
     assert "final portPulse" in replay
+
+
+def test_v0821_rev1_battle_presentation_contract():
+    replay = (CLIENT / 'lib' / 'src' / 'screens' / 'replay_screen.dart').read_text(encoding='utf-8')
+    analysis = (CLIENT / 'lib' / 'src' / 'widgets' / 'battle_analysis_panel.dart').read_text(encoding='utf-8')
+    settings = (CLIENT / 'lib' / 'src' / 'state' / 'app_settings.dart').read_text(encoding='utf-8')
+    assert 'ReplayEventFeed(' not in replay
+    assert 'BattleAnalysisPanel(' in replay
+    assert 'this.replaySpeed = 0.75' in settings
+    assert 'SAVAŞ ANALİZİ' in analysis
+    assert 'SAVAŞIN YILDIZI' in analysis

@@ -8,7 +8,7 @@ void main() {
     addTearDown(container.dispose);
 
     expect(container.read(appSettingsProvider).replaySoundEnabled, isTrue);
-    expect(container.read(appSettingsProvider).replaySpeed, 1);
+    expect(container.read(appSettingsProvider).replaySpeed, 0.75);
 
     final controller = container.read(appSettingsProvider.notifier)
       ..setReplaySoundEnabled(false)

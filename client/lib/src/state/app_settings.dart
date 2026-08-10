@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-const supportedReplaySpeeds = <double>[0.25, 0.5, 1, 2];
+const supportedReplaySpeeds = <double>[0.75, 1, 1.25, 1.5, 2];
 
 final appSettingsProvider =
     NotifierProvider<AppSettingsController, AppSettings>(
@@ -10,7 +10,7 @@ final appSettingsProvider =
 class AppSettings {
   const AppSettings({
     this.replaySoundEnabled = true,
-    this.replaySpeed = 1,
+    this.replaySpeed = 0.75,
   });
 
   final bool replaySoundEnabled;
@@ -21,8 +21,7 @@ class AppSettings {
     double? replaySpeed,
   }) {
     return AppSettings(
-      replaySoundEnabled:
-          replaySoundEnabled ?? this.replaySoundEnabled,
+      replaySoundEnabled: replaySoundEnabled ?? this.replaySoundEnabled,
       replaySpeed: replaySpeed ?? this.replaySpeed,
     );
   }

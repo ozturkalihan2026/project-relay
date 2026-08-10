@@ -91,16 +91,20 @@ class SettingsScreen extends ConsumerWidget {
                               ),
                               segments: const [
                                 ButtonSegment(
-                                  value: 0.25,
-                                  label: Text('0.25×'),
-                                ),
-                                ButtonSegment(
-                                  value: 0.5,
-                                  label: Text('0.5×'),
+                                  value: 0.75,
+                                  label: Text('0.75×'),
                                 ),
                                 ButtonSegment(
                                   value: 1,
                                   label: Text('1×'),
+                                ),
+                                ButtonSegment(
+                                  value: 1.25,
+                                  label: Text('1.25×'),
+                                ),
+                                ButtonSegment(
+                                  value: 1.5,
+                                  label: Text('1.5×'),
                                 ),
                                 ButtonSegment(
                                   value: 2,

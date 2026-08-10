@@ -144,7 +144,7 @@ void main() {
             child: ReplayPlaybackControls(
               playing: false,
               soundEnabled: false,
-              speed: 0.5,
+              speed: 0.75,
               onTogglePlayback: () {},
               onRestart: () {},
               onToggleSound: () {},
@@ -158,7 +158,7 @@ void main() {
 
     expect(find.text('Devam Et'), findsOneWidget);
     expect(find.text('Ses Kapalı'), findsOneWidget);
-    expect(find.text('Hız 0.5×'), findsOneWidget);
+    expect(find.text('Hız 0.75×'), findsOneWidget);
     expect(find.text('YENİ OYUN'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
