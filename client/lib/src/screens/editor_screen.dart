@@ -533,6 +533,7 @@ class _BoardPanel extends StatelessWidget {
               onModuleDropped: onModuleDropped,
               onRotateModule: onRotateModule,
               visuals: visuals,
+              presentation3d: true,
             ),
           ),
         ),

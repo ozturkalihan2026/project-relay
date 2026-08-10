@@ -432,7 +432,7 @@ class _AttackPainter extends CustomPainter {
 
   void _drawShieldEvent(Canvas canvas, Offset to, Color color, double fade, bool absorbed) {
     final phase = Curves.easeOutBack.transform(progress.clamp(0.0, 1.0));
-    final radius = 15 + 30 * phase;
+    final radius = 22 + 42 * phase;
     final path = Path();
     for (var i = 0; i < 6; i++) {
       final angle = -math.pi / 2 + i * math.pi / 3;
@@ -444,6 +444,32 @@ class _AttackPainter extends CustomPainter {
       }
     }
     path.close();
+    final dome = Rect.fromCenter(
+      center: to + const Offset(0, 8),
+      width: radius * 2.5,
+      height: radius * 1.5,
+    );
+    canvas.drawArc(
+      dome,
+      math.pi,
+      math.pi,
+      false,
+      Paint()
+        ..color = color.withValues(alpha: 0.22 * fade)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 8
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 9),
+    );
+    canvas.drawArc(
+      dome,
+      math.pi,
+      math.pi,
+      false,
+      Paint()
+        ..color = color.withValues(alpha: 0.78 * fade)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.1,
+    );
     canvas.drawPath(
       path,
       Paint()
@@ -544,6 +570,20 @@ class _AttackPainter extends CustomPainter {
           ..strokeWidth = index.isEven ? 2.6 : 1.5
           ..strokeCap = StrokeCap.round,
       );
+    }
+    for (var index = 0; index < 8; index++) {
+      final angle = index * math.pi / 4 + 0.35;
+      final distance = 13 + 42 * phase;
+      final center = to + Offset(math.cos(angle), math.sin(angle)) * distance;
+      canvas.save();
+      canvas.translate(center.dx, center.dy);
+      canvas.rotate(angle + phase * 2.1);
+      canvas.drawRect(
+        const Rect.fromLTWH(-3, -2, 6, 4),
+        Paint()..color = (index.isEven ? RelayColors.coral : RelayColors.amber)
+            .withValues(alpha: 0.78 * fade),
+      );
+      canvas.restore();
     }
     _drawFloatingLabel(
       canvas,

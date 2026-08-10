@@ -1,3 +1,11 @@
+## v0.8.21 rev3
+
+- Devre hazırlama ekranına etkileşimli 2.5D kart görünümü eklendi; sürükle-bırak hit testleri transform ile korunur.
+- Savaş modüllerine idle mekanik animasyon dili eklendi (jeneratör rotor, batarya hücresi, lazer lens, darbe topu namlu, kalkan emitörü, soğutucu fan, güçlendirici yön akışı, onarım tarayıcı).
+- Enerji paketleri daha belirgin hâle getirildi.
+- Kalkan kubbesi ve modül yok oluş debris efektleri güçlendirildi.
+- rev1 + rev2 kapsamı korunur.
+
 ## v0.8.21 rev2
 
 - 2.5D Circuit Arena savaş platformu eklendi: kart yüzeyi perspektif/shear, alt gövde ve derinlik gölgesi kazandı.

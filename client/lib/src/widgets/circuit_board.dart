@@ -23,6 +23,7 @@ class CircuitBoard extends StatelessWidget {
     required this.onModuleDropped,
     required this.onRotateModule,
     this.visuals = const EquippedVisuals.defaults(),
+    this.presentation3d = false,
     super.key,
   });
 
@@ -35,11 +36,12 @@ class CircuitBoard extends StatelessWidget {
   final ModuleDropCallback onModuleDropped;
   final ValueChanged<int> onRotateModule;
   final EquippedVisuals visuals;
+  final bool presentation3d;
 
   @override
   Widget build(BuildContext context) {
     final boardTheme = visuals.board;
-    return CosmeticVisualScope(
+    final board = CosmeticVisualScope(
       visuals: visuals,
       child: AspectRatio(
         aspectRatio: 1,
@@ -57,77 +59,115 @@ class CircuitBoard extends StatelessWidget {
               ),
             ],
           ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(18),
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              IgnorePointer(
-                child: CustomPaint(
-                  painter: _CircuitTracePainter(
-                    placements: placements,
-                    specs: specs,
-                    poweredIds: poweredIds,
-                    visuals: visuals,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(18),
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                IgnorePointer(
+                  child: CustomPaint(
+                    painter: _CircuitTracePainter(
+                      placements: placements,
+                      specs: specs,
+                      poweredIds: poweredIds,
+                      visuals: visuals,
+                    ),
                   ),
                 ),
-              ),
-              GridView.builder(
-                physics: const NeverScrollableScrollPhysics(),
-                padding: const EdgeInsets.all(4),
-                gridDelegate:
-                    const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 4,
-                ),
-                itemCount: 16,
-                itemBuilder: (context, index) {
-                  if (isCoreCell(index)) {
+                GridView.builder(
+                  physics: const NeverScrollableScrollPhysics(),
+                  padding: const EdgeInsets.all(4),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 4,
+                  ),
+                  itemCount: 16,
+                  itemBuilder: (context, index) {
+                    if (isCoreCell(index)) {
+                      return Padding(
+                        padding: const EdgeInsets.all(4),
+                        child: _CoreCellBackdrop(
+                          cellIndex: index,
+                          onTap: () => onCellTap(index),
+                        ),
+                      );
+                    }
+                    final placement = placements[index];
                     return Padding(
                       padding: const EdgeInsets.all(4),
-                      child: _CoreCellBackdrop(
+                      child: _CircuitCell(
                         cellIndex: index,
+                        coreGate: isCoreGate(index),
+                        placement: placement,
+                        spec: placement == null ? null : specs[placement.kind],
+                        selected: selectedCell == index,
+                        validationVisible: validationVisible,
+                        powered: placement != null && poweredIds.contains(placement.id),
                         onTap: () => onCellTap(index),
+                        onModuleDropped: (data) => onModuleDropped(index, data),
+                        onRotate: placement?.kind == ModuleKind.amplifier
+                            ? () => onRotateModule(index)
+                            : null,
                       ),
                     );
-                  }
-                  final placement = placements[index];
-                  return Padding(
-                    padding: const EdgeInsets.all(4),
-                    child: _CircuitCell(
-                      cellIndex: index,
-                      coreGate: isCoreGate(index),
-                      placement: placement,
-                      spec: placement == null ? null : specs[placement.kind],
-                      selected: selectedCell == index,
-                      validationVisible: validationVisible,
-                      powered:
-                          placement != null && poweredIds.contains(placement.id),
-                      onTap: () => onCellTap(index),
-                      onModuleDropped: (data) =>
-                          onModuleDropped(index, data),
-                      onRotate: placement?.kind == ModuleKind.amplifier
-                          ? () => onRotateModule(index)
-                          : null,
+                  },
+                ),
+                const IgnorePointer(
+                  child: Center(
+                    child: FractionallySizedBox(
+                      widthFactor: 0.48,
+                      heightFactor: 0.48,
+                      child: _CoreHub(),
                     ),
-                  );
-                },
-              ),
-              const IgnorePointer(
-                child: Center(
-                  child: FractionallySizedBox(
-                    widthFactor: 0.48,
-                    heightFactor: 0.48,
-                    child: _CoreHub(),
                   ),
                 ),
-              ),
-            ],
-          ),
+              ],
+            ),
           ),
         ),
       ),
     );
+    if (!presentation3d) return board;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(8, 4, 8, 22),
+      child: Stack(
+        children: [
+          Positioned.fill(
+            top: 18,
+            child: Transform.translate(
+              offset: const Offset(0, 14),
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: const Color(0xFF07161C),
+                  borderRadius: BorderRadius.circular(22),
+                  border: Border.all(
+                    color: boardTheme.core.withValues(alpha: 0.24),
+                    width: 2,
+                  ),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Color(0x88000000),
+                      blurRadius: 22,
+                      offset: Offset(0, 16),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          Transform(
+            alignment: Alignment.center,
+            transform: Matrix4.identity()
+              ..setEntry(3, 2, 0.00085)
+              ..rotateX(0.10)
+              ..rotateZ(-0.012),
+            transformHitTests: true,
+            child: board,
+          ),
+        ],
+      ),
+    );
   }
+
 }
 
 class _CircuitCell extends StatelessWidget {

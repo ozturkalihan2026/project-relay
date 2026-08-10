@@ -779,6 +779,16 @@ class RelayReplayGame extends FlameGame {
         color: destroyed ? RelayColors.muted : moduleColorValue,
         size: math.max(18.0, cellSize * 0.21),
       );
+      if (!destroyed) {
+        _drawModuleMechanism(
+          canvas,
+          kind: module.kind,
+          cell: cell,
+          color: moduleColorValue,
+          powered: state?.powered ?? false,
+          overheated: state?.overheated ?? false,
+        );
+      }
 
       final maximumHp = _moduleMaxHp[module.id] ?? 1;
       final ratio = (currentHp / maximumHp).clamp(0.0, 1.0).toDouble();
@@ -1106,7 +1116,7 @@ class RelayReplayGame extends FlameGame {
       final trailPhase = (phase - trail * 0.085) % 1;
       final point = ui.Offset.lerp(from, to, trailPhase)!;
       final opacity = (1 - trail * 0.20) * glow;
-      final radius = (stronger ? 3.4 : 3.0) - trail * 0.35;
+      final radius = (stronger ? 4.2 : 3.5) - trail * 0.34;
       canvas.drawCircle(
         point,
         radius * 2.1,
@@ -1409,6 +1419,99 @@ class RelayReplayGame extends FlameGame {
     return null;
   }
 
+
+  void _drawModuleMechanism(
+    ui.Canvas canvas, {
+    required ModuleKind kind,
+    required ui.Rect cell,
+    required Color color,
+    required bool powered,
+    required bool overheated,
+  }) {
+    final center = ui.Offset(cell.center.dx, cell.top + cell.height * 0.23);
+    final phase = _animationTime * (powered ? 3.2 : 1.1);
+    final alpha = powered ? 0.88 : 0.32;
+    final paint = Paint()
+      ..color = color.withValues(alpha: alpha)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.8;
+    switch (kind) {
+      case ModuleKind.generator:
+        for (var i = 0; i < 3; i++) {
+          final angle = phase + i * math.pi * 2 / 3;
+          final tip = center + ui.Offset(math.cos(angle), math.sin(angle)) * 10;
+          canvas.drawLine(center, tip, paint);
+          canvas.drawCircle(tip, 2.2, Paint()..color = color.withValues(alpha: alpha));
+        }
+        canvas.drawCircle(center, 4, Paint()..color = color.withValues(alpha: 0.38));
+        break;
+      case ModuleKind.battery:
+        for (var i = 0; i < 3; i++) {
+          final active = ((_animationTime * 2).floor() + i) % 3;
+          canvas.drawRRect(
+            ui.RRect.fromRectAndRadius(
+              ui.Rect.fromLTWH(center.dx - 11 + i * 8, center.dy - 5, 5, 10),
+              const ui.Radius.circular(2),
+            ),
+            Paint()..color = color.withValues(alpha: active == i ? 0.90 : 0.28),
+          );
+        }
+        break;
+      case ModuleKind.laser:
+        final pulse = 0.45 + 0.45 * math.sin(phase * 1.4).abs();
+        canvas.drawCircle(center, 5 + pulse * 2, Paint()..color = color.withValues(alpha: 0.22 + pulse * 0.38));
+        canvas.drawCircle(center, 9, paint);
+        break;
+      case ModuleKind.pulseCannon:
+        final recoil = math.sin(phase).abs() * 2.5;
+        canvas.drawRRect(
+          ui.RRect.fromRectAndRadius(
+            ui.Rect.fromCenter(center: center + ui.Offset(recoil, 0), width: 22, height: 7),
+            const ui.Radius.circular(3),
+          ),
+          Paint()..color = color.withValues(alpha: 0.55),
+        );
+        canvas.drawCircle(center + ui.Offset(11 + recoil, 0), 4, Paint()..color = RelayColors.white.withValues(alpha: 0.55));
+        break;
+      case ModuleKind.shield:
+        canvas.drawArc(
+          ui.Rect.fromCenter(center: center, width: 24, height: 16),
+          math.pi,
+          math.pi,
+          false,
+          paint,
+        );
+        break;
+      case ModuleKind.cooler:
+        for (var i = 0; i < 4; i++) {
+          final angle = phase + i * math.pi / 2;
+          final tip = center + ui.Offset(math.cos(angle), math.sin(angle)) * 9;
+          canvas.drawLine(center, tip, paint);
+        }
+        canvas.drawCircle(center, 3, Paint()..color = color.withValues(alpha: 0.65));
+        break;
+      case ModuleKind.amplifier:
+        final x = center.dx - 12 + ((_animationTime * 22) % 24);
+        canvas.drawLine(center + const ui.Offset(-13, 0), center + const ui.Offset(13, 0), paint);
+        canvas.drawCircle(ui.Offset(x, center.dy), 3.2, Paint()..color = RelayColors.white.withValues(alpha: 0.76));
+        break;
+      case ModuleKind.repair:
+        final scan = center.dy - 8 + ((_animationTime * 14) % 16);
+        canvas.drawLine(ui.Offset(center.dx - 10, scan), ui.Offset(center.dx + 10, scan), paint);
+        canvas.drawCircle(center, 8, paint);
+        break;
+    }
+    if (overheated) {
+      for (var i = 0; i < 3; i++) {
+        final drift = ((_animationTime * 11 + i * 7) % 15);
+        canvas.drawCircle(
+          center + ui.Offset((i - 1) * 5.0, -9 - drift),
+          2.1,
+          Paint()..color = RelayColors.amber.withValues(alpha: 0.50),
+        );
+      }
+    }
+  }
 
   void _drawModuleIcon(
     ui.Canvas canvas,
