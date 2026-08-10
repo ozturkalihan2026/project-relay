@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+import '../game/battle_visual_director.dart';
 import '../game/replay_game.dart';
 import '../models/relay_models.dart';
 import '../theme/cosmetic_visuals.dart';
@@ -36,7 +37,7 @@ class _ReplayAttackOverlayState extends State<ReplayAttackOverlay>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1120),
+      duration: const Duration(milliseconds: 620),
     );
     widget.events.addListener(_handleEvents);
     _handleEvents();
@@ -223,15 +224,12 @@ class _AttackPainter extends CustomPainter {
     };
 
     if (event.type == 'attack' || event.type == 'core_damage') {
-      _drawBeamEvent(
-        canvas,
-        event,
-        from,
-        to,
-        color,
-        fade,
-        eventIndex,
-      );
+      final cue = BattleVisualDirector.cueFor(event, match);
+      if (cue.weapon == BattleWeapon.pulseCannon) {
+        _drawProjectileEvent(canvas, event, from, to, color, fade, eventIndex);
+      } else {
+        _drawBeamEvent(canvas, event, from, to, color, fade, eventIndex);
+      }
       return;
     }
 
@@ -355,6 +353,79 @@ class _AttackPainter extends CustomPainter {
         to + Offset(0, -24 - impactProgress * 18),
         color,
         fade * (1 - impactProgress * 0.34),
+      );
+    }
+  }
+
+  void _drawProjectileEvent(
+    Canvas canvas,
+    BattleEvent event,
+    Offset from,
+    Offset to,
+    Color color,
+    double fade,
+    int eventIndex,
+  ) {
+    final phase = Curves.easeInOutCubic.transform(progress);
+    final direction = to - from;
+    final distance = direction.distance.clamp(1.0, double.infinity);
+    final unit = direction / distance;
+    final normal = Offset(-unit.dy, unit.dx);
+    final arc = normal * (24 + eventIndex * 3) * (event.side == 'left' ? -1 : 1);
+    final control = Offset.lerp(from, to, 0.5)! + arc;
+    final projectile = _quadratic(from, control, to, phase);
+    final recoil = (1 - (rawProgress / 0.18).clamp(0.0, 1.0)) * 12;
+    final charge = (rawProgress / 0.24).clamp(0.0, 1.0);
+
+    canvas.drawCircle(
+      from - unit * recoil,
+      8 + charge * 9,
+      Paint()
+        ..color = color.withValues(alpha: 0.18 * fade)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10),
+    );
+    final trailStart = projectile - unit * 34;
+    canvas.drawLine(
+      trailStart,
+      projectile,
+      Paint()
+        ..color = color.withValues(alpha: 0.34 * fade)
+        ..strokeWidth = 12
+        ..strokeCap = StrokeCap.round
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8),
+    );
+    canvas.drawLine(
+      trailStart,
+      projectile,
+      Paint()
+        ..color = RelayColors.white.withValues(alpha: 0.90 * fade)
+        ..strokeWidth = 3.2
+        ..strokeCap = StrokeCap.round,
+    );
+    canvas.drawCircle(
+      projectile,
+      7.5,
+      Paint()..color = color.withValues(alpha: 0.98 * fade),
+    );
+    canvas.drawCircle(
+      projectile,
+      15,
+      Paint()
+        ..color = color.withValues(alpha: 0.18 * fade)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 9),
+    );
+    if (phase > 0.72) {
+      final impact = ((phase - 0.72) / 0.28).clamp(0.0, 1.0);
+      _drawImpactBurst(canvas, to, color, impact, fade);
+      _drawTargetHitFrame(canvas, to, color, impact, fade);
+      _drawFloatingLabel(
+        canvas,
+        event.type == 'core_damage'
+            ? '-${event.amount.toStringAsFixed(0)} ÇEKİRDEK'
+            : '-${event.amount.toStringAsFixed(0)}',
+        to + Offset(0, -30 - impact * 18),
+        color,
+        fade,
       );
     }
   }
@@ -637,9 +708,14 @@ class _AttackPainter extends CustomPainter {
     for (final module in board.modules) {
       if (module.id == id) {
         final cellSize = rect.width / 4;
-        return Offset(
+        final raw = Offset(
           rect.left + (module.column + 0.5) * cellSize,
           rect.top + (module.row + 0.5) * cellSize,
+        );
+        return ReplayStageGeometry.perspectivePoint(
+          raw,
+          rect,
+          leftSide: identical(board, match.playerBoard),
         );
       }
     }

@@ -16,6 +16,7 @@ import '../widgets/relay_notice.dart';
 import '../widgets/app_header_actions.dart';
 import '../widgets/replay_attack_overlay.dart';
 import '../widgets/battle_analysis_panel.dart';
+import '../widgets/battle_camera_rig.dart';
 import '../widgets/replay_playback_controls.dart';
 
 class ReplayScreen extends ConsumerStatefulWidget {
@@ -272,22 +273,26 @@ class _ReplayScreenState extends ConsumerState<ReplayScreen> {
               clipBehavior: Clip.antiAlias,
               child: SizedBox(
                 height: stageHeight,
-                child: Stack(
-                  children: [
-                    Positioned.fill(
-                      child: GameWidget<RelayReplayGame>(
-                        key: ValueKey(_game),
-                        game: _game,
+                child: BattleCameraRig(
+                  events: _attackOverlayEvents,
+                  match: widget.match,
+                  child: Stack(
+                    children: [
+                      Positioned.fill(
+                        child: GameWidget<RelayReplayGame>(
+                          key: ValueKey(_game),
+                          game: _game,
+                        ),
                       ),
-                    ),
-                    Positioned.fill(
-                      child: ReplayAttackOverlay(
-                        events: _attackOverlayEvents,
-                        match: widget.match,
-                        leftVisuals: _leftVisuals,
+                      Positioned.fill(
+                        child: ReplayAttackOverlay(
+                          events: _attackOverlayEvents,
+                          match: widget.match,
+                          leftVisuals: _leftVisuals,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),

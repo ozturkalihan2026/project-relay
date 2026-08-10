@@ -44,6 +44,34 @@ abstract final class ReplayStageGeometry {
       extent,
     );
   }
+  static const double perspectiveShear = 0.065;
+  static const double platformDepth = 13;
+
+  static ui.Offset perspectivePoint(
+    ui.Offset point,
+    ui.Rect boardRect, {
+    required bool leftSide,
+  }) {
+    final shear = leftSide ? perspectiveShear : -perspectiveShear;
+    return ui.Offset(
+      point.dx + shear * (point.dy - boardRect.center.dy),
+      point.dy,
+    );
+  }
+
+  static ui.Path boardFacePath(ui.Rect rect, {required bool leftSide}) {
+    final topLeft = perspectivePoint(rect.topLeft, rect, leftSide: leftSide);
+    final topRight = perspectivePoint(rect.topRight, rect, leftSide: leftSide);
+    final bottomRight = perspectivePoint(rect.bottomRight, rect, leftSide: leftSide);
+    final bottomLeft = perspectivePoint(rect.bottomLeft, rect, leftSide: leftSide);
+    return ui.Path()
+      ..moveTo(topLeft.dx, topLeft.dy)
+      ..lineTo(topRight.dx, topRight.dy)
+      ..lineTo(bottomRight.dx, bottomRight.dy)
+      ..lineTo(bottomLeft.dx, bottomLeft.dy)
+      ..close();
+  }
+
 }
 
 abstract final class ReplayCircuitGeometry {
@@ -427,33 +455,57 @@ class RelayReplayGame extends FlameGame {
     final leftCore = leftBoard.center;
     final rightCore = rightBoard.center;
 
-    _drawBoard(
+    _drawBoardPlatform(
       canvas,
       rect: leftBoard,
-      board: match.playerBoard,
-      hp: _leftModuleHp,
-      states: _leftModuleStates,
-      deltas: _leftModuleDeltas,
-      boardState: _leftBoardState,
-      color: leftVisuals.board.core,
-      label: 'SEN',
+      leftSide: true,
+      accent: leftVisuals.board.core,
       visuals: leftVisuals,
-      coreHp: _leftHp,
-      coreMaxHp: match.result.left.coreMaxHp,
     );
-    _drawBoard(
+    _drawPerspectiveBoard(
+      canvas,
+      leftSide: true,
+      rect: leftBoard,
+      draw: () => _drawBoard(
+        canvas,
+        rect: leftBoard,
+        board: match.playerBoard,
+        hp: _leftModuleHp,
+        states: _leftModuleStates,
+        deltas: _leftModuleDeltas,
+        boardState: _leftBoardState,
+        color: leftVisuals.board.core,
+        label: 'SEN',
+        visuals: leftVisuals,
+        coreHp: _leftHp,
+        coreMaxHp: match.result.left.coreMaxHp,
+      ),
+    );
+    _drawBoardPlatform(
       canvas,
       rect: rightBoard,
-      board: match.opponentBoard,
-      hp: _rightModuleHp,
-      states: _rightModuleStates,
-      deltas: _rightModuleDeltas,
-      boardState: _rightBoardState,
-      color: RelayColors.coral,
-      label: match.opponent.displayName.toUpperCase(),
+      leftSide: false,
+      accent: RelayColors.coral,
       visuals: rightVisuals,
-      coreHp: _rightHp,
-      coreMaxHp: match.result.right.coreMaxHp,
+    );
+    _drawPerspectiveBoard(
+      canvas,
+      leftSide: false,
+      rect: rightBoard,
+      draw: () => _drawBoard(
+        canvas,
+        rect: rightBoard,
+        board: match.opponentBoard,
+        hp: _rightModuleHp,
+        states: _rightModuleStates,
+        deltas: _rightModuleDeltas,
+        boardState: _rightBoardState,
+        color: RelayColors.coral,
+        label: match.opponent.displayName.toUpperCase(),
+        visuals: rightVisuals,
+        coreHp: _rightHp,
+        coreMaxHp: match.result.right.coreMaxHp,
+      ),
     );
 
     for (final pulse in _pulses) {
@@ -473,6 +525,60 @@ class RelayReplayGame extends FlameGame {
       color: RelayColors.muted,
       size: 12,
       centered: true,
+    );
+  }
+
+  void _drawPerspectiveBoard(
+    ui.Canvas canvas, {
+    required bool leftSide,
+    required ui.Rect rect,
+    required void Function() draw,
+  }) {
+    final shear = leftSide
+        ? ReplayStageGeometry.perspectiveShear
+        : -ReplayStageGeometry.perspectiveShear;
+    canvas.save();
+    canvas.translate(rect.center.dx, rect.center.dy);
+    canvas.skew(shear, 0);
+    canvas.translate(-rect.center.dx, -rect.center.dy);
+    draw();
+    canvas.restore();
+  }
+
+  void _drawBoardPlatform(
+    ui.Canvas canvas, {
+    required ui.Rect rect,
+    required bool leftSide,
+    required Color accent,
+    required EquippedVisuals visuals,
+  }) {
+    final face = ReplayStageGeometry.boardFacePath(rect, leftSide: leftSide);
+    final depth = ReplayStageGeometry.platformDepth;
+    final shifted = face.shift(ui.Offset(0, depth));
+    canvas.drawPath(
+      shifted,
+      Paint()
+        ..color = const Color(0xAA071017)
+        ..maskFilter = const ui.MaskFilter.blur(ui.BlurStyle.normal, 10),
+    );
+    final bottomLeft = ReplayStageGeometry.perspectivePoint(rect.bottomLeft, rect, leftSide: leftSide);
+    final bottomRight = ReplayStageGeometry.perspectivePoint(rect.bottomRight, rect, leftSide: leftSide);
+    final side = ui.Path()
+      ..moveTo(bottomLeft.dx, bottomLeft.dy)
+      ..lineTo(bottomRight.dx, bottomRight.dy)
+      ..lineTo(bottomRight.dx, bottomRight.dy + depth)
+      ..lineTo(bottomLeft.dx, bottomLeft.dy + depth)
+      ..close();
+    canvas.drawPath(
+      side,
+      Paint()..color = Color.alphaBlend(accent.withValues(alpha: 0.16), const Color(0xFF091820)),
+    );
+    canvas.drawPath(
+      face,
+      Paint()
+        ..color = accent.withValues(alpha: 0.24)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.2,
     );
   }
 
@@ -1289,9 +1395,14 @@ class RelayReplayGame extends FlameGame {
     for (final module in board.modules) {
       if (module.id == id) {
         final cellSize = rect.width / 4;
-        return ui.Offset(
+        final raw = ui.Offset(
           rect.left + (module.column + 0.5) * cellSize,
           rect.top + (module.row + 0.5) * cellSize,
+        );
+        return ReplayStageGeometry.perspectivePoint(
+          raw,
+          rect,
+          leftSide: identical(board, match.playerBoard),
         );
       }
     }

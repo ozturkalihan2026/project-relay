@@ -1,3 +1,11 @@
+## v0.8.21 rev2
+
+- 2.5D Circuit Arena savaş platformu eklendi: kart yüzeyi perspektif/shear, alt gövde ve derinlik gölgesi kazandı.
+- BattleVisualDirector ile Lazer ve Darbe Topu görsel kimlikleri ayrıştırıldı.
+- Darbe Topu gerçek projectile/trail/recoil/impact akışına geçti.
+- BattleCameraRig kritik darbelerde micro-shake/zoom uygular.
+- rev1 analiz ve tempo değişiklikleri korunur.
+
 ## v0.8.21 rev1
 
 - Battle Presentation 2.0 başladı; savaş sahnesindeki canlı olay akışı kaldırıldı.

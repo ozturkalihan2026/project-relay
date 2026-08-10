@@ -55,7 +55,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
       expect(find.text('ÇEVRİMİÇİ SAVAŞ'), findsOneWidget);
-      expect(find.text('PROJECT RELAY • v0.8.21-r1'), findsOneWidget);
+      expect(find.text('PROJECT RELAY • v0.8.21-r2'), findsOneWidget);
       expect(find.text('DEVREYİ KUR'), findsOneWidget);
       expect(
         tester.getSize(
@@ -75,7 +75,7 @@ void main() {
       await tester.tap(find.byKey(const ValueKey('play-mode-training')));
       await tester.pumpAndSettle();
       expect(find.text('ANTRENMAN'), findsOneWidget);
-      expect(find.text('PROJECT RELAY • v0.8.21-r1'), findsOneWidget);
+      expect(find.text('PROJECT RELAY • v0.8.21-r2'), findsOneWidget);
       expect(find.byKey(const ValueKey('training-panel')), findsOneWidget);
       expect(
         tester.getSize(
