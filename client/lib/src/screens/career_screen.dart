@@ -1,9 +1,13 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../api/relay_api.dart';
+import '../game/module_placement_sound_player.dart';
 import '../models/relay_models.dart';
 import '../navigation/navigation_actions.dart';
+import '../state/app_settings.dart';
 import '../state/board_controller.dart';
 import '../theme/cosmetic_visuals.dart';
 import '../theme/relay_theme.dart';
@@ -34,8 +38,21 @@ class _CareerScreenState extends ConsumerState<CareerScreen> {
   String? _runAction;
   String? _loadedBoardSignature;
   EquippedVisuals _visuals = const EquippedVisuals.defaults();
+  late final ModulePlacementSoundPlayer _placementSoundPlayer;
 
   bool get _runBusy => _runAction != null;
+
+  @override
+  void initState() {
+    super.initState();
+    _placementSoundPlayer = ModulePlacementSoundPlayer();
+  }
+
+  @override
+  void dispose() {
+    unawaited(_placementSoundPlayer.dispose());
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -261,7 +278,13 @@ class _CareerScreenState extends ConsumerState<CareerScreen> {
 
   void _tapCell(int index) {
     try {
+      final before = ref.read(careerBoardControllerProvider);
+      final shouldSeatModule =
+          before.placements[index] == null && before.selectedKind != null;
       ref.read(careerBoardControllerProvider.notifier).tapCell(index);
+      if (shouldSeatModule) {
+        _playPlacementSound();
+      }
     } on StateError catch (error) {
       _showError(error.toString().replaceFirst('Bad state: ', ''));
     }
@@ -270,8 +293,15 @@ class _CareerScreenState extends ConsumerState<CareerScreen> {
   void _dropModule(int index, ModuleDragData data) {
     try {
       ref.read(careerBoardControllerProvider.notifier).dropModule(index, data);
+      _playPlacementSound();
     } on StateError catch (error) {
       _showError(error.toString().replaceFirst('Bad state: ', ''));
+    }
+  }
+
+  void _playPlacementSound() {
+    if (ref.read(appSettingsProvider).replaySoundEnabled) {
+      unawaited(_placementSoundPlayer.playLock());
     }
   }
 
@@ -635,20 +665,31 @@ class _CareerInlineEditor extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 10),
-          Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: _careerBoardMaxWidth),
-              child: CircuitBoard(
-                placements: state.placements,
-                specs: specs,
-                poweredIds: validation?.poweredIds ?? const <String>{},
-                validationVisible: validation != null,
-                selectedCell: state.selectedCell,
-                onCellTap: onCellTap,
-                onModuleDropped: onModuleDropped,
-                onRotateModule: onRotateModule,
-                visuals: visuals,
-              ),
+          Expanded(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final boardSize = constraints.maxHeight < _careerBoardMaxWidth
+                    ? constraints.maxHeight
+                    : _careerBoardMaxWidth;
+                return Center(
+                  child: SizedBox.square(
+                    dimension: boardSize,
+                    child: CircuitBoard(
+                      placements: state.placements,
+                      specs: specs,
+                      poweredIds:
+                          validation?.poweredIds ?? const <String>{},
+                      validationVisible: validation != null,
+                      selectedCell: state.selectedCell,
+                      onCellTap: onCellTap,
+                      onModuleDropped: onModuleDropped,
+                      onRotateModule: onRotateModule,
+                      visuals: visuals,
+                      presentation3d: true,
+                    ),
+                  ),
+                );
+              },
             ),
           ),
         ],
@@ -1100,51 +1141,70 @@ class _CareerBoardPreview extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 10),
-          if (draft == null)
-            Container(
-              height: _careerBoardMaxWidth,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: RelayColors.surface.withValues(alpha: 0.45),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: RelayColors.muted.withValues(alpha: 0.24),
-                ),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(18),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.memory_outlined, color: accent, size: 38),
-                    const SizedBox(height: 10),
-                    Text(
-                      emptyMessage,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(color: RelayColors.muted),
+          Expanded(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final boardSize = constraints.maxHeight < _careerBoardMaxWidth
+                    ? constraints.maxHeight
+                    : _careerBoardMaxWidth;
+                if (draft == null) {
+                  return Center(
+                    child: SizedBox.square(
+                      dimension: boardSize,
+                      child: Container(
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: RelayColors.surface.withValues(alpha: 0.45),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: RelayColors.muted.withValues(alpha: 0.24),
+                          ),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(18),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.memory_outlined,
+                                color: accent,
+                                size: 38,
+                              ),
+                              const SizedBox(height: 10),
+                              Text(
+                                emptyMessage,
+                                textAlign: TextAlign.center,
+                                style: const TextStyle(
+                                  color: RelayColors.muted,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                     ),
-                  ],
-                ),
-              ),
-            )
-          else
-            Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: _careerBoardMaxWidth),
-                child: IgnorePointer(
-                  child: CircuitBoard(
-                    placements: placements,
-                    specs: specs,
-                    poweredIds: poweredIds,
-                    validationVisible: false,
-                    selectedCell: null,
-                    onCellTap: (_) {},
-                    onModuleDropped: (_, _) {},
-                    onRotateModule: (_) {},
+                  );
+                }
+                return Center(
+                  child: SizedBox.square(
+                    dimension: boardSize,
+                    child: IgnorePointer(
+                      child: CircuitBoard(
+                        placements: placements,
+                        specs: specs,
+                        poweredIds: poweredIds,
+                        validationVisible: false,
+                        selectedCell: null,
+                        onCellTap: (_) {},
+                        onModuleDropped: (_, _) {},
+                        onRotateModule: (_) {},
+                      ),
+                    ),
                   ),
-                ),
-              ),
+                );
+              },
             ),
+          ),
         ],
       ),
     );

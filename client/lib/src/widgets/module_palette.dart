@@ -387,49 +387,65 @@ class _DragFeedback extends StatelessWidget {
     final color = moduleColor(module.kind);
     return Material(
       color: Colors.transparent,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: const Color(0xF2112730),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: color, width: 2),
-          boxShadow: [
-            BoxShadow(
-              color: color.withValues(alpha: 0.3),
-              blurRadius: 18,
+      child: SizedBox(
+        width: 112,
+        height: 86,
+        child: ModuleChassis(
+          accent: color,
+          lifted: true,
+          compact: true,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Color.alphaBlend(
+                    color.withValues(alpha: 0.24),
+                    const Color(0xFF17323D),
+                  ),
+                  const Color(0xFF0B1C24),
+                ],
+              ),
+              border: Border.all(color: color, width: 2),
+              boxShadow: [
+                BoxShadow(
+                  color: color.withValues(alpha: 0.24),
+                  blurRadius: 15,
+                ),
+              ],
             ),
-          ],
-        ),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(moduleIcon(module.kind), color: color, size: 25),
-              const SizedBox(width: 9),
-              Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
+                  Icon(moduleIcon(module.kind), color: color, size: 27),
+                  const SizedBox(height: 4),
                   Text(
                     module.displayName,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
                     style: const TextStyle(
                       color: Colors.white,
-                      fontWeight: FontWeight.w800,
-                      fontSize: 12,
+                      fontWeight: FontWeight.w900,
+                      fontSize: 11,
                     ),
                   ),
+                  const SizedBox(height: 2),
                   const Text(
-                    'KARTA BIRAK',
+                    'DEVREYE TAK',
                     style: TextStyle(
                       color: RelayColors.cyan,
-                      fontSize: 9,
+                      fontSize: 8,
                       fontWeight: FontWeight.w900,
                       letterSpacing: 0.8,
                     ),
                   ),
                 ],
               ),
-            ],
+            ),
           ),
         ),
       ),

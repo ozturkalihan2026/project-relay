@@ -1,3 +1,13 @@
+## v0.8.22 rev1
+
+- Devre hazırlama ekranı hafif perspektif hilesinden çıkarılarak çok katmanlı 2.5D elektronik platforma taşındı.
+- Hazırlık kartında daha güçlü perspektif, üç katmanlı platform kalınlığı, alt gölge ve platform bağlantı elemanları eklendi.
+- Yerleştirilmiş modüller yüzeyden yükseltilmiş gövde, alt kasa ve gölgeyle fiziksel parça gibi sunuluyor.
+- Çekirdek yüzeyden yükseltilmiş ayrı bir mekanik assembly olarak çiziliyor.
+- Sürüklenen modülün havalanma ve gölge geri bildirimi güçlendirildi; aktif bırakma yuvası daha görünür hale getirildi.
+- Geniş ekran hazırlık kartı büyütüldü; kariyer içi devre hazırlığı aynı 2.5D sunumu kullanıyor.
+- Savaş motoru, replay savaş koreografisi, menü ve üst profil barı değiştirilmedi.
+
 ## v0.8.21 rev4
 
 - Savaş fazı sinematiği tamamlandı: son normal modül sonrası Jeneratör Açığa Çıktı, jeneratör yok oluşunda Çekirdek Açıkta, final core hitte Çekirdek Çöktü bannerları.
@@ -1082,3 +1092,15 @@
 - 4×4 yönlü devre ve sekiz başlangıç modülü oluşturuldu.
 - Deterministik enerji, ısı, hasar, kalkan, soğutma ve onarım motoru eklendi.
 - Olay tabanlı savaş tekrarı ve süre sonu eşitlik bozma kuralları eklendi.
+
+## v0.8.22 rev1 fix1
+- Hazırlık devre kartının 2.5D perspektif yönü oyuncuya doğru kaldırılacak şekilde tersine çevrildi.
+- Kart platform kalınlığı ve gölgesi belirginleştirildi.
+- Yerleşik modüller kesik köşeli, yükseltilmiş fiziksel kasalara dönüştürüldü.
+- Paletten karta sürükleme önizlemesi 3D modül kasası kullanıyor.
+- Başarılı modül yerleşimine metalik `module_lock.wav` bağlantı sesi eklendi.
+
+## v0.8.22 rev1 fix2
+- Kariyer inline editöründeki 16 px dikey RenderFlex taşması giderildi.
+- Oyuncu ve rakip devre kartları sabit yüksekliği zorlamak yerine panelde kalan gerçek yüksekliğe göre otomatik ölçekleniyor.
+- 2.5D hazırlık görünümü ve savaş motoru değiştirilmedi.

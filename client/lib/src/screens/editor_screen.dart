@@ -1,11 +1,14 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../api/relay_api.dart';
+import '../game/module_placement_sound_player.dart';
 import '../models/relay_models.dart';
 import '../navigation/navigation_actions.dart';
+import '../state/app_settings.dart';
 import '../state/board_controller.dart';
 import '../theme/cosmetic_visuals.dart';
 import '../theme/relay_theme.dart';
@@ -53,10 +56,12 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
   bool _loadingBoard = false;
   final ScrollController _editorScrollController = ScrollController();
   EquippedVisuals _visuals = const EquippedVisuals.defaults();
+  late final ModulePlacementSoundPlayer _placementSoundPlayer;
 
   @override
   void initState() {
     super.initState();
+    _placementSoundPlayer = ModulePlacementSoundPlayer();
     _loadingBoard = true;
     Future<void>.microtask(_loadModeBoard);
   }
@@ -65,6 +70,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
   @override
   void dispose() {
     _editorScrollController.dispose();
+    unawaited(_placementSoundPlayer.dispose());
     super.dispose();
   }
 
@@ -159,8 +165,8 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
         final viewportHeight =
             constraints.maxHeight.isFinite ? constraints.maxHeight : 900.0;
         final boardMaxWidth = wide
-            ? math.min(520.0, math.max(360.0, viewportHeight * 0.50))
-            : 560.0;
+            ? math.min(570.0, math.max(400.0, viewportHeight * 0.57))
+            : 580.0;
         final boardPanel = _BoardPanel(
           state: boardState,
           specs: specs,
@@ -251,7 +257,13 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
 
   void _tapCell(int index) {
     try {
+      final before = ref.read(_boardProvider);
+      final shouldSeatModule =
+          before.placements[index] == null && before.selectedKind != null;
       ref.read(_boardProvider.notifier).tapCell(index);
+      if (shouldSeatModule) {
+        _playPlacementSound();
+      }
     } on StateError catch (error) {
       _showError(error.toString().replaceFirst('Bad state: ', ''));
     }
@@ -260,8 +272,15 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
   void _dropModule(int index, ModuleDragData data) {
     try {
       ref.read(_boardProvider.notifier).dropModule(index, data);
+      _playPlacementSound();
     } on StateError catch (error) {
       _showError(error.toString().replaceFirst('Bad state: ', ''));
+    }
+  }
+
+  void _playPlacementSound() {
+    if (ref.read(appSettingsProvider).replaySoundEnabled) {
+      unawaited(_placementSoundPlayer.playLock());
     }
   }
 

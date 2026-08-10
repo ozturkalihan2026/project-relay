@@ -107,16 +107,17 @@ class CircuitBoard extends StatelessWidget {
                         onRotate: placement?.kind == ModuleKind.amplifier
                             ? () => onRotateModule(index)
                             : null,
+                        raised: presentation3d,
                       ),
                     );
                   },
                 ),
-                const IgnorePointer(
+                IgnorePointer(
                   child: Center(
                     child: FractionallySizedBox(
                       widthFactor: 0.48,
                       heightFactor: 0.48,
-                      child: _CoreHub(),
+                      child: _CoreHub(raised: presentation3d),
                     ),
                   ),
                 ),
@@ -127,47 +128,217 @@ class CircuitBoard extends StatelessWidget {
       ),
     );
     if (!presentation3d) return board;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(8, 4, 8, 22),
-      child: Stack(
-        children: [
-          Positioned.fill(
-            top: 18,
-            child: Transform.translate(
-              offset: const Offset(0, 14),
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  color: const Color(0xFF07161C),
-                  borderRadius: BorderRadius.circular(22),
-                  border: Border.all(
-                    color: boardTheme.core.withValues(alpha: 0.24),
-                    width: 2,
+    return _PreparationStageShell(
+      boardTheme: boardTheme,
+      child: board,
+    );
+  }
+
+}
+
+
+class _PreparationStageShell extends StatelessWidget {
+  const _PreparationStageShell({
+    required this.boardTheme,
+    required this.child,
+  });
+
+  final BoardVisualTheme boardTheme;
+  final Widget child;
+
+  static const double perspectiveDepth = 0.00155;
+  static const double deckTilt = -0.32;
+  static const double deckYaw = 0.012;
+
+  Matrix4 _deckTransform() {
+    return Matrix4.identity()
+      ..setEntry(3, 2, perspectiveDepth)
+      ..rotateX(deckTilt)
+      ..rotateZ(deckYaw);
+  }
+
+  Widget _deckLayer({
+    required Color color,
+    required double depth,
+    required double opacity,
+  }) {
+    return IgnorePointer(
+      child: Transform.translate(
+        offset: Offset(0, depth),
+        child: Transform(
+          alignment: Alignment.center,
+          transform: _deckTransform(),
+          transformHitTests: false,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Color.alphaBlend(
+                    boardTheme.core.withValues(alpha: opacity),
+                    color,
                   ),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Color(0x88000000),
-                      blurRadius: 22,
-                      offset: Offset(0, 16),
-                    ),
-                  ],
-                ),
+                  color,
+                ],
+              ),
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(
+                color: boardTheme.core.withValues(alpha: 0.24 + opacity),
+                width: 2,
               ),
             ),
           ),
-          Transform(
-            alignment: Alignment.center,
-            transform: Matrix4.identity()
-              ..setEntry(3, 2, 0.00085)
-              ..rotateX(0.10)
-              ..rotateZ(-0.012),
-            transformHitTests: true,
-            child: board,
-          ),
-        ],
+        ),
       ),
     );
   }
 
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(14, 22, 14, 48),
+      child: AspectRatio(
+        aspectRatio: 1,
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Positioned(
+              left: 34,
+              right: 20,
+              bottom: -22,
+              height: 64,
+              child: IgnorePointer(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(999),
+                    gradient: RadialGradient(
+                      colors: [
+                        boardTheme.core.withValues(alpha: 0.24),
+                        const Color(0x99000000),
+                        Colors.transparent,
+                      ],
+                      stops: const [0.0, 0.52, 1.0],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            Positioned.fill(
+              child: _deckLayer(
+                color: const Color(0xFF030A0E),
+                depth: 30,
+                opacity: 0.05,
+              ),
+            ),
+            Positioned.fill(
+              child: _deckLayer(
+                color: const Color(0xFF071820),
+                depth: 21,
+                opacity: 0.08,
+              ),
+            ),
+            Positioned.fill(
+              child: _deckLayer(
+                color: const Color(0xFF0A2530),
+                depth: 12,
+                opacity: 0.12,
+              ),
+            ),
+            Positioned.fill(
+              child: Transform.translate(
+                offset: const Offset(0, 4),
+                child: Transform(
+                  alignment: Alignment.center,
+                  transform: _deckTransform(),
+                  transformHitTests: true,
+                  child: child,
+                ),
+              ),
+            ),
+            Positioned(
+              left: 30,
+              right: 30,
+              bottom: -7,
+              child: IgnorePointer(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    _DeckFastener(color: boardTheme.core),
+                    Expanded(
+                      child: Container(
+                        height: 2,
+                        margin: const EdgeInsets.symmetric(horizontal: 12),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              Colors.transparent,
+                              boardTheme.core.withValues(alpha: 0.62),
+                              Colors.transparent,
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    _DeckFastener(color: boardTheme.core),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _DeckFastener extends StatelessWidget {
+  const _DeckFastener({required this.color});
+
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: const Color(0xFF09171D),
+        border: Border.all(color: color.withValues(alpha: 0.64)),
+        boxShadow: [
+          BoxShadow(
+            color: color.withValues(alpha: 0.34),
+            blurRadius: 8,
+          ),
+        ],
+      ),
+      child: const SizedBox.square(dimension: 8),
+    );
+  }
+}
+
+class _RaisedModuleShell extends StatelessWidget {
+  const _RaisedModuleShell({
+    required this.accent,
+    required this.lifted,
+    required this.placementId,
+    required this.child,
+  });
+
+  final Color accent;
+  final bool lifted;
+  final String placementId;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return ModuleChassis(
+      accent: accent,
+      lifted: lifted,
+      animateSeat: true,
+      animationKey: ValueKey('module-seat-$placementId'),
+      child: child,
+    );
+  }
 }
 
 class _CircuitCell extends StatelessWidget {
@@ -182,6 +353,7 @@ class _CircuitCell extends StatelessWidget {
     required this.onTap,
     required this.onModuleDropped,
     required this.onRotate,
+    required this.raised,
   });
 
   final int cellIndex;
@@ -194,6 +366,7 @@ class _CircuitCell extends StatelessWidget {
   final VoidCallback onTap;
   final ValueChanged<ModuleDragData> onModuleDropped;
   final VoidCallback? onRotate;
+  final bool raised;
 
   @override
   Widget build(BuildContext context) {
@@ -275,11 +448,21 @@ class _CircuitCell extends StatelessWidget {
                     boxShadow: dropActive
                         ? const [
                             BoxShadow(
-                              color: Color(0x6638E8FF),
-                              blurRadius: 14,
+                              color: Color(0x9938E8FF),
+                              blurRadius: 22,
+                              spreadRadius: 1,
+                              offset: Offset(0, 6),
                             ),
                           ]
-                        : null,
+                        : module != null && raised
+                            ? [
+                                BoxShadow(
+                                  color: color.withValues(alpha: 0.22),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 5),
+                                ),
+                              ]
+                            : null,
                   ),
                   child: module == null
                       ? Center(
@@ -455,6 +638,14 @@ class _CircuitCell extends StatelessWidget {
             ),
           ),
         );
+        final presentedCell = raised && module != null
+            ? _RaisedModuleShell(
+                accent: color,
+                lifted: dropActive,
+                placementId: module.id,
+                child: cell,
+              )
+            : cell;
         if (module == null) {
           return cell;
         }
@@ -469,10 +660,10 @@ class _CircuitCell extends StatelessWidget {
             placement: module,
             displayName: spec?.displayName ?? module.kind.displayName,
           ),
-          childWhenDragging: Opacity(opacity: 0.32, child: cell),
+          childWhenDragging: Opacity(opacity: 0.24, child: presentedCell),
           child: MouseRegion(
             cursor: SystemMouseCursors.grab,
-            child: cell,
+            child: presentedCell,
           ),
         );
       },
@@ -518,12 +709,14 @@ class _CoreCellBackdrop extends StatelessWidget {
 }
 
 class _CoreHub extends StatelessWidget {
-  const _CoreHub();
+  const _CoreHub({required this.raised});
+
+  final bool raised;
 
   @override
   Widget build(BuildContext context) {
     final visuals = CosmeticVisualScope.of(context);
-    return DecoratedBox(
+    final hub = DecoratedBox(
       decoration: BoxDecoration(
         gradient: RadialGradient(
           colors: [
@@ -582,6 +775,42 @@ class _CoreHub extends StatelessWidget {
             ),
         ],
       ),
+    );
+    if (!raised) return hub;
+    return Stack(
+      clipBehavior: Clip.none,
+      fit: StackFit.expand,
+      children: [
+        Positioned.fill(
+          top: 9,
+          bottom: -5,
+          left: 3,
+          right: 3,
+          child: IgnorePointer(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: const Color(0xFF061116),
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(
+                  color: visuals.board.core.withValues(alpha: 0.36),
+                  width: 2,
+                ),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0x99000000),
+                    blurRadius: 18,
+                    offset: Offset(0, 11),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        Transform.translate(
+          offset: const Offset(0, -11),
+          child: hub,
+        ),
+      ],
     );
   }
 }
@@ -666,19 +895,44 @@ class _BoardDragFeedback extends StatelessWidget {
     final color = moduleColor(placement.kind);
     return Material(
       color: Colors.transparent,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: const Color(0xF2112730),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: color, width: 2),
-          boxShadow: [
-            BoxShadow(
-              color: color.withValues(alpha: 0.32),
-              blurRadius: 18,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Positioned.fill(
+            top: 9,
+            bottom: -5,
+            left: 4,
+            right: 4,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: const Color(0xFF050E13),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: color.withValues(alpha: 0.45)),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0xCC000000),
+                    blurRadius: 22,
+                    offset: Offset(0, 15),
+                  ),
+                ],
+              ),
             ),
-          ],
-        ),
-        child: Padding(
+          ),
+          Transform.translate(
+            offset: const Offset(0, -8),
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: const Color(0xF2112730),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: color, width: 2),
+                boxShadow: [
+                  BoxShadow(
+                    color: color.withValues(alpha: 0.48),
+                    blurRadius: 22,
+                  ),
+                ],
+              ),
+              child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -710,7 +964,10 @@ class _BoardDragFeedback extends StatelessWidget {
               ),
             ],
           ),
-        ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

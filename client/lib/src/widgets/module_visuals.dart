@@ -62,3 +62,157 @@ String moduleDirectionTooltip(
   };
 }
 
+
+
+/// Raised hardware shell used by placed modules and drag previews.
+///
+/// The outer widget keeps the full slot hit area while the visible module
+/// chassis is inset, cut-cornered and physically lifted above the board.
+class ModuleChassis extends StatelessWidget {
+  const ModuleChassis({
+    required this.accent,
+    required this.child,
+    this.lifted = false,
+    this.animateSeat = false,
+    this.compact = false,
+    this.animationKey,
+    super.key,
+  });
+
+  final Color accent;
+  final Widget child;
+  final bool lifted;
+  final bool animateSeat;
+  final bool compact;
+  final Key? animationKey;
+
+  @override
+  Widget build(BuildContext context) {
+    Widget buildAt(double settled) {
+      final sideDepth = compact ? 5.0 : 8.0;
+      final inset = compact ? 2.5 : 4.5;
+      final restingLift = compact ? 1.5 : 3.5;
+      final approachLift = compact ? 8.0 : 14.0;
+      final extraLift = lifted ? (compact ? 4.0 : 7.0) : 0.0;
+      final topLift =
+          restingLift + ((1 - settled) * approachLift) + extraLift;
+      final scale = 1 + ((1 - settled) * (compact ? 0.035 : 0.055));
+
+      return Stack(
+        fit: StackFit.expand,
+        clipBehavior: Clip.none,
+        children: [
+          Positioned.fill(
+            left: inset + 1,
+            right: inset + 1,
+            top: sideDepth + 3,
+            bottom: 0,
+            child: IgnorePointer(
+              child: PhysicalShape(
+                clipper: _ModuleChassisClipper(compact: compact),
+                elevation: lifted ? 13 : 8,
+                shadowColor: Color.alphaBlend(
+                  accent.withValues(alpha: lifted ? 0.28 : 0.12),
+                  const Color(0xD9000000),
+                ),
+                color: const Color(0xFF050D11),
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Color.alphaBlend(
+                          accent.withValues(alpha: 0.18),
+                          const Color(0xFF132830),
+                        ),
+                        const Color(0xFF030A0D),
+                      ],
+                    ),
+                    border: Border.all(
+                      color: accent.withValues(alpha: lifted ? 0.72 : 0.38),
+                      width: 1.4,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Transform.translate(
+            offset: Offset(0, -topLift),
+            child: Transform.scale(
+              scale: scale,
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(
+                  inset,
+                  compact ? 1.5 : 2.5,
+                  inset,
+                  sideDepth,
+                ),
+                child: ClipPath(
+                  clipper: _ModuleChassisClipper(compact: compact),
+                  child: child,
+                ),
+              ),
+            ),
+          ),
+          Positioned(
+            left: compact ? 12 : 16,
+            right: compact ? 12 : 16,
+            bottom: compact ? 2 : 3,
+            child: IgnorePointer(
+              child: Container(
+                height: 1.5,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Colors.transparent,
+                      accent.withValues(alpha: 0.65),
+                      Colors.transparent,
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
+    if (!animateSeat) {
+      return buildAt(1);
+    }
+    return TweenAnimationBuilder<double>(
+      key: animationKey,
+      tween: Tween<double>(begin: 0, end: 1),
+      duration: const Duration(milliseconds: 240),
+      curve: Curves.easeOutBack,
+      builder: (context, value, _) => buildAt(value),
+    );
+  }
+}
+
+class _ModuleChassisClipper extends CustomClipper<Path> {
+  const _ModuleChassisClipper({required this.compact});
+
+  final bool compact;
+
+  @override
+  Path getClip(Size size) {
+    final cut = size.shortestSide * (compact ? 0.10 : 0.12);
+    return Path()
+      ..moveTo(cut, 0)
+      ..lineTo(size.width - cut, 0)
+      ..lineTo(size.width, cut)
+      ..lineTo(size.width, size.height - cut)
+      ..lineTo(size.width - cut, size.height)
+      ..lineTo(cut, size.height)
+      ..lineTo(0, size.height - cut)
+      ..lineTo(0, cut)
+      ..close();
+  }
+
+  @override
+  bool shouldReclip(covariant _ModuleChassisClipper oldClipper) =>
+      oldClipper.compact != compact;
+}

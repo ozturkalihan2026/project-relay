@@ -35,7 +35,7 @@ class GameManualScreen extends StatelessWidget {
               ),
             ),
             Text(
-              'PROJECT RELAY • v0.8.21-r4',
+              'PROJECT RELAY • v0.8.22-r1-fix1',
               style: TextStyle(
                 color: RelayColors.muted,
                 fontSize: 10,
