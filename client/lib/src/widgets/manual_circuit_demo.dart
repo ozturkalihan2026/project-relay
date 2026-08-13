@@ -21,7 +21,8 @@ class _ManualCircuitDemoState extends State<ManualCircuitDemo> {
     ),
     _DemoStep(
       title: 'Pasif çekirdek dağıttı',
-      detail: 'Enerji üretmeyen çekirdek, gücü portu açık diğer kapılara '
+      detail:
+          'Enerji üretmeyen çekirdek, gücü portu açık diğer kapılara '
           'iletti.',
     ),
     _DemoStep(
@@ -133,9 +134,7 @@ class _ManualCircuitDemoState extends State<ManualCircuitDemo> {
                       ),
                     ),
                     _HorizontalFlow(active: _step >= 1),
-                    Expanded(
-                      child: _CoreDemoNode(active: _step >= 1),
-                    ),
+                    Expanded(child: _CoreDemoNode(active: _step >= 1)),
                     _HorizontalFlow(active: _step >= 2),
                     Expanded(
                       child: _DemoNode(
@@ -178,9 +177,7 @@ class _ManualCircuitDemoState extends State<ManualCircuitDemo> {
             FilledButton.icon(
               onPressed: _running ? null : _play,
               icon: Icon(
-                _step == _steps.length - 1
-                    ? Icons.replay
-                    : Icons.play_arrow,
+                _step == _steps.length - 1 ? Icons.replay : Icons.play_arrow,
               ),
               label: Text(
                 _step == _steps.length - 1
@@ -216,43 +213,30 @@ class _DemoNode extends StatelessWidget {
       constraints: const BoxConstraints(minHeight: 94),
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: active
-            ? color.withValues(alpha: 0.16)
-            : const Color(0xFF10242D),
+        color: active ? color.withValues(alpha: 0.16) : const Color(0xFF10242D),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: active ? color : const Color(0xFF31515C),
           width: active ? 2 : 1,
         ),
         boxShadow: active
-            ? [
-                BoxShadow(
-                  color: color.withValues(alpha: 0.28),
-                  blurRadius: 12,
-                ),
-              ]
+            ? [BoxShadow(color: color.withValues(alpha: 0.28), blurRadius: 12)]
             : null,
       ),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(moduleIcon(kind), color: color),
+          ModuleGlyph(kind: kind, color: color, size: 26),
           const SizedBox(height: 6),
           Text(
             title,
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w800,
-            ),
+            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w800),
           ),
           Text(
             caption,
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: RelayColors.muted,
-              fontSize: 9,
-            ),
+            style: const TextStyle(color: RelayColors.muted, fontSize: 9),
           ),
         ],
       ),

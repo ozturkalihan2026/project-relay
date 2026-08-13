@@ -6,6 +6,145 @@ import '../models/relay_models.dart';
 import '../theme/relay_theme.dart';
 import 'module_visuals.dart';
 
+class ModuleShelf extends StatelessWidget {
+  const ModuleShelf({
+    required this.modules,
+    required this.selectedKind,
+    required this.onSelected,
+    required this.onBoardModuleReturned,
+    required this.remainingByKind,
+    required this.kitName,
+    required this.onEditKit,
+    super.key,
+  });
+
+  final List<ModuleSpec> modules;
+  final ModuleKind? selectedKind;
+  final ValueChanged<ModuleKind> onSelected;
+  final ValueChanged<ModuleDragData> onBoardModuleReturned;
+  final Map<ModuleKind, int> remainingByKind;
+  final String kitName;
+  final VoidCallback onEditKit;
+
+  @override
+  Widget build(BuildContext context) {
+    return DragTarget<ModuleDragData>(
+      hitTestBehavior: HitTestBehavior.opaque,
+      onWillAcceptWithDetails: (details) => details.data.isFromBoard,
+      onAcceptWithDetails: (details) => onBoardModuleReturned(details.data),
+      builder: (context, candidateData, rejectedData) {
+        final returning = candidateData.any(
+          (data) => data?.isFromBoard ?? false,
+        );
+        return AnimatedContainer(
+          key: const ValueKey('module-shelf'),
+          duration: const Duration(milliseconds: 140),
+          padding: const EdgeInsets.fromLTRB(12, 8, 8, 8),
+          decoration: BoxDecoration(
+            color: Color.alphaBlend(
+              (returning ? RelayColors.coral : RelayColors.cyan).withValues(
+                alpha: returning ? 0.13 : 0.06,
+              ),
+              RelayColors.surfaceHigh,
+            ),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: (returning ? RelayColors.coral : RelayColors.cyan)
+                  .withValues(alpha: returning ? 0.9 : 0.35),
+              width: returning ? 2 : 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: RelayColors.cyan.withValues(alpha: 0.08),
+                blurRadius: 18,
+                spreadRadius: -8,
+              ),
+            ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (returning) ...[
+                const ModulePaletteReturnBanner(),
+                const SizedBox(height: 6),
+              ],
+              Row(
+                children: [
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 150),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text(
+                          'MODÜL RAFI',
+                          style: TextStyle(
+                            color: RelayColors.cyan,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 0.9,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          kitName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: RelayColors.muted,
+                            fontSize: 9,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      key: const ValueKey('module-shelf-scroll'),
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          for (
+                            var index = 0;
+                            index < modules.length;
+                            index++
+                          ) ...[
+                            _PaletteItem(
+                              module: modules[index],
+                              selected: modules[index].kind == selectedKind,
+                              width: 112,
+                              remaining:
+                                  remainingByKind[modules[index].kind] ?? 0,
+                              dense: false,
+                              compact: true,
+                              onTap: () => onSelected(modules[index].kind),
+                            ),
+                            if (index < modules.length - 1)
+                              const SizedBox(width: 6),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton.filledTonal(
+                    key: const ValueKey('module-shelf-edit-kit'),
+                    tooltip: 'Başlangıç sekizlisini değiştir',
+                    onPressed: onEditKit,
+                    icon: const Icon(Icons.tune, size: 19),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
 class ModulePalette extends StatelessWidget {
   const ModulePalette({
     required this.modules,
@@ -33,8 +172,7 @@ class ModulePalette extends StatelessWidget {
     return DragTarget<ModuleDragData>(
       hitTestBehavior: HitTestBehavior.opaque,
       onWillAcceptWithDetails: (details) => details.data.isFromBoard,
-      onAcceptWithDetails: (details) =>
-          onBoardModuleReturned(details.data),
+      onAcceptWithDetails: (details) => onBoardModuleReturned(details.data),
       builder: (context, candidateData, rejectedData) {
         final returning = candidateData.any(
           (data) => data?.isFromBoard ?? false,
@@ -48,9 +186,7 @@ class ModulePalette extends StatelessWidget {
                 : Colors.transparent,
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
-              color: returning
-                  ? RelayColors.coral
-                  : const Color(0x002B5361),
+              color: returning ? RelayColors.coral : const Color(0x002B5361),
               width: 2,
             ),
           ),
@@ -61,10 +197,7 @@ class ModulePalette extends StatelessWidget {
                 duration: const Duration(milliseconds: 120),
                 child: returning
                     ? const ModulePaletteReturnBanner()
-                    : const SizedBox(
-                        key: ValueKey('hint'),
-                        height: 0,
-                      ),
+                    : const SizedBox(key: ValueKey('hint'), height: 0),
               ),
               if (returning) const SizedBox(height: 8),
               LayoutBuilder(
@@ -74,7 +207,11 @@ class ModulePalette extends StatelessWidget {
                   if (vertical) {
                     return Column(
                       children: [
-                        for (var index = 0; index < modules.length; index++) ...[
+                        for (
+                          var index = 0;
+                          index < modules.length;
+                          index++
+                        ) ...[
                           _PaletteItem(
                             module: modules[index],
                             selected: modules[index].kind == selectedKind,
@@ -91,17 +228,20 @@ class ModulePalette extends StatelessWidget {
                       ],
                     );
                   }
-                  final columnCount = fixedColumns ??
+                  final columnCount =
+                      fixedColumns ??
                       (constraints.maxWidth >= 720
                           ? 4
                           : constraints.maxWidth >= 520
-                              ? 3
-                              : 2);
+                          ? 3
+                          : 2);
                   final computedTileWidth =
                       (constraints.maxWidth - spacing * (columnCount - 1)) /
-                          columnCount;
-                  final compactTileWidth =
-                      math.max(0.0, computedTileWidth - 6.0);
+                      columnCount;
+                  final compactTileWidth = math.max(
+                    0.0,
+                    computedTileWidth - 6.0,
+                  );
                   final tileWidth = columnCount == 4
                       ? math.min(235.0, compactTileWidth)
                       : compactTileWidth;
@@ -140,11 +280,7 @@ class ModulePaletteReturnBanner extends StatelessWidget {
     return const Row(
       key: ValueKey('return'),
       children: [
-        Icon(
-          Icons.remove_circle_outline,
-          color: RelayColors.coral,
-          size: 18,
-        ),
+        Icon(Icons.remove_circle_outline, color: RelayColors.coral, size: 18),
         SizedBox(width: 7),
         Expanded(
           child: Text(
@@ -187,7 +323,8 @@ class _PaletteItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final disabled = remaining <= 0;
     return Tooltip(
-      message: '${module.description}\n${_moduleStatistics(module)}\nKitte kalan: $remaining',
+      message:
+          '${module.description}\n${_moduleStatistics(module)}\nKitte kalan: $remaining',
       child: Draggable<ModuleDragData>(
         data: ModuleDragData.palette(module.kind),
         maxSimultaneousDrags: disabled ? 0 : 1,
@@ -243,16 +380,14 @@ class _PaletteTile extends StatelessWidget {
     final color = moduleColor(module.kind);
     final disabled = remaining <= 0;
     return MouseRegion(
-      cursor: disabled
-          ? SystemMouseCursors.forbidden
-          : SystemMouseCursors.grab,
+      cursor: disabled ? SystemMouseCursors.forbidden : SystemMouseCursors.grab,
       child: Material(
         key: ValueKey('palette-module-${module.kind.wireValue}'),
         color: disabled
             ? RelayColors.surfaceHigh.withValues(alpha: 0.45)
             : selected
-                ? color.withValues(alpha: 0.18)
-                : RelayColors.surfaceHigh,
+            ? color.withValues(alpha: 0.18)
+            : RelayColors.surfaceHigh,
         borderRadius: BorderRadius.circular(12),
         child: InkWell(
           onTap: onTap,
@@ -260,10 +395,22 @@ class _PaletteTile extends StatelessWidget {
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 160),
             width: width,
-            height: dense ? 46 : compact ? 44 : 66,
+            height: dense
+                ? 46
+                : compact
+                ? 44
+                : 66,
             padding: EdgeInsets.symmetric(
-              horizontal: dense ? 4 : compact ? 4 : 5,
-              vertical: dense ? 2 : compact ? 1 : 3,
+              horizontal: dense
+                  ? 4
+                  : compact
+                  ? 4
+                  : 5,
+              vertical: dense
+                  ? 2
+                  : compact
+                  ? 1
+                  : 3,
             ),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
@@ -271,8 +418,8 @@ class _PaletteTile extends StatelessWidget {
                 color: disabled
                     ? RelayColors.muted.withValues(alpha: 0.35)
                     : selected
-                        ? color
-                        : const Color(0xFF2B5361),
+                    ? color
+                    : const Color(0xFF2B5361),
                 width: selected && !disabled ? 2 : 1,
               ),
             ),
@@ -327,10 +474,14 @@ class _PaletteTile extends StatelessWidget {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(
-                                moduleIcon(module.kind),
+                              ModuleGlyph(
+                                kind: module.kind,
                                 color: color,
-                                size: dense ? 18 : compact ? 18 : 24,
+                                size: dense
+                                    ? 18
+                                    : compact
+                                    ? 18
+                                    : 24,
                               ),
                               SizedBox(width: dense ? 4 : 6),
                               Flexible(
@@ -340,7 +491,11 @@ class _PaletteTile extends StatelessWidget {
                                   overflow: TextOverflow.ellipsis,
                                   textAlign: TextAlign.center,
                                   style: TextStyle(
-                                    fontSize: dense ? 10.5 : compact ? 10 : 13,
+                                    fontSize: dense
+                                        ? 10.5
+                                        : compact
+                                        ? 10
+                                        : 13,
                                     fontWeight: FontWeight.w900,
                                   ),
                                 ),
@@ -348,7 +503,13 @@ class _PaletteTile extends StatelessWidget {
                             ],
                           ),
                         ),
-                        SizedBox(height: dense ? 1 : compact ? 1 : 3),
+                        SizedBox(
+                          height: dense
+                              ? 1
+                              : compact
+                              ? 1
+                              : 3,
+                        ),
                         Text(
                           _moduleStatistics(module),
                           key: ValueKey(
@@ -359,7 +520,11 @@ class _PaletteTile extends StatelessWidget {
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             color: RelayColors.muted,
-                            fontSize: dense ? 7.5 : compact ? 7.5 : 9.5,
+                            fontSize: dense
+                                ? 7.5
+                                : compact
+                                ? 7.5
+                                : 9.5,
                             height: 1.15,
                             fontWeight: FontWeight.w700,
                           ),
@@ -409,10 +574,7 @@ class _DragFeedback extends StatelessWidget {
               ),
               border: Border.all(color: color, width: 2),
               boxShadow: [
-                BoxShadow(
-                  color: color.withValues(alpha: 0.24),
-                  blurRadius: 15,
-                ),
+                BoxShadow(color: color.withValues(alpha: 0.24), blurRadius: 15),
               ],
             ),
             child: Padding(
@@ -420,7 +582,7 @@ class _DragFeedback extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(moduleIcon(module.kind), color: color, size: 27),
+                  ModuleGlyph(kind: module.kind, color: color, size: 27),
                   const SizedBox(height: 4),
                   Text(
                     module.displayName,

@@ -1,0 +1,91 @@
+{
+  "schema_version": 1,
+  "modules": [
+    {
+      "kind": "generator",
+      "display_name": "Jeneratör",
+      "description": "Çekirdek kapısında içe dönük çalışır; bir portuyla pasif çekirdeği, iki portuyla halkanın iki yönünü besler.",
+      "max_hp": 52,
+      "ports": ["north", "east", "south"],
+      "energy_output": 8,
+      "threat": 60
+    },
+    {
+      "kind": "battery",
+      "display_name": "Batarya",
+      "description": "Dört portlu yönsüz enerji kavşağıdır; enerjiyi dört yöne aktarır ve kullanılmayan enerjiyi depolar.",
+      "max_hp": 38,
+      "ports": ["north", "east", "south", "west"],
+      "battery_capacity": 20,
+      "threat": 40
+    },
+    {
+      "kind": "laser",
+      "display_name": "Lazer",
+      "description": "Az enerjiyle sık ateş eder; arka portu enerji hattına dönük olmalıdır.",
+      "max_hp": 27,
+      "ports": ["west"],
+      "energy_cost": 4,
+      "cooldown_ticks": 2,
+      "heat_per_action": 14,
+      "damage": 8,
+      "threat": 100
+    },
+    {
+      "kind": "pulse_cannon",
+      "display_name": "Darbe Topu",
+      "description": "Yüksek anlık hasar verir fakat çok enerji ve ısı üretir; batarya ve soğutmayla güçlenir.",
+      "max_hp": 33,
+      "ports": ["west"],
+      "energy_cost": 8,
+      "cooldown_ticks": 4,
+      "heat_per_action": 30,
+      "damage": 16,
+      "threat": 110
+    },
+    {
+      "kind": "shield",
+      "display_name": "Kalkan",
+      "description": "Gelen hasarı karşılayan ortak kalkan havuzunu doldurur ve silahlardan önce hedef çekerek onları korur; tek portlu olduğu için hattın ucuna yerleşir.",
+      "max_hp": 35,
+      "ports": ["west"],
+      "energy_cost": 5,
+      "cooldown_ticks": 3,
+      "heat_per_action": 11,
+      "shield": 14,
+      "threat": 120
+    },
+    {
+      "kind": "cooler",
+      "display_name": "Soğutucu",
+      "description": "Bağlı devredeki ısıyı düşürür ve saldırı modüllerinin daha uzun süre çalışmasını sağlar.",
+      "max_hp": 31,
+      "ports": ["west"],
+      "energy_cost": 3,
+      "cooldown_ticks": 2,
+      "heat_per_action": 5,
+      "cooling": 12,
+      "threat": 75
+    },
+    {
+      "kind": "amplifier",
+      "display_name": "Güçlendirici",
+      "description": "Dört portlu enerji kavşağıdır; oku hangi komşu modülün etkisini ve ısısını artıracağını belirler.",
+      "max_hp": 25,
+      "ports": ["north", "east", "south", "west"],
+      "threat": 90
+    },
+    {
+      "kind": "repair",
+      "display_name": "Onarım",
+      "description": "Hasar görmüş enerjili modülü onarır; uzun savaşlarda savunma düzeninin dayanıklılığını artırır.",
+      "max_hp": 30,
+      "ports": ["west"],
+      "energy_cost": 5,
+      "cooldown_ticks": 4,
+      "heat_per_action": 14,
+      "repair": 11,
+      "threat": 80
+    }
+  ]
+}

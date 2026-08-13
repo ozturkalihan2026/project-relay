@@ -30,6 +30,9 @@ class StoredMatch:
     player_board: BoardLayout
     opponent_board: BoardLayout
     result: dict[str, Any]
+    player_modifiers: dict[str, Any] | None = None
+    opponent_modifiers: dict[str, Any] | None = None
+    weekly_protocol_key: str | None = None
 
 
 class MatchNotFoundError(LookupError):
@@ -80,6 +83,7 @@ class DatabaseMatchStore:
                     id=match.match_id,
                     created_at=match.created_at,
                     source=match.source,
+                    weekly_protocol_key=match.weekly_protocol_key,
                     requester_player_id=match.requester_player_id,
                     opponent_player_id=match.opponent_player_id,
                     opponent_kind=match.opponent.kind,
@@ -88,6 +92,8 @@ class DatabaseMatchStore:
                     opponent_description=match.opponent.description,
                     player_board=match.player_board.to_dict(),
                     opponent_board=match.opponent_board.to_dict(),
+                    player_modifiers=dict(match.player_modifiers or {}),
+                    opponent_modifiers=dict(match.opponent_modifiers or {}),
                     result=result,
                     replay={
                         "events": events,
@@ -114,6 +120,7 @@ class DatabaseMatchStore:
                 match_id=record.id,
                 created_at=self._as_utc(record.created_at),
                 source=record.source,
+                weekly_protocol_key=record.weekly_protocol_key,
                 requester_player_id=record.requester_player_id,
                 opponent_player_id=record.opponent_player_id,
                 opponent=OpponentSnapshot(
@@ -125,6 +132,8 @@ class DatabaseMatchStore:
                 player_board=_board_from_dict(record.player_board),
                 opponent_board=_board_from_dict(record.opponent_board),
                 result=result,
+                player_modifiers=dict(record.player_modifiers or {}),
+                opponent_modifiers=dict(record.opponent_modifiers or {}),
             )
 
     @staticmethod

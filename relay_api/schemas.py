@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -64,6 +65,42 @@ class HealthResponse(ApiModel):
     rules_version: str
     storage: str
     database: str
+
+
+class WeeklyProtocolResponse(ApiModel):
+    key: str
+    protocol_id: str
+    title: str
+    description: str
+    effect_label: str
+    starts_at: str
+    ends_at: str
+    modifiers: dict[str, Any]
+
+
+class ProductEventPayload(ApiModel):
+    event_id: str = Field(
+        min_length=8,
+        max_length=40,
+        pattern=r"^[A-Za-z0-9_.:-]+$",
+    )
+    event_name: str = Field(
+        min_length=3,
+        max_length=48,
+        pattern=r"^[a-z][a-z0-9_]*$",
+    )
+    context: dict[str, Any] = Field(default_factory=dict)
+    client_version: str = Field(min_length=1, max_length=24)
+    occurred_at: datetime
+
+
+class ProductEventBatchRequest(ApiModel):
+    events: list[ProductEventPayload] = Field(min_length=1, max_length=50)
+
+
+class ProductEventBatchResponse(ApiModel):
+    accepted: int
+    duplicates: int
 
 
 class BoardValidationResponse(ApiModel):
@@ -227,6 +264,7 @@ class MatchResponse(ApiModel):
     match_id: str
     created_at: str
     source: str
+    weekly_protocol_key: str | None = None
     opponent: MatchOpponentResponse
     player_board: BoardPayload
     opponent_board: BoardPayload
@@ -459,6 +497,17 @@ class CareerBoosterChoiceResponse(ApiModel):
     credit_cost: int
 
 
+class CareerModuleUpgradeResponse(ApiModel):
+    module_id: str
+    kind: str
+    branch: str
+    display_name: str
+    description: str
+    effect_label: str
+    before_value: str
+    after_value: str
+
+
 class CareerOpponentPreviewResponse(ApiModel):
     stage_number: int
     total_stages: int
@@ -471,26 +520,54 @@ class CareerOpponentPreviewResponse(ApiModel):
     board: BoardPayload
 
 
+class CareerStageContentResponse(ApiModel):
+    stage_number: int
+    title: str
+    briefing: str
+    guidance_title: str
+    guidance_text: str
+    icon: str
+    is_boss: bool
+
+
+class CareerSectorContentResponse(ApiModel):
+    sector_id: str
+    number: int
+    title: str
+    stages: list[CareerStageContentResponse]
+
+
 class CareerRunResponse(ApiModel):
     run_id: str | None
+    sector: CareerSectorContentResponse
     status: str
     stage_index: int
     total_stages: int
     wins: int
     selected_boosters: list[CareerBoosterChoiceResponse]
     offered_boosters: list[CareerBoosterChoiceResponse]
+    selected_upgrades: list[CareerModuleUpgradeResponse] = Field(default_factory=list)
+    offered_upgrades: list[CareerModuleUpgradeResponse] = Field(default_factory=list)
     opponent: CareerOpponentPreviewResponse | None
     last_match_id: str | None
     reward: RewardGrantResponse | None
     board_required: bool
     can_battle: bool
     can_choose_booster: bool
+    can_choose_upgrade: bool = False
     started_at: str | None
     ended_at: str | None
 
 
 class CareerBoosterSelectionRequest(ApiModel):
     booster_id: str = Field(min_length=1, max_length=40)
+
+
+class CareerModuleUpgradeSelectionRequest(ApiModel):
+    module_id: str = Field(min_length=1, max_length=80)
+    branch: str = Field(
+        pattern="^(overclock|efficient|regulated|primed|focused)$"
+    )
 
 
 class CareerBattleResponse(ApiModel):

@@ -182,9 +182,95 @@ class CareerRunServiceTests(unittest.TestCase):
             result.match.opponent_board.to_dict(),
             run.opponent.board.to_dict(),
         )
-        self.assertEqual(result.run.status, "active")
+        self.assertEqual(result.run.status, "awaiting_upgrade")
         self.assertEqual(result.run.stage_index, 1)
         self.assertEqual(result.run.offered_boosters, ())
+        self.assertTrue(result.run.can_choose_upgrade)
+
+    def test_upgrade_offers_are_effective_and_use_separate_storage(self) -> None:
+        career, _, _, matches = self._service(["left", "left"])
+        career.save_board("player-a", _board())
+        career.start("player-a")
+
+        awaiting = career.battle("player-a").run
+        generator_offers = [
+            item
+            for item in awaiting.offered_upgrades
+            if item.module_id == "P-GEN"
+        ]
+        self.assertEqual(
+            {item.branch for item in generator_offers},
+            {"overclock", "regulated"},
+        )
+        self.assertNotIn(
+            "efficient",
+            {item.branch for item in generator_offers},
+        )
+        regulated = next(
+            item for item in generator_offers if item.branch == "regulated"
+        )
+        self.assertEqual(regulated.effect_label, "Jeneratör çıkışı")
+        self.assertEqual(regulated.before_value, "8")
+        self.assertEqual(regulated.after_value, "9.2")
+
+        active = career.select_module_upgrade(
+            "player-a",
+            regulated.module_id,
+            regulated.branch,
+        )
+        self.assertEqual(active.selected_boosters, ())
+        self.assertEqual(active.selected_upgrades[0].branch, "regulated")
+        with self.database.session() as session:
+            record = session.get(CareerRunRecord, active.run_id)
+            assert record is not None
+            self.assertEqual(record.selected_boosters, [])
+            self.assertEqual(
+                record.selected_module_upgrades[0]["ruleset_version"],
+                "1",
+            )
+
+        career.battle("player-a")
+        self.assertAlmostEqual(
+            matches.last_player_modifiers.generator_output_multiplier,
+            1.15,
+        )
+
+    def test_upgraded_module_cannot_be_replaced_during_run(self) -> None:
+        career, _, _, _ = self._service(["left"])
+        career.save_board("player-a", _board())
+        career.start("player-a")
+        awaiting = career.battle("player-a").run
+        regulated = next(
+            item
+            for item in awaiting.offered_upgrades
+            if item.module_id == "P-GEN" and item.branch == "regulated"
+        )
+        career.select_module_upgrade(
+            "player-a",
+            regulated.module_id,
+            regulated.branch,
+        )
+        replaced = BoardLayout(
+            name="Değiştirilmiş Devre",
+            modules=tuple(
+                ModulePlacement(
+                    module_id="P-GEN-NEW",
+                    kind=item.kind,
+                    row=item.row,
+                    column=item.column,
+                    orientation=item.orientation,
+                    level=item.level,
+                )
+                if item.module_id == "P-GEN"
+                else item
+                for item in _board().modules
+            ),
+        )
+
+        with self.assertRaises(CareerRunError) as context:
+            career.save_board("player-a", replaced)
+
+        self.assertEqual(context.exception.code, "upgraded_module_locked")
 
     def test_five_wins_complete_run_and_reward_once(self) -> None:
         career, _, progression, matches = self._service(["left"] * 5)
@@ -200,8 +286,14 @@ class CareerRunServiceTests(unittest.TestCase):
             result = career.battle("player-a")
             run = result.run
             if stage < 3:
-                self.assertEqual(run.status, "active")
+                self.assertEqual(run.status, "awaiting_upgrade")
                 self.assertEqual(run.offered_boosters, ())
+                choice = run.offered_upgrades[0]
+                run = career.select_module_upgrade(
+                    "player-a", choice.module_id, choice.branch
+                )
+                self.assertEqual(run.status, "active")
+                self.assertEqual(len(run.selected_upgrades), stage + 1)
             else:
                 self.assertEqual(run.status, "awaiting_booster")
                 self.assertEqual(len(run.offered_boosters), 3)
@@ -247,6 +339,11 @@ class CareerRunServiceTests(unittest.TestCase):
         run = None
         for _ in range(4):
             run = career.battle("player-a").run
+            if run.status == "awaiting_upgrade":
+                choice = run.offered_upgrades[0]
+                run = career.select_module_upgrade(
+                    "player-a", choice.module_id, choice.branch
+                )
         assert run is not None
         self.assertEqual(run.status, "awaiting_booster")
 

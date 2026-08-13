@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../config/relay_features.dart';
 import 'player_status_bar.dart';
 
 /// Ortak üst sol profil alanı.
@@ -36,10 +37,12 @@ class AppHeaderActions extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        CircuitCreditButton(
-          onTap: () => Navigator.of(context).pushNamed('/store'),
-        ),
-        const SizedBox(width: 6),
+        if (RelayFeatures.store) ...[
+          CircuitCreditButton(
+            onTap: () => Navigator.of(context).pushNamed('/store'),
+          ),
+          const SizedBox(width: 6),
+        ],
         IconButton.filledTonal(
           key: const ValueKey('global-settings-action'),
           tooltip: 'Ayarlar',

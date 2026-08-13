@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:project_relay_client/src/game/replay_game.dart';
 import 'package:project_relay_client/src/models/relay_models.dart';
 import 'package:project_relay_client/src/widgets/circuit_board.dart';
+import 'package:project_relay_client/src/widgets/module_visuals.dart';
 
 void main() {
   const boardSize = Size.square(400);
@@ -68,34 +69,22 @@ void main() {
 
   test('dört çekirdek kapısının her biri kendi görünür porta bağlanır', () {
     _expectOffset(
-      CircuitTraceGeometry.corePortAnchor(
-        boardSize,
-        RelayDirection.south,
-      ),
+      CircuitTraceGeometry.corePortAnchor(boardSize, RelayDirection.south),
       154.5,
       109,
     );
     _expectOffset(
-      CircuitTraceGeometry.corePortAnchor(
-        boardSize,
-        RelayDirection.west,
-      ),
+      CircuitTraceGeometry.corePortAnchor(boardSize, RelayDirection.west),
       291,
       154.5,
     );
     _expectOffset(
-      CircuitTraceGeometry.corePortAnchor(
-        boardSize,
-        RelayDirection.north,
-      ),
+      CircuitTraceGeometry.corePortAnchor(boardSize, RelayDirection.north),
       245.5,
       291,
     );
     _expectOffset(
-      CircuitTraceGeometry.corePortAnchor(
-        boardSize,
-        RelayDirection.east,
-      ),
+      CircuitTraceGeometry.corePortAnchor(boardSize, RelayDirection.east),
       109,
       245.5,
     );
@@ -121,22 +110,19 @@ void main() {
       column: 2,
     );
 
-    expect(
-      usableBoardPorts(cornerBattery, RelayDirection.values),
-      {RelayDirection.east, RelayDirection.south},
-    );
-    expect(
-      usableBoardPorts(gateAmplifier, RelayDirection.values),
-      {
-        RelayDirection.east,
-        RelayDirection.south,
-        RelayDirection.west,
-      },
-    );
-    expect(
-      usableBoardPorts(nonGateAmplifier, RelayDirection.values),
-      {RelayDirection.east, RelayDirection.west},
-    );
+    expect(usableBoardPorts(cornerBattery, RelayDirection.values), {
+      RelayDirection.east,
+      RelayDirection.south,
+    });
+    expect(usableBoardPorts(gateAmplifier, RelayDirection.values), {
+      RelayDirection.east,
+      RelayDirection.south,
+      RelayDirection.west,
+    });
+    expect(usableBoardPorts(nonGateAmplifier, RelayDirection.values), {
+      RelayDirection.east,
+      RelayDirection.west,
+    });
   });
 
   testWidgets(
@@ -204,7 +190,7 @@ void main() {
   );
 
   testWidgets(
-    'çekirdek kapısındaki yerleşik modül yalnız simgeyle gösterilir',
+    'çekirdek kapısındaki yerleşik modül donanım glifiyle gösterilir',
     (tester) async {
       const generator = ModulePlacement(
         id: 'gate-generator',
@@ -256,9 +242,10 @@ void main() {
       );
 
       expect(
-        find.byKey(const ValueKey('module-icon-gate-generator')),
+        find.byKey(const ValueKey('module-glyph-gate-generator')),
         findsOneWidget,
       );
+      expect(find.byType(ModuleGlyph), findsOneWidget);
       expect(
         find.byKey(const ValueKey('module-name-gate-generator')),
         findsNothing,

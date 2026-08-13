@@ -54,6 +54,7 @@ class MigrationTests(unittest.TestCase):
         self.assertIn("CREATE TABLE chat_groups", sql)
         self.assertIn("CREATE TABLE chat_group_members", sql)
         self.assertIn("CREATE TABLE chat_messages", sql)
+        self.assertIn("CREATE TABLE product_events", sql)
 
     def test_initial_migration_creates_and_downgrades_online_schema(
         self,
@@ -76,6 +77,18 @@ class MigrationTests(unittest.TestCase):
                 if column["name"] == "seed"
             )
             self.assertIsInstance(seed_column["type"], BigInteger)
+            match_columns = {
+                column["name"]
+                for column in inspect(engine).get_columns("matches")
+            }
+            career_columns = {
+                column["name"]
+                for column in inspect(engine).get_columns("career_runs")
+            }
+            self.assertIn("player_modifiers", match_columns)
+            self.assertIn("opponent_modifiers", match_columns)
+            self.assertIn("weekly_protocol_key", match_columns)
+            self.assertIn("selected_module_upgrades", career_columns)
             self.assertEqual(
                 set(inspect(engine).get_table_names()),
                 {
@@ -106,6 +119,7 @@ class MigrationTests(unittest.TestCase):
                     "chat_groups",
                     "chat_group_members",
                     "chat_messages",
+                    "product_events",
                 },
             )
             engine.dispose()

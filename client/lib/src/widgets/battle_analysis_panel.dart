@@ -10,12 +10,14 @@ class BattleAnalysisPanel extends StatelessWidget {
     required this.match,
     required this.replay,
     required this.modules,
+    this.onRematch,
     super.key,
   });
 
   final MatchResponse match;
   final ReplayResponse replay;
   final List<ModuleSpec> modules;
+  final VoidCallback? onRematch;
 
   @override
   Widget build(BuildContext context) {
@@ -33,6 +35,11 @@ class BattleAnalysisPanel extends StatelessWidget {
     };
     final reward = match.progressionReward;
     final season = match.seasonChange;
+    final recommendation = RematchRecommendation.fromAnalysis(
+      match: match,
+      replay: replay,
+      analysis: analysis,
+    );
 
     return Container(
       key: const ValueKey('battle-analysis-panel'),
@@ -88,6 +95,8 @@ class BattleAnalysisPanel extends StatelessWidget {
               height: 1.35,
             ),
           ),
+          const SizedBox(height: 14),
+          _RematchLabCard(recommendation: recommendation, onRematch: onRematch),
           const SizedBox(height: 16),
           LayoutBuilder(
             builder: (context, constraints) {
@@ -110,14 +119,16 @@ class BattleAnalysisPanel extends StatelessWidget {
                   icon: Icons.shield_outlined,
                   label: 'KALKAN EMİŞİ',
                   value: analysis.playerShieldAbsorbed.toStringAsFixed(0),
-                  detail: 'Rakip: ${analysis.enemyShieldAbsorbed.toStringAsFixed(0)}',
+                  detail:
+                      'Rakip: ${analysis.enemyShieldAbsorbed.toStringAsFixed(0)}',
                   color: RelayColors.electricBlue,
                 ),
                 _MetricCard(
                   icon: Icons.build_outlined,
                   label: 'ONARIM',
                   value: analysis.playerRepair.toStringAsFixed(0),
-                  detail: 'Soğutma ${analysis.playerCooling.toStringAsFixed(0)}',
+                  detail:
+                      'Soğutma ${analysis.playerCooling.toStringAsFixed(0)}',
                   color: RelayColors.mint,
                 ),
                 _MetricCard(
@@ -130,16 +141,18 @@ class BattleAnalysisPanel extends StatelessWidget {
                 _MetricCard(
                   icon: Icons.memory_outlined,
                   label: 'AYAKTA KALAN',
-                  value: '${result.left.survivingModules}/${match.playerBoard.modules.length}',
-                  detail: 'Çekirdek ${result.left.coreHp.toStringAsFixed(0)}/${result.left.coreMaxHp.toStringAsFixed(0)}',
+                  value:
+                      '${result.left.survivingModules}/${match.playerBoard.modules.length}',
+                  detail:
+                      'Çekirdek ${result.left.coreHp.toStringAsFixed(0)}/${result.left.coreMaxHp.toStringAsFixed(0)}',
                   color: RelayColors.cyan,
                 ),
               ];
               final columns = constraints.maxWidth >= 900
                   ? 3
                   : constraints.maxWidth >= 560
-                      ? 2
-                      : 1;
+                  ? 2
+                  : 1;
               return GridView.count(
                 crossAxisCount: columns,
                 mainAxisSpacing: 8,
@@ -158,7 +171,9 @@ class BattleAnalysisPanel extends StatelessWidget {
             decoration: BoxDecoration(
               color: RelayColors.background.withValues(alpha: 0.45),
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: RelayColors.violet.withValues(alpha: 0.42)),
+              border: Border.all(
+                color: RelayColors.violet.withValues(alpha: 0.42),
+              ),
             ),
             child: Row(
               children: [
@@ -184,7 +199,10 @@ class BattleAnalysisPanel extends StatelessWidget {
                       ),
                       Text(
                         analysis.starDetail,
-                        style: const TextStyle(color: RelayColors.muted, fontSize: 11),
+                        style: const TextStyle(
+                          color: RelayColors.muted,
+                          fontSize: 11,
+                        ),
                       ),
                     ],
                   ),
@@ -198,6 +216,220 @@ class BattleAnalysisPanel extends StatelessWidget {
             style: const TextStyle(color: RelayColors.muted, fontSize: 9.5),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class RematchRecommendation {
+  const RematchRecommendation({
+    required this.title,
+    required this.diagnosis,
+    required this.experiment,
+    required this.icon,
+    required this.accent,
+  });
+
+  factory RematchRecommendation.fromAnalysis({
+    required MatchResponse match,
+    required ReplayResponse replay,
+    required BattleAnalysis analysis,
+  }) {
+    final firstStarved = _firstTick(replay, 'energy_starved', side: 'left');
+    final firstOverheat = _firstTick(replay, 'overheat', side: 'left');
+    final lost = match.result.winner == 'right';
+    if (analysis.playerStarved >= 2) {
+      return RematchRecommendation(
+        title: 'ENERJİ HATTI KOPTU',
+        diagnosis:
+            '${analysis.playerStarved} enerji açlığı${firstStarved == null ? '' : ' • ilk kesinti $firstStarved. adımda'} saldırı ritmini bozdu.',
+        experiment:
+            'Bataryayı jeneratör ile silahların arasına taşı; yüksek maliyetli iki silahı aynı hatta çalıştırma.',
+        icon: Icons.battery_alert_outlined,
+        accent: RelayColors.amber,
+      );
+    }
+    if (analysis.playerOverheats >= 2) {
+      return RematchRecommendation(
+        title: 'ISI BİRİKTİ',
+        diagnosis:
+            '${analysis.playerOverheats} aşırı ısınma${firstOverheat == null ? '' : ' • ilki $firstOverheat. adımda'} devreyi susturdu.',
+        experiment:
+            'Soğutucuyu en sık ateş eden modüle komşu yerleştir veya ikinci ağır silahı daha serin bir hatla değiştir.',
+        icon: Icons.device_thermostat,
+        accent: RelayColors.coral,
+      );
+    }
+    if (lost && analysis.playerShieldAbsorbed < analysis.enemyDamage * 0.18) {
+      return const RematchRecommendation(
+        title: 'ÇEKİRDEK AÇIKTA KALDI',
+        diagnosis:
+            'Savunma, rakibin baskısını karşılayacak kadar hasar ememedi.',
+        experiment:
+            'Kalkanı kesintisiz enerji alan kısa bir hatta bağla; Onarım modülünü en çok hedeflenen savunmanın yanına al.',
+        icon: Icons.shield_outlined,
+        accent: RelayColors.electricBlue,
+      );
+    }
+    if (lost && analysis.playerDamage < analysis.enemyDamage * 0.82) {
+      return const RematchRecommendation(
+        title: 'BASKI YETERSİZ KALDI',
+        diagnosis: 'Rakip, devrenden belirgin biçimde daha fazla hasar üretti.',
+        experiment:
+            'Güçlendiricinin okunu ana silaha çevir; saldırı modülünün enerji yolunu kısalt ve destek dışı boş bağlantıları kaldır.',
+        icon: Icons.trending_up,
+        accent: RelayColors.coral,
+      );
+    }
+    if (match.result.winner == 'left') {
+      return const RematchRecommendation(
+        title: 'KAZANAN DÜZENİ SINIRLA',
+        diagnosis:
+            'Devren bu eşleşmeyi kazandı; şimdi dayanıklılığını ölçebilirsin.',
+        experiment:
+            'Aynı çekirdeği koruyup savaşın yıldızı dışındaki tek bir modülün yerini değiştir. Sonucun düzene mi parçaya mı bağlı olduğunu gör.',
+        icon: Icons.science_outlined,
+        accent: RelayColors.mint,
+      );
+    }
+    return const RematchRecommendation(
+      title: 'BERABERLİĞİ BOZ',
+      diagnosis: 'İki devre karar ölçütlerinde birbirini dengeledi.',
+      experiment:
+          'Bir savunma modülünü saldırıya çevir veya Güçlendirici yönünü değiştirerek tek bir karar ölçütünde üstünlük kur.',
+      icon: Icons.balance_outlined,
+      accent: RelayColors.violet,
+    );
+  }
+
+  final String title;
+  final String diagnosis;
+  final String experiment;
+  final IconData icon;
+  final Color accent;
+
+  static int? _firstTick(
+    ReplayResponse replay,
+    String type, {
+    required String side,
+  }) {
+    for (final event in replay.events) {
+      if (event.type == type && event.side == side) return event.tick;
+    }
+    return null;
+  }
+}
+
+class _RematchLabCard extends StatelessWidget {
+  const _RematchLabCard({
+    required this.recommendation,
+    required this.onRematch,
+  });
+
+  final RematchRecommendation recommendation;
+  final VoidCallback? onRematch;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      key: const ValueKey('rematch-lab-card'),
+      padding: const EdgeInsets.all(15),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            recommendation.accent.withValues(alpha: 0.16),
+            RelayColors.background.withValues(alpha: 0.58),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(15),
+        border: Border.all(
+          color: recommendation.accent.withValues(alpha: 0.52),
+        ),
+      ),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final content = Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  color: recommendation.accent.withValues(alpha: 0.16),
+                  shape: BoxShape.circle,
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(10),
+                  child: Icon(
+                    recommendation.icon,
+                    color: recommendation.accent,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'RÖVANŞ LABORATUVARI',
+                      style: TextStyle(
+                        color: RelayColors.violet,
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 1.1,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      recommendation.title,
+                      style: TextStyle(
+                        color: recommendation.accent,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      recommendation.diagnosis,
+                      style: const TextStyle(
+                        color: RelayColors.muted,
+                        height: 1.35,
+                      ),
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      'DENEY: ${recommendation.experiment}',
+                      style: const TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                        height: 1.35,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          );
+          final action = FilledButton.icon(
+            key: const ValueKey('rematch-lab-action'),
+            onPressed: onRematch,
+            icon: const Icon(Icons.tune, size: 18),
+            label: const Text('DEVREYİ DÜZENLE'),
+          );
+          if (constraints.maxWidth < 660) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                content,
+                if (onRematch != null) ...[const SizedBox(height: 12), action],
+              ],
+            );
+          }
+          return Row(
+            children: [
+              Expanded(child: content),
+              if (onRematch != null) ...[const SizedBox(width: 16), action],
+            ],
+          );
+        },
       ),
     );
   }
@@ -245,8 +477,10 @@ class BattleAnalysis {
         case 'attack':
         case 'core_damage':
           if (player) {
-            contribution[event.actorId] = (contribution[event.actorId] ?? 0) + event.amount;
-            details[event.actorId] = '${event.amount.toStringAsFixed(0)} son vuruş katkısı';
+            contribution[event.actorId] =
+                (contribution[event.actorId] ?? 0) + event.amount;
+            details[event.actorId] =
+                '${event.amount.toStringAsFixed(0)} son vuruş katkısı';
           }
           break;
         case 'shield_absorb':
@@ -259,21 +493,27 @@ class BattleAnalysis {
         case 'repair':
           if (player) {
             playerRepair += event.amount;
-            contribution[event.actorId] = (contribution[event.actorId] ?? 0) + event.amount * 0.85;
-            details[event.actorId] = '${event.amount.toStringAsFixed(0)} onarım';
+            contribution[event.actorId] =
+                (contribution[event.actorId] ?? 0) + event.amount * 0.85;
+            details[event.actorId] =
+                '${event.amount.toStringAsFixed(0)} onarım';
           }
           break;
         case 'cool':
           if (player) {
             playerCooling += event.amount;
-            contribution[event.actorId] = (contribution[event.actorId] ?? 0) + event.amount * 0.45;
-            details[event.actorId] = '${event.amount.toStringAsFixed(0)} ısı düşüşü';
+            contribution[event.actorId] =
+                (contribution[event.actorId] ?? 0) + event.amount * 0.45;
+            details[event.actorId] =
+                '${event.amount.toStringAsFixed(0)} ısı düşüşü';
           }
           break;
         case 'shield':
           if (player) {
-            contribution[event.actorId] = (contribution[event.actorId] ?? 0) + event.amount * 0.55;
-            details[event.actorId] = '${event.amount.toStringAsFixed(0)} kalkan üretimi';
+            contribution[event.actorId] =
+                (contribution[event.actorId] ?? 0) + event.amount * 0.55;
+            details[event.actorId] =
+                '${event.amount.toStringAsFixed(0)} kalkan üretimi';
           }
           break;
         case 'overheat':
@@ -372,9 +612,31 @@ class _MetricCard extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(label, style: TextStyle(color: color, fontSize: 8.5, fontWeight: FontWeight.w900, letterSpacing: 0.8)),
-                Text(value, style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w900)),
-                Text(detail, maxLines: 1, overflow: TextOverflow.ellipsis, style: const TextStyle(color: RelayColors.muted, fontSize: 9.5)),
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: color,
+                    fontSize: 8.5,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 0.8,
+                  ),
+                ),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 19,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                Text(
+                  detail,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: RelayColors.muted,
+                    fontSize: 9.5,
+                  ),
+                ),
               ],
             ),
           ),
@@ -385,7 +647,11 @@ class _MetricCard extends StatelessWidget {
 }
 
 class _RewardBadge extends StatelessWidget {
-  const _RewardBadge({required this.xp, required this.credits, this.seasonPoints});
+  const _RewardBadge({
+    required this.xp,
+    required this.credits,
+    this.seasonPoints,
+  });
   final int xp;
   final int credits;
   final int? seasonPoints;
@@ -401,7 +667,11 @@ class _RewardBadge extends StatelessWidget {
       ),
       child: Text(
         '+$xp XP • +$credits DK${seasonPoints == null ? '' : ' • +$seasonPoints SP'}',
-        style: const TextStyle(color: RelayColors.amber, fontWeight: FontWeight.w900, fontSize: 10),
+        style: const TextStyle(
+          color: RelayColors.amber,
+          fontWeight: FontWeight.w900,
+          fontSize: 10,
+        ),
       ),
     );
   }

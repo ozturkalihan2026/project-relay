@@ -62,6 +62,7 @@ from .schemas import (
     AlphaSafetyResponse,
     CareerBattleResponse,
     CareerBoosterSelectionRequest,
+    CareerModuleUpgradeSelectionRequest,
     CareerResponse,
     CareerRunResponse,
     CollectionResponse,
@@ -76,6 +77,8 @@ from .schemas import (
     MatchHistoryResponse,
     MatchResponse,
     ProgressionResponse,
+    ProductEventBatchRequest,
+    ProductEventBatchResponse,
     ModuleCatalogResponse,
     ModuleSpecResponse,
     RefreshSessionRequest,
@@ -96,6 +99,7 @@ from .schemas import (
     CreateChatGroupRequest,
     VerifyReplayRequest,
     VerifyReplayResponse,
+    WeeklyProtocolResponse,
 )
 from .season import (
     SeasonError,
@@ -116,6 +120,12 @@ from .store import (
     MatchNotFoundError,
     StoredMatch,
 )
+from .weekly_protocol import WeeklyProtocol, weekly_protocol
+from .telemetry import (
+    ProductEventInput,
+    TelemetryError,
+    TelemetryService,
+)
 
 
 def _bot_payload(bot: BotDefinition) -> dict[str, Any]:
@@ -125,6 +135,20 @@ def _bot_payload(bot: BotDefinition) -> dict[str, Any]:
         "difficulty": bot.difficulty,
         "description": bot.description,
         "available_module_counts": list(bot.available_module_counts),
+    }
+
+
+def _weekly_protocol_payload(protocol: WeeklyProtocol) -> dict[str, Any]:
+    definition = protocol.definition
+    return {
+        "key": protocol.key,
+        "protocol_id": definition.protocol_id,
+        "title": definition.title,
+        "description": definition.description,
+        "effect_label": definition.effect_label,
+        "starts_at": protocol.starts_at.isoformat(),
+        "ends_at": protocol.ends_at.isoformat(),
+        "modifiers": definition.modifiers.to_dict(),
     }
 
 
@@ -230,6 +254,7 @@ def _match_payload(
         "match_id": match.match_id,
         "created_at": match.created_at.isoformat(),
         "source": match.source,
+        "weekly_protocol_key": match.weekly_protocol_key,
         "opponent": opponent,
         "player_board": (
             match.opponent_board.to_dict()
@@ -428,6 +453,18 @@ def _career_run_payload(snapshot: CareerRunSnapshot) -> dict[str, Any]:
             "credit_cost": item.credit_cost,
         }
 
+    def upgrade_payload(item):
+        return {
+            "module_id": item.module_id,
+            "kind": item.kind,
+            "branch": item.branch,
+            "display_name": item.display_name,
+            "description": item.description,
+            "effect_label": item.effect_label,
+            "before_value": item.before_value,
+            "after_value": item.after_value,
+        }
+
     opponent = None
     if snapshot.opponent is not None:
         item = snapshot.opponent
@@ -444,6 +481,23 @@ def _career_run_payload(snapshot: CareerRunSnapshot) -> dict[str, Any]:
         }
     return {
         "run_id": snapshot.run_id,
+        "sector": {
+            "sector_id": snapshot.sector.sector_id,
+            "number": snapshot.sector.number,
+            "title": snapshot.sector.title,
+            "stages": [
+                {
+                    "stage_number": stage.stage_number,
+                    "title": stage.title,
+                    "briefing": stage.briefing,
+                    "guidance_title": stage.guidance_title,
+                    "guidance_text": stage.guidance_text,
+                    "icon": stage.icon,
+                    "is_boss": stage.is_boss,
+                }
+                for stage in snapshot.sector.stages
+            ],
+        },
         "status": snapshot.status,
         "stage_index": snapshot.stage_index,
         "total_stages": snapshot.total_stages,
@@ -454,6 +508,8 @@ def _career_run_payload(snapshot: CareerRunSnapshot) -> dict[str, Any]:
         "offered_boosters": [
             booster_payload(item) for item in snapshot.offered_boosters
         ],
+        "selected_upgrades": [upgrade_payload(item) for item in snapshot.selected_upgrades],
+        "offered_upgrades": [upgrade_payload(item) for item in snapshot.offered_upgrades],
         "opponent": opponent,
         "last_match_id": snapshot.last_match_id,
         "reward": (
@@ -464,6 +520,7 @@ def _career_run_payload(snapshot: CareerRunSnapshot) -> dict[str, Any]:
         "board_required": snapshot.board_required,
         "can_battle": snapshot.can_battle,
         "can_choose_booster": snapshot.can_choose_booster,
+        "can_choose_upgrade": snapshot.can_choose_upgrade,
         "started_at": (
             snapshot.started_at.isoformat()
             if snapshot.started_at is not None
@@ -699,6 +756,7 @@ def create_app(
     alpha_safety_service: AlphaSafetyService | None = None,
     social_service: SocialService | None = None,
     chat_service: ChatService | None = None,
+    telemetry_service: TelemetryService | None = None,
 ) -> FastAPI:
     resolved_settings = settings or Settings.from_environment()
     resolved_database = database or Database(
@@ -743,6 +801,10 @@ def create_app(
     )
     resolved_social = social_service or SocialService(resolved_database)
     resolved_chat = chat_service or ChatService(resolved_database)
+    resolved_telemetry = telemetry_service or TelemetryService(
+        resolved_database,
+        clock=match_service.clock,
+    )
     bearer = HTTPBearer(auto_error=False)
 
     application = FastAPI(
@@ -773,6 +835,7 @@ def create_app(
     application.state.alpha_safety_service = resolved_alpha
     application.state.social_service = resolved_social
     application.state.chat_service = resolved_chat
+    application.state.telemetry_service = resolved_telemetry
 
     def current_player(
         credentials: HTTPAuthorizationCredentials | None = Depends(bearer),
@@ -949,6 +1012,20 @@ def create_app(
     async def alpha_safety_error_handler(
         _request: Request,
         exc: AlphaSafetyError,
+    ) -> JSONResponse:
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={
+                "code": exc.code,
+                "message": exc.message,
+                "details": None,
+            },
+        )
+
+    @application.exception_handler(TelemetryError)
+    async def telemetry_error_handler(
+        _request: Request,
+        exc: TelemetryError,
     ) -> JSONResponse:
         return JSONResponse(
             status_code=exc.status_code,
@@ -1201,6 +1278,24 @@ def create_app(
         return _career_run_payload(
             resolved_career.select_booster(
                 player.player_id, request.booster_id
+            )
+        )
+
+    @application.post(
+        "/api/v1/me/career-run/module-upgrade",
+        response_model=CareerRunResponse,
+        responses={401: {"model": ErrorResponse}, 409: {"model": ErrorResponse}},
+        tags=["career"],
+    )
+    def choose_career_module_upgrade(
+        request: CareerModuleUpgradeSelectionRequest,
+        player: PlayerView = Depends(current_player),
+    ) -> dict[str, Any]:
+        return _career_run_payload(
+            resolved_career.select_module_upgrade(
+                player.player_id,
+                request.module_id,
+                request.branch,
             )
         )
 
@@ -1608,6 +1703,38 @@ def create_app(
             "created_at": receipt.created_at.isoformat(),
         }
 
+    @application.post(
+        "/api/v1/telemetry/events",
+        response_model=ProductEventBatchResponse,
+        status_code=status.HTTP_202_ACCEPTED,
+        responses={
+            401: {"model": ErrorResponse},
+            422: {"model": ErrorResponse},
+        },
+        tags=["telemetry"],
+    )
+    def submit_product_events(
+        request: ProductEventBatchRequest,
+        player: PlayerView = Depends(current_player),
+    ) -> dict[str, int]:
+        receipt = resolved_telemetry.record(
+            player.player_id,
+            [
+                ProductEventInput(
+                    event_id=event.event_id,
+                    event_name=event.event_name,
+                    context=event.context,
+                    client_version=event.client_version,
+                    occurred_at=event.occurred_at,
+                )
+                for event in request.events
+            ],
+        )
+        return {
+            "accepted": receipt.accepted,
+            "duplicates": receipt.duplicates,
+        }
+
     @application.get(
         "/api/v1/me/collection",
         response_model=CollectionResponse,
@@ -1750,6 +1877,14 @@ def create_app(
             domain_board,
         )
         return _saved_board_payload(saved, match_service)
+
+    @application.get(
+        "/api/v1/live/weekly-protocol",
+        response_model=WeeklyProtocolResponse,
+        tags=["live"],
+    )
+    def current_weekly_protocol() -> dict[str, Any]:
+        return _weekly_protocol_payload(weekly_protocol(resolved_online.clock()))
 
     @application.get(
         "/api/v1/modules",

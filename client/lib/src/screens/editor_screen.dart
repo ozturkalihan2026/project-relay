@@ -10,11 +10,14 @@ import '../models/relay_models.dart';
 import '../navigation/navigation_actions.dart';
 import '../state/app_settings.dart';
 import '../state/board_controller.dart';
+import '../state/product_telemetry.dart';
 import '../theme/cosmetic_visuals.dart';
 import '../theme/relay_theme.dart';
 import '../widgets/circuit_board.dart';
 import '../widgets/module_palette.dart';
+import '../widgets/module_visuals.dart';
 import '../widgets/app_header_actions.dart';
+import '../widgets/preparation_workspace.dart';
 import '../widgets/relay_notice.dart';
 import 'collection_screen.dart';
 import 'replay_screen.dart';
@@ -25,24 +28,20 @@ enum EditorMode {
   career;
 
   String get title => switch (this) {
-        EditorMode.online => 'ÇEVRİMİÇİ SAVAŞ',
-        EditorMode.training => 'ANTRENMAN',
-        EditorMode.career => 'KARİYER DEVRESİ',
-      };
+    EditorMode.online => 'ÇEVRİMİÇİ SAVAŞ',
+    EditorMode.training => 'SANDBOX LAB',
+    EditorMode.career => 'KARİYER DEVRESİ',
+  };
 
   KitMode get kitMode => switch (this) {
-        EditorMode.online => KitMode.online,
-        EditorMode.training => KitMode.training,
-        EditorMode.career => KitMode.career,
-      };
+    EditorMode.online => KitMode.online,
+    EditorMode.training => KitMode.training,
+    EditorMode.career => KitMode.career,
+  };
 }
 
-
 class EditorScreen extends ConsumerStatefulWidget {
-  const EditorScreen({
-    required this.mode,
-    super.key,
-  });
+  const EditorScreen({required this.mode, super.key});
 
   final EditorMode mode;
 
@@ -66,7 +65,6 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
     Future<void>.microtask(_loadModeBoard);
   }
 
-
   @override
   void dispose() {
     _editorScrollController.dispose();
@@ -82,10 +80,10 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
       };
 
   Color get _modeAccent => switch (widget.mode) {
-        EditorMode.online => RelayColors.electricBlue,
-        EditorMode.training => RelayColors.lime,
-        EditorMode.career => RelayColors.amber,
-      };
+    EditorMode.online => RelayColors.electricBlue,
+    EditorMode.training => RelayColors.lime,
+    EditorMode.career => RelayColors.amber,
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -97,26 +95,22 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
         backgroundColor: Colors.transparent,
         centerTitle: true,
         title: AppHeaderTitle(pageTitle: widget.mode.title.toUpperCase()),
-        actions: const [
-          AppHeaderActions(),
-          SizedBox(width: 8),
-        ],
+        actions: const [AppHeaderActions(), SizedBox(width: 8)],
       ),
       body: Container(
         decoration: RelayDecorations.modeShell(_modeAccent),
         child: SafeArea(
           child: catalogs.when(
-          data: (bundle) => _loadingBoard
-              ? const _LoadingPanel()
-              : _buildEditor(bundle),
-          loading: () => const _LoadingPanel(),
-          error: (error, stackTrace) => _ConnectionError(
-            error: error,
-            onRetry: () => ref.invalidate(catalogsProvider),
+            data: (bundle) =>
+                _loadingBoard ? const _LoadingPanel() : _buildEditor(bundle),
+            loading: () => const _LoadingPanel(),
+            error: (error, stackTrace) => _ConnectionError(
+              error: error,
+              onRetry: () => ref.invalidate(catalogsProvider),
+            ),
           ),
         ),
       ),
-    ),
     );
   }
 
@@ -155,15 +149,56 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
         ? ref.watch(guestSessionProvider)
         : const AsyncValue<GuestSession>.loading();
     final controller = ref.read(_boardProvider.notifier);
-    final specs = {
-      for (final module in catalogs.modules) module.kind: module,
-    };
+    final specs = {for (final module in catalogs.modules) module.kind: module};
+
+    if (widget.mode == EditorMode.online) {
+      final weeklyProtocol = ref.watch(weeklyProtocolProvider);
+      return PreparationWorkspace(
+        boardStage: _PreparationBoardStage(
+          state: boardState,
+          specs: specs,
+          visuals: _visuals,
+          onCellTap: _tapCell,
+          onModuleDropped: _dropModule,
+          onRotateModule: controller.rotateAt,
+          onReset: () {
+            controller.reset();
+            _showNotice(
+              'Devre başlangıç düzenine döndürüldü.',
+              RelayNoticeTone.info,
+            );
+          },
+        ),
+        sidePanel: _OnlinePreparationSidePanel(
+          state: boardState,
+          specs: specs,
+          session: guestSession,
+          weeklyProtocol: weeklyProtocol,
+          busy: _busy,
+          onValidate: _validateBoard,
+          onStartAsync: _startAsyncMatch,
+        ),
+        moduleShelf: ModuleShelf(
+          modules: catalogs.modules,
+          selectedKind: boardState.selectedKind,
+          onSelected: controller.selectPalette,
+          onBoardModuleReturned: _returnModuleToPalette,
+          remainingByKind: {
+            for (final module in catalogs.modules)
+              module.kind: boardState.remainingFor(module.kind),
+          },
+          kitName: boardState.kitName,
+          onEditKit: _editStartingKit,
+        ),
+      );
+    }
 
     return LayoutBuilder(
       builder: (context, constraints) {
         final wide = constraints.maxWidth >= 940;
-        final viewportHeight =
-            constraints.maxHeight.isFinite ? constraints.maxHeight : 900.0;
+        final viewportHeight = constraints.maxHeight.isFinite
+            ? constraints.maxHeight
+            : 900.0;
         final boardMaxWidth = wide
             ? math.min(570.0, math.max(400.0, viewportHeight * 0.57))
             : 580.0;
@@ -213,11 +248,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
                 ],
               )
             : Column(
-                children: [
-                  boardPanel,
-                  const SizedBox(height: 14),
-                  actionPanel,
-                ],
+                children: [boardPanel, const SizedBox(height: 14), actionPanel],
               );
 
         return Scrollbar(
@@ -243,10 +274,8 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
   Future<void> _editStartingKit() async {
     final kit = await Navigator.of(context).push<ControlledKit>(
       MaterialPageRoute<ControlledKit>(
-        builder: (context) => CollectionScreen(
-          kitOnly: true,
-          kitMode: widget.mode.kitMode,
-        ),
+        builder: (context) =>
+            CollectionScreen(kitOnly: true, kitMode: widget.mode.kitMode),
       ),
     );
     if (kit == null || !mounted) return;
@@ -290,10 +319,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
       return;
     }
     ref.read(_boardProvider.notifier).removeModuleAt(sourceCell);
-    _showNotice(
-      'Modül devre kartından kaldırıldı.',
-      RelayNoticeTone.info,
-    );
+    _showNotice('Modül devre kartından kaldırıldı.', RelayNoticeTone.info);
   }
 
   Future<void> _validateBoard() async {
@@ -303,18 +329,28 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
     setState(() => _busy = true);
     try {
       final state = ref.read(_boardProvider);
-      final validation =
-          await ref.read(relayApiProvider).validateBoard(state.board);
+      final validation = await ref
+          .read(relayApiProvider)
+          .validateBoard(state.board);
       ref.read(_boardProvider.notifier).applyValidation(validation);
+      ref
+          .read(productTelemetryProvider)
+          .track(
+            'board_validated',
+            context: {
+              'mode': widget.mode.name,
+              'module_count': state.placements.length,
+              'valid': validation.valid,
+              'unpowered_count': validation.unpoweredIds.length,
+            },
+          );
       if (mounted) {
         final unpowered = validation.unpoweredIds.length;
         _showNotice(
           unpowered == 0
               ? 'Devre geçerli; bütün modüller enerji alıyor.'
               : 'Devre geçerli; $unpowered modül enerji almıyor.',
-          unpowered == 0
-              ? RelayNoticeTone.success
-              : RelayNoticeTone.warning,
+          unpowered == 0 ? RelayNoticeTone.success : RelayNoticeTone.warning,
         );
       }
     } on RelayApiException catch (error) {
@@ -348,6 +384,16 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
       ref.read(_boardProvider.notifier).applyValidation(validation);
       await api.saveBoard(state.board);
       final match = await api.createAsyncMatch();
+      ref
+          .read(productTelemetryProvider)
+          .track(
+            'async_match_started',
+            context: {
+              'module_count': state.placements.length,
+              'opponent_kind': match.opponent.kind,
+              'weekly_protocol': match.weeklyProtocolKey,
+            },
+          );
       await _openReplay(api, match);
       ref.invalidate(progressionProvider);
       ref.invalidate(statisticsProvider);
@@ -414,15 +460,10 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
     }
   }
 
-  Future<void> _openReplay(
-    RelayApi api,
-    MatchResponse match,
-  ) async {
+  Future<void> _openReplay(RelayApi api, MatchResponse match) async {
     final replay = await api.fetchReplay(match.id);
     if (replay.checksum != match.replayChecksum) {
-      throw const RelayApiException(
-        'Replay özeti maç sonucuyla uyuşmuyor.',
-      );
+      throw const RelayApiException('Replay özeti maç sonucuyla uyuşmuyor.');
     }
     if (!mounted) {
       return;
@@ -446,7 +487,412 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
     if (!mounted) return;
     RelayNotice.show(context, message, tone: tone);
   }
+}
 
+class _PreparationBoardStage extends StatelessWidget {
+  const _PreparationBoardStage({
+    required this.state,
+    required this.specs,
+    required this.visuals,
+    required this.onCellTap,
+    required this.onModuleDropped,
+    required this.onRotateModule,
+    required this.onReset,
+  });
+
+  final BoardEditorState state;
+  final Map<ModuleKind, ModuleSpec> specs;
+  final EquippedVisuals visuals;
+  final ValueChanged<int> onCellTap;
+  final ModuleDropCallback onModuleDropped;
+  final ValueChanged<int> onRotateModule;
+  final VoidCallback onReset;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      key: const ValueKey('preparation-board-stage'),
+      margin: EdgeInsets.zero,
+      clipBehavior: Clip.antiAlias,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(14, 10, 14, 14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                const Icon(
+                  Icons.developer_board_outlined,
+                  color: RelayColors.cyan,
+                ),
+                const SizedBox(width: 8),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'DEVRE KARTI',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 0.8,
+                        ),
+                      ),
+                      Text(
+                        'Modülü alttaki raftan sürükle veya seçip hücreye dokun.',
+                        style: TextStyle(
+                          color: RelayColors.muted,
+                          fontSize: 9.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Text(
+                  '${state.placements.length}/$maxBoardModules',
+                  style: const TextStyle(
+                    color: RelayColors.amber,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                IconButton(
+                  key: const ValueKey('preparation-reset-board'),
+                  tooltip: 'Devreyi sıfırla',
+                  onPressed: onReset,
+                  icon: const Icon(Icons.restart_alt),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Expanded(
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final size = math.min(
+                    620.0,
+                    math.min(constraints.maxWidth, constraints.maxHeight),
+                  );
+                  return Center(
+                    child: SizedBox.square(
+                      dimension: size,
+                      child: CircuitBoard(
+                        placements: state.placements,
+                        specs: specs,
+                        poweredIds: state.validation?.poweredIds ?? const {},
+                        validationVisible: state.validation != null,
+                        selectedCell: state.selectedCell,
+                        onCellTap: onCellTap,
+                        onModuleDropped: onModuleDropped,
+                        onRotateModule: onRotateModule,
+                        visuals: visuals,
+                        presentation3d: true,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _OnlinePreparationSidePanel extends StatelessWidget {
+  const _OnlinePreparationSidePanel({
+    required this.state,
+    required this.specs,
+    required this.session,
+    required this.weeklyProtocol,
+    required this.busy,
+    required this.onValidate,
+    required this.onStartAsync,
+  });
+
+  final BoardEditorState state;
+  final Map<ModuleKind, ModuleSpec> specs;
+  final AsyncValue<GuestSession> session;
+  final AsyncValue<WeeklyProtocol> weeklyProtocol;
+  final bool busy;
+  final VoidCallback onValidate;
+  final VoidCallback onStartAsync;
+
+  @override
+  Widget build(BuildContext context) {
+    final placement = state.selectedPlacement;
+    final kind = placement?.kind ?? state.selectedKind;
+    final spec = kind == null ? null : specs[kind];
+    return Column(
+      key: const ValueKey('preparation-side-panel'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _SelectedModuleInspector(placement: placement, spec: spec),
+        const SizedBox(height: 10),
+        _WeeklyProtocolCard(protocol: weeklyProtocol),
+        const SizedBox(height: 10),
+        _ValidationCard(
+          state: state,
+          specs: specs,
+          busy: busy,
+          onValidate: onValidate,
+          showAction: false,
+        ),
+        const SizedBox(height: 10),
+        _AsyncMatchCard(
+          session: session,
+          busy: busy,
+          validated: state.validation?.valid ?? false,
+          onValidate: onValidate,
+          onStartAsync: onStartAsync,
+        ),
+        const SizedBox(height: 8),
+        _EditorMenuBackCard(busy: busy),
+      ],
+    );
+  }
+}
+
+class _WeeklyProtocolCard extends StatelessWidget {
+  const _WeeklyProtocolCard({required this.protocol});
+
+  final AsyncValue<WeeklyProtocol> protocol;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      key: const ValueKey('weekly-protocol-card'),
+      child: Padding(
+        padding: const EdgeInsets.all(13),
+        child: protocol.when(
+          loading: () => const Row(
+            children: [
+              SizedBox.square(
+                dimension: 18,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+              SizedBox(width: 10),
+              Text('Haftalık protokol yükleniyor…'),
+            ],
+          ),
+          error: (_, _) => const Row(
+            children: [
+              Icon(Icons.cloud_off_outlined, color: RelayColors.muted),
+              SizedBox(width: 9),
+              Expanded(
+                child: Text(
+                  'Haftalık protokol bilgisi şu anda alınamıyor.',
+                  style: TextStyle(color: RelayColors.muted, fontSize: 10),
+                ),
+              ),
+            ],
+          ),
+          data: (value) => Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  const Icon(
+                    Icons.calendar_view_week_outlined,
+                    color: RelayColors.violet,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  const Expanded(
+                    child: Text(
+                      'HAFTALIK PROTOKOL',
+                      style: TextStyle(
+                        fontSize: 9,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 0.8,
+                      ),
+                    ),
+                  ),
+                  Text(
+                    _remainingLabel(value.endsAt),
+                    style: const TextStyle(
+                      color: RelayColors.muted,
+                      fontSize: 8.5,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                value.title,
+                style: const TextStyle(
+                  color: RelayColors.violet,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+              const SizedBox(height: 3),
+              Text(
+                value.description,
+                style: const TextStyle(
+                  color: RelayColors.muted,
+                  fontSize: 9.5,
+                  height: 1.3,
+                ),
+              ),
+              const SizedBox(height: 7),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7),
+                decoration: BoxDecoration(
+                  color: RelayColors.violet.withValues(alpha: 0.10),
+                  borderRadius: BorderRadius.circular(9),
+                  border: Border.all(
+                    color: RelayColors.violet.withValues(alpha: 0.32),
+                  ),
+                ),
+                child: Text(
+                  value.effectLabel,
+                  style: const TextStyle(
+                    color: RelayColors.violet,
+                    fontSize: 9,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _remainingLabel(DateTime endsAt) {
+    final remaining = endsAt.toUtc().difference(DateTime.now().toUtc());
+    if (remaining.isNegative) return 'YENİLENİYOR';
+    final days = remaining.inDays;
+    final hours = remaining.inHours.remainder(24);
+    return days > 0 ? '${days}G ${hours}S' : '${remaining.inHours}S';
+  }
+}
+
+class _SelectedModuleInspector extends StatelessWidget {
+  const _SelectedModuleInspector({required this.placement, required this.spec});
+
+  final ModulePlacement? placement;
+  final ModuleSpec? spec;
+
+  @override
+  Widget build(BuildContext context) {
+    final module = spec;
+    if (module == null) {
+      return const Card(
+        key: ValueKey('selected-module-inspector-empty'),
+        child: Padding(
+          padding: EdgeInsets.all(16),
+          child: Column(
+            children: [
+              Icon(
+                Icons.touch_app_outlined,
+                color: RelayColors.muted,
+                size: 30,
+              ),
+              SizedBox(height: 8),
+              Text('MODÜL SEÇ', style: TextStyle(fontWeight: FontWeight.w900)),
+              SizedBox(height: 4),
+              Text(
+                'Raftan veya devre kartından bir modül seçtiğinde ayrıntıları burada görünür.',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: RelayColors.muted, fontSize: 10),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+    final color = moduleColor(module.kind);
+    final location = placement == null
+        ? 'RAFTAN SEÇİLDİ'
+        : 'HÜCRE ${placement!.row + 1},${placement!.column + 1} • SV. ${placement!.level}';
+    final stats = <String>[
+      'Can ${module.maxHp.toStringAsFixed(0)}',
+      if (module.energyOutput > 0)
+        'Enerji +${module.energyOutput.toStringAsFixed(0)}',
+      if (module.batteryCapacity > 0)
+        'Depo ${module.batteryCapacity.toStringAsFixed(0)}',
+      if (module.energyCost > 0)
+        'Maliyet ${module.energyCost.toStringAsFixed(0)}',
+      if (module.damage > 0) 'Hasar ${module.damage.toStringAsFixed(0)}',
+      if (module.shield > 0) 'Kalkan ${module.shield.toStringAsFixed(0)}',
+      if (module.cooling > 0) 'Soğutma ${module.cooling.toStringAsFixed(0)}',
+      if (module.repair > 0) 'Onarım ${module.repair.toStringAsFixed(0)}',
+    ];
+    return Card(
+      key: const ValueKey('selected-module-inspector'),
+      child: Padding(
+        padding: const EdgeInsets.all(15),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: color.withValues(alpha: 0.14),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: color.withValues(alpha: 0.5)),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(10),
+                    child: ModuleGlyph(
+                      kind: module.kind,
+                      color: color,
+                      size: 28,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        module.displayName.toUpperCase(),
+                        style: const TextStyle(fontWeight: FontWeight.w900),
+                      ),
+                      Text(
+                        location,
+                        style: TextStyle(
+                          color: color,
+                          fontSize: 9,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Text(
+              module.description,
+              style: const TextStyle(
+                color: RelayColors.muted,
+                fontSize: 10.5,
+                height: 1.35,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: [
+                for (final stat in stats)
+                  Chip(
+                    visualDensity: VisualDensity.compact,
+                    side: BorderSide(color: color.withValues(alpha: 0.35)),
+                    label: Text(stat, style: const TextStyle(fontSize: 9)),
+                  ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class _BoardPanel extends StatelessWidget {
@@ -486,7 +932,8 @@ class _BoardPanel extends StatelessWidget {
         _SectionHeader(
           index: '1',
           title: 'MODÜL SEÇ',
-          subtitle: '${state.kitName} • Kartta kullanabileceğiniz kit yuvaları '
+          subtitle:
+              '${state.kitName} • Kartta kullanabileceğiniz kit yuvaları '
               'sayı rozetlerinde görünür.',
         ),
         const SizedBox(height: 8),
@@ -515,7 +962,8 @@ class _BoardPanel extends StatelessWidget {
         _SectionHeader(
           index: '2',
           title: 'DEVREYİ KUR',
-          subtitle: '12 çevre hücresini kullanın; Jeneratörü dört çekirdek '
+          subtitle:
+              '12 çevre hücresini kullanın; Jeneratörü dört çekirdek '
               'kapısından birine yerleştirin.',
           trailing: Row(
             mainAxisSize: MainAxisSize.min,
@@ -595,7 +1043,6 @@ class _ActionPanel extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-
         _SectionHeader(
           index: '3',
           title: 'ENERJİYİ KONTROL ET',
@@ -621,6 +1068,8 @@ class _ActionPanel extends StatelessWidget {
           _AsyncMatchCard(
             session: session,
             busy: busy,
+            validated: state.validation?.valid ?? false,
+            onValidate: onValidate,
             onStartAsync: onStartAsync,
           ),
           const SizedBox(height: 8),
@@ -633,19 +1082,14 @@ class _ActionPanel extends StatelessWidget {
                 'Rakip ön izlemesine göre devrenizi kaydedin ve kariyere dönün.',
           ),
           const SizedBox(height: 7),
-          _CareerSaveCard(
-            session: session,
-            busy: busy,
-            onSave: onSaveCareer,
-          ),
+          _CareerSaveCard(session: session, busy: busy, onSave: onSaveCareer),
           const SizedBox(height: 8),
           _EditorMenuBackCard(busy: busy),
         ] else ...[
           const _SectionHeader(
             index: '4',
             title: 'RAKİBİ SEÇ',
-            subtitle:
-                'Dokuz sabit rakipten birini seçip düzeninizi sınayın.',
+            subtitle: 'Dokuz sabit rakipten birini seçip düzeninizi sınayın.',
           ),
           const SizedBox(height: 7),
           _TrainingPanel(
@@ -668,11 +1112,15 @@ class _AsyncMatchCard extends StatelessWidget {
   const _AsyncMatchCard({
     required this.session,
     required this.busy,
+    required this.validated,
+    required this.onValidate,
     required this.onStartAsync,
   });
 
   final AsyncValue<GuestSession> session;
   final bool busy;
+  final bool validated;
+  final VoidCallback onValidate;
   final VoidCallback onStartAsync;
 
   @override
@@ -686,10 +1134,7 @@ class _AsyncMatchCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                const Icon(
-                  Icons.public,
-                  color: RelayColors.mint,
-                ),
+                const Icon(Icons.public, color: RelayColors.mint),
                 const SizedBox(width: 9),
                 Expanded(
                   child: Text(
@@ -710,16 +1155,32 @@ class _AsyncMatchCard extends StatelessWidget {
             const SizedBox(height: 9),
             FilledButton.icon(
               key: const ValueKey('async-match-button'),
-              onPressed: busy || !session.hasValue ? null : onStartAsync,
+              onPressed: busy
+                  ? null
+                  : validated
+                  ? session.hasValue
+                        ? onStartAsync
+                        : null
+                  : onValidate,
               icon: busy
                   ? const SizedBox(
                       width: 18,
                       height: 18,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : const Icon(Icons.hub),
+                  : Icon(
+                      validated
+                          ? Icons.hub
+                          : Icons.electrical_services_outlined,
+                    ),
               label: Text(
-                busy ? 'RAKİP ARANIYOR' : 'SAVAŞA BAŞLA',
+                busy
+                    ? validated
+                          ? 'RAKİP ARANIYOR'
+                          : 'BAĞLANTILAR DOĞRULANIYOR'
+                    : validated
+                    ? 'SAVAŞA BAŞLA'
+                    : 'BAĞLANTILARI DOĞRULA',
               ),
             ),
             const SizedBox(height: 6),
@@ -727,10 +1188,7 @@ class _AsyncMatchCard extends StatelessWidget {
               'Kendinizle ve son rakiplerinizle eşleşmezsiniz. Uygun yeni '
               'oyuncu yoksa dengeli sunucu rakibi devreye girer.',
               textAlign: TextAlign.center,
-              style: TextStyle(
-                color: RelayColors.muted,
-                fontSize: 10,
-              ),
+              style: TextStyle(color: RelayColors.muted, fontSize: 10),
             ),
           ],
         ),
@@ -825,7 +1283,7 @@ class _TrainingPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      key: const ValueKey('training-panel'),
+      key: const ValueKey('sandbox-panel'),
       clipBehavior: Clip.antiAlias,
       child: Padding(
         padding: const EdgeInsets.all(10),
@@ -834,18 +1292,12 @@ class _TrainingPanel extends StatelessWidget {
           children: [
             const Row(
               children: [
-                Icon(
-                  Icons.smart_toy_outlined,
-                  color: RelayColors.amber,
-                ),
+                Icon(Icons.smart_toy_outlined, color: RelayColors.amber),
                 SizedBox(width: 9),
                 Expanded(
                   child: Text(
-                    'ANTRENMAN RAKİPLERİ',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w900,
-                      fontSize: 12,
-                    ),
+                    'SANDBOX RAKİPLERİ',
+                    style: TextStyle(fontWeight: FontWeight.w900, fontSize: 12),
                   ),
                 ),
               ],
@@ -868,7 +1320,7 @@ class _TrainingPanel extends StatelessWidget {
               child: OutlinedButton.icon(
                 onPressed: busy ? null : onStartBot,
                 icon: const Icon(Icons.sports_mma),
-                label: const Text('SEÇİLİ BOTLA SAVAŞ'),
+                label: const Text('SEÇİLİ BOTLA TEST ET'),
               ),
             ),
           ],
@@ -938,17 +1390,20 @@ class _ValidationCard extends StatelessWidget {
     required this.specs,
     required this.busy,
     required this.onValidate,
+    this.showAction = true,
   });
 
   final BoardEditorState state;
   final Map<ModuleKind, ModuleSpec> specs;
   final bool busy;
   final VoidCallback onValidate;
+  final bool showAction;
 
   @override
   Widget build(BuildContext context) {
     final result = state.validation;
-    final unpoweredLabels = result?.unpoweredIds
+    final unpoweredLabels =
+        result?.unpoweredIds
             .map(_unpoweredModuleLabel)
             .toList(growable: false) ??
         const <String>[];
@@ -996,12 +1451,14 @@ class _ValidationCard extends StatelessWidget {
                 ),
               ],
             ],
-            const SizedBox(height: 9),
-            OutlinedButton.icon(
-              onPressed: busy ? null : onValidate,
-              icon: const Icon(Icons.electrical_services),
-              label: const Text('Bağlantıları Doğrula'),
-            ),
+            if (showAction) ...[
+              const SizedBox(height: 9),
+              OutlinedButton.icon(
+                onPressed: busy ? null : onValidate,
+                icon: const Icon(Icons.electrical_services),
+                label: const Text('Bağlantıları Doğrula'),
+              ),
+            ],
           ],
         ),
       ),
@@ -1013,8 +1470,8 @@ class _ValidationCard extends StatelessWidget {
     if (placement == null) {
       return 'Bilinmeyen modül';
     }
-    final name = specs[placement.kind]?.displayName ??
-        placement.kind.displayName;
+    final name =
+        specs[placement.kind]?.displayName ?? placement.kind.displayName;
     return '$name (${placement.row + 1},${placement.column + 1})';
   }
 }
@@ -1076,9 +1533,7 @@ class _BotCard extends StatelessWidget {
                         Expanded(
                           child: Text(
                             bot.displayName,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.w800,
-                            ),
+                            style: const TextStyle(fontWeight: FontWeight.w800),
                           ),
                         ),
                         Text(
@@ -1168,10 +1623,7 @@ class _SectionHeader extends StatelessWidget {
               ),
               Text(
                 subtitle,
-                style: const TextStyle(
-                  color: RelayColors.muted,
-                  fontSize: 12,
-                ),
+                style: const TextStyle(color: RelayColors.muted, fontSize: 12),
               ),
             ],
           ),
@@ -1217,18 +1669,11 @@ class _ConnectionError extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(
-                  Icons.cloud_off,
-                  color: RelayColors.coral,
-                  size: 42,
-                ),
+                const Icon(Icons.cloud_off, color: RelayColors.coral, size: 42),
                 const SizedBox(height: 12),
                 const Text(
                   'Project Relay API’ye bağlanılamadı',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w900,
-                    fontSize: 18,
-                  ),
+                  style: TextStyle(fontWeight: FontWeight.w900, fontSize: 18),
                 ),
                 const SizedBox(height: 8),
                 Text(

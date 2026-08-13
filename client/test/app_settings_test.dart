@@ -9,13 +9,19 @@ void main() {
 
     expect(container.read(appSettingsProvider).replaySoundEnabled, isTrue);
     expect(container.read(appSettingsProvider).replaySpeed, 0.75);
+    expect(container.read(appSettingsProvider).language, AppLanguage.turkish);
+    expect(container.read(appSettingsProvider).telemetryEnabled, isTrue);
 
     final controller = container.read(appSettingsProvider.notifier)
       ..setReplaySoundEnabled(false)
-      ..setReplaySpeed(2);
+      ..setReplaySpeed(2)
+      ..setLanguage(AppLanguage.english)
+      ..setTelemetryEnabled(false);
 
     expect(container.read(appSettingsProvider).replaySoundEnabled, isFalse);
     expect(container.read(appSettingsProvider).replaySpeed, 2);
+    expect(container.read(appSettingsProvider).language, AppLanguage.english);
+    expect(container.read(appSettingsProvider).telemetryEnabled, isFalse);
     expect(controller, isNotNull);
   });
 
@@ -41,4 +47,49 @@ void main() {
       expect(container.read(appSettingsProvider).replaySpeed, speed);
     }
   });
+
+  test('kaydedilmiş ayarları yükler ve sonraki değişikliği saklar', () async {
+    final store = _MemorySettingsStore(
+      const AppSettings(
+        replaySoundEnabled: false,
+        replaySpeed: 1.5,
+        language: AppLanguage.english,
+        telemetryEnabled: false,
+      ),
+    );
+    final container = ProviderContainer(
+      overrides: [appSettingsStoreProvider.overrideWithValue(store)],
+    );
+    addTearDown(container.dispose);
+
+    container.read(appSettingsProvider);
+    await Future<void>.delayed(Duration.zero);
+
+    expect(container.read(appSettingsProvider).replaySoundEnabled, isFalse);
+    expect(container.read(appSettingsProvider).replaySpeed, 1.5);
+    expect(container.read(appSettingsProvider).language, AppLanguage.english);
+    expect(container.read(appSettingsProvider).telemetryEnabled, isFalse);
+
+    container
+        .read(appSettingsProvider.notifier)
+        .setTelemetryEnabled(true);
+    await Future<void>.delayed(Duration.zero);
+    expect(store.saved?.telemetryEnabled, isTrue);
+  });
+}
+
+class _MemorySettingsStore implements AppSettingsStore {
+  _MemorySettingsStore(this.value);
+
+  AppSettings? value;
+  AppSettings? saved;
+
+  @override
+  Future<AppSettings?> load() async => value;
+
+  @override
+  Future<void> save(AppSettings settings) async {
+    saved = settings;
+    value = settings;
+  }
 }

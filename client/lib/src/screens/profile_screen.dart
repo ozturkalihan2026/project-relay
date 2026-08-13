@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../config/relay_features.dart';
 import '../navigation/navigation_actions.dart';
 import '../api/relay_api.dart';
 import '../models/relay_models.dart';
@@ -44,7 +45,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   @override
   void initState() {
     super.initState();
-    _section = widget.initialSection;
+    _section = widget.initialSection == ProfileSection.cosmetics &&
+            !RelayFeatures.collectionHub
+        ? ProfileSection.general
+        : widget.initialSection;
   }
 
   @override
@@ -146,14 +150,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               key: const ValueKey('profile-section-friends'),
             ),
           ),
-          const ButtonSegment(
-            value: ProfileSection.cosmetics,
-            icon: Icon(Icons.palette_outlined),
-            label: Text(
-              'KOZMETİK',
-              key: ValueKey('profile-section-cosmetics'),
+          if (RelayFeatures.collectionHub)
+            const ButtonSegment(
+              value: ProfileSection.cosmetics,
+              icon: Icon(Icons.palette_outlined),
+              label: Text(
+                'KOZMETİK',
+                key: ValueKey('profile-section-cosmetics'),
+              ),
             ),
-          ),
           const ButtonSegment(
             value: ProfileSection.matchHistory,
             icon: Icon(Icons.history),

@@ -22,7 +22,10 @@ dev = [
 ]
 
 [tool.setuptools]
-packages = ["relay_api", "relay_engine"]
+packages = ["relay_api", "relay_engine", "relay_content"]
+
+[tool.setuptools.package-data]
+relay_content = ["*.json"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

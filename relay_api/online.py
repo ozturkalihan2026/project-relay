@@ -18,6 +18,7 @@ from .database import Database
 from .db_models import BoardRecord, MatchRecord, PlayerRecord
 from .service import MatchService
 from .store import OpponentSnapshot, StoredMatch
+from .weekly_protocol import weekly_protocol
 
 
 class OnlinePlayError(Exception):
@@ -152,6 +153,7 @@ class OnlinePlayService:
                 description="Kayıtlı gerçek oyuncu devresi.",
             )
             opponent_player_id = player.id
+        protocol = weekly_protocol(self.clock())
         return self.match_service.create_match(
             player_board=player_board.board,
             opponent_board=opponent_board,
@@ -159,6 +161,9 @@ class OnlinePlayService:
             source="async",
             requester_player_id=player_id,
             opponent_player_id=opponent_player_id,
+            player_modifiers=protocol.definition.modifiers,
+            opponent_modifiers=protocol.definition.modifiers,
+            weekly_protocol_key=protocol.key,
         )
 
     def _select_opponent(

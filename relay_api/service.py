@@ -77,6 +77,7 @@ class MatchService:
         opponent_player_id: str | None = None,
         player_modifiers: BattleModifiers | None = None,
         opponent_modifiers: BattleModifiers | None = None,
+        weekly_protocol_key: str | None = None,
     ) -> StoredMatch:
         player_board.validate(self.engine.config.board_size)
         opponent_board.validate(self.engine.config.board_size)
@@ -97,12 +98,17 @@ class MatchService:
             match_id=self.id_source(),
             created_at=self.clock(),
             source=source,
+            weekly_protocol_key=weekly_protocol_key,
             requester_player_id=requester_player_id,
             opponent_player_id=opponent_player_id,
             opponent=opponent,
             player_board=player_board,
             opponent_board=opponent_board,
             result=result.to_dict(include_events=True),
+            player_modifiers=(player_modifiers or BattleModifiers()).to_dict(),
+            opponent_modifiers=(
+                opponent_modifiers or BattleModifiers()
+            ).to_dict(),
         )
         self.store.save(match)
         return match

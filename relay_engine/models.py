@@ -114,6 +114,19 @@ class BattleModifiers:
     module_hp_bonus: float = 0.0
     initial_energy_reserve: float = 0.0
     reserve_capacity_bonus: float = 0.0
+    efficient_module_ids: tuple[str, ...] = ()
+    focused_amplifier_ids: tuple[str, ...] = ()
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "generator_output_multiplier": self.generator_output_multiplier,
+            "initial_shield": self.initial_shield,
+            "module_hp_bonus": self.module_hp_bonus,
+            "initial_energy_reserve": self.initial_energy_reserve,
+            "reserve_capacity_bonus": self.reserve_capacity_bonus,
+            "efficient_module_ids": list(self.efficient_module_ids),
+            "focused_amplifier_ids": list(self.focused_amplifier_ids),
+        }
 
 
 @dataclass(frozen=True, slots=True)
@@ -127,6 +140,8 @@ class BattleConfig:
     max_board_shield: float = 60
     amplifier_effect_multiplier: float = 1.35
     amplifier_heat_multiplier: float = 1.25
+    focused_amplifier_effect_multiplier: float = 1.50
+    focused_amplifier_heat_multiplier: float = 1.32
     max_effect_multiplier: float = 1.75
     max_heat_multiplier: float = 1.60
 

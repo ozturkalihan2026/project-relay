@@ -23,12 +23,13 @@ class CareerBattleScreen extends StatelessWidget {
   final int stageNumber;
 
   String get _primaryActionLabel => switch (outcome.run.status) {
-        'active' => 'SONRAKİ SAVAŞ',
-        'awaiting_booster' => 'BOSS HAZIRLIĞINA GEÇ',
-        'completed' => 'KOŞUYU TAMAMLA',
-        'failed' => 'KARİYER EKRANINA DÖN',
-        _ => 'KARİYERE DÖN',
-      };
+    'active' => 'SONRAKİ SAVAŞ',
+    'awaiting_upgrade' => 'YÜKSELTME SEÇİMİNE GEÇ',
+    'awaiting_booster' => 'BOSS HAZIRLIĞINA GEÇ',
+    'completed' => 'KOŞUYU TAMAMLA',
+    'failed' => 'KARİYER EKRANINA DÖN',
+    _ => 'KARİYERE DÖN',
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -45,6 +46,10 @@ class CareerBattleScreen extends StatelessWidget {
         primaryActionRequiresCompletion: true,
         completionReward: outcome.run.reward,
         completionRewardTitle: 'KARİYER ÖDÜLÜ',
+        moduleUpgradeBranches: {
+          for (final upgrade in outcome.run.selectedUpgrades)
+            upgrade.moduleId: upgrade.branch,
+        },
         onPrimaryAction: () => Navigator.of(context).pop(),
       ),
     );

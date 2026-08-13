@@ -4,377 +4,341 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:project_relay_client/src/api/relay_api.dart';
 import 'package:project_relay_client/src/app.dart';
 import 'package:project_relay_client/src/models/relay_models.dart';
+import 'package:project_relay_client/src/state/product_telemetry.dart';
 
 import 'widget_test_support.dart';
 
 void main() {
   setUpAll(enableStrictWidgetTestMode);
 
-  testWidgets(
-    'ana merkez sade menüyü ve üç oyun kipini açar',
-    (tester) async {
-      await _pumpApp(tester);
+  testWidgets('ana merkez çevrimiçi savaş ve kariyeri doğrudan açar', (
+    tester,
+  ) async {
+    await _pumpApp(tester);
 
-      expect(find.text('PROJECT RELAY'), findsOneWidget);
-      expect(find.byKey(const ValueKey('player-status-bar')), findsOneWidget);
-      expect(
-        find.byKey(const ValueKey('player-status-profile-action')),
-        findsOneWidget,
-      );
-      expect(
-        find.byKey(const ValueKey('player-status-claim-badge')),
-        findsOneWidget,
-      );
-      expect(find.byKey(const ValueKey('main-menu-play')), findsOneWidget);
-      expect(find.byKey(const ValueKey('main-menu-clan')), findsOneWidget);
-      expect(find.byKey(const ValueKey('main-menu-statistics')), findsOneWidget);
-      expect(find.byKey(const ValueKey('main-menu-store')), findsOneWidget);
-      expect(find.byKey(const ValueKey('main-menu-profile')), findsOneWidget);
-      expect(find.byKey(const ValueKey('main-menu-settings')), findsOneWidget);
-      expect(
-        find.byKey(const ValueKey('main-menu-how-to-play')),
-        findsOneWidget,
-      );
-      final mainCreditBox = find.byKey(const ValueKey('global-credit-box'));
-      expect(mainCreditBox, findsOneWidget);
-      expect(tester.getSize(mainCreditBox), const Size(78, 48));
-      expect(find.text('SEZON VE ALFA'), findsNothing);
+    expect(find.text('PROJECT RELAY'), findsOneWidget);
+    expect(find.byKey(const ValueKey('player-status-bar')), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('player-status-profile-action')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey('player-status-claim-badge')),
+      findsOneWidget,
+    );
+    expect(find.byKey(const ValueKey('main-menu-online')), findsOneWidget);
+    expect(find.byKey(const ValueKey('main-menu-career')), findsOneWidget);
+    expect(find.byKey(const ValueKey('main-menu-mission-radar')), findsNothing);
+    expect(find.byKey(const ValueKey('main-menu-clan')), findsNothing);
+    expect(find.byKey(const ValueKey('main-menu-statistics')), findsOneWidget);
+    expect(find.byKey(const ValueKey('main-menu-store')), findsNothing);
+    expect(find.byKey(const ValueKey('main-menu-profile')), findsOneWidget);
+    expect(find.byKey(const ValueKey('main-menu-settings')), findsOneWidget);
+    expect(find.byKey(const ValueKey('main-menu-how-to-play')), findsOneWidget);
+    final mainCreditBox = find.byKey(const ValueKey('global-credit-box'));
+    expect(mainCreditBox, findsNothing);
+    expect(find.text('SEZON VE ALFA'), findsNothing);
 
-      await tester.tap(find.byKey(const ValueKey('main-menu-play')));
-      await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('main-menu-online')));
+    await tester.pumpAndSettle();
+    expect(tester.takeException(), isNull);
+    expect(find.text('ÇEVRİMİÇİ SAVAŞ'), findsOneWidget);
+    expect(find.text('PROJECT RELAY • v0.8.22-r1-fix1'), findsOneWidget);
+    expect(find.text('DEVRE KARTI'), findsOneWidget);
+    expect(find.byKey(const ValueKey('module-shelf')), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('preparation-side-panel')),
+      findsOneWidget,
+    );
+    expect(find.byKey(const ValueKey('weekly-protocol-card')), findsOneWidget);
+    expect(find.text('Rezerv Darbesi'), findsOneWidget);
+    expect(find.text('BAĞLANTILARI DOĞRULA'), findsOneWidget);
+    expect(find.text('SAVAŞA BAŞLA'), findsNothing);
+    expect(
+      tester
+          .getSize(find.byKey(const ValueKey('palette-module-generator')))
+          .height,
+      44,
+    );
 
-      expect(find.byKey(const ValueKey('play-mode-online')), findsOneWidget);
-      expect(find.byKey(const ValueKey('play-mode-career')), findsOneWidget);
-      expect(find.byKey(const ValueKey('play-mode-training')), findsOneWidget);
-      expect(find.byKey(const ValueKey('play-mode-back-button')), findsOneWidget);
-      final playCreditBox = find.byKey(const ValueKey('global-credit-box'));
-      expect(playCreditBox, findsOneWidget);
-      expect(tester.getSize(playCreditBox), const Size(78, 48));
+    final editorBack = find.byKey(const ValueKey('editor-menu-back-button'));
+    await tester.ensureVisible(editorBack);
+    await tester.pumpAndSettle();
+    await tester.tap(editorBack);
+    await tester.pumpAndSettle();
+  });
 
-      await tester.tap(find.byKey(const ValueKey('play-mode-online')));
-      await tester.pumpAndSettle();
-      expect(tester.takeException(), isNull);
-      expect(find.text('ÇEVRİMİÇİ SAVAŞ'), findsOneWidget);
-      expect(find.text('PROJECT RELAY • v0.8.22-r1-fix1'), findsOneWidget);
-      expect(find.text('DEVREYİ KUR'), findsOneWidget);
-      expect(
-        tester.getSize(
-          find.byKey(const ValueKey('palette-module-generator')),
-        ).height,
-        44,
-      );
+  testWidgets('sohbet dock güvenli overlay içinde açılıp kapanır', (
+    tester,
+  ) async {
+    await _pumpApp(tester);
 
-      final editorBack = find.byKey(
-        const ValueKey('editor-menu-back-button'),
-      );
-      await tester.ensureVisible(editorBack);
-      await tester.pumpAndSettle();
-      await tester.tap(editorBack);
-      await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('chat-collapsed-button')), findsNothing);
+  });
 
-      await tester.tap(find.byKey(const ValueKey('play-mode-training')));
-      await tester.pumpAndSettle();
-      expect(find.text('ANTRENMAN'), findsOneWidget);
-      expect(find.text('PROJECT RELAY • v0.8.22-r1-fix1'), findsOneWidget);
-      expect(find.byKey(const ValueKey('training-panel')), findsOneWidget);
-      expect(
-        tester.getSize(
-          find.byKey(const ValueKey('palette-module-generator')),
-        ).height,
-        44,
-      );
-    },
-  );
+  testWidgets('üst çubuk profil ayarlar ve nasıl oynanır erişimi sağlar', (
+    tester,
+  ) async {
+    await _pumpApp(tester);
 
-  testWidgets(
-    'sohbet dock güvenli overlay içinde açılıp kapanır',
-    (tester) async {
-      await _pumpApp(tester);
+    await tester.tap(
+      find.byKey(const ValueKey('player-status-profile-action')),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('PROFİL'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('profile-section-selector')),
+      findsOneWidget,
+    );
+    final profileBack = find.byKey(const ValueKey('profile-menu-back'));
+    expect(profileBack, findsOneWidget);
+    await tester.ensureVisible(profileBack);
+    await tester.pumpAndSettle();
+    await tester.tap(profileBack);
+    await tester.pumpAndSettle();
 
-      final collapsed = find.byKey(const ValueKey('chat-collapsed-button'));
-      expect(collapsed, findsOneWidget);
-      await tester.tap(collapsed);
-      await tester.pumpAndSettle();
-      expect(tester.takeException(), isNull);
-      expect(find.text('SOHBET'), findsOneWidget);
+    final settings = find.byKey(const ValueKey('main-menu-settings'));
+    expect(settings, findsOneWidget);
+    await tester.tap(settings);
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('settings-replay-sound')), findsOneWidget);
+    final sandbox = find.byKey(const ValueKey('settings-sandbox-lab'));
+    expect(sandbox, findsOneWidget);
+    await tester.ensureVisible(sandbox);
+    await tester.tap(sandbox);
+    await tester.pumpAndSettle();
+    expect(find.text('SANDBOX LAB'), findsOneWidget);
+    expect(find.byKey(const ValueKey('sandbox-panel')), findsOneWidget);
+    final sandboxBack = find.byKey(const ValueKey('editor-menu-back-button'));
+    await tester.ensureVisible(sandboxBack);
+    await tester.tap(sandboxBack);
+    await tester.pumpAndSettle();
+    final settingsBack = find.byKey(const ValueKey('settings-back-button'));
+    await tester.ensureVisible(settingsBack);
+    await tester.tap(settingsBack);
+    await tester.pumpAndSettle();
 
-      await tester.tap(find.byTooltip('Sohbeti kapat'));
-      await tester.pumpAndSettle();
-      expect(tester.takeException(), isNull);
-      expect(collapsed, findsOneWidget);
-    },
-  );
+    await tester.tap(find.byKey(const ValueKey('main-menu-how-to-play')));
+    await tester.pumpAndSettle();
+    expect(find.text('NASIL OYNANIR'), findsOneWidget);
+    expect(find.text('OYUNUN AMACI NEDİR?'), findsOneWidget);
+    expect(find.text('ENERJİ NASIL AKAR?'), findsOneWidget);
+  });
 
-  testWidgets(
-    'üst çubuk profil ayarlar ve nasıl oynanır erişimi sağlar',
-    (tester) async {
-      await _pumpApp(tester);
+  testWidgets('kariyer doğrudan devre düzenleme ve rakip hazırlığı gösterir', (
+    tester,
+  ) async {
+    await _pumpApp(tester);
+    await tester.tap(find.byKey(const ValueKey('main-menu-career')));
+    await tester.pumpAndSettle();
 
-      await tester.tap(
-        find.byKey(const ValueKey('player-status-profile-action')),
-      );
-      await tester.pumpAndSettle();
-      expect(find.text('PROFİL'), findsOneWidget);
-      expect(
-        find.byKey(const ValueKey('profile-section-selector')),
-        findsOneWidget,
-      );
-      final profileBack = find.byKey(const ValueKey('profile-menu-back'));
-      expect(profileBack, findsOneWidget);
-      await tester.ensureVisible(profileBack);
-      await tester.pumpAndSettle();
-      await tester.tap(profileBack);
-      await tester.pumpAndSettle();
+    expect(
+      find.byKey(const ValueKey('career-module-selection-card')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey('career-player-board-editor')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey('career-opponent-board-preview')),
+      findsOneWidget,
+    );
+    expect(find.byKey(const ValueKey('career-path')), findsOneWidget);
+    expect(find.byKey(const ValueKey('career-path-node-1')), findsOneWidget);
+    expect(find.byKey(const ValueKey('career-path-node-5')), findsOneWidget);
+    expect(find.byKey(const ValueKey('career-run-start')), findsOneWidget);
+    final careerBack = find.byKey(const ValueKey('career-back-button'));
+    final careerScrollable = findUniqueScrollableWithin(
+      root: find.byKey(const ValueKey('career-scroll-view')),
+      axisDirection: AxisDirection.down,
+      physicsMatches: (physics) => physics is AlwaysScrollableScrollPhysics,
+      description: 'kariyer ana dikey kaydırıcısı',
+    );
+    await scrollIntoView(
+      tester: tester,
+      target: careerBack,
+      scrollable: careerScrollable,
+      delta: 320,
+    );
+    expect(careerBack, findsOneWidget);
+    expect(find.text('MENÜYE DÖN'), findsOneWidget);
+    expect(find.byKey(const ValueKey('career-validate-board')), findsNothing);
+    expect(find.text('BAĞLANTILARI DOĞRULA'), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('global-settings-action')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey('global-how-to-play-action')),
+      findsOneWidget,
+    );
+    expect(find.text('GÜNLÜK GÖREVLER'), findsNothing);
+    expect(find.text('BAŞARIMLAR'), findsNothing);
+  });
 
-      final settings = find.byKey(const ValueKey('main-menu-settings'));
-      expect(settings, findsOneWidget);
-      await tester.tap(settings);
-      await tester.pumpAndSettle();
-      expect(
-        find.byKey(const ValueKey('settings-replay-sound')),
-        findsOneWidget,
-      );
-      final settingsBack = find.byKey(
-        const ValueKey('settings-back-button'),
-      );
-      await tester.ensureVisible(settingsBack);
-      await tester.tap(settingsBack);
-      await tester.pumpAndSettle();
+  testWidgets('kariyer yolu koşu durumunu düğümlere yansıtır', (tester) async {
+    await _pumpApp(
+      tester,
+      careerRun: const CareerRunSnapshot(
+        runId: 'run-path-test',
+        status: 'awaiting_upgrade',
+        stageIndex: 1,
+        totalStages: 5,
+        wins: 1,
+        selectedBoosters: [],
+        offeredBoosters: [],
+        opponent: null,
+        lastMatchId: 'match-1',
+        reward: null,
+        boardRequired: false,
+        canBattle: false,
+        canChooseBooster: false,
+        canChooseUpgrade: true,
+        startedAt: null,
+        endedAt: null,
+      ),
+    );
+    await tester.tap(find.byKey(const ValueKey('main-menu-career')));
+    await tester.pumpAndSettle();
 
-      await tester.tap(find.byKey(const ValueKey('main-menu-how-to-play')));
-      await tester.pumpAndSettle();
-      expect(find.text('NASIL OYNANIR'), findsOneWidget);
-      expect(find.text('OYUNUN AMACI NEDİR?'), findsOneWidget);
-      expect(find.text('ENERJİ NASIL AKAR?'), findsOneWidget);
-    },
-  );
+    expect(find.text('TAMAMLANDI'), findsOneWidget);
+    expect(find.text('YÜKSELTME SEÇ'), findsOneWidget);
+    expect(find.text('KİLİTLİ'), findsNWidgets(3));
+  });
 
-  testWidgets(
-    'kariyer doğrudan devre düzenleme ve rakip hazırlığı gösterir',
-    (tester) async {
-      await _pumpApp(tester);
-      await tester.tap(find.byKey(const ValueKey('main-menu-play')));
-      await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const ValueKey('play-mode-career')));
-      await tester.pumpAndSettle();
+  testWidgets('profil derece sezon geçmiş görev ve başarımları toplar', (
+    tester,
+  ) async {
+    await _pumpApp(tester);
+    final profile = find.byKey(const ValueKey('main-menu-profile'));
+    await tester.ensureVisible(profile);
+    await tester.tap(profile);
+    await tester.pumpAndSettle();
 
-      expect(
-        find.byKey(const ValueKey('career-module-selection-card')),
-        findsOneWidget,
-      );
-      expect(
-        find.byKey(const ValueKey('career-player-board-editor')),
-        findsOneWidget,
-      );
-      expect(
-        find.byKey(const ValueKey('career-opponent-board-preview')),
-        findsOneWidget,
-      );
-      expect(find.byKey(const ValueKey('career-run-start')), findsOneWidget);
-      final careerBack = find.byKey(const ValueKey('career-back-button'));
-      final careerScrollable = findUniqueScrollableWithin(
-        root: find.byKey(const ValueKey('career-scroll-view')),
-        axisDirection: AxisDirection.down,
-        physicsMatches: (physics) => physics is AlwaysScrollableScrollPhysics,
-        description: 'kariyer ana dikey kaydırıcısı',
-      );
-      await scrollIntoView(
-        tester: tester,
-        target: careerBack,
-        scrollable: careerScrollable,
-        delta: 320,
-      );
-      expect(careerBack, findsOneWidget);
-      expect(find.text('MENÜYE DÖN'), findsOneWidget);
-      expect(find.byKey(const ValueKey('career-validate-board')), findsOneWidget);
-      expect(find.byKey(const ValueKey('global-settings-action')), findsOneWidget);
-      expect(
-        find.byKey(const ValueKey('global-how-to-play-action')),
-        findsOneWidget,
-      );
-      expect(find.text('GÜNLÜK GÖREVLER'), findsNothing);
-      expect(find.text('BAŞARIMLAR'), findsNothing);
-    },
-  );
+    expect(find.byKey(const ValueKey('profile-general-card')), findsOneWidget);
+    expect(find.byKey(const ValueKey('social-edit-profile')), findsOneWidget);
+    expect(find.byKey(const ValueKey('profile-open-clan')), findsNothing);
+    expect(find.byKey(const ValueKey('profile-edit-social')), findsNothing);
+    expect(find.byKey(const ValueKey('profile-rating-card')), findsOneWidget);
 
-  testWidgets(
-    'profil derece sezon geçmiş görev ve başarımları toplar',
-    (tester) async {
-      await _pumpApp(tester);
-      final profile = find.byKey(const ValueKey('main-menu-profile'));
-      await tester.ensureVisible(profile);
-      await tester.tap(profile);
-      await tester.pumpAndSettle();
+    await _tapProfileSection(tester, const ValueKey('profile-section-friends'));
+    expect(find.byKey(const ValueKey('social-friends-card')), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('social-incoming-requests')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey('social-outgoing-requests')),
+      findsOneWidget,
+    );
 
-      expect(find.byKey(const ValueKey('profile-general-card')), findsOneWidget);
-      expect(find.byKey(const ValueKey('social-edit-profile')), findsOneWidget);
-      expect(find.byKey(const ValueKey('profile-open-clan')), findsNothing);
-      expect(find.byKey(const ValueKey('profile-edit-social')), findsNothing);
-      expect(find.byKey(const ValueKey('profile-rating-card')), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('profile-section-cosmetics')),
+      findsNothing,
+    );
 
-      await _tapProfileSection(
-        tester,
-        const ValueKey('profile-section-friends'),
-      );
-      expect(find.byKey(const ValueKey('social-friends-card')), findsOneWidget);
-      expect(find.byKey(const ValueKey('social-incoming-requests')), findsOneWidget);
-      expect(find.byKey(const ValueKey('social-outgoing-requests')), findsOneWidget);
+    await _tapProfileSection(
+      tester,
+      const ValueKey('profile-section-season-rewards'),
+    );
+    expect(
+      find.byKey(const ValueKey('profile-season-rewards-card')),
+      findsOneWidget,
+    );
 
-      await _tapProfileSection(
-        tester,
-        const ValueKey('profile-section-cosmetics'),
-      );
-      expect(find.byKey(const ValueKey('profile-cosmetics-card')), findsOneWidget);
-      expect(
-        find.byKey(const ValueKey('profile-cosmetic-section-selector')),
-        findsOneWidget,
-      );
-      expect(
-        find.byKey(const ValueKey('profile-cosmetic-section-module')),
-        findsOneWidget,
-      );
-      expect(
-        find.byKey(const ValueKey('profile-cosmetic-section-board')),
-        findsOneWidget,
-      );
-      expect(
-        find.byKey(const ValueKey('profile-cosmetic-section-profile')),
-        findsOneWidget,
-      );
+    await _tapProfileSection(
+      tester,
+      const ValueKey('profile-section-match-history'),
+    );
+    expect(
+      find.byKey(const ValueKey('profile-match-history-card')),
+      findsOneWidget,
+    );
 
-      await _tapProfileSection(
-        tester,
-        const ValueKey('profile-section-season-rewards'),
-      );
-      expect(find.byKey(const ValueKey('profile-season-rewards-card')), findsOneWidget);
+    await _tapProfileSection(
+      tester,
+      const ValueKey('profile-section-daily-missions'),
+    );
+    expect(
+      find.byKey(const ValueKey('profile-daily-missions-card')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey('profile-daily-first_signal')),
+      findsOneWidget,
+    );
 
-      await _tapProfileSection(
-        tester,
-        const ValueKey('profile-section-match-history'),
-      );
-      expect(
-        find.byKey(const ValueKey('profile-match-history-card')),
-        findsOneWidget,
-      );
+    await _tapProfileSection(
+      tester,
+      const ValueKey('profile-section-achievements'),
+    );
+    expect(
+      find.byKey(const ValueKey('profile-achievements-card')),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const ValueKey('profile-achievement-first_battle')),
+      findsOneWidget,
+    );
+  });
 
-      await _tapProfileSection(
-        tester,
-        const ValueKey('profile-section-daily-missions'),
-      );
-      expect(
-        find.byKey(const ValueKey('profile-daily-missions-card')),
-        findsOneWidget,
-      );
-      expect(
-        find.byKey(const ValueKey('profile-daily-first_signal')),
-        findsOneWidget,
-      );
+  testWidgets('klan istatistikler ve mağaza ana merkezden ayrık açılır', (
+    tester,
+  ) async {
+    await _pumpApp(tester);
 
-      await _tapProfileSection(
-        tester,
-        const ValueKey('profile-section-achievements'),
-      );
-      expect(
-        find.byKey(const ValueKey('profile-achievements-card')),
-        findsOneWidget,
-      );
-      expect(
-        find.byKey(const ValueKey('profile-achievement-first_battle')),
-        findsOneWidget,
-      );
-    },
-  );
+    expect(find.byKey(const ValueKey('main-menu-clan')), findsNothing);
 
-  testWidgets(
-    'klan istatistikler ve mağaza ana merkezden ayrık açılır',
-    (tester) async {
-      await _pumpApp(tester);
+    final statistics = find.byKey(const ValueKey('main-menu-statistics'));
+    await tester.ensureVisible(statistics);
+    await tester.tap(statistics);
+    await tester.pumpAndSettle();
+    expect(find.text('İSTATİSTİKLER'), findsOneWidget);
+    expect(find.byKey(const ValueKey('season-summary-card')), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey('season-leaderboard-card')),
+      findsOneWidget,
+    );
+    final statisticsBack = find.byKey(const ValueKey('season-menu-back'));
+    await tester.ensureVisible(statisticsBack);
+    await tester.tap(statisticsBack);
+    await tester.pumpAndSettle();
 
-      final clan = find.byKey(const ValueKey('main-menu-clan'));
-      await tester.ensureVisible(clan);
-      await tester.tap(clan);
-      await tester.pumpAndSettle();
-      expect(find.text('KLAN'), findsWidgets);
-      expect(find.byKey(const ValueKey('social-no-clan-card')), findsOneWidget);
-      expect(find.byKey(const ValueKey('social-clan-directory')), findsOneWidget);
-      expect(find.byKey(const ValueKey('social-section-selector')), findsNothing);
-      expect(find.text('SOSYAL MERKEZ'), findsNothing);
-      final socialBack = find.byKey(const ValueKey('social-menu-back'));
-      await tester.ensureVisible(socialBack);
-      await tester.tap(socialBack);
-      await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('main-menu-store')), findsNothing);
+  });
 
-      final statistics = find.byKey(const ValueKey('main-menu-statistics'));
-      await tester.ensureVisible(statistics);
-      await tester.tap(statistics);
-      await tester.pumpAndSettle();
-      expect(find.text('İSTATİSTİKLER'), findsOneWidget);
-      expect(find.byKey(const ValueKey('season-summary-card')), findsOneWidget);
-      expect(find.byKey(const ValueKey('season-leaderboard-card')), findsOneWidget);
-      final statisticsBack = find.byKey(
-        const ValueKey('season-menu-back'),
-      );
-      await tester.ensureVisible(statisticsBack);
-      await tester.tap(statisticsBack);
-      await tester.pumpAndSettle();
+  testWidgets('yerleşim uyarısı ortalanmış ortak bildirimde gösterilir', (
+    tester,
+  ) async {
+    await _pumpApp(tester);
+    await tester.tap(find.byKey(const ValueKey('main-menu-online')));
+    await tester.pumpAndSettle();
 
-      final store = find.byKey(const ValueKey('main-menu-store'));
-      await tester.ensureVisible(store);
-      await tester.tap(store);
-      await tester.pumpAndSettle();
-      expect(find.text('MAĞAZA'), findsOneWidget);
-      expect(find.byKey(const ValueKey('store-intro-card')), findsNothing);
-      expect(find.byKey(const ValueKey('store-scroll-view')), findsOneWidget);
-    },
-  );
+    await tester.tap(find.byKey(const ValueKey('palette-module-laser')));
+    await tester.tap(find.byKey(const ValueKey('circuit-cell-5')));
+    await tester.pump();
 
-  testWidgets(
-    'yerleşim uyarısı ortalanmış ortak bildirimde gösterilir',
-    (tester) async {
-      await _pumpApp(tester);
-      await tester.tap(find.byKey(const ValueKey('main-menu-play')));
-      await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const ValueKey('play-mode-online')));
-      await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('relay-centered-notice')), findsOneWidget);
+    expect(
+      find.textContaining('Ortadaki 2×2 alan pasif çekirdeğe ayrılmıştır'),
+      findsOneWidget,
+    );
+    expect(find.byType(SnackBar), findsNothing);
 
-      await tester.tap(
-        find.byKey(const ValueKey('palette-module-laser')),
-      );
-      await tester.tap(find.byKey(const ValueKey('circuit-cell-5')));
-      await tester.pump();
-
-      expect(
-        find.byKey(const ValueKey('relay-centered-notice')),
-        findsOneWidget,
-      );
-      expect(
-        find.textContaining('Ortadaki 2×2 alan pasif çekirdeğe ayrılmıştır'),
-        findsOneWidget,
-      );
-      expect(find.byType(SnackBar), findsNothing);
-
-      await tester.pump(const Duration(seconds: 7));
-      await tester.pump();
-      expect(
-        find.byKey(const ValueKey('relay-centered-notice')),
-        findsNothing,
-      );
-    },
-  );
+    await tester.pump(const Duration(seconds: 7));
+    await tester.pump();
+    expect(find.byKey(const ValueKey('relay-centered-notice')), findsNothing);
+  });
 }
 
-
-Future<void> _tapProfileSection(
-  WidgetTester tester,
-  Key sectionKey,
-) async {
+Future<void> _tapProfileSection(WidgetTester tester, Key sectionKey) async {
   final section = find.byKey(sectionKey);
   final horizontalScrollable = find.ancestor(
     of: section,
     matching: find.byWidgetPredicate(
       (widget) =>
-          widget is Scrollable &&
-          widget.axisDirection == AxisDirection.right,
+          widget is Scrollable && widget.axisDirection == AxisDirection.right,
     ),
   );
 
@@ -390,10 +354,25 @@ Future<void> _tapProfileSection(
   await tester.pumpAndSettle();
 }
 
-Future<void> _pumpApp(WidgetTester tester) async {
+Future<void> _pumpApp(
+  WidgetTester tester, {
+  CareerRunSnapshot? careerRun,
+}) async {
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
+        productTelemetryProvider.overrideWithValue(
+          ProductTelemetry(
+            isEnabled: () => false,
+            send:
+                ({
+                  required eventId,
+                  required eventName,
+                  required context,
+                  required occurredAt,
+                }) async {},
+          ),
+        ),
         catalogsProvider.overrideWith(
           (ref) async => CatalogBundle(
             rulesVersion: '0.8',
@@ -407,6 +386,21 @@ Future<void> _pumpApp(WidgetTester tester) async {
                 availableModuleCounts: [2],
               ),
             ],
+          ),
+        ),
+        weeklyProtocolProvider.overrideWith(
+          (ref) async => WeeklyProtocol(
+            key: '2026-W33:reserve_pulse',
+            id: 'reserve_pulse',
+            title: 'Rezerv Darbesi',
+            description: 'İki devre de ek enerji rezerviyle başlar.',
+            effectLabel: 'İki taraf için başlangıç rezervi +6',
+            startsAt: DateTime.utc(2026, 8, 10),
+            endsAt: DateTime.utc(2026, 8, 17),
+            modifiers: const {
+              'initial_energy_reserve': 6,
+              'reserve_capacity_bonus': 6,
+            },
           ),
         ),
 
@@ -457,7 +451,9 @@ Future<void> _pumpApp(WidgetTester tester) async {
             clan: null,
           ),
         ),
-        chatChannelsProvider.overrideWith((ref) async => const <ChatChannelModel>[]),
+        chatChannelsProvider.overrideWith(
+          (ref) async => const <ChatChannelModel>[],
+        ),
         clanDirectoryProvider.overrideWith(
           (ref) async => const [
             ClanModel(
@@ -689,23 +685,25 @@ Future<void> _pumpApp(WidgetTester tester) async {
         ),
         careerBoardProvider.overrideWith((ref) async => null),
         careerRunProvider.overrideWith(
-          (ref) async => const CareerRunSnapshot(
-            runId: null,
-            status: 'idle',
-            stageIndex: 0,
-            totalStages: 5,
-            wins: 0,
-            selectedBoosters: [],
-            offeredBoosters: [],
-            opponent: null,
-            lastMatchId: null,
-            reward: null,
-            boardRequired: false,
-            canBattle: false,
-            canChooseBooster: false,
-            startedAt: null,
-            endedAt: null,
-          ),
+          (ref) async =>
+              careerRun ??
+              const CareerRunSnapshot(
+                runId: null,
+                status: 'idle',
+                stageIndex: 0,
+                totalStages: 5,
+                wins: 0,
+                selectedBoosters: [],
+                offeredBoosters: [],
+                opponent: null,
+                lastMatchId: null,
+                reward: null,
+                boardRequired: false,
+                canBattle: false,
+                canChooseBooster: false,
+                startedAt: null,
+                endedAt: null,
+              ),
         ),
         guestSessionProvider.overrideWith(
           (ref) async => GuestSession(
@@ -736,11 +734,7 @@ List<ModuleSpec> _moduleSpecs() {
       displayName: 'Jeneratör',
       description: 'Enerji üretir.',
       maxHp: 52,
-      ports: {
-        RelayDirection.north,
-        RelayDirection.east,
-        RelayDirection.south,
-      },
+      ports: {RelayDirection.north, RelayDirection.east, RelayDirection.south},
       energyOutput: 8,
       batteryCapacity: 0,
       energyCost: 0,

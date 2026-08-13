@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../config/relay_features.dart';
 import '../navigation/navigation_actions.dart';
 import '../theme/relay_theme.dart';
 import '../widgets/app_header_actions.dart';
@@ -79,21 +80,23 @@ class PlayModeScreen extends StatelessWidget {
                             ),
                           ),
                         ),
-                        const SizedBox(height: 14),
-                        _ModeCard(
-                          key: const ValueKey('play-mode-training'),
-                          icon: Icons.smart_toy_outlined,
-                          color: RelayColors.amber,
-                          title: 'ANTRENMAN',
-                          subtitle:
-                              'Dokuz sabit rakipten birini seç, devreni kaydetmeden '
-                              'düzenini ve karşı stratejilerini sına.',
-                          badge: 'BOT SAVAŞI',
-                          onPressed: () => _openEditor(
-                            context,
-                            EditorMode.training,
+                        if (RelayFeatures.training) ...[
+                          const SizedBox(height: 14),
+                          _ModeCard(
+                            key: const ValueKey('play-mode-training'),
+                            icon: Icons.smart_toy_outlined,
+                            color: RelayColors.amber,
+                            title: 'SANDBOX LAB',
+                            subtitle:
+                                'Dokuz sabit test devresinden birini seç; düzenini '
+                                'kaydetmeden bağlantıları ve karşı stratejileri sına.',
+                            badge: 'TEST ALANI',
+                            onPressed: () => _openEditor(
+                              context,
+                              EditorMode.training,
+                            ),
                           ),
-                        ),
+                        ],
                         const SizedBox(height: 22),
                         OutlinedButton.icon(
                           key: const ValueKey('play-mode-back-button'),

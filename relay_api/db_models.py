@@ -151,6 +151,10 @@ class MatchRecord(Base):
         nullable=False,
     )
     source: Mapped[str] = mapped_column(String(16), nullable=False)
+    weekly_protocol_key: Mapped[str | None] = mapped_column(
+        String(48),
+        nullable=True,
+    )
     requester_player_id: Mapped[str | None] = mapped_column(
         ForeignKey("players.id", ondelete="SET NULL"),
         nullable=True,
@@ -170,6 +174,16 @@ class MatchRecord(Base):
     opponent_board: Mapped[dict[str, Any]] = mapped_column(
         JSON,
         nullable=False,
+    )
+    player_modifiers: Mapped[dict[str, Any]] = mapped_column(
+        JSON,
+        nullable=False,
+        default=dict,
+    )
+    opponent_modifiers: Mapped[dict[str, Any]] = mapped_column(
+        JSON,
+        nullable=False,
+        default=dict,
     )
     result: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
     replay: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
@@ -467,6 +481,11 @@ class CareerRunRecord(Base):
         nullable=False,
         default=list,
     )
+    selected_module_upgrades: Mapped[list[dict[str, Any]]] = mapped_column(
+        JSON,
+        nullable=False,
+        default=list,
+    )
     offered_boosters: Mapped[list[str]] = mapped_column(
         JSON,
         nullable=False,
@@ -637,6 +656,36 @@ class AlphaFeedbackRecord(Base):
 
     __table_args__ = (
         Index("ix_alpha_feedback_player_time", "player_id", "created_at"),
+    )
+
+
+class ProductEventRecord(Base):
+    __tablename__ = "product_events"
+
+    id: Mapped[str] = mapped_column(String(40), primary_key=True)
+    player_id: Mapped[str] = mapped_column(
+        ForeignKey("players.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    event_name: Mapped[str] = mapped_column(String(48), nullable=False)
+    context: Mapped[dict[str, Any]] = mapped_column(
+        JSON,
+        nullable=False,
+        default=dict,
+    )
+    client_version: Mapped[str] = mapped_column(String(24), nullable=False)
+    occurred_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+    )
+    received_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+    )
+
+    __table_args__ = (
+        Index("ix_product_events_name_time", "event_name", "received_at"),
+        Index("ix_product_events_player_time", "player_id", "received_at"),
     )
 
 

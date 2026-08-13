@@ -31,7 +31,7 @@ class FlutterClientContractTests(unittest.TestCase):
         career_screen = (CLIENT / "lib/src/screens/career_screen.dart").read_text(encoding="utf-8")
         self.assertNotIn("class _Metric extends StatelessWidget", career_screen)
         self.assertIn("await tester.ensureVisible(profileBack);", widget_test)
-        self.assertIn("await tester.pumpAndSettle();\n      await tester.tap(profileBack);", widget_test)
+        self.assertIn("await tester.tap(profileBack);", widget_test)
         self.assertIn("final horizontalScrollable = find.ancestor(", widget_test)
         self.assertNotIn("final horizontalScrollable = find.byWidgetPredicate(\n    (widget)", widget_test)
         self.assertIn("AppHeaderTitle(pageTitle: widget.mode.title.toUpperCase())", editor)
@@ -54,7 +54,10 @@ class FlutterClientContractTests(unittest.TestCase):
             CLIENT / "lib" / "src" / "widgets" / "module_palette.dart"
         ).read_text(encoding="utf-8")
 
-        self.assertIn("height: dense ? 46 : compact ? 44 : 66,", palette)
+        self.assertRegex(
+            palette,
+            r"height:\s*dense\s*\?\s*46\s*:\s*compact\s*\?\s*44\s*:\s*66,",
+        )
         self.assertIn("math.min(235.0, compactTileWidth)", palette)
         self.assertIn("alignment: WrapAlignment.center", palette)
         self.assertIn("this.compact = false", palette)
@@ -103,7 +106,8 @@ class FlutterClientContractTests(unittest.TestCase):
 
         # v0.4.9: bilgi palete taşınır, devre kartı simge-only kalır.
         self.assertIn("palette-module-properties-${module.kind.wireValue}", palette)
-        self.assertIn("module-icon-${module.id}", board)
+        self.assertIn("module-glyph-${module.id}", board)
+        self.assertIn("ModuleGlyph(", board)
         self.assertNotIn("module-name-${module.id}", board)
         self.assertNotIn("module-stat-badges-${module.id}", board)
         self.assertIn("tooltip: '90° döndür'", board)
@@ -117,7 +121,10 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertNotIn("SUNUCU YETKİLİ SAVAŞ", editor)
 
         # v0.4.11 + v0.4.13: sonlu Stack; v0.6.0 UI rev1 kompakt palet.
-        self.assertIn("height: dense ? 46 : compact ? 44 : 66,", palette)
+        self.assertRegex(
+            palette,
+            r"height:\s*dense\s*\?\s*46\s*:\s*compact\s*\?\s*44\s*:\s*66,",
+        )
         self.assertIn("child: Stack(", palette)
         self.assertIn("math.min(235.0, compactTileWidth)", palette)
         self.assertIn("alignment: WrapAlignment.center", palette)
@@ -171,7 +178,7 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("'created_at':", sound_test)
         self.assertGreaterEqual(formatter_test.count("'created_at':"), 2)
         self.assertIn(
-            "çekirdek kapısındaki yerleşik modül yalnız simgeyle gösterilir",
+            "çekirdek kapısındaki yerleşik modül donanım glifiyle gösterilir",
             geometry_test,
         )
         self.assertNotIn(
@@ -186,10 +193,9 @@ class FlutterClientContractTests(unittest.TestCase):
             "profile-section-match-history",
             widget_test,
         )
-        self.assertIn(
-            "play-mode-career",
-            widget_test,
-        )
+        self.assertIn("main-menu-online", widget_test)
+        self.assertIn("main-menu-career", widget_test)
+        self.assertIn("career-path-node-5", widget_test)
 
     def test_v060_progression_foundation_is_visible_and_temporary(self) -> None:
         api = (
@@ -226,9 +232,12 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("const double _careerBoardMaxWidth = 390", career)
         self.assertIn("const double _careerPlayerOpponentGap = 36", career)
         self.assertIn("const double _careerPanelHeight = 500", career)
-        self.assertIn("SizedBox(width: _careerPlayerEditorWidth, child: playerEditor)", career)
+        self.assertIn("width: _careerPlayerEditorWidth", career)
+        self.assertIn("child: playerEditor", career)
         self.assertIn("run.status == 'failed'", career)
-        self.assertIn("? _idle(context)", career)
+        self.assertIn("_RunProgress(run: run)", career)
+        self.assertIn("run.status == 'awaiting_upgrade'", career)
+        self.assertIn("career-path-node-${index + 1}", career)
         self.assertIn("BOSS ÖNCESİ GÜÇLENDİRİCİ MAĞAZASI", career)
         self.assertIn("GÜÇLENDİRİCİ ALMADAN BOSS’A İLERLE", career)
         self.assertIn("SAVAŞ ÖDÜLÜ", replay)
@@ -260,10 +269,22 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("global-credit-box", status)
         self.assertIn("CircuitCreditGlyph", status)
         self.assertIn("width: 78", status)
-        self.assertIn("height: dense ? 46 : compact ? 44 : 66,", palette)
-        self.assertIn("fontSize: dense ? 10.5 : compact ? 10 : 13", palette)
-        self.assertIn("fontSize: dense ? 7.5 : compact ? 7.5 : 9.5", palette)
-        self.assertIn("size: dense ? 18 : compact ? 18 : 24", palette)
+        self.assertRegex(
+            palette,
+            r"height:\s*dense\s*\?\s*46\s*:\s*compact\s*\?\s*44\s*:\s*66,",
+        )
+        self.assertRegex(
+            palette,
+            r"fontSize:\s*dense\s*\?\s*10\.5\s*:\s*compact\s*\?\s*10\s*:\s*13",
+        )
+        self.assertRegex(
+            palette,
+            r"fontSize:\s*dense\s*\?\s*7\.5\s*:\s*compact\s*\?\s*7\.5\s*:\s*9\.5",
+        )
+        self.assertRegex(
+            palette,
+            r"size:\s*dense\s*\?\s*18\s*:\s*compact\s*\?\s*18\s*:\s*24",
+        )
         self.assertGreaterEqual(editor.count("_EditorMenuBackCard(busy: busy)"), 3)
         self.assertIn("void loadSavedBoard(SavedBoard saved)", board_controller)
 
@@ -282,7 +303,8 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("width: 78", status)
         self.assertIn("height: 48", status)
         widget_test = (CLIENT / "test/widget_test.dart").read_text(encoding="utf-8")
-        self.assertIn("const Size(78, 48)", widget_test)
+        self.assertIn("final mainCreditBox", widget_test)
+        self.assertIn("expect(mainCreditBox, findsNothing)", widget_test)
         self.assertIn("CircuitCreditGlyph", status)
         self.assertIn("class CircuitCreditGlyph", credit)
         self.assertNotIn("Icons.toll_outlined", notice)
@@ -675,10 +697,12 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertNotIn("MyApp()", widget_test)
         self.assertIn("Future<void> _tapProfileSection(", widget_test)
         self.assertIn("widget.axisDirection == AxisDirection.right", widget_test)
-        self.assertIn("store-scroll-view", widget_test)
-        self.assertIn("profile-section-cosmetics", widget_test)
+        self.assertIn("module-shelf", widget_test)
+        self.assertIn("preparation-side-panel", widget_test)
+        self.assertIn("main-menu-store", widget_test)
+        self.assertIn("findsNothing", widget_test)
 
-    def test_main_hub_groups_play_clan_collection_store_and_profile(
+    def test_main_hub_prioritizes_online_and_career_while_legacy_hubs_are_gated(
         self,
     ) -> None:
         app_source = (
@@ -711,18 +735,31 @@ class FlutterClientContractTests(unittest.TestCase):
         how_to_play = (
             CLIENT / "lib" / "src" / "screens" / "how_to_play_screen.dart"
         ).read_text(encoding="utf-8")
+        features = (
+            CLIENT / "lib" / "src" / "config" / "relay_features.dart"
+        ).read_text(encoding="utf-8")
 
         self.assertIn("home: const MainMenuScreen()", app_source)
-        self.assertIn("main-menu-play", main_menu)
+        self.assertNotIn("main-menu-play", main_menu)
+        self.assertIn("main-menu-online", main_menu)
+        self.assertIn("main-menu-career", main_menu)
+        self.assertNotIn("main-menu-mission-radar", main_menu)
+        self.assertIn("mode: EditorMode.online", main_menu)
+        self.assertIn("const CareerScreen()", main_menu)
         self.assertIn("main-menu-clan", main_menu)
         self.assertIn("main-menu-statistics", main_menu)
         self.assertIn("main-menu-store", main_menu)
         self.assertIn("main-menu-profile", main_menu)
         self.assertIn("main-menu-how-to-play", main_menu)
         self.assertIn("main-menu-settings", main_menu)
-        self.assertNotIn("main-menu-career", main_menu)
         self.assertNotIn("main-menu-season", main_menu)
         self.assertNotIn("main-menu-collection", main_menu)
+        self.assertIn("static const training = false", features)
+        self.assertIn("static const sandboxLab = true", features)
+        self.assertIn("static const clans = false", features)
+        self.assertIn("static const chat = false", features)
+        self.assertIn("static const store = false", features)
+        self.assertIn("static const collectionHub = false", features)
         self.assertIn("PlayerStatusBar(", main_menu)
         self.assertIn("showClaimBadge: true", main_menu)
         self.assertIn("player-status-profile-action", status_bar)
@@ -775,7 +812,7 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("settings-replay-sound", settings)
         self.assertIn("settings-replay-speed", settings)
 
-    def test_palette_owns_module_labels_and_stats_while_board_stays_icon_only(
+    def test_palette_owns_labels_while_board_uses_compact_hardware_glyphs(
         self,
     ) -> None:
         palette_source = (
@@ -788,14 +825,24 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("module.displayName", palette_source)
         self.assertIn("_moduleStatistics(module)", palette_source)
         self.assertIn("palette-module-properties-", palette_source)
-        self.assertIn("final columnCount = fixedColumns ??", palette_source)
+        self.assertRegex(
+            palette_source,
+            r"final columnCount =\s*fixedColumns \?\?",
+        )
         self.assertIn("overflow: TextOverflow.ellipsis", palette_source)
         self.assertIn("BURAYA BIRAK: KARTTAN KALDIR", palette_source)
         self.assertIn("? 4", palette_source)
         self.assertIn("textAlign: TextAlign.center", palette_source)
-        self.assertIn("fontSize: dense ? 10.5 : compact ? 10 : 13", palette_source)
-        self.assertIn("size: dense ? 18 : compact ? 18 : 24", palette_source)
-        self.assertIn("module-icon-${module.id}", board_source)
+        self.assertRegex(
+            palette_source,
+            r"fontSize:\s*dense\s*\?\s*10\.5\s*:\s*compact\s*\?\s*10\s*:\s*13",
+        )
+        self.assertRegex(
+            palette_source,
+            r"size:\s*dense\s*\?\s*18\s*:\s*compact\s*\?\s*18\s*:\s*24",
+        )
+        self.assertIn("module-glyph-${module.id}", board_source)
+        self.assertIn("ModuleGlyph(", board_source)
         self.assertNotIn("module-name-${module.id}", board_source)
         self.assertNotIn("module-stat-badges-${module.id}", board_source)
         self.assertNotIn("_ModuleStatBadges", board_source)
@@ -1261,7 +1308,7 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("ASENKRON PvP", editor_source)
         self.assertIn("SAVAŞA BAŞLA", editor_source)
         self.assertIn("editor-menu-back-button", editor_source)
-        self.assertIn("ANTRENMAN RAKİPLERİ", editor_source)
+        self.assertIn("SANDBOX RAKİPLERİ", editor_source)
         self.assertIn("mode == EditorMode.online", editor_source)
         self.assertIn("AppHeaderActions()", editor_source)
         self.assertIn("süresi dolan erişim", session_test)
@@ -1339,7 +1386,7 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("sideVisuals.modules.attack", attack_overlay)
         self.assertIn("ProfileFrameVisualTheme.fromId", player_status)
 
-    def test_level_up_celebration_and_boss_tier_explanation_are_visible(self) -> None:
+    def test_level_up_celebration_and_boss_choice_are_contextual(self) -> None:
         notice = (
             CLIENT / "lib" / "src" / "widgets" / "relay_notice.dart"
         ).read_text(encoding="utf-8")
@@ -1353,8 +1400,9 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("relay-level-up-badge", notice)
         self.assertIn("SEVİYE ATLADIN", notice)
         self.assertIn("BOSS GÜÇLENDİRİCİ KADEMESİ K2 AÇILDI", notice)
-        self.assertIn("BOSS GÜÇLENDİRİCİ KADEMELERİ", career)
-        self.assertIn("modüllere kalıcı güç vermez", career)
+        self.assertNotIn("BOSS GÜÇLENDİRİCİ KADEMELERİ", career)
+        self.assertIn("BOSS ÖNCESİ GÜÇLENDİRİCİ MAĞAZASI", career)
+        self.assertIn("Yalnız bu koşunun boss savaşında", career)
         self.assertIn("completionReward: outcome.run.reward", career_battle)
 
     def test_known_flutter_analyzer_findings_are_fixed(self) -> None:
@@ -1426,7 +1474,10 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("devreyi kurduktan ve doğruladıktan sonra", feature_pool.lower())
         self.assertIn("v0.8.4", release)
         self.assertIn("PROJECT RELAY • v0.8.22-r1-fix1", widget_test)
-        self.assertIn("expect(find.text('ANTRENMAN'), findsOneWidget)", widget_test)
+        self.assertIn("main-menu-online", widget_test)
+        self.assertIn("main-menu-career", widget_test)
+        self.assertIn("career-path-node-5", widget_test)
+        self.assertNotIn("expect(find.text('ANTRENMAN'), findsOneWidget)", widget_test)
         self.assertNotIn("ÇEVRİMİÇİ SAVAŞ • v0.8.4", widget_test)
         self.assertNotIn("ANTRENMAN • v0.8.4", widget_test)
 
@@ -1541,7 +1592,8 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("scaffoldBackgroundColor: Colors.transparent", theme)
         self.assertIn("RelayDecorations.appBackground()", app)
         self.assertIn("AnimatedCircuitBackground(", main_menu)
-        self.assertIn("RelayDecorations.heroPanel()", main_menu)
+        self.assertIn("RelayDecorations.accentHalo(RelayColors.magenta)", main_menu)
+        self.assertIn("class _PrimaryModeCard", main_menu)
         self.assertIn("RelayDecorations.panel(accent: accent", main_menu)
         self.assertIn("RelayDecorations.screenShell()", play_mode)
         self.assertIn("RelayDecorations.panel(accent: color)", play_mode)
@@ -1582,6 +1634,66 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("ArcadeHoverLift(", play_mode)
         self.assertIn("segmentedButtonTheme", theme)
         self.assertIn("electricBlue", theme)
+
+    def test_weekly_protocol_localization_persistence_and_telemetry_contract(
+        self,
+    ) -> None:
+        app = (CLIENT / "lib/src/app.dart").read_text(encoding="utf-8")
+        api = (CLIENT / "lib/src/api/relay_api.dart").read_text(encoding="utf-8")
+        settings = (
+            CLIENT / "lib/src/state/app_settings.dart"
+        ).read_text(encoding="utf-8")
+        telemetry = (
+            CLIENT / "lib/src/state/product_telemetry.dart"
+        ).read_text(encoding="utf-8")
+        editor = (
+            CLIENT / "lib/src/screens/editor_screen.dart"
+        ).read_text(encoding="utf-8")
+        settings_screen = (
+            CLIENT / "lib/src/screens/settings_screen.dart"
+        ).read_text(encoding="utf-8")
+        server_app = (ROOT / "relay_api/app.py").read_text(encoding="utf-8")
+        protocol = (
+            ROOT / "relay_api/weekly_protocol.py"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("GlobalMaterialLocalizations.delegate", app)
+        self.assertIn("RelayStrings.delegate", app)
+        self.assertIn("supportedLocales", app)
+        self.assertIn("class SecureAppSettingsStore", settings)
+        self.assertIn("setLanguage", settings)
+        self.assertIn("setTelemetryEnabled", settings)
+        self.assertIn("settings-language", settings_screen)
+        self.assertIn("settings-telemetry", settings_screen)
+        self.assertIn("weeklyProtocolProvider", api)
+        self.assertIn("/api/v1/live/weekly-protocol", api)
+        self.assertIn("weekly-protocol-card", editor)
+        self.assertGreaterEqual(protocol.count("WeeklyProtocolDefinition("), 4)
+        self.assertIn("player_modifiers=protocol.definition.modifiers", (
+            ROOT / "relay_api/online.py"
+        ).read_text(encoding="utf-8"))
+        self.assertIn("productTelemetryProvider", telemetry)
+        self.assertIn("telemetryEnabled", telemetry)
+        self.assertIn("/api/v1/telemetry/events", server_app)
+
+        pyproject = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
+        module_content = (
+            ROOT / "relay_content/modules.json"
+        ).read_text(encoding="utf-8")
+        sector_content = (
+            ROOT / "relay_content/sectors.json"
+        ).read_text(encoding="utf-8")
+        content_loader = (
+            ROOT / "relay_api/content.py"
+        ).read_text(encoding="utf-8")
+        self.assertIn('"relay_content"', pyproject)
+        self.assertIn('relay_content = ["*.json"]', pyproject)
+        self.assertIn('"schema_version": 1', module_content)
+        self.assertIn('"schema_version": 1', sector_content)
+        self.assertIn("load_career_sectors", content_loader)
+        self.assertIn("CareerSectorContent", (
+            CLIENT / "lib/src/models/relay_models.dart"
+        ).read_text(encoding="utf-8"))
 
 
 if __name__ == "__main__":
@@ -1837,3 +1949,56 @@ def test_v0822_rev1_fix1_preparation_perspective_and_lock_sound_contract():
     assert 'unawaited(_placementSoundPlayer.playLock())' in career
     assert "AssetSource('sounds/module_lock.wav')" in placement_sound
     assert (CLIENT / 'assets' / 'sounds' / 'module_lock.wav').is_file()
+
+
+def _legacy_v0822_rev1_fix2_feedback_driven_ui_contract():
+    main_menu = (CLIENT / 'lib' / 'src' / 'screens' / 'main_menu_screen.dart').read_text(encoding='utf-8')
+    editor = (CLIENT / 'lib' / 'src' / 'screens' / 'editor_screen.dart').read_text(encoding='utf-8')
+    career = (CLIENT / 'lib' / 'src' / 'screens' / 'career_screen.dart').read_text(encoding='utf-8')
+    board = (CLIENT / 'lib' / 'src' / 'widgets' / 'circuit_board.dart').read_text(encoding='utf-8')
+    visuals = (CLIENT / 'lib' / 'src' / 'widgets' / 'module_visuals.dart').read_text(encoding='utf-8')
+    replay = (CLIENT / 'lib' / 'src' / 'game' / 'replay_game.dart').read_text(encoding='utf-8')
+    ambient = (CLIENT / 'lib' / 'src' / 'widgets' / 'ambient_music.dart').read_text(encoding='utf-8')
+
+    assert 'main-menu-mission-radar' not in main_menu
+    assert "asset: 'sounds/menu_ambient.wav'" in main_menu
+    assert 'showAction: false' in editor
+    assert "? 'SAVAÅA BAÅLA'" in editor
+    assert ": 'BAÄLANTILARI DOÄRULA'" in editor
+    assert 'career-validate-board' not in career
+    assert 'boardValidated ? onStart : onValidate' in career
+    assert 'BOSS GÃœÃ‡LENDÄ°RÄ°CÄ° KADEMELERÄ°' not in career
+    assert 'BOSS Ã–NCESÄ° GÃœÃ‡LENDÄ°RÄ°CÄ° MAÄAZASI' in career
+    assert 'class _CircuitFlowPainter' in board
+    assert 'clipBehavior: Clip.none' in board
+    assert 'class ModuleGlyph extends StatelessWidget' in visuals
+    assert 'moduleIcon(' not in visuals
+    assert 'final muzzleRadius' in replay
+    assert '_autoplayAttempted' in ambient
+
+
+def test_v0822_rev1_fix2_feedback_driven_ui_contract():
+    main_menu = (CLIENT / 'lib' / 'src' / 'screens' / 'main_menu_screen.dart').read_text(encoding='utf-8')
+    editor = (CLIENT / 'lib' / 'src' / 'screens' / 'editor_screen.dart').read_text(encoding='utf-8')
+    career = (CLIENT / 'lib' / 'src' / 'screens' / 'career_screen.dart').read_text(encoding='utf-8')
+    board = (CLIENT / 'lib' / 'src' / 'widgets' / 'circuit_board.dart').read_text(encoding='utf-8')
+    visuals = (CLIENT / 'lib' / 'src' / 'widgets' / 'module_visuals.dart').read_text(encoding='utf-8')
+    replay = (CLIENT / 'lib' / 'src' / 'game' / 'replay_game.dart').read_text(encoding='utf-8')
+    ambient = (CLIENT / 'lib' / 'src' / 'widgets' / 'ambient_music.dart').read_text(encoding='utf-8')
+
+    assert 'main-menu-mission-radar' not in main_menu
+    assert "asset: 'sounds/menu_ambient.wav'" in main_menu
+    assert 'showAction: false' in editor
+    assert "ValueKey('async-match-button')" in editor
+    assert ': validated' in editor
+    assert ': onValidate,' in editor
+    assert 'career-validate-board' not in career
+    assert "ValueKey('career-run-start')" in career
+    assert "ValueKey('career-battle-button')" in career
+    assert "run.status == 'awaiting_booster'" in career
+    assert 'class _CircuitFlowPainter' in board
+    assert 'clipBehavior: Clip.none' in board
+    assert 'class ModuleGlyph extends StatelessWidget' in visuals
+    assert 'moduleIcon(' not in visuals
+    assert 'final muzzleRadius' in replay
+    assert '_autoplayAttempted' in ambient

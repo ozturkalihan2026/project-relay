@@ -100,6 +100,51 @@ class CircuitBattleEngineTests(unittest.TestCase):
         self.assertEqual(boosted_right.shield, 0)
         self.assertEqual(boosted_right.energy_reserve, 0)
 
+    def test_focused_amplifier_increases_only_its_target_bonus(self) -> None:
+        engine = CircuitBattleEngine(BattleConfig(max_ticks=1))
+        board = BoardLayout(
+            name="Odak Testi",
+            modules=(
+                generator("FOCUS-GEN"),
+                placement(
+                    "FOCUS-AMP",
+                    ModuleKind.AMPLIFIER,
+                    0,
+                    2,
+                    Direction.EAST,
+                ),
+                placement(
+                    "FOCUS-LASER",
+                    ModuleKind.LASER,
+                    0,
+                    3,
+                    Direction.EAST,
+                ),
+            ),
+        )
+        baseline = engine.simulate(board, generator_only("BASE"), seed=5)
+        focused = engine.simulate(
+            board,
+            generator_only("BASE"),
+            seed=5,
+            left_modifiers=BattleModifiers(
+                focused_amplifier_ids=("FOCUS-AMP",),
+            ),
+        )
+        baseline_attack = next(
+            event
+            for event in baseline.events
+            if event.event_type is EventType.ATTACK
+        )
+        focused_attack = next(
+            event
+            for event in focused.events
+            if event.event_type is EventType.ATTACK
+        )
+
+        self.assertAlmostEqual(baseline_attack.amount, 10.8)
+        self.assertAlmostEqual(focused_attack.amount, 12.0)
+
     def test_connected_module_is_powered_and_attacks(self) -> None:
         engine = CircuitBattleEngine(BattleConfig(max_ticks=5))
         board = simple_laser_board()

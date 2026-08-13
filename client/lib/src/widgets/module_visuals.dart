@@ -1,57 +1,307 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import '../models/relay_models.dart';
 import '../theme/relay_theme.dart';
 
-IconData moduleIcon(ModuleKind kind) => switch (kind) {
-      ModuleKind.generator => Icons.bolt,
-      ModuleKind.battery => Icons.battery_charging_full,
-      ModuleKind.laser => Icons.flash_on,
-      ModuleKind.pulseCannon => Icons.radio_button_checked,
-      ModuleKind.shield => Icons.shield_outlined,
-      ModuleKind.cooler => Icons.ac_unit,
-      ModuleKind.amplifier => Icons.call_split,
-      ModuleKind.repair => Icons.build_circle_outlined,
-    };
-
 Color moduleColor(ModuleKind kind) => switch (kind) {
-      ModuleKind.generator => RelayColors.amber,
-      ModuleKind.battery => RelayColors.mint,
-      ModuleKind.laser => RelayColors.coral,
-      ModuleKind.pulseCannon => const Color(0xFFFF8C42),
-      ModuleKind.shield => const Color(0xFF74A7FF),
-      ModuleKind.cooler => RelayColors.cyan,
-      ModuleKind.amplifier => const Color(0xFFB48CFF),
-      ModuleKind.repair => const Color(0xFF62D89A),
-    };
+  ModuleKind.generator => RelayColors.amber,
+  ModuleKind.battery => RelayColors.mint,
+  ModuleKind.laser => RelayColors.coral,
+  ModuleKind.pulseCannon => const Color(0xFFFF8C42),
+  ModuleKind.shield => const Color(0xFF74A7FF),
+  ModuleKind.cooler => RelayColors.cyan,
+  ModuleKind.amplifier => const Color(0xFFB48CFF),
+  ModuleKind.repair => const Color(0xFF62D89A),
+};
+
+/// Material ikon yerine her modülün çalışma biçimini anlatan devre parçası.
+class ModuleGlyph extends StatelessWidget {
+  const ModuleGlyph({
+    required this.kind,
+    required this.color,
+    this.size = 28,
+    this.intensity = 1,
+    super.key,
+  });
+
+  final ModuleKind kind;
+  final Color color;
+  final double size;
+  final double intensity;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox.square(
+      dimension: size,
+      child: CustomPaint(
+        painter: _ModuleGlyphPainter(
+          kind: kind,
+          color: color,
+          intensity: intensity,
+        ),
+      ),
+    );
+  }
+}
+
+void paintModuleGlyph(
+  Canvas canvas,
+  ModuleKind kind,
+  Offset center,
+  double size,
+  Color color, {
+  double intensity = 1,
+}) {
+  final alpha = intensity.clamp(0.18, 1.0).toDouble();
+  canvas.save();
+  canvas.translate(center.dx, center.dy);
+  canvas.scale(size / 48);
+
+  final stroke = Paint()
+    ..color = color.withValues(alpha: alpha)
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 3
+    ..strokeCap = StrokeCap.round
+    ..strokeJoin = StrokeJoin.round;
+  final fine = Paint()
+    ..color = color.withValues(alpha: alpha * 0.72)
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 2
+    ..strokeCap = StrokeCap.round;
+  final fill = Paint()..color = color.withValues(alpha: alpha * 0.24);
+  final hot = Paint()..color = color.withValues(alpha: alpha);
+
+  switch (kind) {
+    case ModuleKind.generator:
+      canvas.drawCircle(Offset.zero, 9, fill);
+      canvas.drawCircle(Offset.zero, 9, stroke);
+      canvas.drawCircle(Offset.zero, 3.5, hot);
+      for (var index = 0; index < 3; index += 1) {
+        final angle = -math.pi / 2 + index * math.pi * 2 / 3;
+        final inner = Offset(math.cos(angle), math.sin(angle)) * 10;
+        final outer = Offset(math.cos(angle), math.sin(angle)) * 19;
+        canvas.drawLine(inner, outer, stroke);
+        canvas.drawCircle(outer, 3, hot);
+      }
+      break;
+    case ModuleKind.battery:
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          const Rect.fromLTWH(-13, -17, 26, 34),
+          const Radius.circular(5),
+        ),
+        fill,
+      );
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          const Rect.fromLTWH(-13, -17, 26, 34),
+          const Radius.circular(5),
+        ),
+        stroke,
+      );
+      canvas.drawLine(const Offset(-5, -21), const Offset(5, -21), stroke);
+      for (var index = 0; index < 3; index += 1) {
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            Rect.fromLTWH(-8, 8 - index * 9, 16, 5),
+            const Radius.circular(2),
+          ),
+          index == 2 ? hot : fill,
+        );
+      }
+      break;
+    case ModuleKind.laser:
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          const Rect.fromLTWH(-18, -9, 18, 18),
+          const Radius.circular(4),
+        ),
+        fill,
+      );
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          const Rect.fromLTWH(-18, -9, 18, 18),
+          const Radius.circular(4),
+        ),
+        stroke,
+      );
+      canvas.drawPath(
+        Path()
+          ..moveTo(0, -6)
+          ..lineTo(15, -3)
+          ..lineTo(15, 3)
+          ..lineTo(0, 6)
+          ..close(),
+        fill,
+      );
+      canvas.drawPath(
+        Path()
+          ..moveTo(0, -6)
+          ..lineTo(15, -3)
+          ..lineTo(15, 3)
+          ..lineTo(0, 6),
+        stroke,
+      );
+      canvas.drawLine(const Offset(16, 0), const Offset(22, 0), fine);
+      canvas.drawCircle(const Offset(21, 0), 2.8, hot);
+      break;
+    case ModuleKind.pulseCannon:
+      canvas.drawCircle(const Offset(-6, 0), 12, fill);
+      canvas.drawCircle(const Offset(-6, 0), 12, stroke);
+      canvas.drawCircle(const Offset(-6, 0), 5, fine);
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          const Rect.fromLTWH(4, -6, 15, 12),
+          const Radius.circular(4),
+        ),
+        fill,
+      );
+      canvas.drawLine(const Offset(5, -6), const Offset(19, -6), stroke);
+      canvas.drawLine(const Offset(5, 6), const Offset(19, 6), stroke);
+      canvas.drawCircle(const Offset(20, 0), 4, hot);
+      break;
+    case ModuleKind.shield:
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          const Rect.fromLTWH(-13, 8, 26, 8),
+          const Radius.circular(3),
+        ),
+        fill,
+      );
+      canvas.drawLine(const Offset(-13, 12), const Offset(13, 12), stroke);
+      canvas.drawArc(
+        const Rect.fromLTWH(-18, -16, 36, 30),
+        math.pi,
+        math.pi,
+        false,
+        stroke,
+      );
+      canvas.drawArc(
+        const Rect.fromLTWH(-11, -9, 22, 18),
+        math.pi,
+        math.pi,
+        false,
+        fine,
+      );
+      canvas.drawCircle(const Offset(-14, -1), 2.5, hot);
+      canvas.drawCircle(const Offset(14, -1), 2.5, hot);
+      break;
+    case ModuleKind.cooler:
+      canvas.drawCircle(Offset.zero, 15, fine);
+      canvas.drawCircle(Offset.zero, 4, hot);
+      for (var index = 0; index < 4; index += 1) {
+        canvas.save();
+        canvas.rotate(index * math.pi / 2);
+        final blade = Path()
+          ..moveTo(3, -2)
+          ..quadraticBezierTo(11, -11, 16, -5)
+          ..quadraticBezierTo(13, 3, 4, 3)
+          ..close();
+        canvas.drawPath(blade, fill);
+        canvas.drawPath(blade, fine);
+        canvas.restore();
+      }
+      break;
+    case ModuleKind.amplifier:
+      canvas.drawLine(const Offset(-21, 0), const Offset(-5, 0), stroke);
+      canvas.drawCircle(const Offset(-5, 0), 4, hot);
+      canvas.drawLine(const Offset(-2, -2), const Offset(13, -14), stroke);
+      canvas.drawLine(const Offset(-1, 0), const Offset(18, 0), stroke);
+      canvas.drawLine(const Offset(-2, 2), const Offset(13, 14), stroke);
+      canvas.drawCircle(const Offset(15, -16), 3, hot);
+      canvas.drawCircle(const Offset(21, 0), 3, hot);
+      canvas.drawCircle(const Offset(15, 16), 3, hot);
+      break;
+    case ModuleKind.repair:
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          const Rect.fromLTWH(-9, -9, 18, 18),
+          const Radius.circular(4),
+        ),
+        fill,
+      );
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          const Rect.fromLTWH(-9, -9, 18, 18),
+          const Radius.circular(4),
+        ),
+        stroke,
+      );
+      canvas.drawLine(const Offset(-5, 0), const Offset(5, 0), stroke);
+      canvas.drawLine(const Offset(0, -5), const Offset(0, 5), stroke);
+      for (final point in const [
+        Offset(0, -18),
+        Offset(18, 0),
+        Offset(0, 18),
+        Offset(-18, 0),
+      ]) {
+        final direction = point / point.distance;
+        canvas.drawLine(direction * 10, direction * 15, fine);
+        canvas.drawCircle(point, 3, hot);
+      }
+      break;
+  }
+  canvas.restore();
+}
+
+class _ModuleGlyphPainter extends CustomPainter {
+  const _ModuleGlyphPainter({
+    required this.kind,
+    required this.color,
+    required this.intensity,
+  });
+
+  final ModuleKind kind;
+  final Color color;
+  final double intensity;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    paintModuleGlyph(
+      canvas,
+      kind,
+      size.center(Offset.zero),
+      size.shortestSide,
+      color,
+      intensity: intensity,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _ModuleGlyphPainter oldDelegate) =>
+      oldDelegate.kind != kind ||
+      oldDelegate.color != color ||
+      oldDelegate.intensity != intensity;
+}
 
 IconData directionIcon(RelayDirection direction) => switch (direction) {
-      RelayDirection.north => Icons.arrow_upward,
-      RelayDirection.east => Icons.arrow_forward,
-      RelayDirection.south => Icons.arrow_downward,
-      RelayDirection.west => Icons.arrow_back,
-    };
+  RelayDirection.north => Icons.arrow_upward,
+  RelayDirection.east => Icons.arrow_forward,
+  RelayDirection.south => Icons.arrow_downward,
+  RelayDirection.west => Icons.arrow_back,
+};
 
 bool usesConnectionDirectionArrow(ModuleKind kind) => switch (kind) {
-      ModuleKind.laser ||
-      ModuleKind.pulseCannon ||
-      ModuleKind.shield ||
-      ModuleKind.cooler ||
-      ModuleKind.repair => true,
-      _ => false,
-    };
+  ModuleKind.laser ||
+  ModuleKind.pulseCannon ||
+  ModuleKind.shield ||
+  ModuleKind.cooler ||
+  ModuleKind.repair => true,
+  _ => false,
+};
 
 RelayDirection moduleDisplayDirection(
   ModuleKind kind,
   RelayDirection orientation,
 ) {
-  return usesConnectionDirectionArrow(kind) ? orientation.opposite : orientation;
+  return usesConnectionDirectionArrow(kind)
+      ? orientation.opposite
+      : orientation;
 }
 
-String moduleDirectionTooltip(
-  ModuleKind kind,
-  RelayDirection orientation,
-) {
+String moduleDirectionTooltip(ModuleKind kind, RelayDirection orientation) {
   final direction = moduleDisplayDirection(kind, orientation);
   return switch (kind) {
     ModuleKind.generator => 'Jeneratör çekirdeğe dönük kalır',
@@ -61,8 +311,6 @@ String moduleDirectionTooltip(
     _ => 'Enerji bağlantısı: ${direction.displayName}',
   };
 }
-
-
 
 /// Raised hardware shell used by placed modules and drag previews.
 ///
@@ -94,8 +342,7 @@ class ModuleChassis extends StatelessWidget {
       final restingLift = compact ? 1.5 : 3.5;
       final approachLift = compact ? 8.0 : 14.0;
       final extraLift = lifted ? (compact ? 4.0 : 7.0) : 0.0;
-      final topLift =
-          restingLift + ((1 - settled) * approachLift) + extraLift;
+      final topLift = restingLift + ((1 - settled) * approachLift) + extraLift;
       final scale = 1 + ((1 - settled) * (compact ? 0.035 : 0.055));
 
       return Stack(

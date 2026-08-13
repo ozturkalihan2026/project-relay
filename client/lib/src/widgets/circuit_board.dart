@@ -7,10 +7,7 @@ import 'module_compact_stats.dart';
 import 'module_visuals.dart';
 import 'relay_emblem.dart';
 
-typedef ModuleDropCallback = void Function(
-  int cellIndex,
-  ModuleDragData data,
-);
+typedef ModuleDropCallback = void Function(int cellIndex, ModuleDragData data);
 
 class CircuitBoard extends StatelessWidget {
   const CircuitBoard({
@@ -24,6 +21,7 @@ class CircuitBoard extends StatelessWidget {
     required this.onRotateModule,
     this.visuals = const EquippedVisuals.defaults(),
     this.presentation3d = false,
+    this.upgradeBranches = const {},
     super.key,
   });
 
@@ -37,6 +35,7 @@ class CircuitBoard extends StatelessWidget {
   final ValueChanged<int> onRotateModule;
   final EquippedVisuals visuals;
   final bool presentation3d;
+  final Map<String, String> upgradeBranches;
 
   @override
   Widget build(BuildContext context) {
@@ -59,89 +58,95 @@ class CircuitBoard extends StatelessWidget {
               ),
             ],
           ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(18),
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                IgnorePointer(
-                  child: CustomPaint(
-                    painter: _CircuitTracePainter(
-                      placements: placements,
-                      specs: specs,
-                      poweredIds: poweredIds,
-                      visuals: visuals,
-                    ),
+          child: Stack(
+            clipBehavior: Clip.none,
+            fit: StackFit.expand,
+            children: [
+              IgnorePointer(
+                child: CustomPaint(
+                  painter: _CircuitTracePainter(
+                    placements: placements,
+                    specs: specs,
+                    poweredIds: poweredIds,
+                    visuals: visuals,
                   ),
                 ),
-                GridView.builder(
-                  physics: const NeverScrollableScrollPhysics(),
-                  padding: const EdgeInsets.all(4),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 4,
-                  ),
-                  itemCount: 16,
-                  itemBuilder: (context, index) {
-                    if (isCoreCell(index)) {
-                      return Padding(
-                        padding: const EdgeInsets.all(4),
-                        child: _CoreCellBackdrop(
-                          cellIndex: index,
-                          onTap: () => onCellTap(index),
-                        ),
-                      );
-                    }
-                    final placement = placements[index];
+              ),
+              GridView.builder(
+                physics: const NeverScrollableScrollPhysics(),
+                clipBehavior: Clip.none,
+                padding: const EdgeInsets.all(4),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 4,
+                ),
+                itemCount: 16,
+                itemBuilder: (context, index) {
+                  if (isCoreCell(index)) {
                     return Padding(
                       padding: const EdgeInsets.all(4),
-                      child: _CircuitCell(
+                      child: _CoreCellBackdrop(
                         cellIndex: index,
-                        coreGate: isCoreGate(index),
-                        placement: placement,
-                        spec: placement == null ? null : specs[placement.kind],
-                        selected: selectedCell == index,
-                        validationVisible: validationVisible,
-                        powered: placement != null && poweredIds.contains(placement.id),
                         onTap: () => onCellTap(index),
-                        onModuleDropped: (data) => onModuleDropped(index, data),
-                        onRotate: placement?.kind == ModuleKind.amplifier
-                            ? () => onRotateModule(index)
-                            : null,
-                        raised: presentation3d,
                       ),
                     );
-                  },
-                ),
-                IgnorePointer(
-                  child: Center(
-                    child: FractionallySizedBox(
-                      widthFactor: 0.48,
-                      heightFactor: 0.48,
-                      child: _CoreHub(raised: presentation3d),
+                  }
+                  final placement = placements[index];
+                  return Padding(
+                    padding: const EdgeInsets.all(4),
+                    child: _CircuitCell(
+                      cellIndex: index,
+                      coreGate: isCoreGate(index),
+                      placement: placement,
+                      spec: placement == null ? null : specs[placement.kind],
+                      selected: selectedCell == index,
+                      validationVisible: validationVisible,
+                      powered:
+                          placement != null &&
+                          poweredIds.contains(placement.id),
+                      onTap: () => onCellTap(index),
+                      onModuleDropped: (data) => onModuleDropped(index, data),
+                      onRotate: placement?.kind == ModuleKind.amplifier
+                          ? () => onRotateModule(index)
+                          : null,
+                      raised: presentation3d,
+                      upgradeBranch: placement == null
+                          ? null
+                          : upgradeBranches[placement.id],
                     ),
+                  );
+                },
+              ),
+              IgnorePointer(
+                child: CustomPaint(
+                  painter: _CircuitFlowPainter(
+                    placements: placements,
+                    specs: specs,
+                    poweredIds: poweredIds,
+                    visuals: visuals,
                   ),
                 ),
-              ],
-            ),
+              ),
+              IgnorePointer(
+                child: Center(
+                  child: FractionallySizedBox(
+                    widthFactor: 0.48,
+                    heightFactor: 0.48,
+                    child: _CoreHub(raised: presentation3d),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),
     );
     if (!presentation3d) return board;
-    return _PreparationStageShell(
-      boardTheme: boardTheme,
-      child: board,
-    );
+    return _PreparationStageShell(boardTheme: boardTheme, child: board);
   }
-
 }
 
-
 class _PreparationStageShell extends StatelessWidget {
-  const _PreparationStageShell({
-    required this.boardTheme,
-    required this.child,
-  });
+  const _PreparationStageShell({required this.boardTheme, required this.child});
 
   final BoardVisualTheme boardTheme;
   final Widget child;
@@ -226,23 +231,9 @@ class _PreparationStageShell extends StatelessWidget {
             ),
             Positioned.fill(
               child: _deckLayer(
-                color: const Color(0xFF030A0E),
-                depth: 30,
-                opacity: 0.05,
-              ),
-            ),
-            Positioned.fill(
-              child: _deckLayer(
-                color: const Color(0xFF071820),
-                depth: 21,
-                opacity: 0.08,
-              ),
-            ),
-            Positioned.fill(
-              child: _deckLayer(
-                color: const Color(0xFF0A2530),
-                depth: 12,
-                opacity: 0.12,
+                color: const Color(0xFF06131A),
+                depth: 17,
+                opacity: 0.09,
               ),
             ),
             Positioned.fill(
@@ -305,10 +296,7 @@ class _DeckFastener extends StatelessWidget {
         color: const Color(0xFF09171D),
         border: Border.all(color: color.withValues(alpha: 0.64)),
         boxShadow: [
-          BoxShadow(
-            color: color.withValues(alpha: 0.34),
-            blurRadius: 8,
-          ),
+          BoxShadow(color: color.withValues(alpha: 0.34), blurRadius: 8),
         ],
       ),
       child: const SizedBox.square(dimension: 8),
@@ -354,6 +342,7 @@ class _CircuitCell extends StatelessWidget {
     required this.onModuleDropped,
     required this.onRotate,
     required this.raised,
+    required this.upgradeBranch,
   });
 
   final int cellIndex;
@@ -367,6 +356,7 @@ class _CircuitCell extends StatelessWidget {
   final ValueChanged<ModuleDragData> onModuleDropped;
   final VoidCallback? onRotate;
   final bool raised;
+  final String? upgradeBranch;
 
   @override
   Widget build(BuildContext context) {
@@ -375,19 +365,17 @@ class _CircuitCell extends StatelessWidget {
     final color = module == null
         ? RelayColors.muted
         : visuals.modules.moduleColorFor(module.kind);
-    final compactStats =
-        spec == null ? const <ModuleCompactStat>[] : moduleCompactStats(spec!);
-    final statSemantics = compactStats
-        .map((stat) => stat.fullLabel)
-        .join(', ');
+    final compactStats = spec == null
+        ? const <ModuleCompactStat>[]
+        : moduleCompactStats(spec!);
+    final statSemantics = compactStats.map((stat) => stat.fullLabel).join(', ');
     return DragTarget<ModuleDragData>(
       hitTestBehavior: HitTestBehavior.opaque,
       onWillAcceptWithDetails: (details) =>
           details.data.sourceCell != cellIndex,
       onAcceptWithDetails: (details) => onModuleDropped(details.data),
       builder: (context, candidateData, rejectedData) {
-        final candidate =
-            candidateData.isEmpty ? null : candidateData.first;
+        final candidate = candidateData.isEmpty ? null : candidateData.first;
         final dropActive = candidate != null;
         final dropLabel = switch ((candidate?.source, module)) {
           (ModuleDragSource.palette, null) => 'YERLEŞTİR',
@@ -398,32 +386,37 @@ class _CircuitCell extends StatelessWidget {
         };
         final borderColor = dropActive
             ? module == null
-                ? RelayColors.cyan
-                : RelayColors.amber
+                  ? RelayColors.cyan
+                  : RelayColors.amber
             : selected
-                ? RelayColors.amber
-                : module == null || !validationVisible
-                    ? coreGate
-                        ? visuals.board.gate
-                        : visuals.board.border.withValues(alpha: 0.72)
-                    : powered
-                        ? visuals.modules.accent
-                        : RelayColors.coral;
+            ? RelayColors.amber
+            : module == null || !validationVisible
+            ? coreGate
+                  ? visuals.board.gate
+                  : visuals.board.border.withValues(alpha: 0.72)
+            : powered
+            ? visuals.modules.accent
+            : RelayColors.coral;
+        final upgradeColor = upgradeBranch == 'overclock'
+            ? RelayColors.amber
+            : upgradeBranch == 'efficient'
+            ? RelayColors.mint
+            : null;
 
         final cell = Semantics(
           key: ValueKey('circuit-cell-$cellIndex'),
           button: true,
           label: module == null
               ? coreGate
-                  ? 'Boş çekirdek kapısı, modül bırakılabilir'
-                  : 'Boş devre hücresi, modül bırakılabilir'
+                    ? 'Boş çekirdek kapısı, modül bırakılabilir'
+                    : 'Boş devre hücresi, modül bırakılabilir'
               : module.kind == ModuleKind.battery
-                  ? '${spec?.displayName ?? module.kind.displayName}, '
-                      'dört yönlü bağlantı, $statSemantics'
-                  : '${spec?.displayName ?? module.kind.displayName}, '
-                      '${moduleDisplayDirection(module.kind, module.orientation).shortLabel} '
-                      '${usesConnectionDirectionArrow(module.kind) ? 'bağlantı' : 'etki'} yönü, '
-                      '$statSemantics',
+              ? '${spec?.displayName ?? module.kind.displayName}, '
+                    'dört yönlü bağlantı, $statSemantics'
+              : '${spec?.displayName ?? module.kind.displayName}, '
+                    '${moduleDisplayDirection(module.kind, module.orientation).shortLabel} '
+                    '${usesConnectionDirectionArrow(module.kind) ? 'bağlantı' : 'etki'} yönü, '
+                    '$statSemantics',
           child: AnimatedScale(
             scale: dropActive ? 1.035 : 1,
             duration: const Duration(milliseconds: 120),
@@ -431,8 +424,8 @@ class _CircuitCell extends StatelessWidget {
               color: dropActive
                   ? RelayColors.cyan.withValues(alpha: 0.16)
                   : module == null
-                      ? visuals.board.emptyCell
-                      : color.withValues(alpha: 0.17),
+                  ? visuals.board.emptyCell
+                  : color.withValues(alpha: 0.17),
               borderRadius: BorderRadius.circular(12),
               child: InkWell(
                 onTap: onTap,
@@ -454,15 +447,23 @@ class _CircuitCell extends StatelessWidget {
                               offset: Offset(0, 6),
                             ),
                           ]
+                        : module != null && upgradeColor != null
+                        ? [
+                            BoxShadow(
+                              color: upgradeColor.withValues(alpha: 0.52),
+                              blurRadius: 18,
+                              spreadRadius: 1,
+                            ),
+                          ]
                         : module != null && raised
-                            ? [
-                                BoxShadow(
-                                  color: color.withValues(alpha: 0.22),
-                                  blurRadius: 10,
-                                  offset: const Offset(0, 5),
-                                ),
-                              ]
-                            : null,
+                        ? [
+                            BoxShadow(
+                              color: color.withValues(alpha: 0.22),
+                              blurRadius: 10,
+                              offset: const Offset(0, 5),
+                            ),
+                          ]
+                        : null,
                   ),
                   child: module == null
                       ? Center(
@@ -471,12 +472,11 @@ class _CircuitCell extends StatelessWidget {
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     Icon(
-                                      coreGate
-                                          ? Icons.hub_outlined
-                                          : Icons.add,
+                                      coreGate ? Icons.hub_outlined : Icons.add,
                                       color: coreGate
-                                          ? RelayColors.amber
-                                              .withValues(alpha: 0.72)
+                                          ? RelayColors.amber.withValues(
+                                              alpha: 0.72,
+                                            )
                                           : const Color(0x774C7785),
                                       size: coreGate ? 20 : 22,
                                     ),
@@ -495,9 +495,11 @@ class _CircuitCell extends StatelessWidget {
                               : Column(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    Icon(
-                                      moduleIcon(candidate.kind),
-                                      color: visuals.modules.moduleColorFor(candidate.kind),
+                                    ModuleGlyph(
+                                      kind: candidate.kind,
+                                      color: visuals.modules.moduleColorFor(
+                                        candidate.kind,
+                                      ),
                                       size: 28,
                                     ),
                                     const SizedBox(height: 3),
@@ -519,9 +521,9 @@ class _CircuitCell extends StatelessWidget {
                               child: Padding(
                                 padding: EdgeInsets.all(coreGate ? 20 : 16),
                                 child: Center(
-                                  child: Icon(
-                                    moduleIcon(module.kind),
-                                    key: ValueKey('module-icon-${module.id}'),
+                                  child: ModuleGlyph(
+                                    kind: module.kind,
+                                    key: ValueKey('module-glyph-${module.id}'),
                                     color: color,
                                     size: coreGate ? 34 : 44,
                                   ),
@@ -536,22 +538,46 @@ class _CircuitCell extends StatelessWidget {
                                   message: 'Güçlendirici etki yönü',
                                   child: Icon(
                                     directionIcon(module.orientation),
-                                    key: ValueKey('module-direction-$cellIndex'),
+                                    key: ValueKey(
+                                      'module-direction-$cellIndex',
+                                    ),
                                     color: RelayColors.violet,
                                     size: 15,
                                   ),
                                 ),
                               ),
-                            if (onRotate != null && module.kind == ModuleKind.amplifier)
+                            if (upgradeColor != null)
+                              Positioned(
+                                left: 5,
+                                bottom: 5,
+                                child: Container(
+                                  key: ValueKey('module-upgrade-${module.id}'),
+                                  padding: const EdgeInsets.all(4),
+                                  decoration: BoxDecoration(
+                                    color: RelayColors.background.withValues(
+                                      alpha: 0.88,
+                                    ),
+                                    shape: BoxShape.circle,
+                                    border: Border.all(color: upgradeColor),
+                                  ),
+                                  child: Icon(
+                                    upgradeBranch == 'overclock'
+                                        ? Icons.bolt
+                                        : Icons.eco_outlined,
+                                    color: upgradeColor,
+                                    size: 13,
+                                  ),
+                                ),
+                              ),
+                            if (onRotate != null &&
+                                module.kind == ModuleKind.amplifier)
                               Positioned(
                                 left: 4,
                                 top: 4,
                                 child: SizedBox.square(
                                   dimension: 28,
                                   child: IconButton.filled(
-                                    key: ValueKey(
-                                      'rotate-module-$cellIndex',
-                                    ),
+                                    key: ValueKey('rotate-module-$cellIndex'),
                                     tooltip: '90° döndür',
                                     padding: EdgeInsets.zero,
                                     onPressed: onRotate,
@@ -563,11 +589,10 @@ class _CircuitCell extends StatelessWidget {
                                 ),
                               ),
                             if (spec != null)
-                              for (final port
-                                  in usableBoardPorts(
-                                    module,
-                                    spec!.worldPorts(module.orientation),
-                                  ))
+                              for (final port in usableBoardPorts(
+                                module,
+                                spec!.worldPorts(module.orientation),
+                              ))
                                 _PortMarker(
                                   direction: port,
                                   energized: powered,
@@ -650,10 +675,7 @@ class _CircuitCell extends StatelessWidget {
           return cell;
         }
         return Draggable<ModuleDragData>(
-          data: ModuleDragData.board(
-            kind: module.kind,
-            cellIndex: cellIndex,
-          ),
+          data: ModuleDragData.board(kind: module.kind, cellIndex: cellIndex),
           maxSimultaneousDrags: 1,
           onDragStarted: onTap,
           feedback: _BoardDragFeedback(
@@ -672,10 +694,7 @@ class _CircuitCell extends StatelessWidget {
 }
 
 class _CoreCellBackdrop extends StatelessWidget {
-  const _CoreCellBackdrop({
-    required this.cellIndex,
-    required this.onTap,
-  });
+  const _CoreCellBackdrop({required this.cellIndex, required this.onTap});
 
   final int cellIndex;
   final VoidCallback onTap;
@@ -727,10 +746,20 @@ class _CoreHub extends StatelessWidget {
           stops: const [0.0, 0.58, 1.0],
         ),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: visuals.board.core.withValues(alpha: 0.90), width: 2),
+        border: Border.all(
+          color: visuals.board.core.withValues(alpha: 0.90),
+          width: 2,
+        ),
         boxShadow: [
-          BoxShadow(color: visuals.board.core.withValues(alpha: 0.34), blurRadius: 30, spreadRadius: -2),
-          BoxShadow(color: RelayColors.violet.withValues(alpha: 0.14), blurRadius: 20),
+          BoxShadow(
+            color: visuals.board.core.withValues(alpha: 0.34),
+            blurRadius: 30,
+            spreadRadius: -2,
+          ),
+          BoxShadow(
+            color: RelayColors.violet.withValues(alpha: 0.14),
+            blurRadius: 20,
+          ),
         ],
       ),
       child: Stack(
@@ -741,7 +770,9 @@ class _CoreHub extends StatelessWidget {
             height: 118,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              border: Border.all(color: visuals.board.core.withValues(alpha: 0.22)),
+              border: Border.all(
+                color: visuals.board.core.withValues(alpha: 0.22),
+              ),
             ),
           ),
           Container(
@@ -750,8 +781,16 @@ class _CoreHub extends StatelessWidget {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: visuals.board.core.withValues(alpha: 0.08),
-              border: Border.all(color: visuals.board.core.withValues(alpha: 0.52), width: 1.5),
-              boxShadow: [BoxShadow(color: visuals.board.core.withValues(alpha: 0.20), blurRadius: 20)],
+              border: Border.all(
+                color: visuals.board.core.withValues(alpha: 0.52),
+                width: 1.5,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: visuals.board.core.withValues(alpha: 0.20),
+                  blurRadius: 20,
+                ),
+              ],
             ),
           ),
           RelayEmblem(
@@ -760,15 +799,28 @@ class _CoreHub extends StatelessWidget {
             accent: visuals.board.core,
             secondary: RelayColors.violet,
           ),
-          for (final alignment in const [Alignment(-0.5,-1),Alignment(1,-0.5),Alignment(0.5,1),Alignment(-1,0.5)])
+          for (final alignment in const [
+            Alignment(-0.5, -1),
+            Alignment(1, -0.5),
+            Alignment(0.5, 1),
+            Alignment(-1, 0.5),
+          ])
             Align(
               alignment: alignment,
               child: DecoratedBox(
                 decoration: BoxDecoration(
                   color: visuals.board.gate,
                   shape: BoxShape.circle,
-                  border: Border.all(color: RelayColors.white.withValues(alpha: 0.55), width: 1),
-                  boxShadow: [BoxShadow(color: visuals.board.gate.withValues(alpha: 0.72), blurRadius: 11)],
+                  border: Border.all(
+                    color: RelayColors.white.withValues(alpha: 0.55),
+                    width: 1,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: visuals.board.gate.withValues(alpha: 0.72),
+                      blurRadius: 11,
+                    ),
+                  ],
                 ),
                 child: const SizedBox(width: 11, height: 11),
               ),
@@ -806,20 +858,14 @@ class _CoreHub extends StatelessWidget {
             ),
           ),
         ),
-        Transform.translate(
-          offset: const Offset(0, -11),
-          child: hub,
-        ),
+        Transform.translate(offset: const Offset(0, -11), child: hub),
       ],
     );
   }
 }
 
 class _PortMarker extends StatelessWidget {
-  const _PortMarker({
-    required this.direction,
-    required this.energized,
-  });
+  const _PortMarker({required this.direction, required this.energized});
 
   final RelayDirection direction;
   final bool energized;
@@ -827,26 +873,10 @@ class _PortMarker extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final position = switch (direction) {
-      RelayDirection.north => const {
-          'top': -1.0,
-          'left': 0.0,
-          'right': 0.0,
-        },
-      RelayDirection.east => const {
-          'right': -1.0,
-          'top': 0.0,
-          'bottom': 0.0,
-        },
-      RelayDirection.south => const {
-          'bottom': -1.0,
-          'left': 0.0,
-          'right': 0.0,
-        },
-      RelayDirection.west => const {
-          'left': -1.0,
-          'top': 0.0,
-          'bottom': 0.0,
-        },
+      RelayDirection.north => const {'top': -1.0, 'left': 0.0, 'right': 0.0},
+      RelayDirection.east => const {'right': -1.0, 'top': 0.0, 'bottom': 0.0},
+      RelayDirection.south => const {'bottom': -1.0, 'left': 0.0, 'right': 0.0},
+      RelayDirection.west => const {'left': -1.0, 'top': 0.0, 'bottom': 0.0},
     };
     return Positioned(
       top: position['top'],
@@ -865,10 +895,9 @@ class _PortMarker extends StatelessWidget {
             boxShadow: energized
                 ? [
                     BoxShadow(
-                      color: CosmeticVisualScope.of(context)
-                          .modules
-                          .accent
-                          .withValues(alpha: 0.6),
+                      color: CosmeticVisualScope.of(
+                        context,
+                      ).modules.accent.withValues(alpha: 0.6),
                       blurRadius: 7,
                     ),
                   ]
@@ -933,37 +962,40 @@ class _BoardDragFeedback extends StatelessWidget {
                 ],
               ),
               child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(moduleIcon(placement.kind), color: color, size: 25),
-              const SizedBox(width: 9),
-              Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    displayName,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w800,
-                      fontSize: 12,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 11,
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    ModuleGlyph(kind: placement.kind, color: color, size: 25),
+                    const SizedBox(width: 9),
+                    Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          displayName,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 12,
+                          ),
+                        ),
+                        const Text(
+                          'TAŞI / YER DEĞİŞTİR',
+                          style: TextStyle(
+                            color: RelayColors.cyan,
+                            fontSize: 9,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 0.8,
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                  const Text(
-                    'TAŞI / YER DEĞİŞTİR',
-                    style: TextStyle(
-                      color: RelayColors.cyan,
-                      fontSize: 9,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 0.8,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -986,10 +1018,8 @@ abstract final class CircuitTraceGeometry {
     ModulePlacement module,
     RelayDirection direction,
   ) {
-    final cellWidth =
-        (size.width - gridPadding * 2) / relayBoardSize;
-    final cellHeight =
-        (size.height - gridPadding * 2) / relayBoardSize;
+    final cellWidth = (size.width - gridPadding * 2) / relayBoardSize;
+    final cellHeight = (size.height - gridPadding * 2) / relayBoardSize;
     final center = Offset(
       gridPadding + (module.column + 0.5) * cellWidth,
       gridPadding + (module.row + 0.5) * cellHeight,
@@ -1002,8 +1032,7 @@ abstract final class CircuitTraceGeometry {
     final right =
         gridPadding + (module.column + 1) * cellWidth - horizontalInset;
     final top = gridPadding + module.row * cellHeight + verticalInset;
-    final bottom =
-        gridPadding + (module.row + 1) * cellHeight - verticalInset;
+    final bottom = gridPadding + (module.row + 1) * cellHeight - verticalInset;
     return switch (direction) {
       RelayDirection.north => Offset(center.dx, top),
       RelayDirection.east => Offset(right, center.dy),
@@ -1012,10 +1041,7 @@ abstract final class CircuitTraceGeometry {
     };
   }
 
-  static Offset corePortAnchor(
-    Size size,
-    RelayDirection gateDirection,
-  ) {
+  static Offset corePortAnchor(Size size, RelayDirection gateDirection) {
     final coreWidth = size.width * coreScale;
     final coreHeight = size.height * coreScale;
     final coreLeft = (size.width - coreWidth) / 2;
@@ -1029,12 +1055,8 @@ abstract final class CircuitTraceGeometry {
       RelayDirection.east => const Alignment(-1, 0.5),
     };
     return Offset(
-      coreLeft +
-          usableWidth * (alignment.x + 1) / 2 +
-          corePortDiameter / 2,
-      coreTop +
-          usableHeight * (alignment.y + 1) / 2 +
-          corePortDiameter / 2,
+      coreLeft + usableWidth * (alignment.x + 1) / 2 + corePortDiameter / 2,
+      coreTop + usableHeight * (alignment.y + 1) / 2 + corePortDiameter / 2,
     );
   }
 }
@@ -1098,8 +1120,8 @@ class _CircuitTracePainter extends CustomPainter {
           neighbor,
           direction.opposite,
         );
-        final energized = poweredIds.contains(module.id) &&
-            poweredIds.contains(neighbor.id);
+        final energized =
+            poweredIds.contains(module.id) && poweredIds.contains(neighbor.id);
         final glow = Paint()
           ..color = energized
               ? visuals.modules.accent.withValues(alpha: 0.28)
@@ -1107,8 +1129,9 @@ class _CircuitTracePainter extends CustomPainter {
           ..strokeWidth = energized ? 12 : 8
           ..strokeCap = StrokeCap.round;
         final trace = Paint()
-          ..color =
-              energized ? visuals.modules.accent : visuals.board.traceMuted
+          ..color = energized
+              ? visuals.modules.accent
+              : visuals.board.traceMuted
           ..strokeWidth = energized ? 4 : 3
           ..strokeCap = StrokeCap.round;
         canvas
@@ -1130,10 +1153,7 @@ class _CircuitTracePainter extends CustomPainter {
         module,
         entry.value,
       );
-      final corePort = CircuitTraceGeometry.corePortAnchor(
-        size,
-        entry.value,
-      );
+      final corePort = CircuitTraceGeometry.corePortAnchor(size, entry.value);
       final energized = poweredIds.contains(module.id);
       final trace = Paint()
         ..color = energized ? visuals.board.gate : visuals.board.traceMuted
@@ -1162,11 +1182,128 @@ class _CircuitTracePainter extends CustomPainter {
       return false;
     }
     return firstSpec.worldPorts(first.orientation).contains(direction) &&
-        secondSpec
-            .worldPorts(second.orientation)
-            .contains(direction.opposite);
+        secondSpec.worldPorts(second.orientation).contains(direction.opposite);
   }
 
   @override
   bool shouldRepaint(covariant _CircuitTracePainter oldDelegate) => true;
+}
+
+class _CircuitFlowPainter extends CustomPainter {
+  const _CircuitFlowPainter({
+    required this.placements,
+    required this.specs,
+    required this.poweredIds,
+    required this.visuals,
+  });
+
+  final Map<int, ModulePlacement> placements;
+  final Map<ModuleKind, ModuleSpec> specs;
+  final Set<String> poweredIds;
+  final EquippedVisuals visuals;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    for (final entry in placements.entries) {
+      final module = entry.value;
+      for (final direction in const [
+        RelayDirection.east,
+        RelayDirection.south,
+      ]) {
+        final neighborIndex = switch (direction) {
+          RelayDirection.east when module.column < 3 => entry.key + 1,
+          RelayDirection.south when module.row < 3 => entry.key + 4,
+          _ => -1,
+        };
+        final neighbor = placements[neighborIndex];
+        if (neighbor == null ||
+            !poweredIds.contains(module.id) ||
+            !poweredIds.contains(neighbor.id) ||
+            !_connects(module, neighbor, direction)) {
+          continue;
+        }
+        _drawFlow(
+          canvas,
+          CircuitTraceGeometry.modulePortAnchor(size, module, direction),
+          CircuitTraceGeometry.modulePortAnchor(
+            size,
+            neighbor,
+            direction.opposite,
+          ),
+          visuals.modules.accent,
+        );
+      }
+    }
+
+    for (final entry in coreGateDirections.entries) {
+      final module = placements[entry.key];
+      final spec = module == null ? null : specs[module.kind];
+      if (module == null ||
+          spec == null ||
+          !poweredIds.contains(module.id) ||
+          !spec.worldPorts(module.orientation).contains(entry.value)) {
+        continue;
+      }
+      final modulePort = CircuitTraceGeometry.modulePortAnchor(
+        size,
+        module,
+        entry.value,
+      );
+      final corePort = CircuitTraceGeometry.corePortAnchor(size, entry.value);
+      _drawFlow(
+        canvas,
+        module.kind == ModuleKind.generator ? modulePort : corePort,
+        module.kind == ModuleKind.generator ? corePort : modulePort,
+        visuals.board.gate,
+      );
+    }
+  }
+
+  void _drawFlow(Canvas canvas, Offset from, Offset to, Color color) {
+    final delta = to - from;
+    final distance = delta.distance;
+    if (distance < 1) return;
+    final direction = delta / distance;
+    final normal = Offset(-direction.dy, direction.dx);
+    for (final fraction in const [0.28, 0.56, 0.84]) {
+      final center = Offset.lerp(from, to, fraction)!;
+      final tip = center + direction * 3.8;
+      final tail = center - direction * 3.8;
+      final path = Path()
+        ..moveTo(tip.dx, tip.dy)
+        ..lineTo(tail.dx + normal.dx * 2.8, tail.dy + normal.dy * 2.8)
+        ..lineTo(tail.dx - normal.dx * 2.8, tail.dy - normal.dy * 2.8)
+        ..close();
+      canvas.drawCircle(
+        center,
+        6,
+        Paint()
+          ..color = color.withValues(alpha: 0.22)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4),
+      );
+      canvas.drawPath(
+        path,
+        Paint()..color = RelayColors.white.withValues(alpha: 0.92),
+      );
+    }
+  }
+
+  bool _connects(
+    ModulePlacement first,
+    ModulePlacement second,
+    RelayDirection direction,
+  ) {
+    final firstSpec = specs[first.kind];
+    final secondSpec = specs[second.kind];
+    return firstSpec != null &&
+        secondSpec != null &&
+        firstSpec.worldPorts(first.orientation).contains(direction) &&
+        secondSpec.worldPorts(second.orientation).contains(direction.opposite);
+  }
+
+  @override
+  bool shouldRepaint(covariant _CircuitFlowPainter oldDelegate) =>
+      oldDelegate.placements != placements ||
+      oldDelegate.poweredIds != poweredIds ||
+      oldDelegate.visuals != visuals;
 }

@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
+from importlib.resources import files
+from typing import Any
 
 from .enums import Direction, ModuleKind
 
@@ -25,129 +28,93 @@ class ModuleSpec:
 
 
 ALL_PORTS = frozenset(Direction)
-BACK_PORT = frozenset({Direction.WEST})
-GENERATOR_PORTS = frozenset(
-    {
-        Direction.NORTH,
-        Direction.EAST,
-        Direction.SOUTH,
-    }
+_NUMERIC_FIELDS = (
+    "energy_output",
+    "battery_capacity",
+    "energy_cost",
+    "heat_per_action",
+    "damage",
+    "shield",
+    "cooling",
+    "repair",
 )
 
 
-MODULE_SPECS: dict[ModuleKind, ModuleSpec] = {
-    ModuleKind.GENERATOR: ModuleSpec(
-        kind=ModuleKind.GENERATOR,
-        display_name="Jeneratör",
-        description=(
-            "Çekirdek kapısında içe dönük çalışır; bir portuyla pasif "
-            "çekirdeği, iki portuyla halkanın iki yönünü besler."
-        ),
-        max_hp=52,
-        ports=GENERATOR_PORTS,
-        energy_output=8,
-        threat=60,
-    ),
-    ModuleKind.BATTERY: ModuleSpec(
-        kind=ModuleKind.BATTERY,
-        display_name="Batarya",
-        description=(
-            "Dört portlu yönsüz enerji kavşağıdır; enerjiyi dört yöne "
-            "aktarır ve kullanılmayan enerjiyi depolar."
-        ),
-        max_hp=38,
-        ports=ALL_PORTS,
-        battery_capacity=20,
-        threat=40,
-    ),
-    ModuleKind.LASER: ModuleSpec(
-        kind=ModuleKind.LASER,
-        display_name="Lazer",
-        description=(
-            "Az enerjiyle sık ateş eder; arka portu enerji hattına dönük "
-            "olmalıdır."
-        ),
-        max_hp=27,
-        ports=BACK_PORT,
-        energy_cost=4,
-        cooldown_ticks=2,
-        heat_per_action=14,
-        damage=8,
-        threat=100,
-    ),
-    ModuleKind.PULSE_CANNON: ModuleSpec(
-        kind=ModuleKind.PULSE_CANNON,
-        display_name="Darbe Topu",
-        description=(
-            "Yüksek anlık hasar verir fakat çok enerji ve ısı üretir; "
-            "batarya ve soğutmayla güçlenir."
-        ),
-        max_hp=33,
-        ports=BACK_PORT,
-        energy_cost=8,
-        cooldown_ticks=4,
-        heat_per_action=30,
-        damage=16,
-        threat=110,
-    ),
-    ModuleKind.SHIELD: ModuleSpec(
-        kind=ModuleKind.SHIELD,
-        display_name="Kalkan",
-        description=(
-            "Gelen hasarı karşılayan ortak kalkan havuzunu doldurur ve "
-            "silahlardan önce hedef çekerek onları korur; tek portlu olduğu "
-            "için hattın ucuna yerleşir."
-        ),
-        max_hp=35,
-        ports=BACK_PORT,
-        energy_cost=5,
-        cooldown_ticks=3,
-        heat_per_action=11,
-        shield=14,
-        threat=120,
-    ),
-    ModuleKind.COOLER: ModuleSpec(
-        kind=ModuleKind.COOLER,
-        display_name="Soğutucu",
-        description=(
-            "Bağlı devredeki ısıyı düşürür ve saldırı modüllerinin daha "
-            "uzun süre çalışmasını sağlar."
-        ),
-        max_hp=31,
-        ports=BACK_PORT,
-        energy_cost=3,
-        cooldown_ticks=2,
-        heat_per_action=5,
-        cooling=12,
-        threat=75,
-    ),
-    ModuleKind.AMPLIFIER: ModuleSpec(
-        kind=ModuleKind.AMPLIFIER,
-        display_name="Güçlendirici",
-        description=(
-            "Dört portlu enerji kavşağıdır; oku hangi komşu modülün etkisini "
-            "ve ısısını artıracağını belirler."
-        ),
-        max_hp=25,
-        ports=ALL_PORTS,
-        threat=90,
-    ),
-    ModuleKind.REPAIR: ModuleSpec(
-        kind=ModuleKind.REPAIR,
-        display_name="Onarım",
-        description=(
-            "Hasar görmüş enerjili modülü onarır; uzun savaşlarda savunma "
-            "düzeninin dayanıklılığını artırır."
-        ),
-        max_hp=30,
-        ports=BACK_PORT,
-        energy_cost=5,
-        cooldown_ticks=4,
-        heat_per_action=14,
-        repair=11,
-        threat=80,
-    ),
-}
+def load_module_specs(payload: dict[str, Any]) -> dict[ModuleKind, ModuleSpec]:
+    if payload.get("schema_version") != 1:
+        raise RuntimeError("Desteklenmeyen modül içerik şeması.")
+    raw_modules = payload.get("modules")
+    if not isinstance(raw_modules, list):
+        raise RuntimeError("Modül içeriğinde 'modules' listesi bulunmalıdır.")
+
+    result: dict[ModuleKind, ModuleSpec] = {}
+    for raw in raw_modules:
+        if not isinstance(raw, dict):
+            raise RuntimeError("Her modül girdisi bir nesne olmalıdır.")
+        try:
+            kind = ModuleKind(str(raw["kind"]))
+            ports = frozenset(Direction(str(value)) for value in raw["ports"])
+            display_name = str(raw["display_name"]).strip()
+            description = str(raw["description"]).strip()
+            max_hp = _non_negative_number(raw["max_hp"], "max_hp")
+        except (KeyError, TypeError, ValueError) as exc:
+            raise RuntimeError(f"Geçersiz modül içeriği: {raw!r}") from exc
+        if kind in result:
+            raise RuntimeError(f"Yinelenen modül türü: {kind.value}")
+        if not display_name or not description or max_hp <= 0 or not ports:
+            raise RuntimeError(f"Eksik modül tanımı: {kind.value}")
+        values = {
+            field: _non_negative_number(raw.get(field, 0), field)
+            for field in _NUMERIC_FIELDS
+        }
+        cooldown_ticks = _non_negative_int(
+            raw.get("cooldown_ticks", 0),
+            "cooldown_ticks",
+        )
+        threat = _non_negative_int(raw.get("threat", 0), "threat")
+        result[kind] = ModuleSpec(
+            kind=kind,
+            display_name=display_name,
+            description=description,
+            max_hp=max_hp,
+            ports=ports,
+            cooldown_ticks=cooldown_ticks,
+            threat=threat,
+            **values,
+        )
+
+    missing = set(ModuleKind) - set(result)
+    extra_count = len(result) - len(ModuleKind)
+    if missing or extra_count:
+        labels = ", ".join(sorted(kind.value for kind in missing))
+        raise RuntimeError(f"Modül kataloğu eksik veya geçersiz: {labels}")
+    return result
+
+
+def _load_bundled_module_specs() -> dict[ModuleKind, ModuleSpec]:
+    resource = files("relay_content").joinpath("modules.json")
+    payload = json.loads(resource.read_text(encoding="utf-8"))
+    if not isinstance(payload, dict):
+        raise RuntimeError("Modül içerik kökü bir nesne olmalıdır.")
+    return load_module_specs(payload)
+
+
+def _non_negative_number(value: Any, field: str) -> float:
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        raise RuntimeError(f"{field} sayısal olmalıdır.")
+    number = float(value)
+    if number < 0:
+        raise RuntimeError(f"{field} negatif olamaz.")
+    return number
+
+
+def _non_negative_int(value: Any, field: str) -> int:
+    if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+        raise RuntimeError(f"{field} negatif olmayan tam sayı olmalıdır.")
+    return value
+
+
+MODULE_SPECS = _load_bundled_module_specs()
 
 
 def get_spec(kind: ModuleKind) -> ModuleSpec:

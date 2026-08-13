@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../config/relay_features.dart';
+import '../l10n/relay_strings.dart';
 import '../navigation/navigation_actions.dart';
 import '../state/app_settings.dart';
+import '../state/product_telemetry.dart';
 import 'alpha_feedback_screen.dart';
+import 'editor_screen.dart';
 import '../theme/relay_theme.dart';
 import '../widgets/app_header_actions.dart';
 
@@ -15,13 +19,14 @@ class SettingsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final settings = ref.watch(appSettingsProvider);
     final controller = ref.read(appSettingsProvider.notifier);
+    final strings = RelayStrings.of(context);
     return Scaffold(
       appBar: AppBar(
         leadingWidth: 224,
         leading: const AppHeaderProfile(),
         backgroundColor: Colors.transparent,
         centerTitle: true,
-        title: const AppHeaderTitle(pageTitle: 'AYARLAR'),
+        title: AppHeaderTitle(pageTitle: strings.settingsTitle),
         actions: const [
           AppHeaderActions(),
           SizedBox(width: 8),
@@ -47,13 +52,13 @@ class SettingsScreen extends ConsumerWidget {
                             : Icons.volume_off,
                         color: RelayColors.cyan,
                       ),
-                      title: const Text(
-                        'Savaş tekrarı sesi',
-                        style: TextStyle(fontWeight: FontWeight.w800),
+                      title: Text(
+                        strings.replaySound,
+                        style: const TextStyle(fontWeight: FontWeight.w800),
                       ),
-                      subtitle: const Text(
-                        'Yeni savaş tekrarları bu ses tercihiyle başlar.',
-                        style: TextStyle(
+                      subtitle: Text(
+                        strings.replaySoundSubtitle,
+                        style: const TextStyle(
                           color: RelayColors.muted,
                           fontSize: 11,
                         ),
@@ -67,16 +72,16 @@ class SettingsScreen extends ConsumerWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Row(
+                          Row(
                             children: [
-                              Icon(
+                              const Icon(
                                 Icons.speed,
                                 color: RelayColors.cyan,
                               ),
-                              SizedBox(width: 10),
+                              const SizedBox(width: 10),
                               Text(
-                                'Varsayılan tekrar hızı',
-                                style: TextStyle(
+                                strings.replaySpeed,
+                                style: const TextStyle(
                                   fontWeight: FontWeight.w800,
                                 ),
                               ),
@@ -122,19 +127,103 @@ class SettingsScreen extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  const Card(
+                  Card(
                     child: ListTile(
-                      leading: Icon(
+                      leading: const Icon(
                         Icons.palette_outlined,
                         color: RelayColors.amber,
                       ),
                       title: Text(
-                        'Görünüm',
-                        style: TextStyle(fontWeight: FontWeight.w800),
+                        strings.appearance,
+                        style: const TextStyle(fontWeight: FontWeight.w800),
                       ),
                       subtitle: Text(
-                        'Yüksek kontrastlı koyu devre teması etkin.',
-                        style: TextStyle(
+                        strings.appearanceSubtitle,
+                        style: const TextStyle(
+                          color: RelayColors.muted,
+                          fontSize: 11,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              const Icon(
+                                Icons.language_outlined,
+                                color: RelayColors.cyan,
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      strings.language,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                    ),
+                                    Text(
+                                      strings.languageSubtitle,
+                                      style: const TextStyle(
+                                        color: RelayColors.muted,
+                                        fontSize: 11,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          SizedBox(
+                            width: double.infinity,
+                            child: SegmentedButton<AppLanguage>(
+                              key: const ValueKey('settings-language'),
+                              segments: const [
+                                ButtonSegment(
+                                  value: AppLanguage.turkish,
+                                  label: Text('Türkçe'),
+                                ),
+                                ButtonSegment(
+                                  value: AppLanguage.english,
+                                  label: Text('English'),
+                                ),
+                              ],
+                              selected: {settings.language},
+                              onSelectionChanged: (selection) {
+                                controller.setLanguage(selection.single);
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Card(
+                    child: SwitchListTile(
+                      key: const ValueKey('settings-telemetry'),
+                      value: settings.telemetryEnabled,
+                      onChanged: controller.setTelemetryEnabled,
+                      secondary: const Icon(
+                        Icons.query_stats_outlined,
+                        color: RelayColors.violet,
+                      ),
+                      title: Text(
+                        strings.telemetry,
+                        style: const TextStyle(fontWeight: FontWeight.w800),
+                      ),
+                      subtitle: Text(
+                        strings.telemetrySubtitle,
+                        style: const TextStyle(
                           color: RelayColors.muted,
                           fontSize: 11,
                         ),
@@ -149,13 +238,13 @@ class SettingsScreen extends ConsumerWidget {
                         Icons.feedback_outlined,
                         color: RelayColors.cyan,
                       ),
-                      title: const Text(
-                        'Alfa geri bildirimi',
-                        style: TextStyle(fontWeight: FontWeight.w800),
+                      title: Text(
+                        strings.alphaFeedback,
+                        style: const TextStyle(fontWeight: FontWeight.w800),
                       ),
-                      subtitle: const Text(
-                        'Denge, hata ve arayüz geri bildirimlerini buradan gönder.',
-                        style: TextStyle(
+                      subtitle: Text(
+                        strings.alphaFeedbackSubtitle,
+                        style: const TextStyle(
                           color: RelayColors.muted,
                           fontSize: 11,
                         ),
@@ -168,12 +257,48 @@ class SettingsScreen extends ConsumerWidget {
                       ),
                     ),
                   ),
+                  if (RelayFeatures.sandboxLab) ...[
+                    const SizedBox(height: 12),
+                    Card(
+                      child: ListTile(
+                        key: const ValueKey('settings-sandbox-lab'),
+                        leading: const Icon(
+                          Icons.science_outlined,
+                          color: RelayColors.lime,
+                        ),
+                        title: Text(
+                          strings.sandbox,
+                          style: const TextStyle(fontWeight: FontWeight.w800),
+                        ),
+                        subtitle: Text(
+                          strings.sandboxSubtitle,
+                          style: const TextStyle(
+                            color: RelayColors.muted,
+                            fontSize: 11,
+                          ),
+                        ),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () {
+                          ref.read(productTelemetryProvider).track(
+                            'sandbox_opened',
+                          );
+                          Navigator.of(context).push(
+                            MaterialPageRoute<void>(
+                              builder: (context) => const EditorScreen(
+                                mode: EditorMode.training,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 22),
                   OutlinedButton.icon(
                     key: const ValueKey('settings-back-button'),
                     onPressed: () => returnToMainMenu(context),
                     icon: const Icon(Icons.arrow_back),
-                    label: const Text('ANA MENÜYE DÖN'),
+                    label: Text(strings.backToMain),
                   ),
                 ],
               ),

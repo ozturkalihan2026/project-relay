@@ -38,6 +38,10 @@ final catalogsProvider = FutureProvider<CatalogBundle>((ref) {
   return ref.watch(relayApiProvider).fetchCatalogs();
 });
 
+final weeklyProtocolProvider = FutureProvider<WeeklyProtocol>((ref) {
+  return ref.watch(relayApiProvider).fetchWeeklyProtocol();
+});
+
 final statisticsProvider = FutureProvider<CareerSnapshot>((ref) async {
   await ref.watch(guestSessionProvider.future);
   return ref.watch(relayApiProvider).fetchStatistics();
@@ -55,38 +59,50 @@ final careerRunProvider = FutureProvider<CareerRunSnapshot>((ref) async {
   return ref.watch(relayApiProvider).fetchCareerRun();
 });
 
-final careerBoardProvider = FutureProvider.autoDispose<SavedBoard?>((ref) async {
+final careerBoardProvider = FutureProvider.autoDispose<SavedBoard?>((
+  ref,
+) async {
   await ref.watch(guestSessionProvider.future);
   return ref.watch(relayApiProvider).fetchCareerBoard();
 });
 
-final collectionProvider = FutureProvider.autoDispose<CollectionSnapshot>((ref) async {
+final collectionProvider = FutureProvider.autoDispose<CollectionSnapshot>((
+  ref,
+) async {
   await ref.watch(guestSessionProvider.future);
   return ref.watch(relayApiProvider).fetchCollection();
 });
 
-final seasonProvider = FutureProvider.autoDispose<SeasonSnapshotModel>((ref) async {
+final seasonProvider = FutureProvider.autoDispose<SeasonSnapshotModel>((
+  ref,
+) async {
   await ref.watch(guestSessionProvider.future);
   return ref.watch(relayApiProvider).fetchSeason();
 });
 
 final alphaSafetyProvider =
     FutureProvider.autoDispose<AlphaSafetySnapshotModel>((ref) async {
-  await ref.watch(guestSessionProvider.future);
-  return ref.watch(relayApiProvider).fetchAlphaSafety();
-});
+      await ref.watch(guestSessionProvider.future);
+      return ref.watch(relayApiProvider).fetchAlphaSafety();
+    });
 
-final socialProvider = FutureProvider.autoDispose<SocialSnapshotModel>((ref) async {
+final socialProvider = FutureProvider.autoDispose<SocialSnapshotModel>((
+  ref,
+) async {
   await ref.watch(guestSessionProvider.future);
   return ref.watch(relayApiProvider).fetchSocial();
 });
 
-final chatChannelsProvider = FutureProvider.autoDispose<List<ChatChannelModel>>((ref) async {
-  await ref.watch(guestSessionProvider.future);
-  return ref.watch(relayApiProvider).fetchChatChannels();
-});
+final chatChannelsProvider = FutureProvider.autoDispose<List<ChatChannelModel>>(
+  (ref) async {
+    await ref.watch(guestSessionProvider.future);
+    return ref.watch(relayApiProvider).fetchChatChannels();
+  },
+);
 
-final clanDirectoryProvider = FutureProvider.autoDispose<List<ClanModel>>((ref) async {
+final clanDirectoryProvider = FutureProvider.autoDispose<List<ClanModel>>((
+  ref,
+) async {
   await ref.watch(guestSessionProvider.future);
   return ref.watch(relayApiProvider).fetchClans();
 });
@@ -96,9 +112,9 @@ class RelayApi {
     required String baseUrl,
     required http.Client client,
     required SessionStorage sessionStorage,
-  })  : _baseUrl = baseUrl.replaceFirst(RegExp(r'/$'), ''),
-        _client = client,
-        _sessionStorage = sessionStorage;
+  }) : _baseUrl = baseUrl.replaceFirst(RegExp(r'/$'), ''),
+       _client = client,
+       _sessionStorage = sessionStorage;
 
   final String _baseUrl;
   final http.Client _client;
@@ -144,27 +160,21 @@ class RelayApi {
     return CatalogBundle(
       rulesVersion: modulePayload['rules_version'] as String,
       modules: (modulePayload['modules'] as List<dynamic>)
-          .map(
-            (module) => ModuleSpec.fromJson(
-              module as Map<String, dynamic>,
-            ),
-          )
+          .map((module) => ModuleSpec.fromJson(module as Map<String, dynamic>))
           .toList(),
       bots: (botPayload['bots'] as List<dynamic>)
-          .map(
-            (bot) => BotDefinition.fromJson(
-              bot as Map<String, dynamic>,
-            ),
-          )
+          .map((bot) => BotDefinition.fromJson(bot as Map<String, dynamic>))
           .toList(),
     );
   }
 
+  Future<WeeklyProtocol> fetchWeeklyProtocol() async {
+    final payload = await _get('/api/v1/live/weekly-protocol');
+    return WeeklyProtocol.fromJson(payload);
+  }
+
   Future<SavedBoard?> fetchCurrentBoard() async {
-    final payload = await _get(
-      '/api/v1/me',
-      authorized: true,
-    );
+    final payload = await _get('/api/v1/me', authorized: true);
     final boardPayload = payload['board'];
     return boardPayload is Map<String, dynamic>
         ? SavedBoard.fromJson(boardPayload)
@@ -173,10 +183,7 @@ class RelayApi {
 
   Future<SavedBoard?> fetchCareerBoard() async {
     try {
-      final payload = await _get(
-        '/api/v1/me/career-board',
-        authorized: true,
-      );
+      final payload = await _get('/api/v1/me/career-board', authorized: true);
       return SavedBoard.fromJson(payload);
     } on RelayApiException catch (error) {
       if (error.code == 'career_board_not_found' || error.statusCode == 404) {
@@ -196,10 +203,7 @@ class RelayApi {
   }
 
   Future<BoardValidation> validateBoard(BoardDraft board) async {
-    final payload = await _post(
-      '/api/v1/boards/validate',
-      board.toJson(),
-    );
+    final payload = await _post('/api/v1/boards/validate', board.toJson());
     return BoardValidation.fromJson(payload);
   }
 
@@ -233,10 +237,7 @@ class RelayApi {
   }
 
   Future<MatchResponse> fetchMatch(String matchId) async {
-    final payload = await _get(
-      '/api/v1/matches/$matchId',
-      authorized: true,
-    );
+    final payload = await _get('/api/v1/matches/$matchId', authorized: true);
     return MatchResponse.fromJson(payload);
   }
 
@@ -263,13 +264,9 @@ class RelayApi {
   }
 
   Future<ProgressionSnapshot> fetchProgression() async {
-    final payload = await _get(
-      '/api/v1/me/progression',
-      authorized: true,
-    );
+    final payload = await _get('/api/v1/me/progression', authorized: true);
     return ProgressionSnapshot.fromJson(payload);
   }
-
 
   Future<SeasonSnapshotModel> fetchSeason({int limit = 20}) async {
     final payload = await _get(
@@ -291,10 +288,7 @@ class RelayApi {
   }
 
   Future<AlphaSafetySnapshotModel> fetchAlphaSafety() async {
-    final payload = await _get(
-      '/api/v1/me/alpha-safety',
-      authorized: true,
-    );
+    final payload = await _get('/api/v1/me/alpha-safety', authorized: true);
     return AlphaSafetySnapshotModel.fromJson(payload);
   }
 
@@ -302,23 +296,39 @@ class RelayApi {
     required String category,
     required String message,
   }) async {
-    final payload = await _post(
-      '/api/v1/alpha/feedback',
-      {
-        'category': category,
-        'message': message,
-        'client_version': '0.8.22',
-      },
-      authorized: true,
-    );
+    final payload = await _post('/api/v1/alpha/feedback', {
+      'category': category,
+      'message': message,
+      'client_version': '0.8.22',
+    }, authorized: true);
     return AlphaFeedbackReceiptModel.fromJson(payload);
   }
 
-  Future<SocialSnapshotModel> fetchSocial() async {
-    final payload = await _get(
-      '/api/v1/me/social',
+  Future<void> submitProductEvent({
+    required String eventId,
+    required String eventName,
+    required Map<String, Object?> context,
+    required DateTime occurredAt,
+  }) async {
+    await _post(
+      '/api/v1/telemetry/events',
+      {
+        'events': [
+          {
+            'event_id': eventId,
+            'event_name': eventName,
+            'context': context,
+            'client_version': '0.8.22',
+            'occurred_at': occurredAt.toUtc().toIso8601String(),
+          },
+        ],
+      },
       authorized: true,
     );
+  }
+
+  Future<SocialSnapshotModel> fetchSocial() async {
+    final payload = await _get('/api/v1/me/social', authorized: true);
     return SocialSnapshotModel.fromJson(payload);
   }
 
@@ -326,14 +336,10 @@ class RelayApi {
     required String statusMessage,
     required ModuleKind favoriteModule,
   }) async {
-    final payload = await _put(
-      '/api/v1/me/social/profile',
-      {
-        'status_message': statusMessage,
-        'favorite_module': favoriteModule.wireValue,
-      },
-      authorized: true,
-    );
+    final payload = await _put('/api/v1/me/social/profile', {
+      'status_message': statusMessage,
+      'favorite_module': favoriteModule.wireValue,
+    }, authorized: true);
     return SocialSnapshotModel.fromJson(payload);
   }
 
@@ -343,11 +349,7 @@ class RelayApi {
       authorized: true,
     );
     return (payload['players'] as List<dynamic>)
-        .map(
-          (item) => SocialPlayerModel.fromJson(
-            item as Map<String, dynamic>,
-          ),
-        )
+        .map((item) => SocialPlayerModel.fromJson(item as Map<String, dynamic>))
         .toList(growable: false);
   }
 
@@ -383,16 +385,9 @@ class RelayApi {
   }
 
   Future<List<ClanModel>> fetchClans() async {
-    final payload = await _get(
-      '/api/v1/clans',
-      authorized: true,
-    );
+    final payload = await _get('/api/v1/clans', authorized: true);
     return (payload['clans'] as List<dynamic>)
-        .map(
-          (item) => ClanModel.fromJson(
-            item as Map<String, dynamic>,
-          ),
-        )
+        .map((item) => ClanModel.fromJson(item as Map<String, dynamic>))
         .toList(growable: false);
   }
 
@@ -401,15 +396,11 @@ class RelayApi {
     required String tag,
     required String description,
   }) async {
-    final payload = await _post(
-      '/api/v1/clans',
-      {
-        'name': name,
-        'tag': tag,
-        'description': description,
-      },
-      authorized: true,
-    );
+    final payload = await _post('/api/v1/clans', {
+      'name': name,
+      'tag': tag,
+      'description': description,
+    }, authorized: true);
     return SocialSnapshotModel.fromJson(payload);
   }
 
@@ -438,7 +429,9 @@ class RelayApi {
         .toList(growable: false);
   }
 
-  Future<List<ChatMessageModel>> fetchChatMessages(ChatChannelModel channel) async {
+  Future<List<ChatMessageModel>> fetchChatMessages(
+    ChatChannelModel channel,
+  ) async {
     final payload = await _get(
       '/api/v1/chat/messages?channel_type=${Uri.encodeQueryComponent(channel.type)}&channel_key=${Uri.encodeQueryComponent(channel.keyValue)}&limit=80',
       authorized: true,
@@ -452,15 +445,11 @@ class RelayApi {
     required ChatChannelModel channel,
     required String message,
   }) async {
-    final payload = await _post(
-      '/api/v1/chat/messages',
-      {
-        'channel_type': channel.type,
-        'channel_key': channel.keyValue,
-        'message': message,
-      },
-      authorized: true,
-    );
+    final payload = await _post('/api/v1/chat/messages', {
+      'channel_type': channel.type,
+      'channel_key': channel.keyValue,
+      'message': message,
+    }, authorized: true);
     return ChatMessageModel.fromJson(payload);
   }
 
@@ -468,19 +457,15 @@ class RelayApi {
     required String name,
     required List<String> memberPlayerIds,
   }) async {
-    final payload = await _post(
-      '/api/v1/chat/groups',
-      {'name': name, 'member_player_ids': memberPlayerIds},
-      authorized: true,
-    );
+    final payload = await _post('/api/v1/chat/groups', {
+      'name': name,
+      'member_player_ids': memberPlayerIds,
+    }, authorized: true);
     return ChatChannelModel.fromJson(payload);
   }
 
   Future<CollectionSnapshot> fetchCollection() async {
-    final payload = await _get(
-      '/api/v1/me/collection',
-      authorized: true,
-    );
+    final payload = await _get('/api/v1/me/collection', authorized: true);
     return CollectionSnapshot.fromJson(payload);
   }
 
@@ -494,11 +479,9 @@ class RelayApi {
   }
 
   Future<CollectionSnapshot> equipCosmetic(String cosmeticId) async {
-    final payload = await _put(
-      '/api/v1/me/collection/equipped',
-      {'cosmetic_id': cosmeticId},
-      authorized: true,
-    );
+    final payload = await _put('/api/v1/me/collection/equipped', {
+      'cosmetic_id': cosmeticId,
+    }, authorized: true);
     return CollectionSnapshot.fromJson(payload);
   }
 
@@ -507,23 +490,16 @@ class RelayApi {
     required String name,
     required List<ModuleKind> moduleKinds,
   }) async {
-    final payload = await _put(
-      '/api/v1/me/kit',
-      {
-        'mode': mode.wireValue,
-        'name': name,
-        'module_kinds': moduleKinds.map((kind) => kind.wireValue).toList(),
-      },
-      authorized: true,
-    );
+    final payload = await _put('/api/v1/me/kit', {
+      'mode': mode.wireValue,
+      'name': name,
+      'module_kinds': moduleKinds.map((kind) => kind.wireValue).toList(),
+    }, authorized: true);
     return CollectionSnapshot.fromJson(payload);
   }
 
   Future<CareerRunSnapshot> fetchCareerRun() async {
-    final payload = await _get(
-      '/api/v1/me/career-run',
-      authorized: true,
-    );
+    final payload = await _get('/api/v1/me/career-run', authorized: true);
     return CareerRunSnapshot.fromJson(payload);
   }
 
@@ -537,11 +513,20 @@ class RelayApi {
   }
 
   Future<CareerRunSnapshot> chooseCareerBooster(String boosterId) async {
-    final payload = await _post(
-      '/api/v1/me/career-run/booster',
-      {'booster_id': boosterId},
-      authorized: true,
-    );
+    final payload = await _post('/api/v1/me/career-run/booster', {
+      'booster_id': boosterId,
+    }, authorized: true);
+    return CareerRunSnapshot.fromJson(payload);
+  }
+
+  Future<CareerRunSnapshot> chooseCareerModuleUpgrade(
+    String moduleId,
+    String branch,
+  ) async {
+    final payload = await _post('/api/v1/me/career-run/module-upgrade', {
+      'module_id': moduleId,
+      'branch': branch,
+    }, authorized: true);
     return CareerRunSnapshot.fromJson(payload);
   }
 
@@ -604,21 +589,14 @@ class RelayApi {
     return ReplayResponse.fromJson(payload);
   }
 
-  Future<GuestSession> _acceptSession(
-    Map<String, dynamic> payload,
-  ) async {
+  Future<GuestSession> _acceptSession(Map<String, dynamic> payload) async {
     final session = GuestSession.fromJson(payload);
     _tokens = session.tokens;
-    await _sessionStorage.writeRefreshToken(
-      session.tokens.refreshToken,
-    );
+    await _sessionStorage.writeRefreshToken(session.tokens.refreshToken);
     return session;
   }
 
-  Future<Map<String, dynamic>> _get(
-    String path, {
-    bool authorized = false,
-  }) {
+  Future<Map<String, dynamic>> _get(String path, {bool authorized = false}) {
     return _request('GET', path, authorized: authorized);
   }
 
@@ -627,12 +605,7 @@ class RelayApi {
     Map<String, dynamic> body, {
     bool authorized = false,
   }) {
-    return _request(
-      'POST',
-      path,
-      body: body,
-      authorized: authorized,
-    );
+    return _request('POST', path, body: body, authorized: authorized);
   }
 
   Future<Map<String, dynamic>> _put(
@@ -640,12 +613,7 @@ class RelayApi {
     Map<String, dynamic> body, {
     bool authorized = false,
   }) {
-    return _request(
-      'PUT',
-      path,
-      body: body,
-      authorized: authorized,
-    );
+    return _request('PUT', path, body: body, authorized: authorized);
   }
 
   Future<Map<String, dynamic>> _request(
@@ -688,12 +656,10 @@ class RelayApi {
       } else {
         throw StateError('Desteklenmeyen HTTP yöntemi: $method');
       }
-      if (
-        response.statusCode == 401 &&
-        authorized &&
-        allowRefresh &&
-        _tokens != null
-      ) {
+      if (response.statusCode == 401 &&
+          authorized &&
+          allowRefresh &&
+          _tokens != null) {
         await refreshSession(_tokens!.refreshToken);
         return _request(
           method,
@@ -710,9 +676,7 @@ class RelayApi {
         'emin olun.',
       );
     } on http.ClientException catch (error) {
-      throw RelayApiException(
-        'Sunucuya bağlanılamadı: ${error.message}',
-      );
+      throw RelayApiException('Sunucuya bağlanılamadı: ${error.message}');
     }
   }
 
@@ -739,11 +703,7 @@ class RelayApi {
 }
 
 class RelayApiException implements Exception {
-  const RelayApiException(
-    this.message, {
-    this.code,
-    this.statusCode,
-  });
+  const RelayApiException(this.message, {this.code, this.statusCode});
 
   final String message;
   final String? code;

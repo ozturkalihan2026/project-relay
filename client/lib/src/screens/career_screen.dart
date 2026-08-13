@@ -9,11 +9,13 @@ import '../models/relay_models.dart';
 import '../navigation/navigation_actions.dart';
 import '../state/app_settings.dart';
 import '../state/board_controller.dart';
+import '../state/product_telemetry.dart';
 import '../theme/cosmetic_visuals.dart';
 import '../theme/relay_theme.dart';
 import '../widgets/app_header_actions.dart';
 import '../widgets/circuit_board.dart';
 import '../widgets/module_palette.dart';
+import '../widgets/module_visuals.dart';
 import '../widgets/relay_notice.dart';
 import '../widgets/relay_dialog.dart';
 import 'career_battle_screen.dart';
@@ -70,150 +72,114 @@ class _CareerScreenState extends ConsumerState<CareerScreen> {
         backgroundColor: Colors.transparent,
         centerTitle: true,
         title: const AppHeaderTitle(pageTitle: 'KARİYER'),
-        actions: const [
-          AppHeaderActions(),
-          SizedBox(width: 8),
-        ],
+        actions: const [AppHeaderActions(), SizedBox(width: 8)],
       ),
       body: Container(
         decoration: RelayDecorations.modeShell(RelayColors.amber),
         child: SafeArea(
           child: progression.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (error, _) => _CareerError(
-            message: error.toString(),
-            onRetry: _refreshAll,
-          ),
-          data: (snapshot) => run.when(
             loading: () => const Center(child: CircularProgressIndicator()),
-            error: (error, _) => _CareerError(
-              message: error.toString(),
-              onRetry: _refreshAll,
-            ),
-            data: (careerRun) => catalogs.when(
+            error: (error, _) =>
+                _CareerError(message: error.toString(), onRetry: _refreshAll),
+            data: (snapshot) => run.when(
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (error, _) => _CareerError(
-                message: error.toString(),
-                onRetry: _refreshAll,
-              ),
-              data: (catalog) => careerBoard.when(
+              error: (error, _) =>
+                  _CareerError(message: error.toString(), onRetry: _refreshAll),
+              data: (careerRun) => catalogs.when(
                 loading: () => const Center(child: CircularProgressIndicator()),
                 error: (error, _) => _CareerError(
                   message: error.toString(),
                   onRetry: _refreshAll,
                 ),
-                data: (savedBoard) => collection.when(
+                data: (catalog) => careerBoard.when(
                   loading: () =>
                       const Center(child: CircularProgressIndicator()),
                   error: (error, _) => _CareerError(
                     message: error.toString(),
                     onRetry: _refreshAll,
                   ),
-                  data: (collectionSnapshot) {
-                    _scheduleEditorInitialization(
-                      savedBoard,
-                      collectionSnapshot,
-                    );
-                    final specs = {
-                      for (final module in catalog.modules)
-                        module.kind: module,
-                    };
-                    final playerEditor = _CareerInlineEditor(
-                      state: editorState,
-                      specs: specs,
-                      modules: catalog.modules,
-                      visuals: _visuals,
-                      busy: _runBusy,
-                      onPaletteSelected: ref
-                          .read(careerBoardControllerProvider.notifier)
-                          .selectPalette,
-                      onBoardModuleReturned: _returnModuleToPalette,
-                      onCellTap: _tapCell,
-                      onModuleDropped: _dropModule,
-                      onRotateModule: ref
-                          .read(careerBoardControllerProvider.notifier)
-                          .rotateAt,
-                      onReset: _resetCareerBoard,
-                      onValidate: _validateCareerBoard,
-                      onEditKit: _editCareerKit,
-                    );
-                    return RefreshIndicator(
-                      onRefresh: _refreshAll,
-                      child: ListView(
-                        key: const ValueKey('career-scroll-view'),
-                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-                        children: [
-                          _ProgressCard(profile: snapshot.profile),
-                          const SizedBox(height: 12),
-                          _CareerRunCard(
-                            run: careerRun,
-                            playerEditor: playerEditor,
-                            modules: catalog.modules,
-                            availableCredits: snapshot.profile.credits,
-                            busyAction: _runAction,
-                            onStart: _prepareRun,
-                            onBattle: () => _battle(catalog.modules),
-                            onChooseBooster: _chooseBooster,
-                            onSkipBooster: () => _chooseBooster('none'),
-                            onAbandon: _confirmAbandon,
-                          ),
-                          const SizedBox(height: 12),
-                          _SectionCard(
-                            title: 'BOSS GÜÇLENDİRİCİ KADEMELERİ',
-                            icon: Icons.bolt_outlined,
-                            child: Column(
-                              children: [
-                                Container(
-                                  width: double.infinity,
-                                  margin: const EdgeInsets.only(bottom: 12),
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    color: RelayColors.amber
-                                        .withValues(alpha: 0.08),
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(
-                                      color: RelayColors.amber
-                                          .withValues(alpha: 0.38),
-                                    ),
-                                  ),
-                                  child: const Text(
-                                    'Bu kademeler modüllere kalıcı güç vermez. '
-                                    'Yalnız kariyer koşusunda, boss savaşı öncesinde '
-                                    'Devre Kredisiyle alınan geçici güçlendiricinin '
-                                    'etkisini belirler. K2/K3/K4/K5 sırasıyla '
-                                    '10, 20, 30 ve 40. seviyelerde açılır.',
-                                    style: TextStyle(
-                                      color: RelayColors.muted,
-                                      fontSize: 11,
-                                      height: 1.4,
-                                    ),
-                                  ),
-                                ),
-                                for (final booster in snapshot.boosters)
-                                  _BoosterRow(booster: booster),
-                              ],
+                  data: (savedBoard) => collection.when(
+                    loading: () =>
+                        const Center(child: CircularProgressIndicator()),
+                    error: (error, _) => _CareerError(
+                      message: error.toString(),
+                      onRetry: _refreshAll,
+                    ),
+                    data: (collectionSnapshot) {
+                      _scheduleEditorInitialization(
+                        savedBoard,
+                        collectionSnapshot,
+                      );
+                      final specs = {
+                        for (final module in catalog.modules)
+                          module.kind: module,
+                      };
+                      final playerEditor = _CareerInlineEditor(
+                        state: editorState,
+                        specs: specs,
+                        modules: catalog.modules,
+                        visuals: _visuals,
+                        upgradeBranches: {
+                          for (final upgrade in careerRun.selectedUpgrades)
+                            upgrade.moduleId: upgrade.branch,
+                        },
+                        busy: _runBusy,
+                        onPaletteSelected: ref
+                            .read(careerBoardControllerProvider.notifier)
+                            .selectPalette,
+                        onBoardModuleReturned: _returnModuleToPalette,
+                        onCellTap: _tapCell,
+                        onModuleDropped: _dropModule,
+                        onRotateModule: ref
+                            .read(careerBoardControllerProvider.notifier)
+                            .rotateAt,
+                        onReset: _resetCareerBoard,
+                        onEditKit: _editCareerKit,
+                      );
+                      return RefreshIndicator(
+                        onRefresh: _refreshAll,
+                        child: ListView(
+                          key: const ValueKey('career-scroll-view'),
+                          padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+                          children: [
+                            _ProgressCard(profile: snapshot.profile),
+                            const SizedBox(height: 12),
+                            _CareerRunCard(
+                              run: careerRun,
+                              playerEditor: playerEditor,
+                              modules: catalog.modules,
+                              availableCredits: snapshot.profile.credits,
+                              busyAction: _runAction,
+                              boardValidated:
+                                  editorState.validation?.valid ?? false,
+                              onValidate: _validateCareerBoard,
+                              onStart: _prepareRun,
+                              onBattle: () => _battle(catalog.modules),
+                              onChooseBooster: _chooseBooster,
+                              onChooseUpgrade: _chooseUpgrade,
+                              onSkipBooster: () => _chooseBooster('none'),
+                              onAbandon: _confirmAbandon,
                             ),
-                          ),
-                          const SizedBox(height: 16),
-                          OutlinedButton.icon(
-                            key: const ValueKey('career-back-button'),
-                            onPressed: _runBusy
-                                ? null
-                                : () => returnToPreviousMenu(context),
-                            icon: const Icon(Icons.arrow_back),
-                            label: const Text('MENÜYE DÖN'),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
+                            const SizedBox(height: 16),
+                            OutlinedButton.icon(
+                              key: const ValueKey('career-back-button'),
+                              onPressed: _runBusy
+                                  ? null
+                                  : () => returnToPreviousMenu(context),
+                              icon: const Icon(Icons.arrow_back),
+                              label: const Text('MENÜYE DÖN'),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
                 ),
               ),
             ),
           ),
         ),
       ),
-    ),
     );
   }
 
@@ -263,10 +229,8 @@ class _CareerScreenState extends ConsumerState<CareerScreen> {
   Future<void> _editCareerKit() async {
     final kit = await Navigator.of(context).push<ControlledKit>(
       MaterialPageRoute<ControlledKit>(
-        builder: (context) => const CollectionScreen(
-          kitOnly: true,
-          kitMode: KitMode.career,
-        ),
+        builder: (context) =>
+            const CollectionScreen(kitOnly: true, kitMode: KitMode.career),
       ),
     );
     if (kit == null || !mounted) return;
@@ -330,9 +294,12 @@ class _CareerScreenState extends ConsumerState<CareerScreen> {
     setState(() => _runAction = 'validate');
     try {
       final state = ref.read(careerBoardControllerProvider);
-      final validation =
-          await ref.read(relayApiProvider).validateBoard(state.board);
-      ref.read(careerBoardControllerProvider.notifier).applyValidation(validation);
+      final validation = await ref
+          .read(relayApiProvider)
+          .validateBoard(state.board);
+      ref
+          .read(careerBoardControllerProvider.notifier)
+          .applyValidation(validation);
       if (mounted) {
         final unpowered = validation.unpoweredIds.length;
         RelayNotice.show(
@@ -358,7 +325,9 @@ class _CareerScreenState extends ConsumerState<CareerScreen> {
     final api = ref.read(relayApiProvider);
     final state = ref.read(careerBoardControllerProvider);
     final validation = await api.validateBoard(state.board);
-    ref.read(careerBoardControllerProvider.notifier).applyValidation(validation);
+    ref
+        .read(careerBoardControllerProvider.notifier)
+        .applyValidation(validation);
     final saved = await api.saveCareerBoard(state.board);
     ref.invalidate(careerBoardProvider);
     return saved;
@@ -370,6 +339,17 @@ class _CareerScreenState extends ConsumerState<CareerScreen> {
     try {
       await _validateAndSaveCareerBoard();
       await ref.read(relayApiProvider).startCareerRun();
+      ref
+          .read(productTelemetryProvider)
+          .track(
+            'career_run_started',
+            context: {
+              'module_count': ref
+                  .read(careerBoardControllerProvider)
+                  .placements
+                  .length,
+            },
+          );
       ref.invalidate(careerRunProvider);
       ref.invalidate(careerBoardProvider);
       await Future.wait([
@@ -398,6 +378,26 @@ class _CareerScreenState extends ConsumerState<CareerScreen> {
     });
   }
 
+  Future<void> _chooseUpgrade(CareerModuleUpgrade upgrade) async {
+    await _executeRunAction(
+      'upgrade:${upgrade.moduleId}:${upgrade.branch}',
+      () async {
+        await ref
+            .read(relayApiProvider)
+            .chooseCareerModuleUpgrade(upgrade.moduleId, upgrade.branch);
+        ref
+            .read(productTelemetryProvider)
+            .track(
+              'career_upgrade_selected',
+              context: {
+                'module_kind': upgrade.kind.wireValue,
+                'branch': upgrade.branch,
+              },
+            );
+      },
+    );
+  }
+
   Future<void> _confirmAbandon() async {
     if (_runBusy) return;
     final confirmed = await showDialog<bool>(
@@ -419,7 +419,8 @@ class _CareerScreenState extends ConsumerState<CareerScreen> {
   Future<void> _battle(List<ModuleSpec> modules) async {
     if (_runBusy) return;
     final runBeforeBattle = ref.read(careerRunProvider).requireValue;
-    final stageNumber = runBeforeBattle.opponent?.stageNumber ??
+    final stageNumber =
+        runBeforeBattle.opponent?.stageNumber ??
         (runBeforeBattle.stageIndex + 1);
     setState(() => _runAction = 'battle');
     try {
@@ -492,6 +493,7 @@ class _CareerInlineEditor extends StatelessWidget {
     required this.specs,
     required this.modules,
     required this.visuals,
+    required this.upgradeBranches,
     required this.busy,
     required this.onPaletteSelected,
     required this.onBoardModuleReturned,
@@ -499,7 +501,6 @@ class _CareerInlineEditor extends StatelessWidget {
     required this.onModuleDropped,
     required this.onRotateModule,
     required this.onReset,
-    required this.onValidate,
     required this.onEditKit,
   });
 
@@ -507,6 +508,7 @@ class _CareerInlineEditor extends StatelessWidget {
   final Map<ModuleKind, ModuleSpec> specs;
   final List<ModuleSpec> modules;
   final EquippedVisuals visuals;
+  final Map<String, String> upgradeBranches;
   final bool busy;
   final ValueChanged<ModuleKind> onPaletteSelected;
   final ValueChanged<ModuleDragData> onBoardModuleReturned;
@@ -514,7 +516,6 @@ class _CareerInlineEditor extends StatelessWidget {
   final ModuleDropCallback onModuleDropped;
   final ValueChanged<int> onRotateModule;
   final VoidCallback onReset;
-  final VoidCallback onValidate;
   final VoidCallback onEditKit;
 
   @override
@@ -523,23 +524,20 @@ class _CareerInlineEditor extends StatelessWidget {
     final statusText = validation == null
         ? 'Devre henüz doğrulanmadı.'
         : validation.unpoweredIds.isEmpty
-            ? 'Devre geçerli • Bütün modüller enerjili'
-            : 'Devre geçerli • ${validation.unpoweredIds.length} modül enerjisiz';
+        ? 'Devre geçerli • Bütün modüller enerjili'
+        : 'Devre geçerli • ${validation.unpoweredIds.length} modül enerjisiz';
     final statusColor = validation == null
         ? RelayColors.muted
         : validation.unpoweredIds.isEmpty
-            ? RelayColors.mint
-            : RelayColors.amber;
+        ? RelayColors.mint
+        : RelayColors.amber;
 
     final moduleCard = Container(
       key: const ValueKey('career-module-selection-card'),
       width: _careerPanelWidth,
       height: _careerPanelHeight,
       padding: const EdgeInsets.all(12),
-      decoration: RelayDecorations.panel(
-        accent: RelayColors.mint,
-        soft: true,
-      ),
+      decoration: RelayDecorations.panel(accent: RelayColors.mint, soft: true),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -601,13 +599,6 @@ class _CareerInlineEditor extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 8),
-          OutlinedButton.icon(
-            key: const ValueKey('career-validate-board'),
-            onPressed: busy ? null : onValidate,
-            icon: const Icon(Icons.fact_check_outlined, size: 18),
-            label: const Text('DOĞRULA'),
-          ),
         ],
       ),
     );
@@ -617,10 +608,7 @@ class _CareerInlineEditor extends StatelessWidget {
       width: _careerPanelWidth,
       height: _careerPanelHeight,
       padding: const EdgeInsets.all(12),
-      decoration: RelayDecorations.panel(
-        accent: RelayColors.cyan,
-        soft: true,
-      ),
+      decoration: RelayDecorations.panel(accent: RelayColors.cyan, soft: true),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -641,10 +629,7 @@ class _CareerInlineEditor extends StatelessWidget {
                     ),
                     Text(
                       'Savaş öncesinde otomatik kaydedilir.',
-                      style: TextStyle(
-                        color: RelayColors.muted,
-                        fontSize: 10,
-                      ),
+                      style: TextStyle(color: RelayColors.muted, fontSize: 10),
                     ),
                   ],
                 ),
@@ -677,8 +662,7 @@ class _CareerInlineEditor extends StatelessWidget {
                     child: CircuitBoard(
                       placements: state.placements,
                       specs: specs,
-                      poweredIds:
-                          validation?.poweredIds ?? const <String>{},
+                      poweredIds: validation?.poweredIds ?? const <String>{},
                       validationVisible: validation != null,
                       selectedCell: state.selectedCell,
                       onCellTap: onCellTap,
@@ -686,6 +670,7 @@ class _CareerInlineEditor extends StatelessWidget {
                       onRotateModule: onRotateModule,
                       visuals: visuals,
                       presentation3d: true,
+                      upgradeBranches: upgradeBranches,
                     ),
                   ),
                 );
@@ -710,11 +695,7 @@ class _CareerInlineEditor extends StatelessWidget {
         }
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            moduleCard,
-            const SizedBox(height: 12),
-            boardCard,
-          ],
+          children: [moduleCard, const SizedBox(height: 12), boardCard],
         );
       },
     );
@@ -728,9 +709,12 @@ class _CareerRunCard extends StatelessWidget {
     required this.modules,
     required this.availableCredits,
     required this.busyAction,
+    required this.boardValidated,
+    required this.onValidate,
     required this.onStart,
     required this.onBattle,
     required this.onChooseBooster,
+    required this.onChooseUpgrade,
     required this.onSkipBooster,
     required this.onAbandon,
   });
@@ -740,9 +724,12 @@ class _CareerRunCard extends StatelessWidget {
   final List<ModuleSpec> modules;
   final int availableCredits;
   final String? busyAction;
+  final bool boardValidated;
+  final VoidCallback onValidate;
   final VoidCallback onStart;
   final VoidCallback onBattle;
   final ValueChanged<String> onChooseBooster;
+  final ValueChanged<CareerModuleUpgrade> onChooseUpgrade;
   final VoidCallback onSkipBooster;
   final VoidCallback onAbandon;
 
@@ -754,16 +741,106 @@ class _CareerRunCard extends StatelessWidget {
       key: const ValueKey('career-run-card'),
       child: Padding(
         padding: const EdgeInsets.all(18),
-        child: run.status == 'active'
-            ? _active(context)
-            : run.status == 'awaiting_booster'
-                ? _boosterChoice()
-                : run.status == 'failed'
-                    ? _idle(context)
-                    : run.isTerminal
-                        ? _terminal()
-                        : _idle(context),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _RunProgress(run: run),
+            const SizedBox(height: 14),
+            if (run.status == 'active')
+              _active(context)
+            else if (run.status == 'awaiting_upgrade')
+              _upgradeChoice()
+            else if (run.status == 'awaiting_booster')
+              _boosterChoice()
+            else if (run.status == 'failed')
+              _idle(context)
+            else if (run.isTerminal)
+              _terminal()
+            else
+              _idle(context),
+          ],
+        ),
       ),
+    );
+  }
+
+  Widget _upgradeChoice() {
+    final byModule = <String, List<CareerModuleUpgrade>>{};
+    for (final upgrade in run.offeredUpgrades) {
+      byModule.putIfAbsent(upgrade.moduleId, () => []).add(upgrade);
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const _RunTitle(
+          icon: Icons.account_tree_outlined,
+          color: RelayColors.violet,
+          title: 'MODÜL YÜKSELTME DALI',
+          subtitle:
+              'Bir modül ve bir dal seç. Yükseltme yalnız bu kariyer koşusunda çalışır ve dereceli güce dönüşmez.',
+        ),
+        const SizedBox(height: 12),
+        for (final entry in byModule.entries)
+          Container(
+            key: ValueKey('career-upgrade-${entry.key}'),
+            margin: const EdgeInsets.only(bottom: 10),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: RelayColors.violet.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: RelayColors.violet.withValues(alpha: 0.34),
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    ModuleGlyph(
+                      kind: entry.value.first.kind,
+                      color: moduleColor(entry.value.first.kind),
+                      size: 26,
+                    ),
+                    const SizedBox(width: 9),
+                    Text(
+                      entry.value.first.kind.displayName,
+                      style: const TextStyle(fontWeight: FontWeight.w900),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 9),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    for (final upgrade in entry.value)
+                      OutlinedButton.icon(
+                        key: ValueKey(
+                          'career-upgrade-${upgrade.moduleId}-${upgrade.branch}',
+                        ),
+                        onPressed: busy ? null : () => onChooseUpgrade(upgrade),
+                        icon: Icon(switch (upgrade.branch) {
+                          'overclock' => Icons.bolt,
+                          'regulated' => Icons.tune,
+                          'primed' => Icons.battery_charging_full,
+                          'focused' => Icons.center_focus_strong,
+                          _ => Icons.eco_outlined,
+                        }, size: 18),
+                        label: Text(
+                          '${upgrade.displayName}\n'
+                          '${upgrade.effectLabel}: '
+                          '${upgrade.beforeValue} → ${upgrade.afterValue}\n'
+                          '${upgrade.description}',
+                          textAlign: TextAlign.left,
+                        ),
+                      ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+      ],
     );
   }
 
@@ -799,8 +876,14 @@ class _CareerRunCard extends StatelessWidget {
                 spacing: _careerPlayerOpponentGap,
                 runSpacing: 14,
                 children: [
-                  SizedBox(width: _careerPlayerEditorWidth, child: playerEditor),
-                  const SizedBox(width: _careerPanelWidth, child: opponentPreview),
+                  SizedBox(
+                    width: _careerPlayerEditorWidth,
+                    child: playerEditor,
+                  ),
+                  const SizedBox(
+                    width: _careerPanelWidth,
+                    child: opponentPreview,
+                  ),
                 ],
               );
             }
@@ -816,15 +899,29 @@ class _CareerRunCard extends StatelessWidget {
         const SizedBox(height: 14),
         FilledButton.icon(
           key: const ValueKey('career-run-start'),
-          onPressed: busy ? null : onStart,
-          icon: busyAction == 'start'
+          onPressed: busy
+              ? null
+              : boardValidated
+              ? onStart
+              : onValidate,
+          icon: busyAction == 'start' || busyAction == 'validate'
               ? const SizedBox.square(
                   dimension: 18,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
-              : const Icon(Icons.play_arrow),
+              : Icon(
+                  boardValidated
+                      ? Icons.play_arrow
+                      : Icons.electrical_services_outlined,
+                ),
           label: Text(
-            busyAction == 'start' ? 'KOŞU HAZIRLANIYOR' : 'KOŞUYU BAŞLAT',
+            busyAction == 'validate'
+                ? 'BAĞLANTILAR DOĞRULANIYOR'
+                : busyAction == 'start'
+                ? 'KOŞU HAZIRLANIYOR'
+                : boardValidated
+                ? 'KOŞUYU BAŞLAT'
+                : 'BAĞLANTILARI DOĞRULA',
           ),
         ),
       ],
@@ -835,8 +932,9 @@ class _CareerRunCard extends StatelessWidget {
     final opponent = run.opponent;
     if (opponent == null) return _idle(context);
     final specs = {for (final item in modules) item.kind: item};
-    final opponentPowered =
-        opponent.board.modules.map((item) => item.id).toSet();
+    final opponentPowered = opponent.board.modules
+        .map((item) => item.id)
+        .toSet();
     final opponentPreview = _CareerBoardPreview(
       key: const ValueKey('career-opponent-board-preview'),
       title: opponent.displayName,
@@ -860,7 +958,11 @@ class _CareerRunCard extends StatelessWidget {
           subtitle: opponent.briefing,
         ),
         const SizedBox(height: 12),
-        _RunProgress(run: run),
+        _CareerStageGuidance(
+          stageNumber: opponent.stageNumber,
+          stage: run.sector?.stage(opponent.stageNumber),
+        ),
+        const SizedBox(height: 12),
         if (run.selectedBoosters.isNotEmpty) ...[
           const SizedBox(height: 12),
           _SelectedBoosters(items: run.selectedBoosters),
@@ -874,7 +976,10 @@ class _CareerRunCard extends StatelessWidget {
                 spacing: _careerPlayerOpponentGap,
                 runSpacing: 14,
                 children: [
-                  SizedBox(width: _careerPlayerEditorWidth, child: playerEditor),
+                  SizedBox(
+                    width: _careerPlayerEditorWidth,
+                    child: playerEditor,
+                  ),
                   SizedBox(width: _careerPanelWidth, child: opponentPreview),
                 ],
               );
@@ -891,19 +996,31 @@ class _CareerRunCard extends StatelessWidget {
         const SizedBox(height: 12),
         FilledButton.icon(
           key: const ValueKey('career-battle-button'),
-          onPressed: busy || !run.canBattle ? null : onBattle,
-          icon: busyAction == 'battle'
+          onPressed: busy || !run.canBattle
+              ? null
+              : boardValidated
+              ? onBattle
+              : onValidate,
+          icon: busyAction == 'battle' || busyAction == 'validate'
               ? const SizedBox.square(
                   dimension: 18,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
-              : const Icon(Icons.flash_on),
+              : Icon(
+                  boardValidated
+                      ? Icons.flash_on
+                      : Icons.electrical_services_outlined,
+                ),
           label: Text(
-            opponent.isBoss
+            busyAction == 'validate'
+                ? 'BAĞLANTILAR DOĞRULANIYOR'
+                : !boardValidated
+                ? 'BAĞLANTILARI DOĞRULA'
+                : opponent.isBoss
                 ? 'BOSS SAVAŞINA İLERLE'
                 : opponent.stageNumber == 1
-                    ? 'İLK SAVAŞA BAŞLA'
-                    : 'SONRAKİ SAVAŞA İLERLE',
+                ? 'İLK SAVAŞA BAŞLA'
+                : 'SONRAKİ SAVAŞA İLERLE',
           ),
         ),
         const SizedBox(height: 7),
@@ -924,11 +1041,10 @@ class _CareerRunCard extends StatelessWidget {
           icon: Icons.bolt,
           color: RelayColors.amber,
           title: 'BOSS ÖNCESİ GÜÇLENDİRİCİ MAĞAZASI',
-          subtitle: 'Yalnız bu koşunun boss savaşında çalışacak tek bir '
+          subtitle:
+              'Yalnız bu koşunun boss savaşında çalışacak tek bir '
               'güçlendirici satın alabilir veya satın almadan ilerleyebilirsin.',
         ),
-        const SizedBox(height: 12),
-        _RunProgress(run: run),
         const SizedBox(height: 10),
         Text(
           'Mevcut bakiye: $availableCredits Devre Kredisi',
@@ -1021,8 +1137,8 @@ class _CareerRunCard extends StatelessWidget {
     final title = completed
         ? 'KARİYER KOŞUSU TAMAMLANDI'
         : failed
-            ? 'KARİYER KOŞUSU SONA ERDİ'
-            : 'KARİYER KOŞUSU BIRAKILDI';
+        ? 'KARİYER KOŞUSU SONA ERDİ'
+        : 'KARİYER KOŞUSU BIRAKILDI';
     final subtitle = completed
         ? 'Bölüm sonu devresi yenildi. Bütün geçici etkiler sıfırlandı.'
         : 'Geçici etkiler sıfırlandı. Yeni koşu temiz bir devreyle başlar.';
@@ -1105,10 +1221,7 @@ class _CareerBoardPreview extends StatelessWidget {
       width: _careerPanelWidth,
       height: _careerPanelHeight,
       padding: const EdgeInsets.all(12),
-      decoration: RelayDecorations.panel(
-        accent: accent,
-        soft: true,
-      ),
+      decoration: RelayDecorations.panel(accent: accent, soft: true),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -1245,10 +1358,7 @@ class _RunTitle extends StatelessWidget {
               const SizedBox(height: 4),
               Text(
                 subtitle,
-                style: const TextStyle(
-                  color: RelayColors.muted,
-                  height: 1.35,
-                ),
+                style: const TextStyle(color: RelayColors.muted, height: 1.35),
               ),
             ],
           ),
@@ -1258,37 +1368,388 @@ class _RunTitle extends StatelessWidget {
   }
 }
 
+class _CareerStageGuidance extends StatelessWidget {
+  const _CareerStageGuidance({required this.stageNumber, this.stage});
+
+  final int stageNumber;
+  final CareerStageContent? stage;
+
+  @override
+  Widget build(BuildContext context) {
+    final fallback = switch (stageNumber) {
+      1 => (
+        title: 'ENERJİ HATTINI OKU',
+        text:
+            'Jeneratörün iki dış portundan birini saldırı modülüne ulaştır. Enerjisiz modül savaşta eylem yapamaz.',
+        icon: Icons.electrical_services,
+      ),
+      2 => (
+        title: 'REZERVİ DENGELE',
+        text:
+            'Batarya kullanılmayan enerjiyi saklar. Darbe Topu gibi yüksek maliyetli modüller için rezerv yolu kur.',
+        icon: Icons.battery_charging_full,
+      ),
+      3 => (
+        title: 'SAVUNMAYI AŞ',
+        text:
+            'Kalkan ortak koruma havuzunu doldurur. Sürekli hasar veya daha güçlü bir darbe hattı arasında seçim yap.',
+        icon: Icons.shield_outlined,
+      ),
+      4 => (
+        title: 'ONARIM ZİNCİRİNİ KIR',
+        text:
+            'Uzayan savaş rakibin onarımına yarar. Tehdit sırasını ve aşırı ısınmayı savaş analizinde izle.',
+        icon: Icons.build_circle_outlined,
+      ),
+      _ => (
+        title: 'BOSS DEVRESİNİ ÇÖZ',
+        text:
+            'Önceki dört savaşın enerji, ısı, savunma ve hedefleme derslerini tek devrede birleştir.',
+        icon: Icons.psychology_alt_outlined,
+      ),
+    };
+    final guidance = stage == null
+        ? fallback
+        : (
+            title: stage!.guidanceTitle,
+            text: stage!.guidanceText,
+            icon: _careerContentIcon(stage!.icon),
+          );
+    return Container(
+      key: const ValueKey('career-stage-guidance'),
+      padding: const EdgeInsets.all(11),
+      decoration: BoxDecoration(
+        color: RelayColors.cyan.withValues(alpha: 0.07),
+        borderRadius: BorderRadius.circular(13),
+        border: Border.all(color: RelayColors.cyan.withValues(alpha: 0.26)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(guidance.icon, color: RelayColors.cyan, size: 21),
+          const SizedBox(width: 9),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  guidance.title,
+                  style: const TextStyle(
+                    color: RelayColors.cyan,
+                    fontSize: 9.5,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 0.55,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  guidance.text,
+                  style: const TextStyle(
+                    color: RelayColors.muted,
+                    fontSize: 10,
+                    height: 1.35,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _RunProgress extends StatelessWidget {
   const _RunProgress({required this.run});
 
   final CareerRunSnapshot run;
 
+  static const _fallbackNodes = <_CareerPathDefinition>[
+    _CareerPathDefinition('İLK TEMAS', Icons.bolt_outlined),
+    _CareerPathDefinition('REZERV DARBESİ', Icons.battery_charging_full),
+    _CareerPathDefinition('KALKAN DUVARI', Icons.shield_outlined),
+    _CareerPathDefinition('ONARIM MUHAFIZI', Icons.build_circle_outlined),
+    _CareerPathDefinition(
+      'AŞIRI AKIM',
+      Icons.warning_amber_rounded,
+      boss: true,
+    ),
+  ];
+
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Expanded(
-              child: Text(
-                'KOŞU İLERLEMESİ • ${run.wins}/${run.totalStages} ZAFER',
+    final sector = run.sector;
+    final nodes = sector == null
+        ? _fallbackNodes
+        : sector.stages
+              .map(
+                (stage) => _CareerPathDefinition(
+                  stage.title.toUpperCase(),
+                  _careerContentIcon(stage.icon),
+                  boss: stage.isBoss,
+                ),
+              )
+              .toList(growable: false);
+    return Container(
+      key: const ValueKey('career-path'),
+      padding: const EdgeInsets.fromLTRB(12, 11, 12, 12),
+      decoration: BoxDecoration(
+        color: RelayColors.surfaceHigh.withValues(alpha: 0.56),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: RelayColors.cyan.withValues(alpha: 0.24)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              const Icon(
+                Icons.route_outlined,
+                color: RelayColors.cyan,
+                size: 18,
+              ),
+              const SizedBox(width: 7),
+              Expanded(
+                child: Text(
+                  sector == null
+                      ? 'SEKTÖR 01 • SİNYAL EŞİĞİ'
+                      : 'SEKTÖR ${sector.number.toString().padLeft(2, '0')} • ${sector.title.toUpperCase()}',
+                  style: const TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 0.7,
+                  ),
+                ),
+              ),
+              Text(
+                '${run.wins}/${run.totalStages} ZAFER',
                 style: const TextStyle(
                   color: RelayColors.muted,
-                  fontSize: 10,
+                  fontSize: 9.5,
                   fontWeight: FontWeight.w900,
                 ),
               ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final content = Row(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  for (var index = 0; index < nodes.length; index++) ...[
+                    _CareerPathNode(
+                      key: ValueKey('career-path-node-${index + 1}'),
+                      index: index,
+                      definition: nodes[index],
+                      state: _stateFor(index),
+                      boss: nodes[index].boss,
+                    ),
+                    if (index < nodes.length - 1)
+                      _CareerPathConnector(completed: index < run.wins),
+                  ],
+                ],
+              );
+              return SingleChildScrollView(
+                key: const ValueKey('career-path-scroll'),
+                scrollDirection: Axis.horizontal,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minWidth: constraints.maxWidth),
+                  child: Center(child: content),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  _CareerNodeState _stateFor(int index) {
+    if (run.status == 'completed' || index < run.wins) {
+      return _CareerNodeState.completed;
+    }
+    if (run.status == 'failed' && index == run.stageIndex) {
+      return _CareerNodeState.failed;
+    }
+    if (run.status == 'abandoned' && index == run.stageIndex) {
+      return _CareerNodeState.stopped;
+    }
+    if (index != run.stageIndex) {
+      return _CareerNodeState.locked;
+    }
+    if (run.status == 'awaiting_upgrade') {
+      return _CareerNodeState.upgradeRequired;
+    }
+    if (run.status == 'awaiting_booster') {
+      return _CareerNodeState.boosterRequired;
+    }
+    return _CareerNodeState.ready;
+  }
+}
+
+class _CareerPathDefinition {
+  const _CareerPathDefinition(this.title, this.icon, {this.boss = false});
+
+  final String title;
+  final IconData icon;
+  final bool boss;
+}
+
+IconData _careerContentIcon(String icon) => switch (icon) {
+  'battery' => Icons.battery_charging_full,
+  'shield' => Icons.shield_outlined,
+  'repair' => Icons.build_circle_outlined,
+  'boss' => Icons.warning_amber_rounded,
+  _ => Icons.bolt_outlined,
+};
+
+enum _CareerNodeState {
+  completed,
+  ready,
+  upgradeRequired,
+  boosterRequired,
+  failed,
+  stopped,
+  locked,
+}
+
+class _CareerPathNode extends StatelessWidget {
+  const _CareerPathNode({
+    required this.index,
+    required this.definition,
+    required this.state,
+    required this.boss,
+    super.key,
+  });
+
+  final int index;
+  final _CareerPathDefinition definition;
+  final _CareerNodeState state;
+  final bool boss;
+
+  Color get color => switch (state) {
+    _CareerNodeState.completed => RelayColors.mint,
+    _CareerNodeState.ready => boss ? RelayColors.amber : RelayColors.cyan,
+    _CareerNodeState.upgradeRequired => RelayColors.violet,
+    _CareerNodeState.boosterRequired => RelayColors.amber,
+    _CareerNodeState.failed => RelayColors.coral,
+    _CareerNodeState.stopped => RelayColors.muted,
+    _CareerNodeState.locked => RelayColors.muted,
+  };
+
+  String get status => switch (state) {
+    _CareerNodeState.completed => 'TAMAMLANDI',
+    _CareerNodeState.ready => boss ? 'BOSS HAZIR' : 'HAZIR',
+    _CareerNodeState.upgradeRequired => 'YÜKSELTME SEÇ',
+    _CareerNodeState.boosterRequired => 'GÜÇLENDİR',
+    _CareerNodeState.failed => 'BAŞARISIZ',
+    _CareerNodeState.stopped => 'DURDURULDU',
+    _CareerNodeState.locked => 'KİLİTLİ',
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final active = state != _CareerNodeState.locked;
+    return SizedBox(
+      width: 104,
+      child: Column(
+        children: [
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 220),
+            width: boss ? 58 : 52,
+            height: boss ? 58 : 52,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: color.withValues(alpha: active ? 0.18 : 0.07),
+              border: Border.all(
+                color: color.withValues(alpha: active ? 0.95 : 0.30),
+                width: active ? 2 : 1,
+              ),
+              boxShadow: active
+                  ? [
+                      BoxShadow(
+                        color: color.withValues(alpha: 0.24),
+                        blurRadius: 16,
+                        spreadRadius: -4,
+                      ),
+                    ]
+                  : null,
+            ),
+            child: Icon(
+              state == _CareerNodeState.completed
+                  ? Icons.check_rounded
+                  : state == _CareerNodeState.locked
+                  ? Icons.lock_outline
+                  : definition.icon,
+              color: color,
+              size: boss ? 27 : 24,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            '${index + 1} • ${definition.title}',
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: active ? Colors.white : RelayColors.muted,
+              fontSize: 8.5,
+              height: 1.15,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 3),
+          Text(
+            status,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: color,
+              fontSize: 7.5,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 0.35,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CareerPathConnector extends StatelessWidget {
+  const _CareerPathConnector({required this.completed});
+
+  final bool completed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 25),
+      child: SizedBox(
+        width: 22,
+        child: Row(
+          children: [
+            Expanded(
+              child: Container(
+                height: 3,
+                decoration: BoxDecoration(
+                  color: (completed ? RelayColors.mint : RelayColors.muted)
+                      .withValues(alpha: completed ? 0.75 : 0.20),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+              ),
+            ),
+            Icon(
+              Icons.chevron_right,
+              size: 13,
+              color: (completed ? RelayColors.mint : RelayColors.muted)
+                  .withValues(alpha: completed ? 0.9 : 0.35),
             ),
           ],
         ),
-        const SizedBox(height: 6),
-        LinearProgressIndicator(
-          value: run.wins / run.totalStages,
-          minHeight: 7,
-          borderRadius: BorderRadius.circular(20),
-        ),
-      ],
+      ),
     );
   }
 }
@@ -1400,132 +1861,6 @@ class _ProgressCard extends StatelessWidget {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _SectionCard extends StatelessWidget {
-  const _SectionCard({
-    required this.title,
-    required this.icon,
-    required this.child,
-  });
-
-  final String title;
-  final IconData icon;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(icon, color: RelayColors.cyan),
-                const SizedBox(width: 9),
-                Expanded(
-                  child: Text(
-                    title,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 0.9,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 14),
-            child,
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _BoosterRow extends StatelessWidget {
-  const _BoosterRow({required this.booster});
-
-  final BoosterMastery booster;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      key: ValueKey('booster-${booster.id}'),
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: const Color(0x1538E8FF),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0x5538E8FF)),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.bolt, color: RelayColors.cyan),
-          const SizedBox(width: 11),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  booster.displayName,
-                  style: const TextStyle(fontWeight: FontWeight.w900),
-                ),
-                Text(
-                  booster.effectLabel,
-                  style: const TextStyle(
-                    color: RelayColors.amber,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  booster.description,
-                  style: const TextStyle(
-                    color: RelayColors.muted,
-                    fontSize: 10,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                'K${booster.tier}',
-                style: const TextStyle(
-                  color: RelayColors.cyan,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-              if (booster.nextTierLevel != null)
-                Text(
-                  'K${booster.tier + 1}: SV ${booster.nextTierLevel}',
-                  style: const TextStyle(
-                    color: RelayColors.muted,
-                    fontSize: 8.5,
-                    fontWeight: FontWeight.w700,
-                  ),
-                )
-              else
-                const Text(
-                  'MAKS.',
-                  style: TextStyle(
-                    color: RelayColors.mint,
-                    fontSize: 8.5,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-            ],
-          ),
-        ],
       ),
     );
   }

@@ -51,6 +51,8 @@ class _BoardState:
     energy_reserve: float = 0.0
     reserve_capacity_bonus: float = 0.0
     generator_output_multiplier: float = 1.0
+    efficient_module_ids: frozenset[str] = frozenset()
+    focused_amplifier_ids: frozenset[str] = frozenset()
     energy_spent: float = 0.0
     total_damage: float = 0.0
 
@@ -179,6 +181,10 @@ class CircuitBattleEngine:
             energy_reserve=max(0.0, modifiers.initial_energy_reserve),
             reserve_capacity_bonus=max(0.0, modifiers.reserve_capacity_bonus),
             generator_output_multiplier=max(1.0, modifiers.generator_output_multiplier),
+            efficient_module_ids=frozenset(modifiers.efficient_module_ids),
+            focused_amplifier_ids=frozenset(
+                modifiers.focused_amplifier_ids
+            ),
         )
 
     def _plan_tick(
@@ -299,7 +305,10 @@ class CircuitBattleEngine:
                     module.energy_starved_reported = False
                     continue
 
-            energy_cost = scaled_value(spec.energy_cost, module.placement.level)
+            efficient = module.placement.module_id in own.efficient_module_ids
+            energy_cost = scaled_value(spec.energy_cost, module.placement.level) * (
+                0.82 if efficient else 1.0
+            )
             total_energy = available_energy + own.energy_reserve
             if total_energy + 1e-9 < energy_cost:
                 module.energy_wait_ticks += 1
@@ -328,6 +337,7 @@ class CircuitBattleEngine:
             added_heat = (
                 scaled_value(spec.heat_per_action, module.placement.level)
                 * heat_multiplier
+                * (0.78 if efficient else 1.0)
             )
             module.heat += added_heat
             projected_heat[position] = projected_heat.get(position, 0.0) + added_heat
@@ -621,7 +631,8 @@ class CircuitBattleEngine:
         board: _BoardState,
         powered: set[tuple[int, int]],
     ) -> tuple[float, float]:
-        amplifier_count = 0
+        effect = 1.0
+        heat = 1.0
         for position in powered:
             amplifier = board.modules[position]
             if (
@@ -634,17 +645,25 @@ class CircuitBattleEngine:
             if front == target_position and target_position in self._connected_neighbors(
                 position, board
             ):
-                amplifier_count += 1
+                focused = (
+                    amplifier.placement.module_id
+                    in board.focused_amplifier_ids
+                )
+                effect *= (
+                    self.config.focused_amplifier_effect_multiplier
+                    if focused
+                    else self.config.amplifier_effect_multiplier
+                )
+                heat *= (
+                    self.config.focused_amplifier_heat_multiplier
+                    if focused
+                    else self.config.amplifier_heat_multiplier
+                )
 
-        effect = min(
-            self.config.max_effect_multiplier,
-            self.config.amplifier_effect_multiplier**amplifier_count,
+        return (
+            min(self.config.max_effect_multiplier, effect),
+            min(self.config.max_heat_multiplier, heat),
         )
-        heat = min(
-            self.config.max_heat_multiplier,
-            self.config.amplifier_heat_multiplier**amplifier_count,
-        )
-        return effect, heat
 
     def _choose_target(
         self,

@@ -13,6 +13,7 @@ import '../widgets/relay_notice.dart';
 enum CollectionScreenMode { collection, store }
 
 enum _CollectionSection { kit, cosmetics }
+
 enum _StoreSection { all, module, board, profile }
 
 class CollectionScreen extends ConsumerStatefulWidget {
@@ -57,13 +58,10 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen> {
           pageTitle: widget.mode == CollectionScreenMode.store
               ? 'MAĞAZA'
               : widget.kitOnly
-                  ? '${widget.kitMode.displayName.toUpperCase()} SEKİZLİSİ'
-                  : 'KOLEKSİYON',
+              ? '${widget.kitMode.displayName.toUpperCase()} SEKİZLİSİ'
+              : 'KOLEKSİYON',
         ),
-        actions: const [
-          AppHeaderActions(),
-          SizedBox(width: 8),
-        ],
+        actions: const [AppHeaderActions(), SizedBox(width: 8)],
       ),
       body: SafeArea(
         child: remote.when(
@@ -292,9 +290,7 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen> {
         .toList(growable: false);
     if (visibleItems.isEmpty) {
       return _CollectionEmptyState(
-        icon: owned
-            ? Icons.inventory_2_outlined
-            : Icons.storefront_outlined,
+        icon: owned ? Icons.inventory_2_outlined : Icons.storefront_outlined,
         message: emptyMessage,
       );
     }
@@ -313,19 +309,19 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen> {
               builder: (context, constraints) {
                 final columns = widget.mode == CollectionScreenMode.store
                     ? constraints.maxWidth >= 1320
-                        ? 6
-                        : constraints.maxWidth >= 1040
-                            ? 5
-                            : constraints.maxWidth >= 780
-                                ? 4
-                                : constraints.maxWidth >= 540
-                                    ? 3
-                                    : 2
+                          ? 6
+                          : constraints.maxWidth >= 1040
+                          ? 5
+                          : constraints.maxWidth >= 780
+                          ? 4
+                          : constraints.maxWidth >= 540
+                          ? 3
+                          : 2
                     : constraints.maxWidth >= 960
-                        ? 3
-                        : constraints.maxWidth >= 620
-                            ? 2
-                            : 1;
+                    ? 3
+                    : constraints.maxWidth >= 620
+                    ? 2
+                    : 1;
                 const spacing = 10.0;
                 final width =
                     (constraints.maxWidth - spacing * (columns - 1)) / columns;
@@ -375,8 +371,7 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen> {
       return null;
     }
     final excessive = counts.entries
-        .where((entry) =>
-            entry.key != ModuleKind.generator && entry.value > 3)
+        .where((entry) => entry.key != ModuleKind.generator && entry.value > 3)
         .map((entry) => entry.key.displayName)
         .toList(growable: false);
     if (excessive.isNotEmpty) {
@@ -390,7 +385,9 @@ class _CollectionScreenState extends ConsumerState<CollectionScreen> {
 
     setState(() => _busy = true);
     try {
-      final value = await ref.read(relayApiProvider).saveControlledKit(
+      final value = await ref
+          .read(relayApiProvider)
+          .saveControlledKit(
             mode: widget.kitMode,
             name: _kitNameController.text,
             moduleKinds: slots,
@@ -577,9 +574,10 @@ class _KitEditor extends StatelessWidget {
                           initialValue: slots[index],
                           decoration: InputDecoration(
                             labelText: 'Yuva ${index + 1}',
-                            prefixIcon: Icon(
-                              moduleIcon(slots[index]),
+                            prefixIcon: ModuleGlyph(
+                              kind: slots[index],
                               color: moduleColor(slots[index]),
+                              size: 22,
                             ),
                           ),
                           items: [
@@ -630,20 +628,20 @@ class _CategoryTitle extends StatelessWidget {
   Widget build(BuildContext context) {
     final (icon, title, subtitle) = switch (category) {
       'module_skin' => (
-          Icons.palette_outlined,
-          'MODÜL KAPLAMALARI',
-          'Modül simgesi ve bağlantı vurgusu',
-        ),
+        Icons.palette_outlined,
+        'MODÜL KAPLAMALARI',
+        'Modül simgesi ve bağlantı vurgusu',
+      ),
       'board_theme' => (
-          Icons.grid_4x4_outlined,
-          'DEVRE KARTI TEMALARI',
-          'Laboratuvar zemini ve hücre görünümü',
-        ),
+        Icons.grid_4x4_outlined,
+        'DEVRE KARTI TEMALARI',
+        'Laboratuvar zemini ve hücre görünümü',
+      ),
       _ => (
-          Icons.account_box_outlined,
-          'PROFİL ÇERÇEVELERİ',
-          'Oyuncu adı ve ilerleme alanı görünümü',
-        ),
+        Icons.account_box_outlined,
+        'PROFİL ÇERÇEVELERİ',
+        'Oyuncu adı ve ilerleme alanı görünümü',
+      ),
     };
     return Row(
       children: [
@@ -718,21 +716,29 @@ class _CosmeticCard extends StatelessWidget {
                   item.category == 'module_skin'
                       ? Icons.memory
                       : item.category == 'board_theme'
-                          ? Icons.grid_on
-                          : Icons.person_outline,
+                      ? Icons.grid_on
+                      : Icons.person_outline,
                   color: accent,
                   size: previewSize,
                 ),
               ),
             ),
             SizedBox(height: compact ? 5 : 9),
-            Text(item.displayName, maxLines: 2, overflow: TextOverflow.ellipsis, style: titleStyle),
+            Text(
+              item.displayName,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: titleStyle,
+            ),
             const SizedBox(height: 3),
             Text(
               item.description,
               maxLines: compact ? 1 : 3,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(color: RelayColors.muted, fontSize: compact ? 8.2 : 10.5),
+              style: TextStyle(
+                color: RelayColors.muted,
+                fontSize: compact ? 8.2 : 10.5,
+              ),
             ),
             SizedBox(height: compact ? 5 : 10),
             if (item.equipped)
@@ -785,10 +791,7 @@ class _CosmeticCard extends StatelessWidget {
 }
 
 class _CollectionEmptyState extends StatelessWidget {
-  const _CollectionEmptyState({
-    required this.icon,
-    required this.message,
-  });
+  const _CollectionEmptyState({required this.icon, required this.message});
 
   final IconData icon;
   final String message;

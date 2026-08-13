@@ -1,0 +1,62 @@
+{
+  "schema_version": 1,
+  "sectors": [
+    {
+      "sector_id": "signal_threshold",
+      "number": 1,
+      "title": "Sinyal Eşiği",
+      "stages": [
+        {
+          "stage_number": 1,
+          "bot_id": "starter_laser",
+          "title": "İlk Temas",
+          "briefing": "Lazer hattını okuyup temel karşı devreyi kur.",
+          "guidance_title": "Enerji Hattını Oku",
+          "guidance_text": "Jeneratörün iki dış portundan birini saldırı modülüne ulaştır. Enerjisiz modül savaşta eylem yapamaz.",
+          "icon": "energy",
+          "is_boss": false
+        },
+        {
+          "stage_number": 2,
+          "bot_id": "battery_pulse",
+          "title": "Rezerv Darbesi",
+          "briefing": "Batarya destekli ağır saldırıya karşı enerji ve savunmayı dengele.",
+          "guidance_title": "Rezervi Dengele",
+          "guidance_text": "Batarya kullanılmayan enerjiyi saklar. Darbe Topu gibi yüksek maliyetli modüller için rezerv yolu kur.",
+          "icon": "battery",
+          "is_boss": false
+        },
+        {
+          "stage_number": 3,
+          "bot_id": "shield_wall",
+          "title": "Kalkan Duvarı",
+          "briefing": "Yüksek emilimli savunmayı sürdürülebilir hasarla aş.",
+          "guidance_title": "Savunmayı Aş",
+          "guidance_text": "Kalkan ortak koruma havuzunu doldurur. Sürekli hasar veya daha güçlü bir darbe hattı arasında seçim yap.",
+          "icon": "shield",
+          "is_boss": false
+        },
+        {
+          "stage_number": 4,
+          "bot_id": "repair_guard",
+          "title": "Onarım Muhafızı",
+          "briefing": "Uzayan savaşta onarım zincirini bozacak hedef düzenini kur.",
+          "guidance_title": "Onarım Zincirini Kır",
+          "guidance_text": "Uzayan savaş rakibin onarımına yarar. Tehdit sırasını ve aşırı ısınmayı savaş analizinde izle.",
+          "icon": "repair",
+          "is_boss": false
+        },
+        {
+          "stage_number": 5,
+          "bot_id": "amplified_pulse",
+          "title": "Aşırı Akım",
+          "briefing": "Güçlendirilmiş Darbe Topu çekirdeğini analiz edip son devreni hazırla.",
+          "guidance_title": "Boss Devresini Çöz",
+          "guidance_text": "Önceki dört savaşın enerji, ısı, savunma ve hedefleme derslerini tek devrede birleştir.",
+          "icon": "boss",
+          "is_boss": true
+        }
+      ]
+    }
+  ]
+}

@@ -14,8 +14,10 @@ import '../theme/cosmetic_visuals.dart';
 import '../theme/relay_theme.dart';
 import '../widgets/relay_notice.dart';
 import '../widgets/app_header_actions.dart';
+import '../widgets/ambient_music.dart';
 import '../widgets/replay_attack_overlay.dart';
 import '../widgets/battle_analysis_panel.dart';
+import '../widgets/battle_arena_atmosphere.dart';
 import '../widgets/battle_camera_rig.dart';
 import '../widgets/replay_playback_controls.dart';
 
@@ -31,6 +33,7 @@ class ReplayScreen extends ConsumerStatefulWidget {
     this.completionReward,
     this.completionRewardTitle = 'SAVAŞ ÖDÜLÜ',
     this.onPrimaryAction,
+    this.moduleUpgradeBranches = const {},
     super.key,
   });
 
@@ -44,6 +47,7 @@ class ReplayScreen extends ConsumerStatefulWidget {
   final ProgressionReward? completionReward;
   final String completionRewardTitle;
   final VoidCallback? onPrimaryAction;
+  final Map<String, String> moduleUpgradeBranches;
 
   @override
   ConsumerState<ReplayScreen> createState() => _ReplayScreenState();
@@ -70,9 +74,7 @@ class _ReplayScreenState extends ConsumerState<ReplayScreen> {
     _soundEnabled = settings.replaySoundEnabled;
     _formatter = ReplayEventFormatter(widget.match);
     _soundPlayer = EventSoundPlayer(widget.match);
-    _moduleSpecs = {
-      for (final module in widget.modules) module.kind: module,
-    };
+    _moduleSpecs = {for (final module in widget.modules) module.kind: module};
     _attackOverlayEvents = ValueNotifier<List<BattleEvent>>(const []);
     _snapshot = ValueNotifier(ReplaySnapshot.initial(widget.match));
     _game = _createGame();
@@ -86,6 +88,7 @@ class _ReplayScreenState extends ConsumerState<ReplayScreen> {
       moduleSpecs: _moduleSpecs,
       formatter: _formatter,
       leftVisuals: _leftVisuals,
+      moduleUpgradeBranches: widget.moduleUpgradeBranches,
       onFrame: (snapshot) {
         if (!mounted) return;
         _snapshot.value = snapshot;
@@ -110,8 +113,9 @@ class _ReplayScreenState extends ConsumerState<ReplayScreen> {
             )
             .toList(growable: false);
         if (visualEvents.isNotEmpty) {
-          _attackOverlayEvents.value =
-              List<BattleEvent>.unmodifiable(visualEvents);
+          _attackOverlayEvents.value = List<BattleEvent>.unmodifiable(
+            visualEvents,
+          );
         }
         if (_soundEnabled) {
           unawaited(_soundPlayer.playFrame(events));
@@ -141,7 +145,8 @@ class _ReplayScreenState extends ConsumerState<ReplayScreen> {
   }
 
   void _showCompletionRewardNotice() {
-    final reward = widget.completionReward ??
+    final reward =
+        widget.completionReward ??
         (widget.match.source == 'async'
             ? widget.match.progressionReward
             : null);
@@ -210,9 +215,7 @@ class _ReplayScreenState extends ConsumerState<ReplayScreen> {
       _ => RelayColors.amber,
     };
     final mediaSize = MediaQuery.sizeOf(context);
-    final stageHeight = (mediaSize.height - 130)
-        .clamp(540.0, 620.0)
-        .toDouble();
+    final stageHeight = (mediaSize.height - 130).clamp(540.0, 620.0).toDouble();
 
     return Scaffold(
       appBar: AppBar(
@@ -224,98 +227,107 @@ class _ReplayScreenState extends ConsumerState<ReplayScreen> {
         ),
         actions: const [AppHeaderActions(), SizedBox(width: 8)],
       ),
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 4, 16, 28),
-          children: [
-            if (widget.battleModeLabel != null) ...[
+      body: AmbientMusic(
+        asset: 'sounds/battle_ambient.wav',
+        enabled: _soundEnabled,
+        volume: 0.12,
+        child: SafeArea(
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 28),
+            children: [
+              if (widget.battleModeLabel != null) ...[
+                Center(
+                  child: Text(
+                    widget.battleModeLabel!,
+                    key: const ValueKey('replay-battle-mode-label'),
+                    style: const TextStyle(
+                      color: RelayColors.cyan,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 1.4,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 4),
+              ],
+              ValueListenableBuilder<ReplaySnapshot>(
+                valueListenable: _snapshot,
+                builder: (context, snapshot, child) {
+                  return Center(
+                    child: Text(
+                      snapshot.complete ? resultLabel : 'SAVAŞ SÜRÜYOR',
+                      style: Theme.of(context).textTheme.headlineMedium
+                          ?.copyWith(
+                            color: snapshot.complete
+                                ? resultColor
+                                : RelayColors.amber,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 4,
+                          ),
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: 6),
               Center(
                 child: Text(
-                  widget.battleModeLabel!,
-                  key: const ValueKey('replay-battle-mode-label'),
-                  style: const TextStyle(
-                    color: RelayColors.cyan,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 1.4,
-                  ),
+                  '${result.left.name}  ×  ${widget.match.opponent.displayName}',
+                  style: const TextStyle(color: RelayColors.muted),
                 ),
               ),
-              const SizedBox(height: 4),
-            ],
-            ValueListenableBuilder<ReplaySnapshot>(
-              valueListenable: _snapshot,
-              builder: (context, snapshot, child) {
-                return Center(
-                  child: Text(
-                    snapshot.complete ? resultLabel : 'SAVAŞ SÜRÜYOR',
-                    style:
-                        Theme.of(context).textTheme.headlineMedium?.copyWith(
-                              color: snapshot.complete
-                                  ? resultColor
-                                  : RelayColors.amber,
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: 4,
+              const SizedBox(height: 18),
+              Card(
+                clipBehavior: Clip.antiAlias,
+                child: SizedBox(
+                  height: stageHeight,
+                  child: BattleArenaAtmosphere(
+                    events: _attackOverlayEvents,
+                    child: BattleCameraRig(
+                      events: _attackOverlayEvents,
+                      match: widget.match,
+                      child: Stack(
+                        children: [
+                          Positioned.fill(
+                            child: GameWidget<RelayReplayGame>(
+                              key: ValueKey(_game),
+                              game: _game,
                             ),
-                  ),
-                );
-              },
-            ),
-            const SizedBox(height: 6),
-            Center(
-              child: Text(
-                '${result.left.name}  ×  ${widget.match.opponent.displayName}',
-                style: const TextStyle(color: RelayColors.muted),
-              ),
-            ),
-            const SizedBox(height: 18),
-            Card(
-              clipBehavior: Clip.antiAlias,
-              child: SizedBox(
-                height: stageHeight,
-                child: BattleCameraRig(
-                  events: _attackOverlayEvents,
-                  match: widget.match,
-                  child: Stack(
-                    children: [
-                      Positioned.fill(
-                        child: GameWidget<RelayReplayGame>(
-                          key: ValueKey(_game),
-                          game: _game,
-                        ),
+                          ),
+                          Positioned.fill(
+                            child: ReplayAttackOverlay(
+                              events: _attackOverlayEvents,
+                              match: widget.match,
+                              leftVisuals: _leftVisuals,
+                            ),
+                          ),
+                        ],
                       ),
-                      Positioned.fill(
-                        child: ReplayAttackOverlay(
-                          events: _attackOverlayEvents,
-                          match: widget.match,
-                          leftVisuals: _leftVisuals,
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                 ),
               ),
-            ),
-            const SizedBox(height: 12),
-            ValueListenableBuilder<ReplaySnapshot>(
-              valueListenable: _snapshot,
-              builder: (context, snapshot, child) {
-                return Column(
-                  children: [
-                    _playbackControls(complete: snapshot.complete),
-                    if (snapshot.complete) ...[
-                      const SizedBox(height: 20),
-                      BattleAnalysisPanel(
-                        match: widget.match,
-                        replay: widget.replay,
-                        modules: widget.modules,
-                      ),
+              const SizedBox(height: 12),
+              ValueListenableBuilder<ReplaySnapshot>(
+                valueListenable: _snapshot,
+                builder: (context, snapshot, child) {
+                  return Column(
+                    children: [
+                      _playbackControls(complete: snapshot.complete),
+                      if (snapshot.complete) ...[
+                        const SizedBox(height: 20),
+                        BattleAnalysisPanel(
+                          match: widget.match,
+                          replay: widget.replay,
+                          modules: widget.modules,
+                          onRematch: _primaryAction,
+                        ),
+                      ],
                     ],
-                  ],
-                );
-              },
-            ),
-          ],
+                  );
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -351,9 +363,7 @@ class _ReplayScreenState extends ConsumerState<ReplayScreen> {
       onRestart: _restart,
       onToggleSound: () {
         final enabled = !_soundEnabled;
-        ref
-            .read(appSettingsProvider.notifier)
-            .setReplaySoundEnabled(enabled);
+        ref.read(appSettingsProvider.notifier).setReplaySoundEnabled(enabled);
         setState(() => _soundEnabled = enabled);
       },
       onSpeedChanged: (value) {
@@ -366,8 +376,7 @@ class _ReplayScreenState extends ConsumerState<ReplayScreen> {
       onNewGame: _primaryAction,
       primaryActionLabel: widget.primaryActionLabel,
       primaryActionKey: widget.primaryActionKey,
-      primaryActionEnabled:
-          !widget.primaryActionRequiresCompletion || complete,
+      primaryActionEnabled: !widget.primaryActionRequiresCompletion || complete,
     );
   }
 

@@ -244,6 +244,7 @@ class OnlineApiTests(unittest.TestCase):
         self.assertEqual(response.status_code, 201, response.text)
         payload = response.json()
         self.assertEqual(payload["source"], "async")
+        self.assertTrue(payload["weekly_protocol_key"].startswith("2026-W31:"))
         self.assertEqual(payload["opponent"]["kind"], "player")
         self.assertEqual(
             payload["opponent"]["opponent_id"],
@@ -271,6 +272,10 @@ class OnlineApiTests(unittest.TestCase):
             payload["rating_change"]["outcome"],
             {"win", "draw", "loss"},
         )
+        stored = self.match_service.get_match(payload["match_id"])
+        self.assertEqual(stored.weekly_protocol_key, payload["weekly_protocol_key"])
+        self.assertEqual(stored.player_modifiers, stored.opponent_modifiers)
+        self.assertEqual(stored.player_modifiers["initial_shield"], 8)
         career = self.client.get(
             "/api/v1/me/career",
             headers=self._authorization(first),
@@ -312,6 +317,16 @@ class OnlineApiTests(unittest.TestCase):
             season.json()["entry"]["points"],
             payload["season_change"]["points_gained"],
         )
+
+    def test_weekly_protocol_endpoint_matches_server_rotation(self) -> None:
+        response = self.client.get("/api/v1/live/weekly-protocol")
+
+        self.assertEqual(response.status_code, 200, response.text)
+        payload = response.json()
+        self.assertEqual(payload["key"], "2026-W31:shield_boot")
+        self.assertEqual(payload["protocol_id"], "shield_boot")
+        self.assertEqual(payload["modifiers"]["initial_shield"], 8)
+        self.assertLess(payload["starts_at"], payload["ends_at"])
 
     def test_progression_reward_daily_claim_and_achievement_are_idempotent(
         self,

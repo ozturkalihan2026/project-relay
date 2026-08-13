@@ -7,39 +7,39 @@ enum RelayDirection {
   String get wireValue => name;
 
   String get shortLabel => switch (this) {
-        RelayDirection.north => 'K',
-        RelayDirection.east => 'D',
-        RelayDirection.south => 'G',
-        RelayDirection.west => 'B',
-      };
+    RelayDirection.north => 'K',
+    RelayDirection.east => 'D',
+    RelayDirection.south => 'G',
+    RelayDirection.west => 'B',
+  };
 
   String get displayName => switch (this) {
-        RelayDirection.north => 'Kuzey',
-        RelayDirection.east => 'Doğu',
-        RelayDirection.south => 'Güney',
-        RelayDirection.west => 'Batı',
-      };
+    RelayDirection.north => 'Kuzey',
+    RelayDirection.east => 'Doğu',
+    RelayDirection.south => 'Güney',
+    RelayDirection.west => 'Batı',
+  };
 
   int get clockwiseTurnsFromEast => switch (this) {
-        RelayDirection.east => 0,
-        RelayDirection.south => 1,
-        RelayDirection.west => 2,
-        RelayDirection.north => 3,
-      };
+    RelayDirection.east => 0,
+    RelayDirection.south => 1,
+    RelayDirection.west => 2,
+    RelayDirection.north => 3,
+  };
 
   RelayDirection get next => switch (this) {
-        RelayDirection.north => RelayDirection.east,
-        RelayDirection.east => RelayDirection.south,
-        RelayDirection.south => RelayDirection.west,
-        RelayDirection.west => RelayDirection.north,
-      };
+    RelayDirection.north => RelayDirection.east,
+    RelayDirection.east => RelayDirection.south,
+    RelayDirection.south => RelayDirection.west,
+    RelayDirection.west => RelayDirection.north,
+  };
 
   RelayDirection get opposite => switch (this) {
-        RelayDirection.north => RelayDirection.south,
-        RelayDirection.east => RelayDirection.west,
-        RelayDirection.south => RelayDirection.north,
-        RelayDirection.west => RelayDirection.east,
-      };
+    RelayDirection.north => RelayDirection.south,
+    RelayDirection.east => RelayDirection.west,
+    RelayDirection.south => RelayDirection.north,
+    RelayDirection.west => RelayDirection.east,
+  };
 
   static RelayDirection parse(String value) {
     return RelayDirection.values.firstWhere(
@@ -73,20 +73,20 @@ enum ModuleKind {
   repair;
 
   String get wireValue => switch (this) {
-        ModuleKind.pulseCannon => 'pulse_cannon',
-        _ => name,
-      };
+    ModuleKind.pulseCannon => 'pulse_cannon',
+    _ => name,
+  };
 
   String get displayName => switch (this) {
-        ModuleKind.generator => 'Jeneratör',
-        ModuleKind.battery => 'Batarya',
-        ModuleKind.laser => 'Lazer',
-        ModuleKind.pulseCannon => 'Darbe Topu',
-        ModuleKind.shield => 'Kalkan',
-        ModuleKind.cooler => 'Soğutucu',
-        ModuleKind.amplifier => 'Güçlendirici',
-        ModuleKind.repair => 'Onarım Ünitesi',
-      };
+    ModuleKind.generator => 'Jeneratör',
+    ModuleKind.battery => 'Batarya',
+    ModuleKind.laser => 'Lazer',
+    ModuleKind.pulseCannon => 'Darbe Topu',
+    ModuleKind.shield => 'Kalkan',
+    ModuleKind.cooler => 'Soğutucu',
+    ModuleKind.amplifier => 'Güçlendirici',
+    ModuleKind.repair => 'Onarım Ünitesi',
+  };
 
   static ModuleKind parse(String value) {
     return ModuleKind.values.firstWhere(
@@ -125,8 +125,7 @@ class ModuleSpec {
           .map((value) => RelayDirection.parse(value as String))
           .toSet(),
       energyOutput: (json['energy_output'] as num).toDouble(),
-      batteryCapacity:
-          (json['battery_capacity'] as num? ?? 0).toDouble(),
+      batteryCapacity: (json['battery_capacity'] as num? ?? 0).toDouble(),
       energyCost: (json['energy_cost'] as num).toDouble(),
       cooldownTicks: json['cooldown_ticks'] as int,
       heatPerAction: (json['heat_per_action'] as num).toDouble(),
@@ -160,10 +159,48 @@ class ModuleSpec {
     }
     return ports.map((port) {
       final index = RelayDirection.values.indexOf(port);
-      return RelayDirection.values[
-          (index + orientation.clockwiseTurnsFromEast) % 4];
+      return RelayDirection.values[(index +
+              orientation.clockwiseTurnsFromEast) %
+          4];
     }).toSet();
   }
+}
+
+class WeeklyProtocol {
+  const WeeklyProtocol({
+    required this.key,
+    required this.id,
+    required this.title,
+    required this.description,
+    required this.effectLabel,
+    required this.startsAt,
+    required this.endsAt,
+    required this.modifiers,
+  });
+
+  factory WeeklyProtocol.fromJson(Map<String, dynamic> json) {
+    return WeeklyProtocol(
+      key: json['key'] as String,
+      id: json['protocol_id'] as String,
+      title: json['title'] as String,
+      description: json['description'] as String,
+      effectLabel: json['effect_label'] as String,
+      startsAt: DateTime.parse(json['starts_at'] as String),
+      endsAt: DateTime.parse(json['ends_at'] as String),
+      modifiers: Map<String, dynamic>.from(
+        json['modifiers'] as Map<String, dynamic>,
+      ),
+    );
+  }
+
+  final String key;
+  final String id;
+  final String title;
+  final String description;
+  final String effectLabel;
+  final DateTime startsAt;
+  final DateTime endsAt;
+  final Map<String, dynamic> modifiers;
 }
 
 class BotDefinition {
@@ -181,10 +218,9 @@ class BotDefinition {
       displayName: json['display_name'] as String,
       difficulty: json['difficulty'] as String,
       description: json['description'] as String,
-      availableModuleCounts:
-          (json['available_module_counts'] as List<dynamic>)
-              .map((value) => value as int)
-              .toList(growable: false),
+      availableModuleCounts: (json['available_module_counts'] as List<dynamic>)
+          .map((value) => value as int)
+          .toList(growable: false),
     );
   }
 
@@ -286,14 +322,12 @@ enum ModuleDragSource { palette, board }
 
 class ModuleDragData {
   const ModuleDragData.palette(this.kind)
-      : source = ModuleDragSource.palette,
-        sourceCell = null;
+    : source = ModuleDragSource.palette,
+      sourceCell = null;
 
-  const ModuleDragData.board({
-    required this.kind,
-    required int cellIndex,
-  })  : source = ModuleDragSource.board,
-        sourceCell = cellIndex;
+  const ModuleDragData.board({required this.kind, required int cellIndex})
+    : source = ModuleDragSource.board,
+      sourceCell = cellIndex;
 
   final ModuleKind kind;
   final ModuleDragSource source;
@@ -311,9 +345,8 @@ class BoardDraft {
       name: json['name'] as String,
       modules: (json['modules'] as List<dynamic>)
           .map(
-            (module) => ModulePlacement.fromJson(
-              module as Map<String, dynamic>,
-            ),
+            (module) =>
+                ModulePlacement.fromJson(module as Map<String, dynamic>),
           )
           .toList(growable: false),
     );
@@ -374,19 +407,12 @@ class AuthTokens {
 }
 
 class GuestSession {
-  const GuestSession({
-    required this.player,
-    required this.tokens,
-  });
+  const GuestSession({required this.player, required this.tokens});
 
   factory GuestSession.fromJson(Map<String, dynamic> json) {
     return GuestSession(
-      player: PlayerProfile.fromJson(
-        json['player'] as Map<String, dynamic>,
-      ),
-      tokens: AuthTokens.fromJson(
-        json['tokens'] as Map<String, dynamic>,
-      ),
+      player: PlayerProfile.fromJson(json['player'] as Map<String, dynamic>),
+      tokens: AuthTokens.fromJson(json['tokens'] as Map<String, dynamic>),
     );
   }
 
@@ -409,12 +435,8 @@ class SavedBoard {
       id: json['board_id'] as String,
       fingerprint: json['fingerprint'] as String,
       updatedAt: DateTime.parse(json['updated_at'] as String),
-      board: BoardDraft.fromJson(
-        json['board'] as Map<String, dynamic>,
-      ),
-      poweredIds: Set<String>.from(
-        json['powered_module_ids'] as List<dynamic>,
-      ),
+      board: BoardDraft.fromJson(json['board'] as Map<String, dynamic>),
+      poweredIds: Set<String>.from(json['powered_module_ids'] as List<dynamic>),
       unpoweredIds: Set<String>.from(
         json['unpowered_module_ids'] as List<dynamic>,
       ),
@@ -439,9 +461,7 @@ class BoardValidation {
   factory BoardValidation.fromJson(Map<String, dynamic> json) {
     return BoardValidation(
       valid: json['valid'] as bool,
-      poweredIds: Set<String>.from(
-        json['powered_module_ids'] as List<dynamic>,
-      ),
+      poweredIds: Set<String>.from(json['powered_module_ids'] as List<dynamic>),
       unpoweredIds: Set<String>.from(
         json['unpowered_module_ids'] as List<dynamic>,
       ),
@@ -476,9 +496,8 @@ class BoardSummary {
       survivingModules: json['surviving_modules'] as int,
       modules: (json['modules'] as List<dynamic>? ?? const [])
           .map(
-            (module) => ModuleBattleSummary.fromJson(
-              module as Map<String, dynamic>,
-            ),
+            (module) =>
+                ModuleBattleSummary.fromJson(module as Map<String, dynamic>),
           )
           .toList(growable: false),
     );
@@ -550,19 +569,14 @@ class DecisionMetric {
 }
 
 class BattleDecision {
-  const BattleDecision({
-    required this.criterion,
-    required this.metrics,
-  });
+  const BattleDecision({required this.criterion, required this.metrics});
 
   factory BattleDecision.fromJson(Map<String, dynamic> json) {
     return BattleDecision(
       criterion: json['criterion'] as String,
       metrics: (json['metrics'] as List<dynamic>)
           .map(
-            (metric) => DecisionMetric.fromJson(
-              metric as Map<String, dynamic>,
-            ),
+            (metric) => DecisionMetric.fromJson(metric as Map<String, dynamic>),
           )
           .toList(growable: false),
     );
@@ -616,11 +630,10 @@ class MatchOpponent {
   factory MatchOpponent.fromJson(Map<String, dynamic> json) {
     return MatchOpponent(
       kind: json['kind'] as String? ?? 'bot',
-      id: (
-        json['opponent_id'] as String? ??
-        json['bot_id'] as String? ??
-        'unknown'
-      ),
+      id:
+          (json['opponent_id'] as String? ??
+          json['bot_id'] as String? ??
+          'unknown'),
       displayName: json['display_name'] as String,
       description: json['description'] as String? ?? '',
       difficulty: json['difficulty'] as String? ?? 'player',
@@ -695,6 +708,7 @@ class MatchResponse {
     required this.id,
     required this.createdAt,
     required this.source,
+    this.weeklyProtocolKey,
     required this.opponent,
     required this.playerBoard,
     required this.opponentBoard,
@@ -715,6 +729,7 @@ class MatchResponse {
       id: json['match_id'] as String,
       createdAt: DateTime.parse(json['created_at'] as String),
       source: json['source'] as String? ?? 'bot',
+      weeklyProtocolKey: json['weekly_protocol_key'] as String?,
       opponent: MatchOpponent.fromJson(
         json['opponent'] as Map<String, dynamic>,
       ),
@@ -742,6 +757,7 @@ class MatchResponse {
   final String id;
   final DateTime createdAt;
   final String source;
+  final String? weeklyProtocolKey;
   final MatchOpponent opponent;
   final BoardDraft playerBoard;
   final BoardDraft opponentBoard;
@@ -752,7 +768,6 @@ class MatchResponse {
   final ProgressionReward? progressionReward;
   final SeasonPointChangeModel? seasonChange;
 }
-
 
 class BattleEvent {
   const BattleEvent({
@@ -837,9 +852,8 @@ class BoardReplayState {
       energySpent: (json['energy_spent'] as num).toDouble(),
       modules: (json['modules'] as List<dynamic>)
           .map(
-            (module) => ModuleReplayState.fromJson(
-              module as Map<String, dynamic>,
-            ),
+            (module) =>
+                ModuleReplayState.fromJson(module as Map<String, dynamic>),
           )
           .toList(growable: false),
     );
@@ -853,8 +867,8 @@ class BoardReplayState {
   final List<ModuleReplayState> modules;
 
   Map<String, ModuleReplayState> get modulesById => {
-        for (final module in modules) module.id: module,
-      };
+    for (final module in modules) module.id: module,
+  };
 }
 
 class ReplayStateFrame {
@@ -867,12 +881,8 @@ class ReplayStateFrame {
   factory ReplayStateFrame.fromJson(Map<String, dynamic> json) {
     return ReplayStateFrame(
       tick: json['tick'] as int,
-      left: BoardReplayState.fromJson(
-        json['left'] as Map<String, dynamic>,
-      ),
-      right: BoardReplayState.fromJson(
-        json['right'] as Map<String, dynamic>,
-      ),
+      left: BoardReplayState.fromJson(json['left'] as Map<String, dynamic>),
+      right: BoardReplayState.fromJson(json['right'] as Map<String, dynamic>),
     );
   }
 
@@ -896,17 +906,11 @@ class ReplayResponse {
       rulesVersion: json['rules_version'] as String,
       checksum: json['checksum'] as String,
       events: (json['events'] as List<dynamic>)
-          .map(
-            (event) => BattleEvent.fromJson(
-              event as Map<String, dynamic>,
-            ),
-          )
+          .map((event) => BattleEvent.fromJson(event as Map<String, dynamic>))
           .toList(),
       stateFrames: (json['state_frames'] as List<dynamic>? ?? const [])
           .map(
-            (frame) => ReplayStateFrame.fromJson(
-              frame as Map<String, dynamic>,
-            ),
+            (frame) => ReplayStateFrame.fromJson(frame as Map<String, dynamic>),
           )
           .toList(growable: false),
     );
@@ -1116,17 +1120,15 @@ class CareerSnapshot {
 
   factory CareerSnapshot.fromJson(Map<String, dynamic> json) {
     return CareerSnapshot(
-      profile: RatingProfile.fromJson(
-        json['profile'] as Map<String, dynamic>,
-      ),
-      league: LeagueEntry.fromJson(
-        json['league'] as Map<String, dynamic>,
-      ),
+      profile: RatingProfile.fromJson(json['profile'] as Map<String, dynamic>),
+      league: LeagueEntry.fromJson(json['league'] as Map<String, dynamic>),
       leaderboard: (json['leaderboard'] as List<dynamic>)
           .map((item) => LeagueStanding.fromJson(item as Map<String, dynamic>))
           .toList(growable: false),
       recentMatches: (json['recent_matches'] as List<dynamic>)
-          .map((item) => MatchHistoryItem.fromJson(item as Map<String, dynamic>))
+          .map(
+            (item) => MatchHistoryItem.fromJson(item as Map<String, dynamic>),
+          )
           .toList(growable: false),
       matchmaking: MatchmakingMetrics.fromJson(
         json['matchmaking'] as Map<String, dynamic>,
@@ -1152,7 +1154,9 @@ class MatchHistoryPage {
   factory MatchHistoryPage.fromJson(Map<String, dynamic> json) {
     return MatchHistoryPage(
       items: (json['items'] as List<dynamic>)
-          .map((item) => MatchHistoryItem.fromJson(item as Map<String, dynamic>))
+          .map(
+            (item) => MatchHistoryItem.fromJson(item as Map<String, dynamic>),
+          )
           .toList(growable: false),
       total: json['total'] as int,
       limit: json['limit'] as int,
@@ -1294,9 +1298,8 @@ class DailyMission {
     );
   }
 
-  double get progressRatio => target == 0
-      ? 1
-      : (progress / target).clamp(0, 1).toDouble();
+  double get progressRatio =>
+      target == 0 ? 1 : (progress / target).clamp(0, 1).toDouble();
 
   final String id;
   final String title;
@@ -1336,9 +1339,8 @@ class PlayerAchievement {
     );
   }
 
-  double get progressRatio => target == 0
-      ? 1
-      : (progress / target).clamp(0, 1).toDouble();
+  double get progressRatio =>
+      target == 0 ? 1 : (progress / target).clamp(0, 1).toDouble();
 
   final String id;
   final String title;
@@ -1409,9 +1411,7 @@ class ProgressionSnapshot {
           .toList(growable: false),
       achievements: (json['achievements'] as List<dynamic>)
           .map(
-            (item) => PlayerAchievement.fromJson(
-              item as Map<String, dynamic>,
-            ),
+            (item) => PlayerAchievement.fromJson(item as Map<String, dynamic>),
           )
           .toList(growable: false),
       boosters: (json['boosters'] as List<dynamic>)
@@ -1426,7 +1426,6 @@ class ProgressionSnapshot {
   final List<PlayerAchievement> achievements;
   final List<BoosterMastery> boosters;
 }
-
 
 class CareerBoosterChoice {
   const CareerBoosterChoice({
@@ -1498,6 +1497,108 @@ class CareerOpponentPreview {
   final BoardDraft board;
 }
 
+class CareerModuleUpgrade {
+  const CareerModuleUpgrade({
+    required this.moduleId,
+    required this.kind,
+    required this.branch,
+    required this.displayName,
+    required this.description,
+    required this.effectLabel,
+    required this.beforeValue,
+    required this.afterValue,
+  });
+
+  factory CareerModuleUpgrade.fromJson(Map<String, dynamic> json) {
+    return CareerModuleUpgrade(
+      moduleId: json['module_id'] as String,
+      kind: ModuleKind.parse(json['kind'] as String),
+      branch: json['branch'] as String,
+      displayName: json['display_name'] as String,
+      description: json['description'] as String,
+      effectLabel: json['effect_label'] as String,
+      beforeValue: json['before_value'] as String,
+      afterValue: json['after_value'] as String,
+    );
+  }
+
+  final String moduleId;
+  final ModuleKind kind;
+  final String branch;
+  final String displayName;
+  final String description;
+  final String effectLabel;
+  final String beforeValue;
+  final String afterValue;
+}
+
+class CareerStageContent {
+  const CareerStageContent({
+    required this.stageNumber,
+    required this.title,
+    required this.briefing,
+    required this.guidanceTitle,
+    required this.guidanceText,
+    required this.icon,
+    required this.isBoss,
+  });
+
+  factory CareerStageContent.fromJson(Map<String, dynamic> json) {
+    return CareerStageContent(
+      stageNumber: json['stage_number'] as int,
+      title: json['title'] as String,
+      briefing: json['briefing'] as String,
+      guidanceTitle: json['guidance_title'] as String,
+      guidanceText: json['guidance_text'] as String,
+      icon: json['icon'] as String,
+      isBoss: json['is_boss'] as bool,
+    );
+  }
+
+  final int stageNumber;
+  final String title;
+  final String briefing;
+  final String guidanceTitle;
+  final String guidanceText;
+  final String icon;
+  final bool isBoss;
+}
+
+class CareerSectorContent {
+  const CareerSectorContent({
+    required this.id,
+    required this.number,
+    required this.title,
+    required this.stages,
+  });
+
+  factory CareerSectorContent.fromJson(Map<String, dynamic> json) {
+    return CareerSectorContent(
+      id: json['sector_id'] as String,
+      number: json['number'] as int,
+      title: json['title'] as String,
+      stages: (json['stages'] as List<dynamic>)
+          .map(
+            (item) =>
+                CareerStageContent.fromJson(item as Map<String, dynamic>),
+          )
+          .toList(growable: false),
+    );
+  }
+
+  final String id;
+  final int number;
+  final String title;
+  final List<CareerStageContent> stages;
+
+  CareerStageContent? stage(int number) {
+    for (final stage in stages) {
+      if (stage.stageNumber == number) return stage;
+    }
+    return null;
+  }
+}
+
 class CareerRunSnapshot {
   const CareerRunSnapshot({
     required this.runId,
@@ -1515,11 +1616,16 @@ class CareerRunSnapshot {
     required this.canChooseBooster,
     required this.startedAt,
     required this.endedAt,
+    this.selectedUpgrades = const [],
+    this.offeredUpgrades = const [],
+    this.canChooseUpgrade = false,
+    this.sector,
   });
 
   factory CareerRunSnapshot.fromJson(Map<String, dynamic> json) {
     final opponentPayload = json['opponent'];
     final rewardPayload = json['reward'];
+    final sectorPayload = json['sector'];
     return CareerRunSnapshot(
       runId: json['run_id'] as String?,
       status: json['status'] as String,
@@ -1528,16 +1634,14 @@ class CareerRunSnapshot {
       wins: json['wins'] as int,
       selectedBoosters: (json['selected_boosters'] as List<dynamic>)
           .map(
-            (item) => CareerBoosterChoice.fromJson(
-              item as Map<String, dynamic>,
-            ),
+            (item) =>
+                CareerBoosterChoice.fromJson(item as Map<String, dynamic>),
           )
           .toList(growable: false),
       offeredBoosters: (json['offered_boosters'] as List<dynamic>)
           .map(
-            (item) => CareerBoosterChoice.fromJson(
-              item as Map<String, dynamic>,
-            ),
+            (item) =>
+                CareerBoosterChoice.fromJson(item as Map<String, dynamic>),
           )
           .toList(growable: false),
       opponent: opponentPayload is Map<String, dynamic>
@@ -1550,6 +1654,23 @@ class CareerRunSnapshot {
       boardRequired: json['board_required'] as bool,
       canBattle: json['can_battle'] as bool,
       canChooseBooster: json['can_choose_booster'] as bool,
+      selectedUpgrades:
+          (json['selected_upgrades'] as List<dynamic>? ?? const [])
+              .map(
+                (item) =>
+                    CareerModuleUpgrade.fromJson(item as Map<String, dynamic>),
+              )
+              .toList(growable: false),
+      offeredUpgrades: (json['offered_upgrades'] as List<dynamic>? ?? const [])
+          .map(
+            (item) =>
+                CareerModuleUpgrade.fromJson(item as Map<String, dynamic>),
+          )
+          .toList(growable: false),
+      canChooseUpgrade: json['can_choose_upgrade'] as bool? ?? false,
+      sector: sectorPayload is Map<String, dynamic>
+          ? CareerSectorContent.fromJson(sectorPayload)
+          : null,
       startedAt: json['started_at'] == null
           ? null
           : DateTime.parse(json['started_at'] as String),
@@ -1574,6 +1695,10 @@ class CareerRunSnapshot {
   final bool canChooseBooster;
   final DateTime? startedAt;
   final DateTime? endedAt;
+  final List<CareerModuleUpgrade> selectedUpgrades;
+  final List<CareerModuleUpgrade> offeredUpgrades;
+  final bool canChooseUpgrade;
+  final CareerSectorContent? sector;
 
   bool get isTerminal =>
       status == 'completed' || status == 'failed' || status == 'abandoned';
@@ -1601,16 +1726,16 @@ enum KitMode {
   String get wireValue => name;
 
   String get displayName => switch (this) {
-        KitMode.online => 'Çevrimiçi Savaş',
-        KitMode.training => 'Antrenman',
-        KitMode.career => 'Kariyer',
-      };
+    KitMode.online => 'Çevrimiçi Savaş',
+    KitMode.training => 'Sandbox Lab',
+    KitMode.career => 'Kariyer',
+  };
 
   static KitMode parse(String value) => switch (value) {
-        'training' => KitMode.training,
-        'career' => KitMode.career,
-        _ => KitMode.online,
-      };
+    'training' => KitMode.training,
+    'career' => KitMode.career,
+    _ => KitMode.online,
+  };
 }
 
 class ControlledKit {
@@ -1868,17 +1993,14 @@ class SeasonSnapshotModel {
       season: SeasonWindowModel.fromJson(
         json['season'] as Map<String, dynamic>,
       ),
-      entry: SeasonEntryModel.fromJson(
-        json['entry'] as Map<String, dynamic>,
-      ),
+      entry: SeasonEntryModel.fromJson(json['entry'] as Map<String, dynamic>),
       tiers: (json['tiers'] as List<dynamic>)
           .map((item) => SeasonTierModel.fromJson(item as Map<String, dynamic>))
           .toList(growable: false),
       leaderboard: (json['leaderboard'] as List<dynamic>)
           .map(
-            (item) => SeasonStandingModel.fromJson(
-              item as Map<String, dynamic>,
-            ),
+            (item) =>
+                SeasonStandingModel.fromJson(item as Map<String, dynamic>),
           )
           .toList(growable: false),
     );
@@ -1915,8 +2037,7 @@ class AlphaSafetySnapshotModel {
       blockedUntil: json['blocked_until'] == null
           ? null
           : DateTime.parse(json['blocked_until'] as String),
-      serverAuthoritativeResults:
-          json['server_authoritative_results'] as bool,
+      serverAuthoritativeResults: json['server_authoritative_results'] as bool,
       idempotentRewards: json['idempotent_rewards'] as bool,
       boardValidation: json['board_validation'] as bool,
     );
@@ -2076,11 +2197,7 @@ class ClanModel {
       isOpen: json['is_open'] as bool,
       memberCount: json['member_count'] as int,
       members: (json['members'] as List<dynamic>)
-          .map(
-            (item) => ClanMemberModel.fromJson(
-              item as Map<String, dynamic>,
-            ),
-          )
+          .map((item) => ClanMemberModel.fromJson(item as Map<String, dynamic>))
           .toList(growable: false),
     );
   }
@@ -2112,23 +2229,17 @@ class SocialSnapshotModel {
       ),
       incomingRequests: (json['incoming_requests'] as List<dynamic>)
           .map(
-            (item) => FriendRequestModel.fromJson(
-              item as Map<String, dynamic>,
-            ),
+            (item) => FriendRequestModel.fromJson(item as Map<String, dynamic>),
           )
           .toList(growable: false),
       outgoingRequests: (json['outgoing_requests'] as List<dynamic>)
           .map(
-            (item) => FriendRequestModel.fromJson(
-              item as Map<String, dynamic>,
-            ),
+            (item) => FriendRequestModel.fromJson(item as Map<String, dynamic>),
           )
           .toList(growable: false),
       friends: (json['friends'] as List<dynamic>)
           .map(
-            (item) => SocialPlayerModel.fromJson(
-              item as Map<String, dynamic>,
-            ),
+            (item) => SocialPlayerModel.fromJson(item as Map<String, dynamic>),
           )
           .toList(growable: false),
       clan: clanPayload is Map<String, dynamic>

@@ -173,6 +173,9 @@ class RelayApiTests(unittest.TestCase):
         payload = started.json()
         self.assertEqual(payload["status"], "active")
         self.assertEqual(payload["total_stages"], 5)
+        self.assertEqual(payload["sector"]["sector_id"], "signal_threshold")
+        self.assertEqual(len(payload["sector"]["stages"]), 5)
+        self.assertTrue(payload["sector"]["stages"][-1]["is_boss"])
         self.assertEqual(payload["opponent"]["stage_number"], 1)
         self.assertEqual(
             len(payload["opponent"]["board"]["modules"]),
