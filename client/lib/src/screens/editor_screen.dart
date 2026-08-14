@@ -10,12 +10,13 @@ import '../models/relay_models.dart';
 import '../navigation/navigation_actions.dart';
 import '../state/app_settings.dart';
 import '../state/board_controller.dart';
+import '../state/onboarding_tour.dart';
 import '../state/product_telemetry.dart';
 import '../theme/cosmetic_visuals.dart';
 import '../theme/relay_theme.dart';
 import '../widgets/circuit_board.dart';
 import '../widgets/module_palette.dart';
-import '../widgets/module_visuals.dart';
+import '../widgets/onboarding_coach_banner.dart';
 import '../widgets/app_header_actions.dart';
 import '../widgets/preparation_workspace.dart';
 import '../widgets/relay_notice.dart';
@@ -153,14 +154,12 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
 
     if (widget.mode == EditorMode.online) {
       final weeklyProtocol = ref.watch(weeklyProtocolProvider);
-      return PreparationWorkspace(
-        boardStage: _PreparationBoardStage(
-          state: boardState,
-          specs: specs,
-          visuals: _visuals,
-          onCellTap: _tapCell,
-          onModuleDropped: _dropModule,
-          onRotateModule: controller.rotateAt,
+      final tour = ref.watch(onboardingTourProvider);
+      final workspace = PreparationWorkspace(
+        boardStage: PreparationBoardStage(
+          key: const ValueKey('preparation-board-stage'),
+          moduleCount: boardState.placements.length,
+          maxModules: maxBoardModules,
           onReset: () {
             controller.reset();
             _showNotice(
@@ -168,6 +167,18 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
               RelayNoticeTone.info,
             );
           },
+          board: CircuitBoard(
+            placements: boardState.placements,
+            specs: specs,
+            poweredIds: boardState.validation?.poweredIds ?? const {},
+            validationVisible: boardState.validation != null,
+            selectedCell: boardState.selectedCell,
+            onCellTap: _tapCell,
+            onModuleDropped: _dropModule,
+            onRotateModule: controller.rotateAt,
+            visuals: _visuals,
+            presentation3d: true,
+          ),
         ),
         sidePanel: _OnlinePreparationSidePanel(
           state: boardState,
@@ -189,7 +200,34 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
           },
           kitName: boardState.kitName,
           onEditKit: _editStartingKit,
+          highlighted: tour.step == OnboardingTourStep.modulePlacement,
         ),
+      );
+      final coach = switch (tour.step) {
+        OnboardingTourStep.modulePlacement => OnboardingCoachBanner(
+          stepLabel: '2/4',
+          title: 'MODÜLÜ DEVREYE TAK',
+          message:
+              'Parlayan raftan bir modülü boş hücreye sürükleyin veya seçip hücreye dokunun.',
+          onSkip: ref.read(onboardingTourProvider.notifier).complete,
+          icon: Icons.swipe_down_alt,
+        ),
+        OnboardingTourStep.validateAndBattle => OnboardingCoachBanner(
+          stepLabel: '3/4',
+          title: 'DEVREYİ DOĞRULA VE SAVAŞ',
+          message:
+              'Bağlantıları doğrulayın; düğme SAVAŞA BAŞLA olduğunda yeniden dokunun.',
+          onSkip: ref.read(onboardingTourProvider.notifier).complete,
+          icon: Icons.electrical_services_outlined,
+        ),
+        _ => null,
+      };
+      return Stack(
+        children: [
+          Positioned.fill(child: workspace),
+          if (coach != null)
+            Align(alignment: Alignment.topCenter, child: coach),
+        ],
       );
     }
 
@@ -292,6 +330,7 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
       ref.read(_boardProvider.notifier).tapCell(index);
       if (shouldSeatModule) {
         _playPlacementSound();
+        ref.read(onboardingTourProvider.notifier).modulePlaced();
       }
     } on StateError catch (error) {
       _showError(error.toString().replaceFirst('Bad state: ', ''));
@@ -302,6 +341,9 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
     try {
       ref.read(_boardProvider.notifier).dropModule(index, data);
       _playPlacementSound();
+      if (!data.isFromBoard) {
+        ref.read(onboardingTourProvider.notifier).modulePlaced();
+      }
     } on StateError catch (error) {
       _showError(error.toString().replaceFirst('Bad state: ', ''));
     }
@@ -395,6 +437,11 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
             },
           );
       await _openReplay(api, match);
+      final tour = ref.read(onboardingTourProvider);
+      if (tour.step == OnboardingTourStep.validateAndBattle) {
+        ref.read(onboardingTourProvider.notifier).battleViewed();
+        if (mounted) Navigator.of(context).pop();
+      }
       ref.invalidate(progressionProvider);
       ref.invalidate(statisticsProvider);
     } on RelayApiException catch (error) {
@@ -489,115 +536,6 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
   }
 }
 
-class _PreparationBoardStage extends StatelessWidget {
-  const _PreparationBoardStage({
-    required this.state,
-    required this.specs,
-    required this.visuals,
-    required this.onCellTap,
-    required this.onModuleDropped,
-    required this.onRotateModule,
-    required this.onReset,
-  });
-
-  final BoardEditorState state;
-  final Map<ModuleKind, ModuleSpec> specs;
-  final EquippedVisuals visuals;
-  final ValueChanged<int> onCellTap;
-  final ModuleDropCallback onModuleDropped;
-  final ValueChanged<int> onRotateModule;
-  final VoidCallback onReset;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      key: const ValueKey('preparation-board-stage'),
-      margin: EdgeInsets.zero,
-      clipBehavior: Clip.antiAlias,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(14, 10, 14, 14),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              children: [
-                const Icon(
-                  Icons.developer_board_outlined,
-                  color: RelayColors.cyan,
-                ),
-                const SizedBox(width: 8),
-                const Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'DEVRE KARTI',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 0.8,
-                        ),
-                      ),
-                      Text(
-                        'Modülü alttaki raftan sürükle veya seçip hücreye dokun.',
-                        style: TextStyle(
-                          color: RelayColors.muted,
-                          fontSize: 9.5,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Text(
-                  '${state.placements.length}/$maxBoardModules',
-                  style: const TextStyle(
-                    color: RelayColors.amber,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-                const SizedBox(width: 6),
-                IconButton(
-                  key: const ValueKey('preparation-reset-board'),
-                  tooltip: 'Devreyi sıfırla',
-                  onPressed: onReset,
-                  icon: const Icon(Icons.restart_alt),
-                ),
-              ],
-            ),
-            const SizedBox(height: 6),
-            Expanded(
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final size = math.min(
-                    620.0,
-                    math.min(constraints.maxWidth, constraints.maxHeight),
-                  );
-                  return Center(
-                    child: SizedBox.square(
-                      dimension: size,
-                      child: CircuitBoard(
-                        placements: state.placements,
-                        specs: specs,
-                        poweredIds: state.validation?.poweredIds ?? const {},
-                        validationVisible: state.validation != null,
-                        selectedCell: state.selectedCell,
-                        onCellTap: onCellTap,
-                        onModuleDropped: onModuleDropped,
-                        onRotateModule: onRotateModule,
-                        visuals: visuals,
-                        presentation3d: true,
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 class _OnlinePreparationSidePanel extends StatelessWidget {
   const _OnlinePreparationSidePanel({
     required this.state,
@@ -626,18 +564,20 @@ class _OnlinePreparationSidePanel extends StatelessWidget {
       key: const ValueKey('preparation-side-panel'),
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _SelectedModuleInspector(placement: placement, spec: spec),
+        SelectedModuleInspector(placement: placement, spec: spec),
         const SizedBox(height: 10),
         _WeeklyProtocolCard(protocol: weeklyProtocol),
         const SizedBox(height: 10),
-        _ValidationCard(
-          state: state,
-          specs: specs,
-          busy: busy,
-          onValidate: onValidate,
-          showAction: false,
-        ),
-        const SizedBox(height: 10),
+        if (state.validation != null) ...[
+          _ValidationCard(
+            state: state,
+            specs: specs,
+            busy: busy,
+            onValidate: onValidate,
+            showAction: false,
+          ),
+          const SizedBox(height: 10),
+        ],
         _AsyncMatchCard(
           session: session,
           busy: busy,
@@ -691,12 +631,6 @@ class _WeeklyProtocolCard extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  const Icon(
-                    Icons.calendar_view_week_outlined,
-                    color: RelayColors.violet,
-                    size: 20,
-                  ),
-                  const SizedBox(width: 8),
                   const Expanded(
                     child: Text(
                       'HAFTALIK PROTOKOL',
@@ -766,132 +700,6 @@ class _WeeklyProtocolCard extends StatelessWidget {
     final days = remaining.inDays;
     final hours = remaining.inHours.remainder(24);
     return days > 0 ? '${days}G ${hours}S' : '${remaining.inHours}S';
-  }
-}
-
-class _SelectedModuleInspector extends StatelessWidget {
-  const _SelectedModuleInspector({required this.placement, required this.spec});
-
-  final ModulePlacement? placement;
-  final ModuleSpec? spec;
-
-  @override
-  Widget build(BuildContext context) {
-    final module = spec;
-    if (module == null) {
-      return const Card(
-        key: ValueKey('selected-module-inspector-empty'),
-        child: Padding(
-          padding: EdgeInsets.all(16),
-          child: Column(
-            children: [
-              Icon(
-                Icons.touch_app_outlined,
-                color: RelayColors.muted,
-                size: 30,
-              ),
-              SizedBox(height: 8),
-              Text('MODÜL SEÇ', style: TextStyle(fontWeight: FontWeight.w900)),
-              SizedBox(height: 4),
-              Text(
-                'Raftan veya devre kartından bir modül seçtiğinde ayrıntıları burada görünür.',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: RelayColors.muted, fontSize: 10),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-    final color = moduleColor(module.kind);
-    final location = placement == null
-        ? 'RAFTAN SEÇİLDİ'
-        : 'HÜCRE ${placement!.row + 1},${placement!.column + 1} • SV. ${placement!.level}';
-    final stats = <String>[
-      'Can ${module.maxHp.toStringAsFixed(0)}',
-      if (module.energyOutput > 0)
-        'Enerji +${module.energyOutput.toStringAsFixed(0)}',
-      if (module.batteryCapacity > 0)
-        'Depo ${module.batteryCapacity.toStringAsFixed(0)}',
-      if (module.energyCost > 0)
-        'Maliyet ${module.energyCost.toStringAsFixed(0)}',
-      if (module.damage > 0) 'Hasar ${module.damage.toStringAsFixed(0)}',
-      if (module.shield > 0) 'Kalkan ${module.shield.toStringAsFixed(0)}',
-      if (module.cooling > 0) 'Soğutma ${module.cooling.toStringAsFixed(0)}',
-      if (module.repair > 0) 'Onarım ${module.repair.toStringAsFixed(0)}',
-    ];
-    return Card(
-      key: const ValueKey('selected-module-inspector'),
-      child: Padding(
-        padding: const EdgeInsets.all(15),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              children: [
-                DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: color.withValues(alpha: 0.14),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: color.withValues(alpha: 0.5)),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(10),
-                    child: ModuleGlyph(
-                      kind: module.kind,
-                      color: color,
-                      size: 28,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        module.displayName.toUpperCase(),
-                        style: const TextStyle(fontWeight: FontWeight.w900),
-                      ),
-                      Text(
-                        location,
-                        style: TextStyle(
-                          color: color,
-                          fontSize: 9,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            Text(
-              module.description,
-              style: const TextStyle(
-                color: RelayColors.muted,
-                fontSize: 10.5,
-                height: 1.35,
-              ),
-            ),
-            const SizedBox(height: 10),
-            Wrap(
-              spacing: 6,
-              runSpacing: 6,
-              children: [
-                for (final stat in stats)
-                  Chip(
-                    visualDensity: VisualDensity.compact,
-                    side: BorderSide(color: color.withValues(alpha: 0.35)),
-                    label: Text(stat, style: const TextStyle(fontSize: 9)),
-                  ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
   }
 }
 

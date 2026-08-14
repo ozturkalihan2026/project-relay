@@ -2,15 +2,12 @@ import '../models/relay_models.dart';
 
 class ReplayEventFormatter {
   ReplayEventFormatter(this.match)
-      : _modules = {
-          for (final module in match.playerBoard.modules)
-            module.id: _KnownModule(module, 'Sen'),
-          for (final module in match.opponentBoard.modules)
-            module.id: _KnownModule(
-              module,
-              match.opponent.displayName,
-            ),
-        };
+    : _modules = {
+        for (final module in match.playerBoard.modules)
+          module.id: _KnownModule(module, 'Sen'),
+        for (final module in match.opponentBoard.modules)
+          module.id: _KnownModule(module, match.opponent.displayName),
+      };
 
   final MatchResponse match;
   final Map<String, _KnownModule> _modules;
@@ -39,9 +36,10 @@ class ReplayEventFormatter {
     final target = moduleLabel(event.targetId);
     final amount = event.amount.toStringAsFixed(1);
     return switch (event.type) {
+      'overload' =>
+        'Aşırı yük kademesi ${event.amount.toStringAsFixed(0)} etkinleşti.',
       'attack' => '$actor, $target hedefine $amount hasar verdi.',
-      'core_damage' =>
-        '$actor rakip çekirdeğe $amount hasar verdi.',
+      'core_damage' => '$actor rakip çekirdeğe $amount hasar verdi.',
       'shield' => '$actor ortak havuza $amount kalkan ekledi.',
       'shield_absorb' =>
         '$actor saldırısının $amount hasarı kalkan tarafından emildi.',
@@ -50,17 +48,16 @@ class ReplayEventFormatter {
       'overheat' => '$actor aşırı ısındı ve geçici olarak durdu.',
       'recovered' => '$actor soğudu ve yeniden çalışmaya başladı.',
       'destroyed' => '$target imha edildi.',
-      'energy_starved' =>
-        '$actor çalışamadı; $amount enerji eksik.',
+      'energy_starved' => '$actor çalışamadı; $amount enerji eksik.',
       _ => 'Bilinmeyen savaş olayı.',
     };
   }
 
   String sideLabel(String side) => switch (side) {
-        'left' => 'SEN',
-        'right' => match.opponent.displayName.toUpperCase(),
-        _ => 'SİSTEM',
-      };
+    'left' => 'SEN',
+    'right' => match.opponent.displayName.toUpperCase(),
+    _ => 'SİSTEM',
+  };
 }
 
 class _KnownModule {

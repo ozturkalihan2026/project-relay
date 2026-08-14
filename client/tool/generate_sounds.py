@@ -363,6 +363,47 @@ def _attack() -> tuple[float, Signal]:
     )
 
 
+def _level_up() -> tuple[float, Signal]:
+    duration = 1.16
+    fanfare = _mix(
+        _layer(
+            _tone(523.25),
+            _envelope(0.34, attack=0.008, release=0.24),
+            0.52,
+        ),
+        _delayed(
+            _layer(
+                _tone(659.25),
+                _envelope(0.34, attack=0.008, release=0.24),
+                0.52,
+            ),
+            0.20,
+        ),
+        _delayed(
+            _layer(
+                _mix(
+                    _tone(783.99),
+                    _layer(_tone(1_046.50), lambda _: 1, 0.45),
+                ),
+                _envelope(0.62, attack=0.01, release=0.50),
+                0.58,
+            ),
+            0.40,
+        ),
+    )
+    applause = _layer(
+        _noise(2_026, smoothing=0.18),
+        _envelope(duration, attack=0.04, release=0.72, curve=1.2),
+        0.16,
+    )
+    sparkle = _layer(
+        _sweep(1_100, 3_200, duration, phase=0.25),
+        _envelope(duration, attack=0.02, release=0.82),
+        0.12,
+    )
+    return duration, _mix(fanfare, applause, sparkle)
+
+
 def main() -> None:
     OUTPUT.mkdir(parents=True, exist_ok=True)
     sounds = {
@@ -379,6 +420,7 @@ def main() -> None:
         "overheat.wav": _overheat(),
         "energy_starved.wav": _energy_starved(),
         "destroyed.wav": _destroyed(),
+        "level_up.wav": _level_up(),
     }
     for name, (duration, signal) in sounds.items():
         _write(name, duration, signal)

@@ -60,6 +60,7 @@ class Side(str, Enum):
 
 
 class EventType(str, Enum):
+    OVERLOAD = "overload"
     ENERGY_STARVED = "energy_starved"
     OVERHEAT = "overheat"
     RECOVERED = "recovered"

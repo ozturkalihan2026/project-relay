@@ -15,6 +15,7 @@ class ModuleShelf extends StatelessWidget {
     required this.remainingByKind,
     required this.kitName,
     required this.onEditKit,
+    this.highlighted = false,
     super.key,
   });
 
@@ -24,7 +25,8 @@ class ModuleShelf extends StatelessWidget {
   final ValueChanged<ModuleDragData> onBoardModuleReturned;
   final Map<ModuleKind, int> remainingByKind;
   final String kitName;
-  final VoidCallback onEditKit;
+  final VoidCallback? onEditKit;
+  final bool highlighted;
 
   @override
   Widget build(BuildContext context) {
@@ -49,15 +51,21 @@ class ModuleShelf extends StatelessWidget {
             ),
             borderRadius: BorderRadius.circular(18),
             border: Border.all(
-              color: (returning ? RelayColors.coral : RelayColors.cyan)
-                  .withValues(alpha: returning ? 0.9 : 0.35),
-              width: returning ? 2 : 1,
+              color:
+                  (returning
+                          ? RelayColors.coral
+                          : highlighted
+                          ? RelayColors.amber
+                          : RelayColors.cyan)
+                      .withValues(alpha: returning || highlighted ? 0.9 : 0.35),
+              width: returning || highlighted ? 2 : 1,
             ),
             boxShadow: [
               BoxShadow(
-                color: RelayColors.cyan.withValues(alpha: 0.08),
-                blurRadius: 18,
-                spreadRadius: -8,
+                color: (highlighted ? RelayColors.amber : RelayColors.cyan)
+                    .withValues(alpha: highlighted ? 0.36 : 0.08),
+                blurRadius: highlighted ? 22 : 18,
+                spreadRadius: highlighted ? 1 : -8,
               ),
             ],
           ),
@@ -114,7 +122,7 @@ class ModuleShelf extends StatelessWidget {
                             _PaletteItem(
                               module: modules[index],
                               selected: modules[index].kind == selectedKind,
-                              width: 112,
+                              width: 78,
                               remaining:
                                   remainingByKind[modules[index].kind] ?? 0,
                               dense: false,
@@ -324,7 +332,7 @@ class _PaletteItem extends StatelessWidget {
     final disabled = remaining <= 0;
     return Tooltip(
       message:
-          '${module.description}\n${_moduleStatistics(module)}\nKitte kalan: $remaining',
+          '${module.displayName}\n${module.description}\n${_moduleStatistics(module)}\nKitte kalan: $remaining',
       child: Draggable<ModuleDragData>(
         data: ModuleDragData.palette(module.kind),
         maxSimultaneousDrags: disabled ? 0 : 1,
@@ -379,6 +387,17 @@ class _PaletteTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = moduleColor(module.kind);
     final disabled = remaining <= 0;
+    if (compact) {
+      return _CompactPaletteTile(
+        module: module,
+        color: color,
+        selected: selected,
+        disabled: disabled,
+        width: width,
+        remaining: remaining,
+        onTap: onTap,
+      );
+    }
     return MouseRegion(
       cursor: disabled ? SystemMouseCursors.forbidden : SystemMouseCursors.grab,
       child: Material(
@@ -533,6 +552,129 @@ class _PaletteTile extends StatelessWidget {
                     ),
                   ),
                 ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CompactPaletteTile extends StatelessWidget {
+  const _CompactPaletteTile({
+    required this.module,
+    required this.color,
+    required this.selected,
+    required this.disabled,
+    required this.width,
+    required this.remaining,
+    required this.onTap,
+  });
+
+  final ModuleSpec module;
+  final Color color;
+  final bool selected;
+  final bool disabled;
+  final double width;
+  final int remaining;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      enabled: !disabled,
+      selected: selected,
+      label: '${module.displayName}, kitte kalan $remaining',
+      child: MouseRegion(
+        cursor: disabled
+            ? SystemMouseCursors.forbidden
+            : SystemMouseCursors.grab,
+        child: Material(
+          key: ValueKey('palette-module-${module.kind.wireValue}'),
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(14),
+            child: Opacity(
+              opacity: disabled ? 0.42 : 1,
+              child: SizedBox(
+                width: width,
+                height: 68,
+                child: ModuleChassis(
+                  accent: color,
+                  lifted: selected && !disabled,
+                  compact: true,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          Color.alphaBlend(
+                            color.withValues(alpha: selected ? 0.28 : 0.16),
+                            const Color(0xFF17323D),
+                          ),
+                          const Color(0xFF08161C),
+                        ],
+                      ),
+                      border: Border.all(
+                        color: selected ? color : const Color(0xFF2B5361),
+                        width: selected ? 2 : 1,
+                      ),
+                    ),
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        ModuleGlyph(kind: module.kind, color: color, size: 31),
+                        Positioned(
+                          right: 5,
+                          top: 4,
+                          child: Container(
+                            key: ValueKey(
+                              'palette-module-remaining-${module.kind.wireValue}',
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 5,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: disabled
+                                  ? RelayColors.coral.withValues(alpha: 0.22)
+                                  : color.withValues(alpha: 0.22),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              '$remaining',
+                              style: TextStyle(
+                                color: disabled ? RelayColors.coral : color,
+                                fontSize: 9,
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                          ),
+                        ),
+                        if (selected && !disabled)
+                          Positioned(
+                            left: 15,
+                            right: 15,
+                            bottom: 5,
+                            child: Container(
+                              height: 2,
+                              decoration: BoxDecoration(
+                                color: color,
+                                borderRadius: BorderRadius.circular(99),
+                                boxShadow: [
+                                  BoxShadow(color: color, blurRadius: 7),
+                                ],
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
               ),
             ),
           ),

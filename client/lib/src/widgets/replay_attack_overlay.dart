@@ -39,7 +39,7 @@ class _ReplayAttackOverlayState extends State<ReplayAttackOverlay>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 620),
+      duration: const Duration(milliseconds: 1450),
     );
     widget.events.addListener(_handleEvents);
     _handleEvents();
@@ -66,6 +66,7 @@ class _ReplayAttackOverlayState extends State<ReplayAttackOverlay>
         .where(
           (event) =>
               event.type == 'attack' ||
+              event.type == 'overload' ||
               event.type == 'core_damage' ||
               event.type == 'shield_absorb' ||
               event.type == 'shield' ||
@@ -82,6 +83,9 @@ class _ReplayAttackOverlayState extends State<ReplayAttackOverlay>
       return;
     }
     _phaseCue = null;
+    for (final event in _events.where((event) => event.type == 'overload')) {
+      _phaseCue = 'AŞIRI YÜK K${event.amount.toStringAsFixed(0)}';
+    }
     for (final event in _events.where((event) => event.type == 'destroyed')) {
       final target = event.targetId;
       if (target == null) continue;
@@ -108,8 +112,11 @@ class _ReplayAttackOverlayState extends State<ReplayAttackOverlay>
         }
       }
     }
-    if (_events.any((event) =>
-        event.type == 'core_damage' && event.tick >= widget.match.result.ticks)) {
+    if (_events.any(
+      (event) =>
+          event.type == 'core_damage' &&
+          event.tick >= widget.match.result.ticks,
+    )) {
       _phaseCue = 'ÇEKİRDEK ÇÖKTÜ';
     }
     _controller.forward(from: 0);
@@ -182,7 +189,9 @@ class _AttackPainter extends CustomPainter {
 
   void _drawPhaseCue(Canvas canvas, Size size, String cue) {
     final appear = math.sin(rawProgress * math.pi).clamp(0.0, 1.0);
-    final color = cue.contains('ÇEKİRDEK') ? RelayColors.coral : RelayColors.amber;
+    final color = cue.contains('ÇEKİRDEK') || cue.contains('AŞIRI YÜK')
+        ? RelayColors.coral
+        : RelayColors.amber;
     final painter = TextPainter(
       text: TextSpan(
         text: cue,
@@ -192,7 +201,10 @@ class _AttackPainter extends CustomPainter {
           fontWeight: FontWeight.w900,
           letterSpacing: 2.1,
           shadows: [
-            Shadow(color: color.withValues(alpha: 0.70 * appear), blurRadius: 18),
+            Shadow(
+              color: color.withValues(alpha: 0.70 * appear),
+              blurRadius: 18,
+            ),
             const Shadow(color: Colors.black, blurRadius: 6),
           ],
         ),
@@ -233,15 +245,25 @@ class _AttackPainter extends CustomPainter {
   ) {
     final opacity = math.sin(rawProgress * math.pi).clamp(0.0, 1.0);
     if (opacity <= 0) return;
-    final leftActive = events.any((event) => event.side == 'left');
-    final rightActive = events.any((event) => event.side == 'right');
+    final systemOverload = events.any((event) => event.type == 'overload');
+    final leftActive =
+        systemOverload || events.any((event) => event.side == 'left');
+    final rightActive =
+        systemOverload || events.any((event) => event.side == 'right');
     if (leftActive) {
-      _drawBoardEdgePulse(canvas, leftBoard, leftVisuals.modules.attack, opacity);
+      _drawBoardEdgePulse(
+        canvas,
+        leftBoard,
+        leftVisuals.modules.attack,
+        opacity,
+      );
     }
     if (rightActive) {
       _drawBoardEdgePulse(canvas, rightBoard, RelayColors.coral, opacity);
     }
-    if (events.any((event) => event.type == 'destroyed' || event.type == 'core_damage')) {
+    if (events.any(
+      (event) => event.type == 'destroyed' || event.type == 'core_damage',
+    )) {
       final wash = Paint()
         ..shader = LinearGradient(
           begin: Alignment.topCenter,
@@ -256,7 +278,12 @@ class _AttackPainter extends CustomPainter {
     }
   }
 
-  void _drawBoardEdgePulse(Canvas canvas, Rect board, Color color, double opacity) {
+  void _drawBoardEdgePulse(
+    Canvas canvas,
+    Rect board,
+    Color color,
+    double opacity,
+  ) {
     final inflated = board.inflate(7 + opacity * 4);
     canvas.drawRRect(
       RRect.fromRectAndRadius(inflated, const Radius.circular(18)),
@@ -277,9 +304,12 @@ class _AttackPainter extends CustomPainter {
     required Offset leftCore,
     required Offset rightCore,
   }) {
-    final actorBoard = event.side == 'left' ? match.playerBoard : match.opponentBoard;
+    final actorBoard = event.side == 'left'
+        ? match.playerBoard
+        : match.opponentBoard;
     final actorRect = event.side == 'left' ? leftBoard : rightBoard;
-    final targetOnEnemy = event.type == 'attack' ||
+    final targetOnEnemy =
+        event.type == 'attack' ||
         event.type == 'core_damage' ||
         event.type == 'shield_absorb' ||
         event.type == 'destroyed';
@@ -289,7 +319,8 @@ class _AttackPainter extends CustomPainter {
     final targetRect = targetOnEnemy
         ? (event.side == 'left' ? rightBoard : leftBoard)
         : actorRect;
-    final from = _modulePoint(event.actorId, actorBoard, actorRect) ??
+    final from =
+        _modulePoint(event.actorId, actorBoard, actorRect) ??
         (event.side == 'left' ? leftCore : rightCore);
     final targetCore = event.side == 'left' ? rightCore : leftCore;
     final to = event.type == 'core_damage'
@@ -320,7 +351,13 @@ class _AttackPainter extends CustomPainter {
     switch (event.type) {
       case 'shield':
       case 'shield_absorb':
-        _drawShieldEvent(canvas, to, color, fade, event.type == 'shield_absorb');
+        _drawShieldEvent(
+          canvas,
+          to,
+          color,
+          fade,
+          event.type == 'shield_absorb',
+        );
         break;
       case 'repair':
       case 'recovered':
@@ -357,7 +394,8 @@ class _AttackPainter extends CustomPainter {
     final distance = math.sqrt(dx * dx + dy * dy).clamp(1.0, double.infinity);
     final normal = Offset(-dy / distance, dx / distance);
     final arcDirection = event.side == 'left' ? -1.0 : 1.0;
-    final control = Offset.lerp(from, to, 0.5)! +
+    final control =
+        Offset.lerp(from, to, 0.5)! +
         normal * (18 + eventIndex * 4) * arcDirection;
     final headT = progress.clamp(0.0, 1.0).toDouble();
     final head = _quadratic(from, control, to, headT);
@@ -426,7 +464,9 @@ class _AttackPainter extends CustomPainter {
     );
 
     if (rawProgress > 0.48) {
-      final impactProgress = ((rawProgress - 0.48) / 0.52).clamp(0.0, 1.0).toDouble();
+      final impactProgress = ((rawProgress - 0.48) / 0.52)
+          .clamp(0.0, 1.0)
+          .toDouble();
       _drawImpactBurst(canvas, to, color, impactProgress, fade);
       if (event.type == 'core_damage' && event.tick >= match.result.ticks) {
         _drawCoreCollapse(canvas, to, color, impactProgress, fade);
@@ -458,7 +498,8 @@ class _AttackPainter extends CustomPainter {
     final distance = direction.distance.clamp(1.0, double.infinity);
     final unit = direction / distance;
     final normal = Offset(-unit.dy, unit.dx);
-    final arc = normal * (24 + eventIndex * 3) * (event.side == 'left' ? -1 : 1);
+    final arc =
+        normal * (24 + eventIndex * 3) * (event.side == 'left' ? -1 : 1);
     final control = Offset.lerp(from, to, 0.5)! + arc;
     final projectile = _quadratic(from, control, to, phase);
     final recoil = (1 - (rawProgress / 0.18).clamp(0.0, 1.0)) * 12;
@@ -517,7 +558,13 @@ class _AttackPainter extends CustomPainter {
     }
   }
 
-  void _drawShieldEvent(Canvas canvas, Offset to, Color color, double fade, bool absorbed) {
+  void _drawShieldEvent(
+    Canvas canvas,
+    Offset to,
+    Color color,
+    double fade,
+    bool absorbed,
+  ) {
     final phase = Curves.easeOutBack.transform(progress.clamp(0.0, 1.0));
     final radius = 22 + 42 * phase;
     final path = Path();
@@ -572,10 +619,30 @@ class _AttackPainter extends CustomPainter {
     );
     final shield = Path()
       ..moveTo(to.dx, to.dy - radius * 0.54)
-      ..quadraticBezierTo(to.dx + radius * 0.42, to.dy - radius * 0.34, to.dx + radius * 0.34, to.dy + radius * 0.12)
-      ..quadraticBezierTo(to.dx + radius * 0.20, to.dy + radius * 0.48, to.dx, to.dy + radius * 0.62)
-      ..quadraticBezierTo(to.dx - radius * 0.20, to.dy + radius * 0.48, to.dx - radius * 0.34, to.dy + radius * 0.12)
-      ..quadraticBezierTo(to.dx - radius * 0.42, to.dy - radius * 0.34, to.dx, to.dy - radius * 0.54)
+      ..quadraticBezierTo(
+        to.dx + radius * 0.42,
+        to.dy - radius * 0.34,
+        to.dx + radius * 0.34,
+        to.dy + radius * 0.12,
+      )
+      ..quadraticBezierTo(
+        to.dx + radius * 0.20,
+        to.dy + radius * 0.48,
+        to.dx,
+        to.dy + radius * 0.62,
+      )
+      ..quadraticBezierTo(
+        to.dx - radius * 0.20,
+        to.dy + radius * 0.48,
+        to.dx - radius * 0.34,
+        to.dy + radius * 0.12,
+      )
+      ..quadraticBezierTo(
+        to.dx - radius * 0.42,
+        to.dy - radius * 0.34,
+        to.dx,
+        to.dy - radius * 0.54,
+      )
       ..close();
     canvas.drawPath(
       shield,
@@ -599,7 +666,13 @@ class _AttackPainter extends CustomPainter {
     );
   }
 
-  void _drawRepairEvent(Canvas canvas, Offset to, Color color, double fade, BattleEvent event) {
+  void _drawRepairEvent(
+    Canvas canvas,
+    Offset to,
+    Color color,
+    double fade,
+    BattleEvent event,
+  ) {
     final phase = Curves.easeOut.transform(progress);
     final radius = 11 + 30 * phase;
     canvas.drawCircle(
@@ -612,7 +685,8 @@ class _AttackPainter extends CustomPainter {
     );
     for (var i = 0; i < 4; i++) {
       final angle = i * math.pi / 2 + rawProgress * 1.8;
-      final center = to + Offset(math.cos(angle), math.sin(angle)) * (12 + 16 * phase);
+      final center =
+          to + Offset(math.cos(angle), math.sin(angle)) * (12 + 16 * phase);
       _drawPlus(canvas, center, color.withValues(alpha: 0.82 * fade), 4.5);
     }
     _drawFloatingLabel(
@@ -644,31 +718,36 @@ class _AttackPainter extends CustomPainter {
         ..color = color.withValues(alpha: 0.42 * fade)
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 9),
     );
-    for (var index = 0; index < 12; index++) {
-      final angle = index * math.pi / 6 + rawProgress * 0.45;
+    for (var index = 0; index < 20; index++) {
+      final angle = index * math.pi * 2 / 20 + rawProgress * 0.45;
       final start = to + Offset(math.cos(angle), math.sin(angle)) * 8;
-      final finish = to + Offset(math.cos(angle), math.sin(angle)) * (18 + 35 * phase);
+      final finish =
+          to +
+          Offset(math.cos(angle), math.sin(angle)) *
+              (22 + (38 + (index % 5) * 7) * phase);
       canvas.drawLine(
         start,
         finish,
         Paint()
-          ..color = (index.isEven ? color : RelayColors.amber)
-              .withValues(alpha: 0.82 * fade)
-          ..strokeWidth = index.isEven ? 2.6 : 1.5
+          ..color = (index.isEven ? color : RelayColors.amber).withValues(
+            alpha: 0.82 * fade,
+          )
+          ..strokeWidth = index.isEven ? 3.1 : 1.7
           ..strokeCap = StrokeCap.round,
       );
     }
-    for (var index = 0; index < 8; index++) {
-      final angle = index * math.pi / 4 + 0.35;
-      final distance = 13 + 42 * phase;
+    for (var index = 0; index < 16; index++) {
+      final angle = index * math.pi / 8 + 0.35;
+      final distance = 13 + (48 + (index % 4) * 9) * phase;
       final center = to + Offset(math.cos(angle), math.sin(angle)) * distance;
       canvas.save();
       canvas.translate(center.dx, center.dy);
       canvas.rotate(angle + phase * 2.1);
       canvas.drawRect(
-        const Rect.fromLTWH(-3, -2, 6, 4),
-        Paint()..color = (index.isEven ? RelayColors.coral : RelayColors.amber)
-            .withValues(alpha: 0.78 * fade),
+        Rect.fromLTWH(-3.5 - (index % 3), -2.2, 7.0 + (index % 3) * 2, 4.4),
+        Paint()
+          ..color = (index.isEven ? RelayColors.coral : RelayColors.amber)
+              .withValues(alpha: 0.78 * fade),
       );
       canvas.restore();
     }
@@ -681,7 +760,13 @@ class _AttackPainter extends CustomPainter {
     );
   }
 
-  void _drawHeatEvent(Canvas canvas, Offset to, Color color, double fade, {required bool hot}) {
+  void _drawHeatEvent(
+    Canvas canvas,
+    Offset to,
+    Color color,
+    double fade, {
+    required bool hot,
+  }) {
     final phase = Curves.easeOut.transform(progress);
     for (var i = 0; i < 6; i++) {
       final spread = (i - 2.5) * 6.0;
@@ -725,7 +810,13 @@ class _AttackPainter extends CustomPainter {
     );
   }
 
-  void _drawImpactBurst(Canvas canvas, Offset center, Color color, double phase, double fade) {
+  void _drawImpactBurst(
+    Canvas canvas,
+    Offset center,
+    Color color,
+    double phase,
+    double fade,
+  ) {
     final outer = 8 + 34 * phase;
     final inner = 4 + 20 * phase;
     for (final entry in [(outer, 0.80), (inner, 0.48)]) {
@@ -733,7 +824,9 @@ class _AttackPainter extends CustomPainter {
         center,
         entry.$1,
         Paint()
-          ..color = color.withValues(alpha: entry.$2 * fade * (1 - phase * 0.35))
+          ..color = color.withValues(
+            alpha: entry.$2 * fade * (1 - phase * 0.35),
+          )
           ..style = PaintingStyle.stroke
           ..strokeWidth = entry.$1 == outer ? 2.8 : 1.5,
       );
@@ -748,7 +841,8 @@ class _AttackPainter extends CustomPainter {
     for (var index = 0; index < 8; index++) {
       final angle = index * math.pi / 4 + 0.22;
       final distance = 11 + 30 * phase;
-      final particle = center + Offset(math.cos(angle), math.sin(angle)) * distance;
+      final particle =
+          center + Offset(math.cos(angle), math.sin(angle)) * distance;
       canvas.drawCircle(
         particle,
         1.6 + 2.2 * (1 - phase),
@@ -767,28 +861,44 @@ class _AttackPainter extends CustomPainter {
     final flash = (1 - phase).clamp(0.0, 1.0);
     canvas.drawCircle(
       center,
-      20 + phase * 74,
+      26 + phase * 112,
       Paint()
-        ..color = RelayColors.white.withValues(alpha: 0.28 * fade * flash)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 18),
+        ..color = RelayColors.white.withValues(alpha: 0.52 * fade * flash)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 24),
     );
-    for (var i = 0; i < 18; i++) {
-      final angle = i * math.pi * 2 / 18 + phase * 0.35;
-      final distance = 16 + phase * (48 + (i % 4) * 8);
-      final point = center + Offset(math.cos(angle), math.sin(angle)) * distance;
+    canvas.drawCircle(
+      center,
+      18 + phase * 76,
+      Paint()
+        ..color = color.withValues(alpha: 0.80 * fade * (1 - phase * 0.42))
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 5,
+    );
+    for (var i = 0; i < 28; i++) {
+      final angle = i * math.pi * 2 / 28 + phase * 0.35;
+      final distance = 20 + phase * (64 + (i % 5) * 11);
+      final point =
+          center + Offset(math.cos(angle), math.sin(angle)) * distance;
       canvas.drawLine(
         center + Offset(math.cos(angle), math.sin(angle)) * 8,
         point,
         Paint()
-          ..color = (i.isEven ? color : RelayColors.amber)
-              .withValues(alpha: 0.82 * fade * (1 - phase * 0.35))
-          ..strokeWidth = i % 3 == 0 ? 3.2 : 1.7
+          ..color = (i.isEven ? color : RelayColors.amber).withValues(
+            alpha: 0.82 * fade * (1 - phase * 0.35),
+          )
+          ..strokeWidth = i % 3 == 0 ? 4.0 : 2.0
           ..strokeCap = StrokeCap.round,
       );
     }
   }
 
-  void _drawTargetHitFrame(Canvas canvas, Offset center, Color color, double phase, double fade) {
+  void _drawTargetHitFrame(
+    Canvas canvas,
+    Offset center,
+    Color color,
+    double phase,
+    double fade,
+  ) {
     final extent = 11 + phase * 12;
     final paint = Paint()
       ..color = color.withValues(alpha: 0.82 * fade * (1 - phase * 0.25))
@@ -812,7 +922,13 @@ class _AttackPainter extends CustomPainter {
     canvas.drawLine(center + Offset(0, -size), center + Offset(0, size), paint);
   }
 
-  void _drawFloatingLabel(Canvas canvas, String label, Offset center, Color color, double opacity) {
+  void _drawFloatingLabel(
+    Canvas canvas,
+    String label,
+    Offset center,
+    Color color,
+    double opacity,
+  ) {
     final alpha = opacity.clamp(0.0, 1.0).toDouble();
     final painter = TextPainter(
       text: TextSpan(

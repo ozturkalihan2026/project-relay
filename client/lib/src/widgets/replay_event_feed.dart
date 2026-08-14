@@ -50,9 +50,7 @@ class _ReplayEventFeedState extends State<ReplayEventFeed> {
     final visibleEvents = widget.events
         .where((event) => event.tick <= widget.visibleTick)
         .toList(growable: false);
-    final allVisible = visibleEvents
-        .reversed
-        .toList(growable: false);
+    final allVisible = visibleEvents.reversed.toList(growable: false);
     final eventList = Stack(
       children: [
         Positioned.fill(
@@ -62,16 +60,15 @@ class _ReplayEventFeedState extends State<ReplayEventFeed> {
             thumbVisibility: true,
             interactive: true,
             child: ScrollConfiguration(
-              behavior: ScrollConfiguration.of(context).copyWith(
-                scrollbars: false,
-              ),
+              behavior: ScrollConfiguration.of(
+                context,
+              ).copyWith(scrollbars: false),
               child: ListView.separated(
                 key: const ValueKey('replay-event-list'),
                 controller: _scrollController,
                 primary: false,
                 itemCount: allVisible.length,
-                separatorBuilder: (context, index) =>
-                    const Divider(height: 1),
+                separatorBuilder: (context, index) => const Divider(height: 1),
                 itemBuilder: (context, index) {
                   final event = allVisible[index];
                   return _EventRow(
@@ -102,59 +99,59 @@ class _ReplayEventFeedState extends State<ReplayEventFeed> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-            Row(
-              children: [
-                const Icon(Icons.receipt_long, color: RelayColors.cyan),
-                const SizedBox(width: 9),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'CANLI OLAY AKIŞI',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 0.8,
-                        ),
+          Row(
+            children: [
+              const Icon(Icons.receipt_long, color: RelayColors.cyan),
+              const SizedBox(width: 9),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'CANLI OLAY AKIŞI',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 0.8,
                       ),
-                      Text(
-                        'Tüm olaylar • en yeni üstte • kaydırarak okuyun',
-                        style: const TextStyle(
-                          color: RelayColors.muted,
-                          fontSize: 10,
-                        ),
+                    ),
+                    Text(
+                      'Tüm olaylar • en yeni üstte • kaydırarak okuyun',
+                      style: const TextStyle(
+                        color: RelayColors.muted,
+                        fontSize: 10,
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-                Text(
-                  '${allVisible.length}/${widget.events.length}',
-                  style: const TextStyle(
-                    color: RelayColors.amber,
-                    fontWeight: FontWeight.w800,
-                  ),
+              ),
+              Text(
+                '${allVisible.length}/${widget.events.length}',
+                style: const TextStyle(
+                  color: RelayColors.amber,
+                  fontWeight: FontWeight.w800,
                 ),
-              ],
-            ),
-            SizedBox(height: widget.compact ? 8 : 12),
-            if (widget.compact)
-              Expanded(child: eventList)
-            else
-              SizedBox(height: 245, child: eventList),
-            const SizedBox(height: 6),
-            _FeedFooter(
-              match: widget.match,
-              replay: widget.replay,
-              complete: widget.complete,
-              visibleTick: widget.visibleTick,
-              visibleEvents: visibleEvents,
-              currentLeftHp: widget.currentLeftHp ??
-                  widget.match.result.left.coreMaxHp,
-              currentRightHp: widget.currentRightHp ??
-                  widget.match.result.right.coreMaxHp,
-              compact: widget.compact,
-              controls: widget.controls,
-            ),
+              ),
+            ],
+          ),
+          SizedBox(height: widget.compact ? 8 : 12),
+          if (widget.compact)
+            Expanded(child: eventList)
+          else
+            SizedBox(height: 245, child: eventList),
+          const SizedBox(height: 6),
+          _FeedFooter(
+            match: widget.match,
+            replay: widget.replay,
+            complete: widget.complete,
+            visibleTick: widget.visibleTick,
+            visibleEvents: visibleEvents,
+            currentLeftHp:
+                widget.currentLeftHp ?? widget.match.result.left.coreMaxHp,
+            currentRightHp:
+                widget.currentRightHp ?? widget.match.result.right.coreMaxHp,
+            compact: widget.compact,
+            controls: widget.controls,
+          ),
         ],
       ),
     );
@@ -165,18 +162,13 @@ class _ReplayEventFeedState extends State<ReplayEventFeed> {
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: const Color(0xFF28515E)),
           boxShadow: const [
-            BoxShadow(
-              color: Color(0x55000000),
-              blurRadius: 12,
-            ),
+            BoxShadow(color: Color(0x55000000), blurRadius: 12),
           ],
         ),
         child: content,
       );
     }
-    return Card(
-      child: content,
-    );
+    return Card(child: content);
   }
 }
 
@@ -251,9 +243,7 @@ class _FeedFooter extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      complete
-                          ? resultLabel
-                          : 'CANLI • ADIM $visibleTick/${result.ticks}',
+                      complete ? resultLabel : 'CANLI • SİNYAL AKIŞI',
                       key: const ValueKey('server-result-status'),
                       style: TextStyle(
                         color: complete ? resultColor : RelayColors.amber,
@@ -282,7 +272,7 @@ class _FeedFooter extends StatelessWidget {
                 ] else ...[
                   Text(
                     'Sunucunun replay verileri oynatılıyor; '
-                    'değerler her adımda güncelleniyor.',
+                    'değerler akış boyunca güncelleniyor.',
                     style: detailStyle.copyWith(
                       color: RelayColors.amber,
                       fontWeight: FontWeight.w800,
@@ -307,10 +297,7 @@ class _FeedFooter extends StatelessWidget {
             ),
           ),
         ),
-        if (controls != null) ...[
-          const SizedBox(height: 6),
-          controls!,
-        ],
+        if (controls != null) ...[const SizedBox(height: 6), controls!],
       ],
     );
   }
@@ -390,8 +377,10 @@ class _LiveBattleTable extends StatelessWidget {
         }
       }
     }
-    final leftModules =
-        math.max(0, match.playerBoard.modules.length - destroyedLeft.length);
+    final leftModules = math.max(
+      0,
+      match.playerBoard.modules.length - destroyedLeft.length,
+    );
     final rightModules = math.max(
       0,
       match.opponentBoard.modules.length - destroyedRight.length,
@@ -430,12 +419,7 @@ class _LiveBattleTable extends StatelessWidget {
     );
   }
 
-  TableRow _row(
-    String label,
-    String left,
-    String right,
-    TextStyle style,
-  ) {
+  TableRow _row(String label, String left, String right, TextStyle style) {
     return TableRow(
       children: [
         Padding(
@@ -489,8 +473,7 @@ class _DecisionTable extends StatelessWidget {
             Text('RAKİP', textAlign: TextAlign.right, style: baseStyle),
           ],
         ),
-        for (final metric in decision.metrics)
-          _metricRow(metric, baseStyle),
+        for (final metric in decision.metrics) _metricRow(metric, baseStyle),
       ],
     );
   }
@@ -498,10 +481,7 @@ class _DecisionTable extends StatelessWidget {
   TableRow _metricRow(DecisionMetric metric, TextStyle baseStyle) {
     final decisive = metric.key == decision.criterion;
     final style = decisive
-        ? baseStyle.copyWith(
-            color: highlightColor,
-            fontWeight: FontWeight.w900,
-          )
+        ? baseStyle.copyWith(color: highlightColor, fontWeight: FontWeight.w900)
         : baseStyle;
     final marker = decisive ? '  ← KARAR' : '';
     return TableRow(
@@ -532,22 +512,22 @@ class _DecisionTable extends StatelessWidget {
 }
 
 String _metricLabel(String key) => switch (key) {
-      'core_hp_ratio' => 'Çekirdek canı',
-      'surviving_modules' => 'Kalan modül',
-      'module_hp_ratio' => 'Modül canı',
-      'total_damage' => 'Toplam hasar',
-      'damage_efficiency' => 'Hasar/enerji',
-      'total_heat' => 'Toplam ısı ↓',
-      _ => key,
-    };
+  'core_hp_ratio' => 'Çekirdek canı',
+  'surviving_modules' => 'Kalan modül',
+  'module_hp_ratio' => 'Modül canı',
+  'total_damage' => 'Toplam hasar',
+  'damage_efficiency' => 'Hasar/enerji',
+  'total_heat' => 'Toplam ısı ↓',
+  _ => key,
+};
 
 String _metricValue(String key, double value) => switch (key) {
-      'core_hp_ratio' || 'module_hp_ratio' =>
-        '%${(value * 100).toStringAsFixed(1)}',
-      'surviving_modules' => value.toStringAsFixed(0),
-      'damage_efficiency' => value.toStringAsFixed(3),
-      _ => value.toStringAsFixed(1),
-    };
+  'core_hp_ratio' ||
+  'module_hp_ratio' => '%${(value * 100).toStringAsFixed(1)}',
+  'surviving_modules' => value.toStringAsFixed(0),
+  'damage_efficiency' => value.toStringAsFixed(3),
+  _ => value.toStringAsFixed(1),
+};
 
 class _EventRow extends StatelessWidget {
   const _EventRow({
@@ -586,7 +566,9 @@ class _EventRow extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  formatter.sideLabel(event.side),
+                  event.type == 'overload'
+                      ? 'SİSTEM'
+                      : formatter.sideLabel(event.side),
                   style: TextStyle(
                     color: color,
                     fontSize: 9,
@@ -598,10 +580,7 @@ class _EventRow extends StatelessWidget {
                   formatter.eventLabel(event),
                   maxLines: null,
                   overflow: TextOverflow.visible,
-                  style: TextStyle(
-                    fontSize: compact ? 9.5 : 11,
-                    height: 1.3,
-                  ),
+                  style: TextStyle(fontSize: compact ? 9.5 : 11, height: 1.3),
                 ),
               ],
             ),
@@ -612,22 +591,22 @@ class _EventRow extends StatelessWidget {
   }
 
   IconData _eventIcon(String type) => switch (type) {
-        'attack' || 'core_damage' => Icons.flash_on,
-        'shield' || 'shield_absorb' => Icons.shield_outlined,
-        'cool' => Icons.ac_unit,
-        'repair' || 'recovered' => Icons.build_outlined,
-        'overheat' => Icons.device_thermostat,
-        'destroyed' => Icons.close,
-        'energy_starved' => Icons.battery_alert_outlined,
-        _ => Icons.circle_outlined,
-      };
+    'attack' || 'core_damage' => Icons.flash_on,
+    'shield' || 'shield_absorb' => Icons.shield_outlined,
+    'cool' => Icons.ac_unit,
+    'repair' || 'recovered' => Icons.build_outlined,
+    'overheat' => Icons.device_thermostat,
+    'destroyed' => Icons.close,
+    'energy_starved' => Icons.battery_alert_outlined,
+    _ => Icons.circle_outlined,
+  };
 
   Color _eventColor(String type) => switch (type) {
-        'attack' || 'core_damage' || 'destroyed' => RelayColors.coral,
-        'shield' || 'shield_absorb' => const Color(0xFF74A7FF),
-        'cool' => RelayColors.cyan,
-        'repair' || 'recovered' => RelayColors.mint,
-        'overheat' || 'energy_starved' => RelayColors.amber,
-        _ => RelayColors.muted,
-      };
+    'attack' || 'core_damage' || 'destroyed' => RelayColors.coral,
+    'shield' || 'shield_absorb' => const Color(0xFF74A7FF),
+    'cool' => RelayColors.cyan,
+    'repair' || 'recovered' => RelayColors.mint,
+    'overheat' || 'energy_starved' => RelayColors.amber,
+    _ => RelayColors.muted,
+  };
 }

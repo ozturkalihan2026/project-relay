@@ -93,6 +93,7 @@ class MatchService:
             seed=seed,
             left_modifiers=player_modifiers,
             right_modifiers=opponent_modifiers,
+            overload=source == "async",
         )
         match = StoredMatch(
             match_id=self.id_source(),

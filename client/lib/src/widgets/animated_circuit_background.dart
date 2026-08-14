@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -7,51 +6,52 @@ import '../theme/relay_theme.dart';
 import 'relay_emblem.dart';
 
 class AnimatedCircuitBackground extends StatefulWidget {
-  const AnimatedCircuitBackground({required this.child, this.pathCount = 16, super.key});
+  const AnimatedCircuitBackground({
+    required this.child,
+    this.pathCount = 16,
+    super.key,
+  });
   final Widget child;
   final int pathCount;
   @override
-  State<AnimatedCircuitBackground> createState() => _AnimatedCircuitBackgroundState();
+  State<AnimatedCircuitBackground> createState() =>
+      _AnimatedCircuitBackgroundState();
 }
 
-class _AnimatedCircuitBackgroundState extends State<AnimatedCircuitBackground> with SingleTickerProviderStateMixin {
+class _AnimatedCircuitBackgroundState extends State<AnimatedCircuitBackground>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
-  Timer? _restartTimer;
   bool _motionDisabled = false;
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 7800))..addStatusListener(_handleStatus);
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 7800),
+    );
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     final disabled = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
-    if (_motionDisabled == disabled && (_controller.isAnimating || disabled || _controller.value > 0)) return;
+    if (_motionDisabled == disabled &&
+        (_controller.isAnimating || disabled || _controller.value > 0)) {
+      return;
+    }
     _motionDisabled = disabled;
-    _restartTimer?.cancel();
     if (disabled) {
       _controller.stop();
       _controller.value = 0.42;
     } else {
-      _controller.forward(from: 0);
+      _controller.repeat();
     }
-  }
-
-  void _handleStatus(AnimationStatus status) {
-    if (status != AnimationStatus.completed || _motionDisabled || !mounted) return;
-    _restartTimer?.cancel();
-    _restartTimer = Timer(const Duration(milliseconds: 520), () {
-      if (mounted && !_motionDisabled) _controller.forward(from: 0);
-    });
   }
 
   @override
   void dispose() {
-    _restartTimer?.cancel();
-    _controller..removeStatusListener(_handleStatus)..dispose();
+    _controller.dispose();
     super.dispose();
   }
 
@@ -64,7 +64,10 @@ class _AnimatedCircuitBackgroundState extends State<AnimatedCircuitBackground> w
           animation: _controller,
           builder: (context, child) => CustomPaint(
             key: const ValueKey('animated-circuit-background'),
-            painter: _CircuitCurrentPainter(phase: _controller.value, pathCount: widget.pathCount),
+            painter: _CircuitCurrentPainter(
+              phase: _controller.value,
+              pathCount: widget.pathCount,
+            ),
             child: child,
           ),
           child: widget.child,
@@ -85,7 +88,9 @@ class _CircuitCurrentPainter extends CustomPainter {
     final emblemCenter = Offset(size.width * 0.86, size.height * 0.49);
     final emblemRadius = math.min(size.width, size.height) * 0.070;
     final ports = RelayEmblemPainter.portOffsets(emblemRadius)
-        .map((offset) => emblemCenter + offset + _outwardFor(offset, emblemRadius))
+        .map(
+          (offset) => emblemCenter + offset + _outwardFor(offset, emblemRadius),
+        )
         .toList(growable: false);
     final colors = <Color>[
       RelayColors.cyan,
@@ -189,7 +194,8 @@ class _CircuitCurrentPainter extends CustomPainter {
       );
     }
 
-    final elbowX = start.dx + (target.dx - start.dx) * (0.40 + (index % 4) * 0.09);
+    final elbowX =
+        start.dx + (target.dx - start.dx) * (0.40 + (index % 4) * 0.09);
     final secondX = target.dx - size.width * (0.025 + (index % 3) * 0.008);
     return Path()
       ..moveTo(start.dx, start.dy)

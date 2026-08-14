@@ -95,8 +95,6 @@ class BattleAnalysisPanel extends StatelessWidget {
               height: 1.35,
             ),
           ),
-          const SizedBox(height: 14),
-          _RematchLabCard(recommendation: recommendation, onRematch: onRematch),
           const SizedBox(height: 16),
           LayoutBuilder(
             builder: (context, constraints) {
@@ -214,6 +212,242 @@ class BattleAnalysisPanel extends StatelessWidget {
           Text(
             '${replay.events.length} savaş olayı • ${result.ticks} adım • doğrulama ${replay.checksum.substring(0, math.min(8, replay.checksum.length))}…',
             style: const TextStyle(color: RelayColors.muted, fontSize: 9.5),
+          ),
+          const SizedBox(height: 16),
+          _RematchLabCard(recommendation: recommendation, onRematch: onRematch),
+        ],
+      ),
+    );
+  }
+}
+
+class BattleCenterAnalysisPanel extends StatelessWidget {
+  const BattleCenterAnalysisPanel({
+    required this.match,
+    required this.replay,
+    required this.modules,
+    super.key,
+  });
+
+  final MatchResponse match;
+  final ReplayResponse replay;
+  final List<ModuleSpec> modules;
+
+  @override
+  Widget build(BuildContext context) {
+    final analysis = BattleAnalysis.fromMatch(match, replay, modules);
+    final result = match.result;
+    final resultLabel = switch (result.winner) {
+      'left' => 'ZAFER',
+      'right' => 'YENİLGİ',
+      _ => 'BERABERE',
+    };
+    final resultColor = switch (result.winner) {
+      'left' => RelayColors.mint,
+      'right' => RelayColors.coral,
+      _ => RelayColors.amber,
+    };
+    final reward = match.progressionReward;
+    return Container(
+      key: const ValueKey('battle-center-analysis'),
+      decoration: RelayDecorations.panel(accent: resultColor),
+      clipBehavior: Clip.antiAlias,
+      child: Scrollbar(
+        child: SingleChildScrollView(
+          key: const ValueKey('battle-center-analysis-scroll'),
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Text(
+                'SAVAŞ ANALİZİ',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: RelayColors.cyan,
+                  fontSize: 9,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1.1,
+                ),
+              ),
+              const SizedBox(height: 3),
+              Text(
+                resultLabel,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: resultColor,
+                  fontSize: 22,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 2.4,
+                ),
+              ),
+              if (reward != null) ...[
+                const SizedBox(height: 4),
+                Text(
+                  '+${reward.xp} XP  •  +${reward.credits} DK',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: RelayColors.amber,
+                    fontSize: 9,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ],
+              const SizedBox(height: 8),
+              Text(
+                analysis.decisionExplanation,
+                key: const ValueKey('battle-center-analysis-decision'),
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: resultColor,
+                  fontSize: 9.5,
+                  fontWeight: FontWeight.w800,
+                  height: 1.25,
+                ),
+              ),
+              const SizedBox(height: 9),
+              _CenterAnalysisMetric(
+                label: 'VERİLEN HASAR',
+                value: analysis.playerDamage.toStringAsFixed(0),
+                comparison: 'Rakip ${analysis.enemyDamage.toStringAsFixed(0)}',
+                color: RelayColors.coral,
+              ),
+              _CenterAnalysisMetric(
+                label: 'ENERJİ',
+                value: analysis.playerEnergy.toStringAsFixed(0),
+                comparison: '${analysis.playerStarved} açlık',
+                color: RelayColors.amber,
+              ),
+              _CenterAnalysisMetric(
+                label: 'KALKAN EMİŞİ',
+                value: analysis.playerShieldAbsorbed.toStringAsFixed(0),
+                comparison:
+                    'Rakip ${analysis.enemyShieldAbsorbed.toStringAsFixed(0)}',
+                color: RelayColors.electricBlue,
+              ),
+              _CenterAnalysisMetric(
+                label: 'ONARIM / SOĞUTMA',
+                value: analysis.playerRepair.toStringAsFixed(0),
+                comparison: analysis.playerCooling.toStringAsFixed(0),
+                color: RelayColors.mint,
+              ),
+              _CenterAnalysisMetric(
+                label: 'AŞIRI ISI',
+                value: '${analysis.playerOverheats}',
+                comparison: 'Rakip ${analysis.enemyOverheats}',
+                color: RelayColors.amber,
+              ),
+              _CenterAnalysisMetric(
+                label: 'AYAKTA KALAN',
+                value:
+                    '${result.left.survivingModules}/${match.playerBoard.modules.length}',
+                comparison:
+                    'Çekirdek ${result.left.coreHp.toStringAsFixed(0)}/${result.left.coreMaxHp.toStringAsFixed(0)}',
+                color: RelayColors.cyan,
+              ),
+              const SizedBox(height: 7),
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: RelayColors.violet.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: RelayColors.violet.withValues(alpha: 0.34),
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    const Text(
+                      'SAVAŞIN YILDIZI',
+                      style: TextStyle(
+                        color: RelayColors.violet,
+                        fontSize: 8,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      analysis.starTitle,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    Text(
+                      analysis.starDetail,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: RelayColors.muted,
+                        fontSize: 8,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 7),
+              Text(
+                '${replay.events.length} olay • ${result.ticks} adım',
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: RelayColors.muted, fontSize: 8),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CenterAnalysisMetric extends StatelessWidget {
+  const _CenterAnalysisMetric({
+    required this.label,
+    required this.value,
+    required this.comparison,
+    required this.color,
+  });
+
+  final String label;
+  final String value;
+  final String comparison;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 5),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      decoration: BoxDecoration(
+        color: RelayColors.background.withValues(alpha: 0.46),
+        borderRadius: BorderRadius.circular(9),
+        border: Border.all(color: color.withValues(alpha: 0.22)),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: color,
+                fontSize: 7.5,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ),
+          Text(
+            value,
+            style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900),
+          ),
+          const SizedBox(width: 5),
+          Flexible(
+            child: Text(
+              comparison,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.right,
+              style: const TextStyle(color: RelayColors.muted, fontSize: 7.5),
+            ),
           ),
         ],
       ),

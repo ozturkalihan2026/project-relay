@@ -131,7 +131,8 @@ class FlutterClientContractTests(unittest.TestCase):
 
         # v0.4.12 + v0.4.13: tek ekran savaş geometrisi ve güçlü etiketler.
         self.assertIn("maxBoardExtent = 488", replay_game)
-        self.assertIn("clamp(540.0, 620.0)", replay_screen)
+        self.assertIn("key: const ValueKey('replay-battle-stage')", replay_screen)
+        self.assertIn("Expanded(", replay_screen)
         self.assertIn("size: 14,", replay_game)
         self.assertIn("fontWeight: FontWeight.w900", replay_game)
         self.assertIn("width: 220,", controls)
@@ -223,17 +224,17 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("careerRunProvider", api)
         self.assertIn("career-player-board-editor", career)
         self.assertIn("career-opponent-board-preview", career)
-        self.assertIn("fixedColumns: 2", career)
+        self.assertIn("class _CareerDualBoardStage", career)
         self.assertIn("career-module-selection-card", career)
         self.assertIn("returnToPreviousMenu(context)", career)
-        self.assertIn("ModulePalette(", career)
+        self.assertIn("ModuleShelf(", career)
         self.assertIn("career-module-selection-card", career)
-        self.assertIn("const double _careerPanelWidth = 430", career)
-        self.assertIn("const double _careerBoardMaxWidth = 390", career)
-        self.assertIn("const double _careerPlayerOpponentGap = 36", career)
-        self.assertIn("const double _careerPanelHeight = 500", career)
-        self.assertIn("width: _careerPlayerEditorWidth", career)
-        self.assertIn("child: playerEditor", career)
+        self.assertIn("class _CareerPreparationLayout", career)
+        self.assertIn("final sideWidth = math.min(370.0", career)
+        self.assertIn("key: const ValueKey('career-dual-board-stage')", career)
+        self.assertIn("height: 600", career)
+        self.assertIn("Widget buildPlayerEditor(Widget sideActions)", career)
+        self.assertIn("playerEditorBuilder(", career)
         self.assertIn("run.status == 'failed'", career)
         self.assertIn("_RunProgress(run: run)", career)
         self.assertIn("run.status == 'awaiting_upgrade'", career)
@@ -341,9 +342,9 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("class AppHeaderTitle", header)
         self.assertIn("PROJECT RELAY • $version", header)
         self.assertIn("centerTitle: true", (CLIENT / "lib/src/screens/profile_screen.dart").read_text(encoding="utf-8"))
-        self.assertIn("compact: false", career)
-        self.assertIn("const Spacer()", career)
-        self.assertIn("const double _careerPlayerOpponentGap = 36", career)
+        self.assertIn("class _CareerPreparationLayout", career)
+        self.assertIn("career-preparation-side-scroll", career)
+        self.assertIn("sideActions", career)
         self.assertIn("leaderboard-scrollbar", season)
         self.assertIn("thumbVisibility: true", season)
         self.assertIn("trackVisibility: true", season)
@@ -1022,13 +1023,13 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("ReplayStageGeometry.rightBoard", replay_game)
         self.assertIn("_drawModuleIcon", replay_game)
         self.assertNotIn("_moduleCode", replay_game)
-        self.assertIn("height: stageHeight", replay_screen)
-        self.assertIn("clamp(540.0, 620.0)", replay_screen)
+        self.assertIn("key: const ValueKey('replay-battle-stage')", replay_screen)
+        self.assertIn("constraints.maxHeight * 0.82", replay_screen)
         self.assertIn("appBar: AppBar(", replay_screen)
         self.assertIn("onNewGame: _primaryAction", replay_screen)
         self.assertIn("_togglePlayback", replay_screen)
         self.assertIn("ReplayAttackOverlay", replay_screen)
-        self.assertIn("BattleAnalysisPanel", replay_screen)
+        self.assertIn("BattleCenterAnalysisPanel", replay_screen)
         self.assertNotIn("ReplayEventFeed(", replay_screen)
         self.assertNotIn("Savaş Tekrarı", replay_screen)
         self.assertNotIn("DropdownButton<double>", replay_screen)
@@ -1037,7 +1038,7 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("inline-server-result", event_feed)
         self.assertIn("SUNUCU SONUCU", event_feed)
         self.assertIn("live-server-metrics", event_feed)
-        self.assertIn("CANLI • ADIM $visibleTick/${result.ticks}", event_feed)
+        self.assertIn("CANLI • SİNYAL AKIŞI", event_feed)
         self.assertIn("if (widget.compact)", event_feed)
         self.assertIn("Expanded(child: eventList)", event_feed)
         self.assertIn("height: compact ? 150 : 182", event_feed)
@@ -1464,7 +1465,7 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("/how-to-play", header)
         self.assertIn("career-player-board-editor", career)
         self.assertIn("career-opponent-board-preview", career)
-        self.assertIn("fixedColumns: 2", career)
+        self.assertIn("class _CareerDualBoardStage", career)
         self.assertIn("career-module-selection-card", career)
         self.assertIn("returnToPreviousMenu(context)", career)
         self.assertIn("KOŞUYU BAŞLAT", career)
@@ -1618,7 +1619,8 @@ class FlutterClientContractTests(unittest.TestCase):
         ).read_text(encoding="utf-8")
 
         self.assertIn("class AnimatedCircuitBackground", background)
-        self.assertIn("Timer(const Duration(milliseconds: 520)", background)
+        self.assertIn("_controller.repeat()", background)
+        self.assertIn("disableAnimations", background)
         self.assertIn("animated-circuit-background", background)
         emblem = (
             CLIENT / "lib" / "src" / "widgets" / "relay_emblem.dart"
@@ -1871,7 +1873,7 @@ def test_v0821_rev1_battle_presentation_contract():
     analysis = (CLIENT / 'lib' / 'src' / 'widgets' / 'battle_analysis_panel.dart').read_text(encoding='utf-8')
     settings = (CLIENT / 'lib' / 'src' / 'state' / 'app_settings.dart').read_text(encoding='utf-8')
     assert 'ReplayEventFeed(' not in replay
-    assert 'BattleAnalysisPanel(' in replay
+    assert 'BattleCenterAnalysisPanel(' in replay
     assert 'this.replaySpeed = 0.75' in settings
     assert 'SAVAŞ ANALİZİ' in analysis
     assert 'SAVAŞIN YILDIZI' in analysis
@@ -1917,11 +1919,11 @@ def test_v0822_rev1_preparation_scene_rebuild_contract():
     editor = (CLIENT / 'lib' / 'src' / 'screens' / 'editor_screen.dart').read_text(encoding='utf-8')
     career = (CLIENT / 'lib' / 'src' / 'screens' / 'career_screen.dart').read_text(encoding='utf-8')
     assert '_PreparationStageShell' in board
-    assert 'deckTilt = -0.32' in board
-    assert 'perspectiveDepth = 0.00155' in board
+    assert 'deckTilt = -0.20' in board
+    assert 'perspectiveDepth = 0.00115' in board
     assert '_RaisedModuleShell' in board
     assert '_DeckFastener' in board
-    assert 'depth: 30' in board
+    assert 'depth: 17' in board
     assert 'offset: const Offset(0, -11)' in board
     assert 'viewportHeight * 0.57' in editor
     assert 'presentation3d: true' in editor
@@ -1936,8 +1938,8 @@ def test_v0822_rev1_fix1_preparation_perspective_and_lock_sound_contract():
     career = (CLIENT / 'lib' / 'src' / 'screens' / 'career_screen.dart').read_text(encoding='utf-8')
     placement_sound = (CLIENT / 'lib' / 'src' / 'game' / 'module_placement_sound_player.dart').read_text(encoding='utf-8')
 
-    assert 'deckTilt = -0.32' in board
-    assert 'perspectiveDepth = 0.00155' in board
+    assert 'deckTilt = -0.20' in board
+    assert 'perspectiveDepth = 0.00115' in board
     assert "ValueKey('module-seat-$placementId')" in board
     assert 'class ModuleChassis extends StatelessWidget' in visuals
     assert 'class _ModuleChassisClipper extends CustomClipper<Path>' in visuals

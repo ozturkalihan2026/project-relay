@@ -43,8 +43,8 @@ abstract final class ReplayStageGeometry {
     );
   }
 
-  static const double perspectiveShear = 0.065;
-  static const double platformDepth = 13;
+  static const double perspectiveShear = 0.018;
+  static const double platformDepth = 20;
 
   static ui.Offset perspectivePoint(
     ui.Offset point,
@@ -235,7 +235,7 @@ class RelayReplayGame extends FlameGame {
   late BoardReplayState _leftBoardState;
   late BoardReplayState _rightBoardState;
 
-  static const _defaultFrameDelay = 0.34;
+  static const _defaultFrameDelay = 0.58;
   double speed = 1;
   double _elapsed = 0;
   double _frameDelay = _defaultFrameDelay;
@@ -329,14 +329,14 @@ class RelayReplayGame extends FlameGame {
     if (events.any(
       (event) => event.type == 'destroyed' || event.type == 'core_damage',
     )) {
-      return 0.72;
+      return 1.42;
     }
-    if (events.any((event) => event.type == 'shield_absorb')) return 0.56;
-    if (events.any((event) => event.type == 'attack')) return 0.48;
+    if (events.any((event) => event.type == 'shield_absorb')) return 1.02;
+    if (events.any((event) => event.type == 'attack')) return 0.92;
     if (events.any(
       (event) => event.type == 'repair' || event.type == 'shield',
     )) {
-      return 0.44;
+      return 0.84;
     }
     return _defaultFrameDelay;
   }
@@ -458,7 +458,16 @@ class RelayReplayGame extends FlameGame {
     final height = size.y;
     canvas.drawRect(
       ui.Rect.fromLTWH(0, 0, width, height),
-      Paint()..color = RelayColors.background,
+      Paint()..color = const Color(0xFF071B24),
+    );
+    canvas.drawRect(
+      ui.Rect.fromLTWH(0, 0, width, height),
+      Paint()
+        ..shader = ui.Gradient.radial(
+          ui.Offset(width / 2, height * 0.48),
+          math.max(width, height) * 0.62,
+          [const Color(0xFF123C49).withValues(alpha: 0.58), Colors.transparent],
+        ),
     );
     _drawCircuitBackground(canvas, width, height);
 
@@ -533,7 +542,7 @@ class RelayReplayGame extends FlameGame {
     }
     _drawText(
       canvas,
-      'ADIM $_tick / ${match.result.ticks}',
+      'SİNYAL AKIŞI • CANLI',
       ui.Offset(width / 2, 12),
       color: RelayColors.muted,
       size: 12,
@@ -679,7 +688,14 @@ class RelayReplayGame extends FlameGame {
     final cellSize = rect.width / 4;
     canvas.drawRRect(
       ui.RRect.fromRectAndRadius(rect, const ui.Radius.circular(10)),
-      Paint()..color = visuals.board.background.withValues(alpha: 0.94),
+      Paint()
+        ..shader = ui.Gradient.linear(rect.topCenter, rect.bottomCenter, [
+          Color.alphaBlend(
+            color.withValues(alpha: 0.13),
+            visuals.board.background,
+          ),
+          visuals.board.background,
+        ]),
     );
     final boardBreath = 0.34 + 0.16 * math.sin(_animationTime * math.pi * 1.6);
     canvas.drawRRect(
@@ -751,6 +767,30 @@ class RelayReplayGame extends FlameGame {
           _lastEventData?.targetId == module.id;
       final isActor = _lastEventData?.actorId == module.id;
       final isTarget = _lastEventData?.targetId == module.id;
+      final chassisDepth = math.max(5.0, cellSize * 0.065);
+      canvas.drawRRect(
+        ui.RRect.fromRectAndRadius(
+          cell.shift(ui.Offset(0, chassisDepth)),
+          const ui.Radius.circular(7),
+        ),
+        Paint()
+          ..color = Color.alphaBlend(
+            moduleColorValue.withValues(alpha: destroyed ? 0.04 : 0.16),
+            const Color(0xFF02080B),
+          ),
+      );
+      if (!destroyed) {
+        canvas.drawRRect(
+          ui.RRect.fromRectAndRadius(
+            cell.shift(ui.Offset(0, chassisDepth * 0.62)),
+            const ui.Radius.circular(7),
+          ),
+          Paint()
+            ..color = moduleColorValue.withValues(alpha: 0.20)
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 1.4,
+        );
+      }
       if (active && !destroyed) {
         final activeColor = isTarget && delta.hp < 0
             ? RelayColors.coral
@@ -799,7 +839,10 @@ class RelayReplayGame extends FlameGame {
       canvas.drawRRect(
         ui.RRect.fromRectAndRadius(cell, const ui.Radius.circular(6)),
         Paint()
-          ..color = moduleColorValue.withValues(alpha: destroyed ? 0.05 : 0.20),
+          ..shader = ui.Gradient.linear(cell.topCenter, cell.bottomCenter, [
+            moduleColorValue.withValues(alpha: destroyed ? 0.05 : 0.32),
+            const Color(0xFF061116).withValues(alpha: destroyed ? 0.80 : 0.96),
+          ]),
       );
       canvas.drawRRect(
         ui.RRect.fromRectAndRadius(cell, const ui.Radius.circular(6)),
@@ -1310,6 +1353,17 @@ class RelayReplayGame extends FlameGame {
     final criticalPulse = ratio <= 0.35
         ? 0.45 + 0.40 * math.sin(_animationTime * math.pi * 3.6).abs()
         : 0.0;
+    canvas.drawRRect(
+      ui.RRect.fromRectAndRadius(
+        coreRect.shift(const ui.Offset(0, 10)),
+        const ui.Radius.circular(12),
+      ),
+      Paint()
+        ..color = Color.alphaBlend(
+          color.withValues(alpha: 0.16),
+          const Color(0xFF02080B),
+        ),
+    );
     if (criticalPulse > 0) {
       canvas.drawCircle(
         center,
@@ -1706,6 +1760,22 @@ class RelayReplayGame extends FlameGame {
     required Color color,
     required double size,
   }) {
+    paintModuleGlyph(
+      canvas,
+      kind,
+      center + ui.Offset(0, size * 0.09),
+      size,
+      Color.alphaBlend(color.withValues(alpha: 0.28), const Color(0xFF020609)),
+      intensity: 0.84,
+    );
+    paintModuleGlyph(
+      canvas,
+      kind,
+      center + ui.Offset(0, size * 0.04),
+      size,
+      color.withValues(alpha: 0.58),
+      intensity: 0.92,
+    );
     paintModuleGlyph(canvas, kind, center, size, color);
   }
 

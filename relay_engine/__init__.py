@@ -1,6 +1,13 @@
 """Project Relay deterministic combat engine."""
 
 from .engine import CircuitBattleEngine
+from .intervention import (
+    InterventionError,
+    InterventionPolicy,
+    ModuleHealthRack,
+    ModuleSwapResult,
+    ModuleVitality,
+)
 from .enums import Direction, EventType, ModuleKind, Side
 from .models import (
     BattleConfig,
@@ -45,6 +52,11 @@ __all__ = [
     "CORE_GATE_DIRECTIONS",
     "MAX_BOARD_MODULES",
     "CircuitBattleEngine",
+    "InterventionError",
+    "InterventionPolicy",
+    "ModuleHealthRack",
+    "ModuleSwapResult",
+    "ModuleVitality",
     "Direction",
     "EventType",
     "ModuleKind",

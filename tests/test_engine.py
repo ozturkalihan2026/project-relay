@@ -51,6 +51,28 @@ def generator_only(prefix: str = "B") -> BoardLayout:
 
 
 class CircuitBattleEngineTests(unittest.TestCase):
+    def test_async_overload_extends_battle_and_emits_deterministic_stages(self) -> None:
+        engine = CircuitBattleEngine(
+            BattleConfig(max_ticks=5, async_max_ticks=136)
+        )
+        left = generator_only("OVERLOAD-A")
+        right = generator_only("OVERLOAD-B")
+
+        normal = engine.simulate(left, right, seed=91)
+        overloaded = engine.simulate(left, right, seed=91, overload=True)
+        repeated = engine.simulate(left, right, seed=91, overload=True)
+
+        self.assertEqual(normal.ticks, 5)
+        self.assertEqual(overloaded.ticks, 136)
+        stages = [
+            event
+            for event in overloaded.events
+            if event.event_type is EventType.OVERLOAD
+        ]
+        self.assertEqual([event.tick for event in stages], [91, 106, 121, 136])
+        self.assertEqual([event.amount for event in stages], [1.0, 2.0, 3.0, 4.0])
+        self.assertEqual(overloaded.to_dict(), repeated.to_dict())
+
     def test_same_input_and_seed_produce_identical_replay(self) -> None:
         engine = CircuitBattleEngine(BattleConfig(max_ticks=30))
         first = engine.simulate(

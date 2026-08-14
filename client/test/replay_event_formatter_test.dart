@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:project_relay_client/src/game/replay_event_formatter.dart';
 import 'package:project_relay_client/src/models/relay_models.dart';
+import 'package:project_relay_client/src/widgets/battle_analysis_panel.dart';
 import 'package:project_relay_client/src/widgets/replay_event_feed.dart';
 
 void main() {
@@ -51,6 +52,23 @@ void main() {
         ),
       ),
       contains('rakip çekirdeğe 8.0 hasar'),
+    );
+  });
+
+  test('aşırı yük kademesini savaş günlüğünde açıkça gösterir', () {
+    final formatter = ReplayEventFormatter(_match());
+
+    expect(
+      formatter.eventLabel(
+        const BattleEvent(
+          tick: 106,
+          side: 'left',
+          type: 'overload',
+          actorId: 'system',
+          amount: 2,
+        ),
+      ),
+      'Aşırı yük kademesi 2 etkinleşti.',
     );
   });
 
@@ -119,14 +137,10 @@ void main() {
       expect(controller!.hasClients, isTrue);
       expect(find.byType(Scrollbar), findsOneWidget);
 
-      final mouse = await tester.createGesture(
-        kind: PointerDeviceKind.mouse,
-      );
+      final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
       await mouse.addPointer(location: Offset.zero);
       await mouse.moveTo(
-        tester.getCenter(
-          find.byKey(const ValueKey('replay-event-scrollbar')),
-        ),
+        tester.getCenter(find.byKey(const ValueKey('replay-event-scrollbar'))),
       );
       await tester.pump();
       expect(tester.takeException(), isNull);
@@ -153,9 +167,7 @@ void main() {
       expect(identical(scrollbar.controller, controller), isTrue);
       expect(scrollbar.controller!.hasClients, isTrue);
       await mouse.moveTo(
-        tester.getCenter(
-          find.byKey(const ValueKey('replay-event-scrollbar')),
-        ),
+        tester.getCenter(find.byKey(const ValueKey('replay-event-scrollbar'))),
       );
       await tester.pump();
       expect(tester.takeException(), isNull);
@@ -178,23 +190,15 @@ void main() {
       ];
 
       await tester.pumpWidget(
-        _eventFeed(
-          events,
-          1,
-          currentLeftHp: 87,
-          currentRightHp: 64,
-        ),
+        _eventFeed(events, 1, currentLeftHp: 87, currentRightHp: 64),
       );
       expect(find.text('SUNUCU SONUCU'), findsOneWidget);
       expect(
         find.byKey(const ValueKey('inline-server-result')),
         findsOneWidget,
       );
-      expect(
-        find.byKey(const ValueKey('live-server-metrics')),
-        findsOneWidget,
-      );
-      expect(find.textContaining('CANLI • ADIM 1/24'), findsOneWidget);
+      expect(find.byKey(const ValueKey('live-server-metrics')), findsOneWidget);
+      expect(find.text('CANLI • SİNYAL AKIŞI'), findsOneWidget);
       expect(find.text('87'), findsOneWidget);
       expect(find.text('64'), findsOneWidget);
 
@@ -203,10 +207,7 @@ void main() {
         find.byKey(const ValueKey('inline-server-result')),
         findsOneWidget,
       );
-      expect(
-        find.byKey(const ValueKey('live-server-metrics')),
-        findsNothing,
-      );
+      expect(find.byKey(const ValueKey('live-server-metrics')), findsNothing);
       expect(find.text('ZAFER'), findsOneWidget);
     },
   );
@@ -231,12 +232,7 @@ void main() {
       );
 
       await tester.pumpWidget(
-        _eventFeed(
-          events,
-          6,
-          height: 402,
-          controls: controls,
-        ),
+        _eventFeed(events, 6, height: 402, controls: controls),
       );
       final duringTop = tester.getTopLeft(
         find.byKey(const ValueKey('fixed-test-controls')),
@@ -244,13 +240,7 @@ void main() {
       expect(tester.takeException(), isNull);
 
       await tester.pumpWidget(
-        _eventFeed(
-          events,
-          12,
-          complete: true,
-          height: 402,
-          controls: controls,
-        ),
+        _eventFeed(events, 12, complete: true, height: 402, controls: controls),
       );
       final completedTop = tester.getTopLeft(
         find.byKey(const ValueKey('fixed-test-controls')),
@@ -298,53 +288,74 @@ void main() {
     },
   );
 
-  testWidgets(
-    'oynatma kontrolleri sunucu sonucunun altında gösterilir',
-    (tester) async {
-      final match = _match();
-      await tester.pumpWidget(
-        MaterialApp(
-          home: Scaffold(
-            body: SizedBox(
-              width: 500,
-              height: 500,
-              child: ReplayEventFeed(
-                events: const [],
-                visibleTick: 90,
-                formatter: ReplayEventFormatter(match),
-                match: match,
-                replay: _replay(const []),
-                complete: true,
-                compact: true,
-                controls: const SizedBox(
-                  key: ValueKey('test-replay-controls'),
-                  height: 34,
-                ),
+  testWidgets('oynatma kontrolleri sunucu sonucunun altında gösterilir', (
+    tester,
+  ) async {
+    final match = _match();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SizedBox(
+            width: 500,
+            height: 500,
+            child: ReplayEventFeed(
+              events: const [],
+              visibleTick: 90,
+              formatter: ReplayEventFormatter(match),
+              match: match,
+              replay: _replay(const []),
+              complete: true,
+              compact: true,
+              controls: const SizedBox(
+                key: ValueKey('test-replay-controls'),
+                height: 34,
               ),
             ),
           ),
         ),
-      );
+      ),
+    );
 
-      final resultBottom = tester.getBottomRight(
-        find.textContaining('sunucu doğrulaması'),
-      );
-      final controlsTop = tester.getTopLeft(
-        find.byKey(const ValueKey('test-replay-controls')),
-      );
+    final resultBottom = tester.getBottomRight(
+      find.textContaining('sunucu doğrulaması'),
+    );
+    final controlsTop = tester.getTopLeft(
+      find.byKey(const ValueKey('test-replay-controls')),
+    );
 
-      expect(
-        find.byKey(const ValueKey('inline-server-result')),
-        findsOneWidget,
-      );
-      expect(
-        find.byKey(const ValueKey('test-replay-controls')),
-        findsOneWidget,
-      );
-      expect(controlsTop.dy, greaterThan(resultBottom.dy));
-      expect(tester.takeException(), isNull);
-    },
-  );
+    expect(find.byKey(const ValueKey('inline-server-result')), findsOneWidget);
+    expect(find.byKey(const ValueKey('test-replay-controls')), findsOneWidget);
+    expect(controlsTop.dy, greaterThan(resultBottom.dy));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('savaş bitince merkez analiz paneli tek ekranda gösterilir', (
+    tester,
+  ) async {
+    final match = _match();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: SizedBox(
+            width: 250,
+            height: 500,
+            child: BattleCenterAnalysisPanel(
+              match: match,
+              replay: _replay(const []),
+              modules: const [],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(
+      find.byKey(const ValueKey('battle-center-analysis')),
+      findsOneWidget,
+    );
+    expect(find.text('ZAFER'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
 }
 
 Widget _eventFeed(

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import hashlib
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 from .catalog import get_spec, world_ports
 from .enums import Direction, EventType, ModuleKind, Side
@@ -82,6 +82,7 @@ class CircuitBattleEngine:
         seed: int = 1,
         left_modifiers: BattleModifiers | None = None,
         right_modifiers: BattleModifiers | None = None,
+        overload: bool = False,
     ) -> BattleResult:
         left_layout.validate(self.config.board_size)
         right_layout.validate(self.config.board_size)
@@ -100,7 +101,8 @@ class CircuitBattleEngine:
         reason = "draw"
         final_tick = 0
 
-        for tick in range(1, self.config.max_ticks + 1):
+        max_ticks = self.config.async_max_ticks if overload else self.config.max_ticks
+        for tick in range(1, max_ticks + 1):
             final_tick = tick
             left_intents = self._plan_tick(
                 tick, Side.LEFT, states[Side.LEFT], states[Side.RIGHT], seed, events
@@ -110,6 +112,8 @@ class CircuitBattleEngine:
             )
 
             intents = left_intents + right_intents
+            if overload:
+                intents = self._apply_overload(tick, intents, events)
             self._apply_support_intents(intents, states, events)
             self._apply_attack_intents(intents, states, events)
             state_frames.append(self._snapshot_frame(tick, states))
@@ -146,6 +150,51 @@ class CircuitBattleEngine:
             state_frames=tuple(state_frames),
             replay_checksum=checksum,
         )
+
+    def _apply_overload(
+        self,
+        tick: int,
+        intents: list[_Intent],
+        events: list[BattleEvent],
+    ) -> list[_Intent]:
+        if tick <= self.config.overload_start_tick:
+            return intents
+        stage = 1 + (
+            tick - self.config.overload_start_tick - 1
+        ) // self.config.overload_step_ticks
+        if (
+            tick - self.config.overload_start_tick - 1
+        ) % self.config.overload_step_ticks == 0:
+            events.append(
+                BattleEvent(
+                    tick=tick,
+                    side=Side.LEFT,
+                    event_type=EventType.OVERLOAD,
+                    actor_id="system",
+                    amount=float(stage),
+                    detail=(
+                        f"damage_x{1 + stage * self.config.overload_damage_step:.2f};"
+                        f"support_x{max(self.config.overload_min_support, 1 - stage * self.config.overload_support_step):.2f}"
+                    ),
+                )
+            )
+        damage_multiplier = 1 + stage * self.config.overload_damage_step
+        support_multiplier = max(
+            self.config.overload_min_support,
+            1 - stage * self.config.overload_support_step,
+        )
+        return [
+            replace(
+                intent,
+                amount=intent.amount
+                * (
+                    damage_multiplier
+                    if intent.kind in (ModuleKind.LASER, ModuleKind.PULSE_CANNON)
+                    else support_multiplier
+                ),
+            )
+            for intent in intents
+        ]
 
     def powered_module_ids(self, layout: BoardLayout) -> frozenset[str]:
         """Public helper used by a future editor to preview live connections."""

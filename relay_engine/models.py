@@ -134,6 +134,12 @@ class BattleConfig:
     board_size: int = BOARD_SIZE
     core_hp: float = 120
     max_ticks: int = 90
+    async_max_ticks: int = 150
+    overload_start_tick: int = 90
+    overload_step_ticks: int = 15
+    overload_damage_step: float = 0.30
+    overload_support_step: float = 0.18
+    overload_min_support: float = 0.28
     passive_heat_loss: float = 2
     overheat_threshold: float = 100
     recovery_threshold: float = 55

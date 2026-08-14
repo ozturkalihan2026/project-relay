@@ -27,6 +27,10 @@ class _AmbientMusicState extends State<AmbientMusic>
   bool _unlocked = false;
   bool _autoplayAttempted = false;
   bool _routeActive = true;
+  bool _sourceLoaded = false;
+  bool _sourceChanged = false;
+  bool _syncing = false;
+  bool _syncRequested = false;
 
   @override
   void initState() {
@@ -51,7 +55,8 @@ class _AmbientMusicState extends State<AmbientMusic>
   void didUpdateWidget(covariant AmbientMusic oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.asset != widget.asset) {
-      unawaited(_player.stop());
+      _sourceLoaded = false;
+      _sourceChanged = true;
       _autoplayAttempted = true;
       _unlocked = true;
     } else if (!oldWidget.enabled && widget.enabled) {
@@ -71,16 +76,38 @@ class _AmbientMusicState extends State<AmbientMusic>
   }
 
   Future<void> _sync() async {
+    if (_syncing) {
+      _syncRequested = true;
+      return;
+    }
+    _syncing = true;
     try {
-      if (!widget.enabled || !_routeActive || !_unlocked) {
-        await _player.pause();
-        return;
-      }
-      await _player.setVolume(widget.volume);
-      await _player.play(AssetSource(widget.asset));
-    } catch (_) {
-      // Web otomatik oynatmayı engellerse ilk kullanıcı etkileşimi yeniden dener.
-      _unlocked = false;
+      do {
+        _syncRequested = false;
+        try {
+          if (_sourceChanged) {
+            await _player.stop();
+            _sourceChanged = false;
+          }
+          if (!widget.enabled || !_routeActive || !_unlocked) {
+            if (_sourceLoaded) await _player.pause();
+            continue;
+          }
+          await _player.setVolume(widget.volume);
+          if (_sourceLoaded) {
+            await _player.resume();
+          } else {
+            await _player.play(AssetSource(widget.asset));
+            _sourceLoaded = true;
+          }
+        } catch (_) {
+          // Web otomatik oynatmayı engellerse ilk kullanıcı etkileşimi yeniden dener.
+          _unlocked = false;
+          _sourceLoaded = false;
+        }
+      } while (_syncRequested);
+    } finally {
+      _syncing = false;
     }
   }
 

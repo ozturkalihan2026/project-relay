@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:project_relay_client/src/api/relay_api.dart';
 import 'package:project_relay_client/src/app.dart';
 import 'package:project_relay_client/src/models/relay_models.dart';
+import 'package:project_relay_client/src/state/onboarding_tour.dart';
 import 'package:project_relay_client/src/state/product_telemetry.dart';
 
 import 'widget_test_support.dart';
@@ -58,7 +59,11 @@ void main() {
       tester
           .getSize(find.byKey(const ValueKey('palette-module-generator')))
           .height,
-      44,
+      68,
+    );
+    expect(
+      find.byKey(const ValueKey('palette-module-properties-generator')),
+      findsNothing,
     );
 
     final editorBack = find.byKey(const ValueKey('editor-menu-back-button'));
@@ -144,6 +149,35 @@ void main() {
       find.byKey(const ValueKey('career-opponent-board-preview')),
       findsOneWidget,
     );
+    final dualBoardStage = find.byKey(
+      const ValueKey('career-dual-board-stage'),
+    );
+    expect(dualBoardStage, findsOneWidget);
+    expect(
+      find.descendant(
+        of: dualBoardStage,
+        matching: find.byKey(const ValueKey('career-player-board-editor')),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: dualBoardStage,
+        matching: find.byKey(const ValueKey('career-opponent-board-preview')),
+      ),
+      findsOneWidget,
+    );
+    expect(find.byKey(const ValueKey('module-shelf')), findsOneWidget);
+    final inspectorCount =
+        find
+            .byKey(const ValueKey('selected-module-inspector-empty'))
+            .evaluate()
+            .length +
+        find
+            .byKey(const ValueKey('selected-module-inspector'))
+            .evaluate()
+            .length;
+    expect(inspectorCount, 1);
     expect(find.byKey(const ValueKey('career-path')), findsOneWidget);
     expect(find.byKey(const ValueKey('career-path-node-1')), findsOneWidget);
     expect(find.byKey(const ValueKey('career-path-node-5')), findsOneWidget);
@@ -358,9 +392,14 @@ Future<void> _pumpApp(
   WidgetTester tester, {
   CareerRunSnapshot? careerRun,
 }) async {
+  tester.platformDispatcher.accessibilityFeaturesTestValue =
+      const FakeAccessibilityFeatures(disableAnimations: true);
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
+        onboardingTourStoreProvider.overrideWithValue(
+          _CompletedOnboardingTourStore(),
+        ),
         productTelemetryProvider.overrideWithValue(
           ProductTelemetry(
             isEnabled: () => false,
@@ -725,6 +764,14 @@ Future<void> _pumpApp(
     ),
   );
   await tester.pumpAndSettle();
+}
+
+class _CompletedOnboardingTourStore implements OnboardingTourStore {
+  @override
+  Future<bool> isComplete() async => true;
+
+  @override
+  Future<void> markComplete() async {}
 }
 
 List<ModuleSpec> _moduleSpecs() {

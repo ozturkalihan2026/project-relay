@@ -132,13 +132,13 @@ class _ArenaAtmospherePainter extends CustomPainter {
       canvas.drawCircle(
         Offset(x, y),
         0.7 + (i % 3) * 0.45,
-        Paint()..color = RelayColors.cyan.withValues(alpha: 0.05 * pulse),
+        Paint()..color = RelayColors.cyan.withValues(alpha: 0.09 * pulse),
       );
     }
 
     final vignette = RadialGradient(
-      colors: [Colors.transparent, Colors.black.withValues(alpha: 0.48)],
-      stops: const [0.55, 1],
+      colors: [Colors.transparent, Colors.black.withValues(alpha: 0.20)],
+      stops: const [0.68, 1],
     );
     canvas.drawRect(
       Offset.zero & size,

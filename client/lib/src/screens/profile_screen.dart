@@ -5,6 +5,7 @@ import '../config/relay_features.dart';
 import '../navigation/navigation_actions.dart';
 import '../api/relay_api.dart';
 import '../models/relay_models.dart';
+import '../state/app_settings.dart';
 import '../theme/relay_theme.dart';
 import '../widgets/app_header_actions.dart';
 import '../widgets/relay_notice.dart';
@@ -39,13 +40,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   late ProfileSection _section;
   String? _claimingId;
   String? _loadingMatchId;
-  _ProfileCosmeticSection _cosmeticSection =
-      _ProfileCosmeticSection.module;
+  _ProfileCosmeticSection _cosmeticSection = _ProfileCosmeticSection.module;
 
   @override
   void initState() {
     super.initState();
-    _section = widget.initialSection == ProfileSection.cosmetics &&
+    _section =
+        widget.initialSection == ProfileSection.cosmetics &&
             !RelayFeatures.collectionHub
         ? ProfileSection.general
         : widget.initialSection;
@@ -54,16 +55,25 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final progression = ref.watch(progressionProvider);
-    final claimableDaily = progression.asData?.value.dailyMissions.any(
+    final claimableDaily =
+        progression.asData?.value.dailyMissions.any(
           (mission) => mission.completed && !mission.claimed,
         ) ??
         false;
-    final claimableAchievements = progression.asData?.value.achievements.any(
+    final claimableAchievements =
+        progression.asData?.value.achievements.any(
           (achievement) => achievement.unlocked && !achievement.claimed,
         ) ??
         false;
     final social = ref.watch(socialProvider);
-    final claimableSeasonRewards = ref.watch(seasonProvider).asData?.value.tiers.any((tier) => tier.unlocked && !tier.claimed) ?? false;
+    final claimableSeasonRewards =
+        ref
+            .watch(seasonProvider)
+            .asData
+            ?.value
+            .tiers
+            .any((tier) => tier.unlocked && !tier.claimed) ??
+        false;
     final incomingFriendRequests =
         social.asData?.value.incomingRequests.length ?? 0;
 
@@ -74,10 +84,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         backgroundColor: Colors.transparent,
         centerTitle: true,
         title: const AppHeaderTitle(pageTitle: 'PROFİL'),
-        actions: const [
-          AppHeaderActions(),
-          SizedBox(width: 8),
-        ],
+        actions: const [AppHeaderActions(), SizedBox(width: 8)],
       ),
       body: SafeArea(
         child: RefreshIndicator(
@@ -96,8 +103,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
               switch (_section) {
                 ProfileSection.general => _generalSection(),
                 ProfileSection.friends => const SocialScreen(
-                    embeddedFriendsOnly: true,
-                  ),
+                  embeddedFriendsOnly: true,
+                ),
                 ProfileSection.cosmetics => _cosmeticsSection(),
                 ProfileSection.matchHistory => _matchHistorySection(),
                 ProfileSection.dailyMissions => _dailyMissionsSection(),
@@ -275,9 +282,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           _ProfileCosmeticSection.profile => 'profile_frame',
         };
         final ownedItems = snapshot.cosmetics
-            .where(
-              (item) => item.owned && item.category == selectedCategory,
-            )
+            .where((item) => item.owned && item.category == selectedCategory)
             .toList(growable: false);
         return Card(
           key: const ValueKey('profile-cosmetics-card'),
@@ -330,9 +335,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     selected: {_cosmeticSection},
                     onSelectionChanged: _claimingId == null
                         ? (selection) {
-                            setState(
-                              () => _cosmeticSection = selection.first,
-                            );
+                            setState(() => _cosmeticSection = selection.first);
                           }
                         : null,
                   ),
@@ -343,8 +346,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     icon: selectedCategory == 'module_skin'
                         ? Icons.memory_outlined
                         : selectedCategory == 'board_theme'
-                            ? Icons.grid_4x4_outlined
-                            : Icons.account_box_outlined,
+                        ? Icons.grid_4x4_outlined
+                        : Icons.account_box_outlined,
                     message:
                         'Bu kategoride sahip olduğun kozmetik yok. Mağazadan satın aldıkların burada görünür.',
                   )
@@ -354,12 +357,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       final columns = constraints.maxWidth >= 980
                           ? 4
                           : constraints.maxWidth >= 700
-                              ? 3
-                              : 2;
+                          ? 3
+                          : 2;
                       const spacing = 10.0;
                       final width =
                           (constraints.maxWidth - spacing * (columns - 1)) /
-                              columns;
+                          columns;
                       return Wrap(
                         spacing: spacing,
                         runSpacing: spacing,
@@ -370,10 +373,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                               child: _ProfileCosmeticCard(
                                 item: item,
                                 busy: _claimingId != null,
-                                onEquip: () => _equipCosmetic(
-                                  item.id,
-                                  item.displayName,
-                                ),
+                                onEquip: () =>
+                                    _equipCosmetic(item.id, item.displayName),
                               ),
                             ),
                         ],
@@ -526,7 +527,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
   }
 
-
   Widget _seasonRewardsSection() {
     final season = ref.watch(seasonProvider);
     return season.when(
@@ -540,7 +540,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             padding: const EdgeInsets.fromLTRB(4, 0, 4, 8),
             child: Text(
               snapshot.season.title,
-              style: const TextStyle(color: RelayColors.cyan, fontWeight: FontWeight.w900),
+              style: const TextStyle(
+                color: RelayColors.cyan,
+                fontWeight: FontWeight.w900,
+              ),
             ),
           ),
           for (final tier in snapshot.tiers)
@@ -551,16 +554,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   backgroundColor: tier.claimed
                       ? RelayColors.mint.withValues(alpha: 0.18)
                       : tier.unlocked
-                          ? RelayColors.amber.withValues(alpha: 0.18)
-                          : const Color(0xFF183440),
+                      ? RelayColors.amber.withValues(alpha: 0.18)
+                      : const Color(0xFF183440),
                   child: Text(
                     '${tier.tier}',
                     style: TextStyle(
                       color: tier.claimed
                           ? RelayColors.mint
                           : tier.unlocked
-                              ? RelayColors.amber
-                              : RelayColors.muted,
+                          ? RelayColors.amber
+                          : RelayColors.muted,
                       fontWeight: FontWeight.w900,
                     ),
                   ),
@@ -582,7 +585,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                             ? const SizedBox(
                                 width: 16,
                                 height: 16,
-                                child: CircularProgressIndicator(strokeWidth: 2),
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
                               )
                             : Text(tier.unlocked ? 'ÖDÜL AL' : 'KİLİTLİ'),
                       ),
@@ -625,8 +630,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   Future<void> _claimAchievement(String achievementId) async {
     await _claimReward(
       id: 'achievement:$achievementId',
-      action: () =>
-          ref.read(relayApiProvider).claimAchievement(achievementId),
+      action: () => ref.read(relayApiProvider).claimAchievement(achievementId),
     );
   }
 
@@ -679,6 +683,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             reward.levelAfter,
             previousLevel: reward.levelBefore,
           ),
+          soundEnabled: ref.read(appSettingsProvider).replaySoundEnabled,
         );
       } else {
         RelayNotice.showReward(
@@ -690,11 +695,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       }
     } on RelayApiException catch (error) {
       if (mounted) {
-        RelayNotice.show(
-          context,
-          error.message,
-          tone: RelayNoticeTone.error,
-        );
+        RelayNotice.show(context, error.message, tone: RelayNoticeTone.error);
       }
     } finally {
       if (mounted) setState(() => _claimingId = null);
@@ -742,22 +743,22 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   }
 
   String _outcomeLabel(String outcome) => switch (outcome) {
-        'win' => 'ZAFER',
-        'loss' => 'MAĞLUBİYET',
-        _ => 'BERABERLİK',
-      };
+    'win' => 'ZAFER',
+    'loss' => 'MAĞLUBİYET',
+    _ => 'BERABERLİK',
+  };
 
   IconData _outcomeIcon(String outcome) => switch (outcome) {
-        'win' => Icons.emoji_events_outlined,
-        'loss' => Icons.close,
-        _ => Icons.balance_outlined,
-      };
+    'win' => Icons.emoji_events_outlined,
+    'loss' => Icons.close,
+    _ => Icons.balance_outlined,
+  };
 
   Color _outcomeColor(String outcome) => switch (outcome) {
-        'win' => RelayColors.mint,
-        'loss' => RelayColors.coral,
-        _ => RelayColors.amber,
-      };
+    'win' => RelayColors.mint,
+    'loss' => RelayColors.coral,
+    _ => RelayColors.amber,
+  };
 }
 
 class _ProfileCosmeticCard extends StatelessWidget {
@@ -821,8 +822,8 @@ class _ProfileCosmeticCard extends StatelessWidget {
                 item.category == 'module_skin'
                     ? Icons.memory
                     : item.category == 'board_theme'
-                        ? Icons.grid_on
-                        : Icons.person_outline,
+                    ? Icons.grid_on
+                    : Icons.person_outline,
                 color: accent,
                 size: 28,
               ),
@@ -880,11 +881,7 @@ class _SectionIcon extends StatelessWidget {
       children: [
         Icon(icon),
         if (notify)
-          const Positioned(
-            right: -3,
-            top: -3,
-            child: _NotificationDot(),
-          ),
+          const Positioned(right: -3, top: -3, child: _NotificationDot()),
       ],
     );
   }
@@ -933,10 +930,7 @@ class _CardTitle extends StatelessWidget {
 }
 
 class _MetricBox extends StatelessWidget {
-  const _MetricBox({
-    required this.value,
-    required this.label,
-  });
+  const _MetricBox({required this.value, required this.label});
 
   final String value;
   final String label;
@@ -949,9 +943,7 @@ class _MetricBox extends StatelessWidget {
       decoration: BoxDecoration(
         color: RelayColors.cyan.withValues(alpha: 0.09),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: RelayColors.cyan.withValues(alpha: 0.35),
-        ),
+        border: Border.all(color: RelayColors.cyan.withValues(alpha: 0.35)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

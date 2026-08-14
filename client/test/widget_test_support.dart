@@ -68,21 +68,37 @@ Future<void> scrollIntoView({
   expect(
     initialTargetCount <= 1,
     isTrue,
-    reason: 'Kaydırılacak hedef kaydırma öncesinde en fazla bir kez bulunmalıdır.',
+    reason:
+        'Kaydırılacak hedef kaydırma öncesinde en fazla bir kez bulunmalıdır.',
   );
 
-  await tester.scrollUntilVisible(
-    target,
-    delta,
-    scrollable: scrollable,
-    maxScrolls: maxScrolls,
-  );
+  if (initialTargetCount == 0) {
+    final distance = delta.abs();
+    var attempts = 0;
+    while (target.evaluate().isEmpty && attempts < maxScrolls) {
+      final position = tester.state<ScrollableState>(scrollable).position;
+      final forward =
+          position.axisDirection == AxisDirection.down ||
+          position.axisDirection == AxisDirection.right;
+      final next = (position.pixels + (forward ? distance : -distance))
+          .clamp(position.minScrollExtent, position.maxScrollExtent)
+          .toDouble();
+      if (next == position.pixels) break;
+      position.jumpTo(next);
+      await tester.pump();
+      attempts += 1;
+    }
+  }
+  if (target.evaluate().isNotEmpty) {
+    await tester.ensureVisible(target);
+  }
   await tester.pumpAndSettle();
 
   expect(
     target,
     findsOneWidget,
-    reason: 'Kaydırma tamamlandığında hedef oluşturulmuş ve benzersiz olmalıdır.',
+    reason:
+        'Kaydırma tamamlandığında hedef oluşturulmuş ve benzersiz olmalıdır.',
   );
   expect(
     target.hitTestable(),
@@ -96,7 +112,11 @@ Future<void> tapVisible({
   required WidgetTester tester,
   required Finder target,
 }) async {
-  expect(target, findsOneWidget, reason: 'Tıklanacak hedef benzersiz olmalıdır.');
+  expect(
+    target,
+    findsOneWidget,
+    reason: 'Tıklanacak hedef benzersiz olmalıdır.',
+  );
   await tester.ensureVisible(target);
   await tester.pumpAndSettle();
   expect(target.hitTestable(), findsOneWidget);

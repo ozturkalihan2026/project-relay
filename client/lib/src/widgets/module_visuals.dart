@@ -163,30 +163,33 @@ void paintModuleGlyph(
       canvas.drawCircle(const Offset(20, 0), 4, hot);
       break;
     case ModuleKind.shield:
-      canvas.drawRRect(
-        RRect.fromRectAndRadius(
-          const Rect.fromLTWH(-13, 8, 26, 8),
-          const Radius.circular(3),
-        ),
-        fill,
+      final shield = Path()
+        ..moveTo(0, -20)
+        ..lineTo(17, -13)
+        ..lineTo(14, 5)
+        ..quadraticBezierTo(10, 16, 0, 22)
+        ..quadraticBezierTo(-10, 16, -14, 5)
+        ..lineTo(-17, -13)
+        ..close();
+      canvas.drawPath(
+        shield,
+        Paint()
+          ..color = color.withValues(alpha: 0.15)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 7),
       );
-      canvas.drawLine(const Offset(-13, 12), const Offset(13, 12), stroke);
-      canvas.drawArc(
-        const Rect.fromLTWH(-18, -16, 36, 30),
-        math.pi,
-        math.pi,
-        false,
-        stroke,
-      );
-      canvas.drawArc(
-        const Rect.fromLTWH(-11, -9, 22, 18),
-        math.pi,
-        math.pi,
-        false,
-        fine,
-      );
-      canvas.drawCircle(const Offset(-14, -1), 2.5, hot);
-      canvas.drawCircle(const Offset(14, -1), 2.5, hot);
+      canvas.drawPath(shield, fill);
+      canvas.drawPath(shield, stroke);
+      final innerShield = Path()
+        ..moveTo(0, -13)
+        ..lineTo(10, -9)
+        ..lineTo(8, 3)
+        ..quadraticBezierTo(6, 10, 0, 14)
+        ..quadraticBezierTo(-6, 10, -8, 3)
+        ..lineTo(-10, -9)
+        ..close();
+      canvas.drawPath(innerShield, fine);
+      canvas.drawLine(const Offset(0, -10), const Offset(0, 10), fine);
+      canvas.drawCircle(const Offset(0, -15), 2.8, hot);
       break;
     case ModuleKind.cooler:
       canvas.drawCircle(Offset.zero, 15, fine);
@@ -259,10 +262,27 @@ class _ModuleGlyphPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
+    final center = size.center(Offset.zero);
     paintModuleGlyph(
       canvas,
       kind,
-      size.center(Offset.zero),
+      center + Offset(0, size.shortestSide * 0.075),
+      size.shortestSide,
+      Color.alphaBlend(color.withValues(alpha: 0.32), const Color(0xFF020609)),
+      intensity: intensity * 0.82,
+    );
+    paintModuleGlyph(
+      canvas,
+      kind,
+      center + Offset(0, size.shortestSide * 0.035),
+      size.shortestSide,
+      color.withValues(alpha: 0.58),
+      intensity: intensity * 0.90,
+    );
+    paintModuleGlyph(
+      canvas,
+      kind,
+      center,
       size.shortestSide,
       color,
       intensity: intensity,

@@ -1,3 +1,5 @@
+import 'dart:ui' show PathMetric;
+
 import 'package:flutter/material.dart';
 
 import '../models/relay_models.dart';
@@ -117,21 +119,21 @@ class CircuitBoard extends StatelessWidget {
                 },
               ),
               IgnorePointer(
-                child: CustomPaint(
-                  painter: _CircuitFlowPainter(
-                    placements: placements,
-                    specs: specs,
-                    poweredIds: poweredIds,
-                    visuals: visuals,
-                  ),
-                ),
-              ),
-              IgnorePointer(
                 child: Center(
                   child: FractionallySizedBox(
                     widthFactor: 0.48,
                     heightFactor: 0.48,
                     child: _CoreHub(raised: presentation3d),
+                  ),
+                ),
+              ),
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: _AnimatedCircuitFlow(
+                    placements: placements,
+                    specs: specs,
+                    poweredIds: poweredIds,
+                    visuals: visuals,
                   ),
                 ),
               ),
@@ -151,9 +153,9 @@ class _PreparationStageShell extends StatelessWidget {
   final BoardVisualTheme boardTheme;
   final Widget child;
 
-  static const double perspectiveDepth = 0.00155;
-  static const double deckTilt = -0.32;
-  static const double deckYaw = 0.012;
+  static const double perspectiveDepth = 0.00115;
+  static const double deckTilt = -0.20;
+  static const double deckYaw = 0.008;
 
   Matrix4 _deckTransform() {
     return Matrix4.identity()
@@ -201,82 +203,84 @@ class _PreparationStageShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(14, 22, 14, 48),
-      child: AspectRatio(
-        aspectRatio: 1,
-        child: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            Positioned(
-              left: 34,
-              right: 20,
-              bottom: -22,
-              height: 64,
-              child: IgnorePointer(
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(999),
-                    gradient: RadialGradient(
-                      colors: [
-                        boardTheme.core.withValues(alpha: 0.24),
-                        const Color(0x99000000),
-                        Colors.transparent,
-                      ],
-                      stops: const [0.0, 0.52, 1.0],
+    return ClipRect(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 20, 16, 34),
+        child: AspectRatio(
+          aspectRatio: 1,
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Positioned(
+                left: 34,
+                right: 20,
+                bottom: -12,
+                height: 54,
+                child: IgnorePointer(
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(999),
+                      gradient: RadialGradient(
+                        colors: [
+                          boardTheme.core.withValues(alpha: 0.24),
+                          const Color(0x99000000),
+                          Colors.transparent,
+                        ],
+                        stops: const [0.0, 0.52, 1.0],
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
-            Positioned.fill(
-              child: _deckLayer(
-                color: const Color(0xFF06131A),
-                depth: 17,
-                opacity: 0.09,
-              ),
-            ),
-            Positioned.fill(
-              child: Transform.translate(
-                offset: const Offset(0, 4),
-                child: Transform(
-                  alignment: Alignment.center,
-                  transform: _deckTransform(),
-                  transformHitTests: true,
-                  child: child,
+              Positioned.fill(
+                child: _deckLayer(
+                  color: const Color(0xFF06131A),
+                  depth: 17,
+                  opacity: 0.09,
                 ),
               ),
-            ),
-            Positioned(
-              left: 30,
-              right: 30,
-              bottom: -7,
-              child: IgnorePointer(
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    _DeckFastener(color: boardTheme.core),
-                    Expanded(
-                      child: Container(
-                        height: 2,
-                        margin: const EdgeInsets.symmetric(horizontal: 12),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [
-                              Colors.transparent,
-                              boardTheme.core.withValues(alpha: 0.62),
-                              Colors.transparent,
-                            ],
+              Positioned.fill(
+                child: Transform.translate(
+                  offset: const Offset(0, 4),
+                  child: Transform(
+                    alignment: Alignment.center,
+                    transform: _deckTransform(),
+                    transformHitTests: true,
+                    child: child,
+                  ),
+                ),
+              ),
+              Positioned(
+                left: 30,
+                right: 30,
+                bottom: -7,
+                child: IgnorePointer(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      _DeckFastener(color: boardTheme.core),
+                      Expanded(
+                        child: Container(
+                          height: 2,
+                          margin: const EdgeInsets.symmetric(horizontal: 12),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                Colors.transparent,
+                                boardTheme.core.withValues(alpha: 0.62),
+                                Colors.transparent,
+                              ],
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                    _DeckFastener(color: boardTheme.core),
-                  ],
+                      _DeckFastener(color: boardTheme.core),
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -588,7 +592,7 @@ class _CircuitCell extends StatelessWidget {
                                   ),
                                 ),
                               ),
-                            if (spec != null)
+                            if (spec != null && !raised)
                               for (final port in usableBoardPorts(
                                 module,
                                 spec!.worldPorts(module.orientation),
@@ -671,6 +675,19 @@ class _CircuitCell extends StatelessWidget {
                 child: cell,
               )
             : cell;
+        final portAnchoredCell = raised && module != null && spec != null
+            ? Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Positioned.fill(child: presentedCell),
+                  for (final port in usableBoardPorts(
+                    module,
+                    spec!.worldPorts(module.orientation),
+                  ))
+                    _PortMarker(direction: port, energized: powered),
+                ],
+              )
+            : presentedCell;
         if (module == null) {
           return cell;
         }
@@ -682,10 +699,10 @@ class _CircuitCell extends StatelessWidget {
             placement: module,
             displayName: spec?.displayName ?? module.kind.displayName,
           ),
-          childWhenDragging: Opacity(opacity: 0.24, child: presentedCell),
+          childWhenDragging: Opacity(opacity: 0.24, child: portAnchoredCell),
           child: MouseRegion(
             cursor: SystemMouseCursors.grab,
-            child: presentedCell,
+            child: portAnchoredCell,
           ),
         );
       },
@@ -1134,9 +1151,10 @@ class _CircuitTracePainter extends CustomPainter {
               : visuals.board.traceMuted
           ..strokeWidth = energized ? 4 : 3
           ..strokeCap = StrokeCap.round;
+        final cable = _circuitCablePath(start, end);
         canvas
-          ..drawLine(start, end, glow)
-          ..drawLine(start, end, trace);
+          ..drawPath(cable, glow)
+          ..drawPath(cable, trace);
       }
     }
 
@@ -1165,9 +1183,10 @@ class _CircuitTracePainter extends CustomPainter {
             : visuals.board.traceMuted.withValues(alpha: 0.20)
         ..strokeWidth = energized ? 12 : 8
         ..strokeCap = StrokeCap.round;
+      final cable = _circuitCablePath(modulePort, corePort);
       canvas
-        ..drawLine(modulePort, corePort, glow)
-        ..drawLine(modulePort, corePort, trace);
+        ..drawPath(cable, glow)
+        ..drawPath(cable, trace);
     }
   }
 
@@ -1189,8 +1208,27 @@ class _CircuitTracePainter extends CustomPainter {
   bool shouldRepaint(covariant _CircuitTracePainter oldDelegate) => true;
 }
 
-class _CircuitFlowPainter extends CustomPainter {
-  const _CircuitFlowPainter({
+Path _circuitCablePath(Offset from, Offset to) {
+  final delta = to - from;
+  final distance = delta.distance;
+  if (distance < 1) return Path()..moveTo(from.dx, from.dy);
+  final direction = delta / distance;
+  final normal = Offset(-direction.dy, direction.dx);
+  final bend = (distance * 0.10).clamp(2.0, 7.0);
+  return Path()
+    ..moveTo(from.dx, from.dy)
+    ..cubicTo(
+      from.dx + delta.dx * 0.34 + normal.dx * bend,
+      from.dy + delta.dy * 0.34 + normal.dy * bend,
+      from.dx + delta.dx * 0.66 - normal.dx * bend,
+      from.dy + delta.dy * 0.66 - normal.dy * bend,
+      to.dx,
+      to.dy,
+    );
+}
+
+class _AnimatedCircuitFlow extends StatefulWidget {
+  const _AnimatedCircuitFlow({
     required this.placements,
     required this.specs,
     required this.poweredIds,
@@ -1203,7 +1241,85 @@ class _CircuitFlowPainter extends CustomPainter {
   final EquippedVisuals visuals;
 
   @override
+  State<_AnimatedCircuitFlow> createState() => _AnimatedCircuitFlowState();
+}
+
+class _AnimatedCircuitFlowState extends State<_AnimatedCircuitFlow>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  bool _motionDisabled = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+      value: 0,
+    );
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final disabled = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+    if (_motionDisabled == disabled &&
+        (_controller.isAnimating || disabled || _controller.value > 0)) {
+      return;
+    }
+    _motionDisabled = disabled;
+    if (disabled) {
+      _controller
+        ..stop()
+        ..value = 0.35;
+    } else {
+      _controller.repeat();
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) => CustomPaint(
+        painter: _CircuitFlowPainter(
+          placements: widget.placements,
+          specs: widget.specs,
+          poweredIds: widget.poweredIds,
+          visuals: widget.visuals,
+          progress: _controller.value,
+        ),
+      ),
+    );
+  }
+}
+
+enum _CircuitFlowKind { energy, repair, cooling, shield, amplified }
+
+class _CircuitFlowPainter extends CustomPainter {
+  const _CircuitFlowPainter({
+    required this.placements,
+    required this.specs,
+    required this.poweredIds,
+    required this.visuals,
+    required this.progress,
+  });
+
+  final Map<int, ModulePlacement> placements;
+  final Map<ModuleKind, ModuleSpec> specs;
+  final Set<String> poweredIds;
+  final EquippedVisuals visuals;
+  final double progress;
+
+  @override
   void paint(Canvas canvas, Size size) {
+    final distances = _energyDistances();
     for (final entry in placements.entries) {
       final module = entry.value;
       for (final direction in const [
@@ -1222,15 +1338,31 @@ class _CircuitFlowPainter extends CustomPainter {
             !_connects(module, neighbor, direction)) {
           continue;
         }
+        final moduleDistance = distances[module.id] ?? 1 << 20;
+        final neighborDistance = distances[neighbor.id] ?? 1 << 20;
+        final moduleFirst = moduleDistance != neighborDistance
+            ? moduleDistance < neighborDistance
+            : _preferAsSource(module, neighbor);
+        final firstPort = CircuitTraceGeometry.modulePortAnchor(
+          size,
+          module,
+          direction,
+        );
+        final secondPort = CircuitTraceGeometry.modulePortAnchor(
+          size,
+          neighbor,
+          direction.opposite,
+        );
+        final source = moduleFirst ? module : neighbor;
+        final target = moduleFirst ? neighbor : module;
         _drawFlow(
           canvas,
-          CircuitTraceGeometry.modulePortAnchor(size, module, direction),
-          CircuitTraceGeometry.modulePortAnchor(
-            size,
-            neighbor,
-            direction.opposite,
-          ),
-          visuals.modules.accent,
+          moduleFirst ? firstPort : secondPort,
+          moduleFirst ? secondPort : firstPort,
+          _flowKind(source: source, target: target),
+          bidirectional:
+              module.kind == ModuleKind.battery ||
+              neighbor.kind == ModuleKind.battery,
         );
       }
     }
@@ -1254,38 +1386,167 @@ class _CircuitFlowPainter extends CustomPainter {
         canvas,
         module.kind == ModuleKind.generator ? modulePort : corePort,
         module.kind == ModuleKind.generator ? corePort : modulePort,
-        visuals.board.gate,
+        _CircuitFlowKind.energy,
       );
     }
   }
 
-  void _drawFlow(Canvas canvas, Offset from, Offset to, Color color) {
-    final delta = to - from;
-    final distance = delta.distance;
-    if (distance < 1) return;
-    final direction = delta / distance;
-    final normal = Offset(-direction.dy, direction.dx);
-    for (final fraction in const [0.28, 0.56, 0.84]) {
-      final center = Offset.lerp(from, to, fraction)!;
-      final tip = center + direction * 3.8;
-      final tail = center - direction * 3.8;
-      final path = Path()
-        ..moveTo(tip.dx, tip.dy)
-        ..lineTo(tail.dx + normal.dx * 2.8, tail.dy + normal.dy * 2.8)
-        ..lineTo(tail.dx - normal.dx * 2.8, tail.dy - normal.dy * 2.8)
-        ..close();
-      canvas.drawCircle(
-        center,
-        6,
-        Paint()
-          ..color = color.withValues(alpha: 0.22)
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4),
-      );
-      canvas.drawPath(
-        path,
-        Paint()..color = RelayColors.white.withValues(alpha: 0.92),
-      );
+  Map<String, int> _energyDistances() {
+    final distances = <String, int>{};
+    for (final module in placements.values) {
+      if (module.kind == ModuleKind.generator &&
+          poweredIds.contains(module.id)) {
+        distances[module.id] = 0;
+      }
     }
+    for (var round = 0; round < placements.length; round += 1) {
+      var changed = false;
+      for (final entry in placements.entries) {
+        final module = entry.value;
+        for (final direction in const [
+          RelayDirection.east,
+          RelayDirection.south,
+        ]) {
+          final neighborIndex = switch (direction) {
+            RelayDirection.east when module.column < 3 => entry.key + 1,
+            RelayDirection.south when module.row < 3 => entry.key + 4,
+            _ => -1,
+          };
+          final neighbor = placements[neighborIndex];
+          if (neighbor == null || !_connects(module, neighbor, direction)) {
+            continue;
+          }
+          final moduleDistance = distances[module.id];
+          final neighborDistance = distances[neighbor.id];
+          if (moduleDistance != null && neighborDistance == null) {
+            distances[neighbor.id] = moduleDistance + 1;
+            changed = true;
+          } else if (neighborDistance != null && moduleDistance == null) {
+            distances[module.id] = neighborDistance + 1;
+            changed = true;
+          }
+        }
+      }
+      if (!changed) break;
+    }
+    return distances;
+  }
+
+  bool _preferAsSource(ModulePlacement first, ModulePlacement second) {
+    if (first.kind == ModuleKind.generator) return true;
+    if (second.kind == ModuleKind.generator) return false;
+    if (first.kind == ModuleKind.battery) return true;
+    if (second.kind == ModuleKind.battery) return false;
+    return first.cellIndex < second.cellIndex;
+  }
+
+  _CircuitFlowKind _flowKind({
+    required ModulePlacement source,
+    required ModulePlacement target,
+  }) {
+    return switch (source.kind) {
+      ModuleKind.repair => _CircuitFlowKind.repair,
+      ModuleKind.cooler => _CircuitFlowKind.cooling,
+      ModuleKind.amplifier => _CircuitFlowKind.amplified,
+      _ when target.kind == ModuleKind.shield => _CircuitFlowKind.shield,
+      _ => _CircuitFlowKind.energy,
+    };
+  }
+
+  Color _flowColor(_CircuitFlowKind kind) => switch (kind) {
+    _CircuitFlowKind.energy => RelayColors.amber,
+    _CircuitFlowKind.repair => RelayColors.mint,
+    _CircuitFlowKind.cooling => RelayColors.cyan,
+    _CircuitFlowKind.shield => RelayColors.electricBlue,
+    _CircuitFlowKind.amplified => RelayColors.violet,
+  };
+
+  void _drawFlow(
+    Canvas canvas,
+    Offset from,
+    Offset to,
+    _CircuitFlowKind kind, {
+    bool bidirectional = false,
+  }) {
+    final cable = _circuitCablePath(from, to);
+    final metrics = cable.computeMetrics().toList(growable: false);
+    if (metrics.isEmpty || metrics.first.length < 1) return;
+    final metric = metrics.first;
+    final color = _flowColor(kind);
+    for (final seed in const [0.0, 0.34, 0.68]) {
+      _drawPacket(
+        canvas,
+        metric,
+        (seed + progress) % 1,
+        color,
+        kind,
+        opacity: 1,
+      );
+      if (bidirectional && seed < 0.4) {
+        _drawPacket(
+          canvas,
+          metric,
+          1 - ((seed + progress * 0.72) % 1),
+          color,
+          _CircuitFlowKind.energy,
+          opacity: 0.52,
+        );
+      }
+    }
+  }
+
+  void _drawPacket(
+    Canvas canvas,
+    PathMetric metric,
+    double fraction,
+    Color color,
+    _CircuitFlowKind kind, {
+    required double opacity,
+  }) {
+    final tangent = metric.getTangentForOffset(metric.length * fraction);
+    if (tangent == null) return;
+    final vectorLength = tangent.vector.distance;
+    if (vectorLength < 0.001) return;
+    final direction = tangent.vector / vectorLength;
+    final normal = Offset(-direction.dy, direction.dx);
+    final center = tangent.position;
+    canvas.drawCircle(
+      center,
+      7,
+      Paint()
+        ..color = color.withValues(alpha: 0.28 * opacity)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4),
+    );
+    final paint = Paint()
+      ..color = color.withValues(alpha: opacity)
+      ..strokeWidth = 1.8
+      ..strokeCap = StrokeCap.round
+      ..style = PaintingStyle.fill;
+    if (kind == _CircuitFlowKind.repair) {
+      canvas
+        ..drawCircle(center, 3.2, paint)
+        ..drawLine(center - direction * 4, center + direction * 4, paint)
+        ..drawLine(center - normal * 4, center + normal * 4, paint);
+      return;
+    }
+    if (kind == _CircuitFlowKind.cooling) {
+      final diamond = Path()
+        ..moveTo((center + direction * 4.6).dx, (center + direction * 4.6).dy)
+        ..lineTo((center + normal * 3.4).dx, (center + normal * 3.4).dy)
+        ..lineTo((center - direction * 4.6).dx, (center - direction * 4.6).dy)
+        ..lineTo((center - normal * 3.4).dx, (center - normal * 3.4).dy)
+        ..close();
+      canvas.drawPath(diamond, paint);
+      return;
+    }
+    final tip = center + direction * 4.4;
+    final tail = center - direction * 4.0;
+    final arrow = Path()
+      ..moveTo(tip.dx, tip.dy)
+      ..lineTo(tail.dx + normal.dx * 3.1, tail.dy + normal.dy * 3.1)
+      ..lineTo(tail.dx - normal.dx * 3.1, tail.dy - normal.dy * 3.1)
+      ..close();
+    canvas.drawPath(arrow, paint);
   }
 
   bool _connects(
@@ -1305,5 +1566,6 @@ class _CircuitFlowPainter extends CustomPainter {
   bool shouldRepaint(covariant _CircuitFlowPainter oldDelegate) =>
       oldDelegate.placements != placements ||
       oldDelegate.poweredIds != poweredIds ||
-      oldDelegate.visuals != visuals;
+      oldDelegate.visuals != visuals ||
+      oldDelegate.progress != progress;
 }
