@@ -323,15 +323,22 @@ enum ModuleDragSource { palette, board }
 class ModuleDragData {
   const ModuleDragData.palette(this.kind)
     : source = ModuleDragSource.palette,
+      sourceCell = null,
+      moduleId = null;
+
+  const ModuleDragData.reserve({required this.kind, required this.moduleId})
+    : source = ModuleDragSource.palette,
       sourceCell = null;
 
   const ModuleDragData.board({required this.kind, required int cellIndex})
     : source = ModuleDragSource.board,
-      sourceCell = cellIndex;
+      sourceCell = cellIndex,
+      moduleId = null;
 
   final ModuleKind kind;
   final ModuleDragSource source;
   final int? sourceCell;
+  final String? moduleId;
 
   bool get isFromPalette => source == ModuleDragSource.palette;
   bool get isFromBoard => source == ModuleDragSource.board;
@@ -1579,8 +1586,7 @@ class CareerSectorContent {
       title: json['title'] as String,
       stages: (json['stages'] as List<dynamic>)
           .map(
-            (item) =>
-                CareerStageContent.fromJson(item as Map<String, dynamic>),
+            (item) => CareerStageContent.fromJson(item as Map<String, dynamic>),
           )
           .toList(growable: false),
     );
@@ -1716,6 +1722,142 @@ class CareerBattleResponse {
 
   final MatchResponse match;
   final CareerRunSnapshot run;
+}
+
+class CareerReserveModule {
+  const CareerReserveModule({
+    required this.id,
+    required this.kind,
+    required this.level,
+  });
+
+  factory CareerReserveModule.fromJson(Map<String, dynamic> json) {
+    return CareerReserveModule(
+      id: json['module_id'] as String,
+      kind: ModuleKind.parse(json['kind'] as String),
+      level: json['level'] as int,
+    );
+  }
+
+  final String id;
+  final ModuleKind kind;
+  final int level;
+}
+
+class CareerInterventionState {
+  const CareerInterventionState({
+    required this.tick,
+    required this.windowTick,
+    required this.active,
+    required this.pending,
+    required this.swapsUsed,
+    required this.swapsRemaining,
+    required this.activeModuleIds,
+    required this.reserveModuleIds,
+  });
+
+  factory CareerInterventionState.fromJson(Map<String, dynamic> json) {
+    return CareerInterventionState(
+      tick: json['tick'] as int,
+      windowTick: json['window_tick'] as int?,
+      active: json['active'] as bool,
+      pending: json['pending'] as bool,
+      swapsUsed: json['swaps_used'] as int,
+      swapsRemaining: json['swaps_remaining'] as int,
+      activeModuleIds: Set<String>.from(
+        json['active_module_ids'] as List<dynamic>,
+      ),
+      reserveModuleIds: Set<String>.from(
+        json['reserve_module_ids'] as List<dynamic>,
+      ),
+    );
+  }
+
+  final int tick;
+  final int? windowTick;
+  final bool active;
+  final bool pending;
+  final int swapsUsed;
+  final int swapsRemaining;
+  final Set<String> activeModuleIds;
+  final Set<String> reserveModuleIds;
+}
+
+class CareerBattleSessionSnapshot {
+  const CareerBattleSessionSnapshot({
+    required this.sessionId,
+    required this.runId,
+    required this.stageIndex,
+    required this.totalStages,
+    required this.status,
+    required this.tick,
+    required this.complete,
+    required this.playerBoard,
+    required this.opponentBoard,
+    required this.frame,
+    required this.intervention,
+    required this.reserves,
+    required this.events,
+    required this.opponent,
+    required this.run,
+    required this.match,
+  });
+
+  factory CareerBattleSessionSnapshot.fromJson(Map<String, dynamic> json) {
+    final matchPayload = json['match'];
+    return CareerBattleSessionSnapshot(
+      sessionId: json['session_id'] as String,
+      runId: json['run_id'] as String,
+      stageIndex: json['stage_index'] as int,
+      totalStages: json['total_stages'] as int,
+      status: json['status'] as String,
+      tick: json['tick'] as int,
+      complete: json['complete'] as bool,
+      playerBoard: BoardDraft.fromJson(
+        json['player_board'] as Map<String, dynamic>,
+      ),
+      opponentBoard: BoardDraft.fromJson(
+        json['opponent_board'] as Map<String, dynamic>,
+      ),
+      frame: ReplayStateFrame.fromJson(json['frame'] as Map<String, dynamic>),
+      intervention: CareerInterventionState.fromJson(
+        json['intervention'] as Map<String, dynamic>,
+      ),
+      reserves: (json['reserves'] as List<dynamic>)
+          .map(
+            (item) =>
+                CareerReserveModule.fromJson(item as Map<String, dynamic>),
+          )
+          .toList(growable: false),
+      events: (json['events'] as List<dynamic>)
+          .map((item) => BattleEvent.fromJson(item as Map<String, dynamic>))
+          .toList(growable: false),
+      opponent: CareerOpponentPreview.fromJson(
+        json['opponent'] as Map<String, dynamic>,
+      ),
+      run: CareerRunSnapshot.fromJson(json['run'] as Map<String, dynamic>),
+      match: matchPayload is Map<String, dynamic>
+          ? MatchResponse.fromJson(matchPayload)
+          : null,
+    );
+  }
+
+  final String sessionId;
+  final String runId;
+  final int stageIndex;
+  final int totalStages;
+  final String status;
+  final int tick;
+  final bool complete;
+  final BoardDraft playerBoard;
+  final BoardDraft opponentBoard;
+  final ReplayStateFrame frame;
+  final CareerInterventionState intervention;
+  final List<CareerReserveModule> reserves;
+  final List<BattleEvent> events;
+  final CareerOpponentPreview opponent;
+  final CareerRunSnapshot run;
+  final MatchResponse? match;
 }
 
 enum KitMode {

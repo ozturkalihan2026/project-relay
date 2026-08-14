@@ -1,12 +1,18 @@
 """Project Relay deterministic combat engine."""
 
-from .engine import CircuitBattleEngine
+from .engine import (
+    CircuitBattleEngine,
+    LiveBattleSession,
+    LiveBattleSessionSnapshot,
+)
 from .intervention import (
     InterventionError,
     InterventionPolicy,
+    InterventionWindowState,
     ModuleHealthRack,
     ModuleSwapResult,
     ModuleVitality,
+    ReserveModule,
 )
 from .enums import Direction, EventType, ModuleKind, Side
 from .models import (
@@ -54,9 +60,13 @@ __all__ = [
     "CircuitBattleEngine",
     "InterventionError",
     "InterventionPolicy",
+    "InterventionWindowState",
+    "LiveBattleSession",
+    "LiveBattleSessionSnapshot",
     "ModuleHealthRack",
     "ModuleSwapResult",
     "ModuleVitality",
+    "ReserveModule",
     "Direction",
     "EventType",
     "ModuleKind",

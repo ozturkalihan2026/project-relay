@@ -134,6 +134,7 @@ class BattleConfig:
     board_size: int = BOARD_SIZE
     core_hp: float = 120
     max_ticks: int = 90
+    live_max_ticks: int = 150
     async_max_ticks: int = 150
     overload_start_tick: int = 90
     overload_step_ticks: int = 15

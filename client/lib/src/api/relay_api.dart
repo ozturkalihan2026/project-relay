@@ -310,21 +310,17 @@ class RelayApi {
     required Map<String, Object?> context,
     required DateTime occurredAt,
   }) async {
-    await _post(
-      '/api/v1/telemetry/events',
-      {
-        'events': [
-          {
-            'event_id': eventId,
-            'event_name': eventName,
-            'context': context,
-            'client_version': '0.8.22',
-            'occurred_at': occurredAt.toUtc().toIso8601String(),
-          },
-        ],
-      },
-      authorized: true,
-    );
+    await _post('/api/v1/telemetry/events', {
+      'events': [
+        {
+          'event_id': eventId,
+          'event_name': eventName,
+          'context': context,
+          'client_version': '0.8.22',
+          'occurred_at': occurredAt.toUtc().toIso8601String(),
+        },
+      ],
+    }, authorized: true);
   }
 
   Future<SocialSnapshotModel> fetchSocial() async {
@@ -537,6 +533,47 @@ class RelayApi {
       authorized: true,
     );
     return CareerBattleResponse.fromJson(payload);
+  }
+
+  Future<CareerBattleSessionSnapshot> startCareerBattleSession() async {
+    final payload = await _post(
+      '/api/v1/me/career-run/battle-session',
+      const {},
+      authorized: true,
+    );
+    return CareerBattleSessionSnapshot.fromJson(payload);
+  }
+
+  Future<CareerBattleSessionSnapshot> fetchCareerBattleSession() async {
+    final payload = await _get(
+      '/api/v1/me/career-run/battle-session',
+      authorized: true,
+    );
+    return CareerBattleSessionSnapshot.fromJson(payload);
+  }
+
+  Future<CareerBattleSessionSnapshot> advanceCareerBattleSession({
+    int ticks = 1,
+  }) async {
+    final payload = await _post(
+      '/api/v1/me/career-run/battle-session/advance',
+      {'ticks': ticks},
+      authorized: true,
+    );
+    return CareerBattleSessionSnapshot.fromJson(payload);
+  }
+
+  Future<CareerBattleSessionSnapshot> swapCareerBattleModule({
+    required String outgoingId,
+    required String incomingId,
+    RelayDirection? orientation,
+  }) async {
+    final payload = await _post('/api/v1/me/career-run/battle-session/swap', {
+      'outgoing_id': outgoingId,
+      'incoming_id': incomingId,
+      if (orientation != null) 'orientation': orientation.wireValue,
+    }, authorized: true);
+    return CareerBattleSessionSnapshot.fromJson(payload);
   }
 
   Future<CareerRunSnapshot> abandonCareerRun() async {

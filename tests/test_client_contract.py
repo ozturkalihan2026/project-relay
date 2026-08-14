@@ -107,7 +107,7 @@ class FlutterClientContractTests(unittest.TestCase):
         # v0.4.9: bilgi palete taşınır, devre kartı simge-only kalır.
         self.assertIn("palette-module-properties-${module.kind.wireValue}", palette)
         self.assertIn("module-glyph-${module.id}", board)
-        self.assertIn("ModuleGlyph(", board)
+        self.assertIn("ModuleHardware(", board)
         self.assertNotIn("module-name-${module.id}", board)
         self.assertNotIn("module-stat-badges-${module.id}", board)
         self.assertIn("tooltip: '90° döndür'", board)
@@ -144,8 +144,9 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("child: Text(primaryActionLabel)", controls)
         self.assertNotIn("Icons.add_circle_outline", controls)
 
-        # FittedBox dönüşümleri piksel merkezlerinde makine hassasiyeti farkı yaratabilir.
-        self.assertIn("closeTo(playbackButtonCenterY, 0.001)", controls_test)
+        # Birincil eylem, oynatma satırının altında ayrı ve sabit boyutta kalır.
+        self.assertIn("greaterThan(", controls_test)
+        self.assertIn("const Size(220, 40)", controls_test)
 
         # VisualDensity.compact minimum genişliği 8 px küçültebildiği için
         # 220×40 ölçü dış SizedBox ile kesin olarak korunur.
@@ -618,6 +619,9 @@ class FlutterClientContractTests(unittest.TestCase):
             "/api/v1/me/career-run/start",
             "/api/v1/me/career-run/booster",
             "/api/v1/me/career-run/battle",
+            "/api/v1/me/career-run/battle-session",
+            "/api/v1/me/career-run/battle-session/advance",
+            "/api/v1/me/career-run/battle-session/swap",
             "/api/v1/me/career-run/abandon",
             "/daily-missions/",
             "/achievements/",
@@ -843,7 +847,7 @@ class FlutterClientContractTests(unittest.TestCase):
             r"size:\s*dense\s*\?\s*18\s*:\s*compact\s*\?\s*18\s*:\s*24",
         )
         self.assertIn("module-glyph-${module.id}", board_source)
-        self.assertIn("ModuleGlyph(", board_source)
+        self.assertIn("ModuleHardware(", board_source)
         self.assertNotIn("module-name-${module.id}", board_source)
         self.assertNotIn("module-stat-badges-${module.id}", board_source)
         self.assertNotIn("_ModuleStatBadges", board_source)
@@ -1021,7 +1025,8 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("maxBoardExtent = 488", replay_game)
         self.assertIn("ReplayStageGeometry.leftBoard", replay_game)
         self.assertIn("ReplayStageGeometry.rightBoard", replay_game)
-        self.assertIn("_drawModuleIcon", replay_game)
+        self.assertIn("_drawModuleHardware", replay_game)
+        self.assertIn("paintModuleHardware", replay_game)
         self.assertNotIn("_moduleCode", replay_game)
         self.assertIn("key: const ValueKey('replay-battle-stage')", replay_screen)
         self.assertIn("constraints.maxHeight * 0.82", replay_screen)
@@ -1052,7 +1057,7 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("replay-playback-button", playback_controls)
         self.assertIn("replay-restart-button", playback_controls)
         self.assertIn("replay-sound-button", playback_controls)
-        self.assertIn("replay-speed-button", playback_controls)
+        self.assertNotIn("replay-speed-button", playback_controls)
         self.assertIn("replay-new-game-button", playback_controls)
         self.assertNotIn("Icons.add_circle_outline", playback_controls)
         self.assertIn("Wrap(", playback_controls)
@@ -1074,7 +1079,8 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("const Size(220, 40)", controls_test)
         self.assertIn("Yeniden Oynat", playback_controls)
         self.assertIn("YENİ OYUN", playback_controls)
-        self.assertIn("Hız ${_speedLabel(speed)}", playback_controls)
+        self.assertNotIn("_speedLabel", playback_controls)
+        self.assertIn("findsNothing", controls_test)
         self.assertNotIn("_ResultDetails", replay_screen)
         self.assertNotIn("class _Metric", replay_screen)
         self.assertIn("ScrollController", event_feed)
@@ -1211,7 +1217,16 @@ class FlutterClientContractTests(unittest.TestCase):
             CLIENT / "lib" / "src" / "widgets" / "game_manual.dart"
         ).read_text(encoding="utf-8")
 
-        self.assertIn("CareerBattleScreen(", career)
+        live_battle = (
+            CLIENT / "lib" / "src" / "screens" / "career_live_battle_screen.dart"
+        ).read_text(encoding="utf-8")
+        self.assertIn("CareerLiveBattleScreen(", career)
+        self.assertIn("startCareerBattleSession", career)
+        self.assertIn("CareerBattleScreen(", live_battle)
+        self.assertIn("Timer.periodic", live_battle)
+        self.assertIn("advanceCareerBattleSession", live_battle)
+        self.assertIn("swapCareerBattleModule", live_battle)
+        self.assertIn("MÜDAHALE RAFI AKTİF", live_battle)
         self.assertNotIn("builder: (context) => ReplayScreen(", career)
         self.assertIn("class CareerBattleScreen", career_battle)
         self.assertIn("career-battle-screen", career_battle)
@@ -1863,7 +1878,8 @@ def test_v0820_rev5_modern_chat_core_and_energy_contract() -> None:
 
     # Battle energy flow has a visible directional trail and powered-port pulse.
     assert "void _drawEnergyLink(" in replay
-    assert "for (var trail = 0; trail < 4; trail += 1)" in replay
+    assert "CircuitCableVisual.drawCable(" in replay
+    assert "CircuitCableVisual.drawPacket(" in replay
     assert "maskFilter = const ui.MaskFilter.blur" in replay
     assert "final portPulse" in replay
 
@@ -1916,13 +1932,16 @@ def test_v0821_rev4_cinematic_final_contract():
 
 def test_v0822_rev1_preparation_scene_rebuild_contract():
     board = (CLIENT / 'lib' / 'src' / 'widgets' / 'circuit_board.dart').read_text(encoding='utf-8')
+    presentation = (CLIENT / 'lib' / 'src' / 'theme' / 'circuit_presentation.dart').read_text(encoding='utf-8')
     editor = (CLIENT / 'lib' / 'src' / 'screens' / 'editor_screen.dart').read_text(encoding='utf-8')
     career = (CLIENT / 'lib' / 'src' / 'screens' / 'career_screen.dart').read_text(encoding='utf-8')
     assert '_PreparationStageShell' in board
-    assert 'deckTilt = -0.20' in board
-    assert 'perspectiveDepth = 0.00115' in board
+    assert 'preparationDeckTilt = -0.20' in presentation
+    assert 'preparationPerspectiveDepth = 0.00115' in presentation
+    assert 'CircuitPresentationSpec.preparationDeckTilt' in board
+    assert 'CircuitPresentationSpec.preparationPerspectiveDepth' in board
     assert '_RaisedModuleShell' in board
-    assert '_DeckFastener' in board
+    assert '_DeckFastener' not in board
     assert 'depth: 17' in board
     assert 'offset: const Offset(0, -11)' in board
     assert 'viewportHeight * 0.57' in editor
@@ -1932,14 +1951,17 @@ def test_v0822_rev1_preparation_scene_rebuild_contract():
 
 def test_v0822_rev1_fix1_preparation_perspective_and_lock_sound_contract():
     board = (CLIENT / 'lib' / 'src' / 'widgets' / 'circuit_board.dart').read_text(encoding='utf-8')
+    presentation = (CLIENT / 'lib' / 'src' / 'theme' / 'circuit_presentation.dart').read_text(encoding='utf-8')
     visuals = (CLIENT / 'lib' / 'src' / 'widgets' / 'module_visuals.dart').read_text(encoding='utf-8')
     palette = (CLIENT / 'lib' / 'src' / 'widgets' / 'module_palette.dart').read_text(encoding='utf-8')
     editor = (CLIENT / 'lib' / 'src' / 'screens' / 'editor_screen.dart').read_text(encoding='utf-8')
     career = (CLIENT / 'lib' / 'src' / 'screens' / 'career_screen.dart').read_text(encoding='utf-8')
     placement_sound = (CLIENT / 'lib' / 'src' / 'game' / 'module_placement_sound_player.dart').read_text(encoding='utf-8')
 
-    assert 'deckTilt = -0.20' in board
-    assert 'perspectiveDepth = 0.00115' in board
+    assert 'preparationDeckTilt = -0.20' in presentation
+    assert 'preparationPerspectiveDepth = 0.00115' in presentation
+    assert 'CircuitPresentationSpec.preparationDeckTilt' in board
+    assert 'CircuitPresentationSpec.preparationPerspectiveDepth' in board
     assert "ValueKey('module-seat-$placementId')" in board
     assert 'class ModuleChassis extends StatelessWidget' in visuals
     assert 'class _ModuleChassisClipper extends CustomClipper<Path>' in visuals
@@ -1973,7 +1995,8 @@ def _legacy_v0822_rev1_fix2_feedback_driven_ui_contract():
     assert 'BOSS Ã–NCESÄ° GÃœÃ‡LENDÄ°RÄ°CÄ° MAÄAZASI' in career
     assert 'class _CircuitFlowPainter' in board
     assert 'clipBehavior: Clip.none' in board
-    assert 'class ModuleGlyph extends StatelessWidget' in visuals
+    assert 'class ModuleHardware extends StatelessWidget' in visuals
+    assert 'void paintModuleHardware(' in visuals
     assert 'moduleIcon(' not in visuals
     assert 'final muzzleRadius' in replay
     assert '_autoplayAttempted' in ambient
@@ -2000,7 +2023,8 @@ def test_v0822_rev1_fix2_feedback_driven_ui_contract():
     assert "run.status == 'awaiting_booster'" in career
     assert 'class _CircuitFlowPainter' in board
     assert 'clipBehavior: Clip.none' in board
-    assert 'class ModuleGlyph extends StatelessWidget' in visuals
+    assert 'class ModuleHardware extends StatelessWidget' in visuals
+    assert 'void paintModuleHardware(' in visuals
     assert 'moduleIcon(' not in visuals
     assert 'final muzzleRadius' in replay
     assert '_autoplayAttempted' in ambient

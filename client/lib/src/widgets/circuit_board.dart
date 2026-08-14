@@ -1,8 +1,8 @@
-import 'dart:ui' show PathMetric;
-
 import 'package:flutter/material.dart';
 
 import '../models/relay_models.dart';
+import '../theme/circuit_cable.dart';
+import '../theme/circuit_presentation.dart';
 import '../theme/cosmetic_visuals.dart';
 import '../theme/relay_theme.dart';
 import 'module_compact_stats.dart';
@@ -10,6 +10,7 @@ import 'module_visuals.dart';
 import 'relay_emblem.dart';
 
 typedef ModuleDropCallback = void Function(int cellIndex, ModuleDragData data);
+typedef ModuleDropPredicate = bool Function(int cellIndex, ModuleDragData data);
 
 class CircuitBoard extends StatelessWidget {
   const CircuitBoard({
@@ -24,6 +25,8 @@ class CircuitBoard extends StatelessWidget {
     this.visuals = const EquippedVisuals.defaults(),
     this.presentation3d = false,
     this.upgradeBranches = const {},
+    this.canAcceptModuleDrop,
+    this.moduleDraggingEnabled = true,
     super.key,
   });
 
@@ -38,6 +41,8 @@ class CircuitBoard extends StatelessWidget {
   final EquippedVisuals visuals;
   final bool presentation3d;
   final Map<String, String> upgradeBranches;
+  final ModuleDropPredicate? canAcceptModuleDrop;
+  final bool moduleDraggingEnabled;
 
   @override
   Widget build(BuildContext context) {
@@ -50,8 +55,13 @@ class CircuitBoard extends StatelessWidget {
           key: ValueKey('circuit-board-theme-${boardTheme.id}'),
           decoration: BoxDecoration(
             color: boardTheme.background,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: boardTheme.border, width: 2),
+            borderRadius: BorderRadius.circular(
+              CircuitPresentationSpec.boardCornerRadius,
+            ),
+            border: Border.all(
+              color: boardTheme.border,
+              width: CircuitPresentationSpec.boardBorderWidth,
+            ),
             boxShadow: [
               BoxShadow(
                 color: boardTheme.core.withValues(alpha: 0.22),
@@ -60,84 +70,104 @@ class CircuitBoard extends StatelessWidget {
               ),
             ],
           ),
-          child: Stack(
-            clipBehavior: Clip.none,
-            fit: StackFit.expand,
-            children: [
-              IgnorePointer(
-                child: CustomPaint(
-                  painter: _CircuitTracePainter(
-                    placements: placements,
-                    specs: specs,
-                    poweredIds: poweredIds,
-                    visuals: visuals,
+          child: ClipRRect(
+            key: const ValueKey('circuit-board-face-clip'),
+            clipBehavior: Clip.antiAlias,
+            borderRadius: BorderRadius.circular(
+              CircuitPresentationSpec.boardCornerRadius -
+                  CircuitPresentationSpec.boardBorderWidth,
+            ),
+            child: Stack(
+              clipBehavior: Clip.hardEdge,
+              fit: StackFit.expand,
+              children: [
+                IgnorePointer(
+                  child: CustomPaint(
+                    painter: _CircuitTracePainter(
+                      placements: placements,
+                      specs: specs,
+                      poweredIds: poweredIds,
+                      visuals: visuals,
+                    ),
                   ),
                 ),
-              ),
-              GridView.builder(
-                physics: const NeverScrollableScrollPhysics(),
-                clipBehavior: Clip.none,
-                padding: const EdgeInsets.all(4),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 4,
-                ),
-                itemCount: 16,
-                itemBuilder: (context, index) {
-                  if (isCoreCell(index)) {
+                GridView.builder(
+                  physics: const NeverScrollableScrollPhysics(),
+                  clipBehavior: Clip.hardEdge,
+                  padding: const EdgeInsets.all(
+                    CircuitPresentationSpec.boardContentInset,
+                  ),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: CircuitPresentationSpec.gridSize,
+                  ),
+                  itemCount:
+                      CircuitPresentationSpec.gridSize *
+                      CircuitPresentationSpec.gridSize,
+                  itemBuilder: (context, index) {
+                    if (isCoreCell(index)) {
+                      return Padding(
+                        padding: const EdgeInsets.all(
+                          CircuitPresentationSpec.cellInset,
+                        ),
+                        child: _CoreCellBackdrop(
+                          cellIndex: index,
+                          onTap: () => onCellTap(index),
+                        ),
+                      );
+                    }
+                    final placement = placements[index];
                     return Padding(
-                      padding: const EdgeInsets.all(4),
-                      child: _CoreCellBackdrop(
+                      padding: const EdgeInsets.all(
+                        CircuitPresentationSpec.cellInset,
+                      ),
+                      child: _CircuitCell(
                         cellIndex: index,
+                        coreGate: isCoreGate(index),
+                        placement: placement,
+                        spec: placement == null ? null : specs[placement.kind],
+                        selected: selectedCell == index,
+                        validationVisible: validationVisible,
+                        powered:
+                            placement != null &&
+                            poweredIds.contains(placement.id),
                         onTap: () => onCellTap(index),
+                        onModuleDropped: (data) => onModuleDropped(index, data),
+                        canAcceptDrop: (data) =>
+                            canAcceptModuleDrop?.call(index, data) ??
+                            data.sourceCell != index,
+                        onRotate: placement?.kind == ModuleKind.amplifier
+                            ? () => onRotateModule(index)
+                            : null,
+                        raised: presentation3d,
+                        upgradeBranch: placement == null
+                            ? null
+                            : upgradeBranches[placement.id],
+                        moduleDraggingEnabled: moduleDraggingEnabled,
                       ),
                     );
-                  }
-                  final placement = placements[index];
-                  return Padding(
-                    padding: const EdgeInsets.all(4),
-                    child: _CircuitCell(
-                      cellIndex: index,
-                      coreGate: isCoreGate(index),
-                      placement: placement,
-                      spec: placement == null ? null : specs[placement.kind],
-                      selected: selectedCell == index,
-                      validationVisible: validationVisible,
-                      powered:
-                          placement != null &&
-                          poweredIds.contains(placement.id),
-                      onTap: () => onCellTap(index),
-                      onModuleDropped: (data) => onModuleDropped(index, data),
-                      onRotate: placement?.kind == ModuleKind.amplifier
-                          ? () => onRotateModule(index)
-                          : null,
-                      raised: presentation3d,
-                      upgradeBranch: placement == null
-                          ? null
-                          : upgradeBranches[placement.id],
+                  },
+                ),
+                IgnorePointer(
+                  child: Center(
+                    child: FractionallySizedBox(
+                      widthFactor: CircuitPresentationSpec.coreExtentFactor,
+                      heightFactor: CircuitPresentationSpec.coreExtentFactor,
+                      child: _CoreHub(raised: presentation3d),
                     ),
-                  );
-                },
-              ),
-              IgnorePointer(
-                child: Center(
-                  child: FractionallySizedBox(
-                    widthFactor: 0.48,
-                    heightFactor: 0.48,
-                    child: _CoreHub(raised: presentation3d),
                   ),
                 ),
-              ),
-              Positioned.fill(
-                child: IgnorePointer(
-                  child: _AnimatedCircuitFlow(
-                    placements: placements,
-                    specs: specs,
-                    poweredIds: poweredIds,
-                    visuals: visuals,
+                Positioned.fill(
+                  child: IgnorePointer(
+                    child: _AnimatedCircuitFlow(
+                      placements: placements,
+                      specs: specs,
+                      poweredIds: poweredIds,
+                      visuals: visuals,
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -153,9 +183,10 @@ class _PreparationStageShell extends StatelessWidget {
   final BoardVisualTheme boardTheme;
   final Widget child;
 
-  static const double perspectiveDepth = 0.00115;
-  static const double deckTilt = -0.20;
-  static const double deckYaw = 0.008;
+  static const double perspectiveDepth =
+      CircuitPresentationSpec.preparationPerspectiveDepth;
+  static const double deckTilt = CircuitPresentationSpec.preparationDeckTilt;
+  static const double deckYaw = CircuitPresentationSpec.preparationDeckYaw;
 
   Matrix4 _deckTransform() {
     return Matrix4.identity()
@@ -189,7 +220,9 @@ class _PreparationStageShell extends StatelessWidget {
                   color,
                 ],
               ),
-              borderRadius: BorderRadius.circular(22),
+              borderRadius: BorderRadius.circular(
+                CircuitPresentationSpec.boardCornerRadius + 2,
+              ),
               border: Border.all(
                 color: boardTheme.core.withValues(alpha: 0.24 + opacity),
                 width: 2,
@@ -250,60 +283,10 @@ class _PreparationStageShell extends StatelessWidget {
                   ),
                 ),
               ),
-              Positioned(
-                left: 30,
-                right: 30,
-                bottom: -7,
-                child: IgnorePointer(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      _DeckFastener(color: boardTheme.core),
-                      Expanded(
-                        child: Container(
-                          height: 2,
-                          margin: const EdgeInsets.symmetric(horizontal: 12),
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [
-                                Colors.transparent,
-                                boardTheme.core.withValues(alpha: 0.62),
-                                Colors.transparent,
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                      _DeckFastener(color: boardTheme.core),
-                    ],
-                  ),
-                ),
-              ),
             ],
           ),
         ),
       ),
-    );
-  }
-}
-
-class _DeckFastener extends StatelessWidget {
-  const _DeckFastener({required this.color});
-
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: const Color(0xFF09171D),
-        border: Border.all(color: color.withValues(alpha: 0.64)),
-        boxShadow: [
-          BoxShadow(color: color.withValues(alpha: 0.34), blurRadius: 8),
-        ],
-      ),
-      child: const SizedBox.square(dimension: 8),
     );
   }
 }
@@ -344,9 +327,11 @@ class _CircuitCell extends StatelessWidget {
     required this.powered,
     required this.onTap,
     required this.onModuleDropped,
+    required this.canAcceptDrop,
     required this.onRotate,
     required this.raised,
     required this.upgradeBranch,
+    required this.moduleDraggingEnabled,
   });
 
   final int cellIndex;
@@ -358,9 +343,11 @@ class _CircuitCell extends StatelessWidget {
   final bool powered;
   final VoidCallback onTap;
   final ValueChanged<ModuleDragData> onModuleDropped;
+  final bool Function(ModuleDragData data) canAcceptDrop;
   final VoidCallback? onRotate;
   final bool raised;
   final String? upgradeBranch;
+  final bool moduleDraggingEnabled;
 
   @override
   Widget build(BuildContext context) {
@@ -375,8 +362,7 @@ class _CircuitCell extends StatelessWidget {
     final statSemantics = compactStats.map((stat) => stat.fullLabel).join(', ');
     return DragTarget<ModuleDragData>(
       hitTestBehavior: HitTestBehavior.opaque,
-      onWillAcceptWithDetails: (details) =>
-          details.data.sourceCell != cellIndex,
+      onWillAcceptWithDetails: (details) => canAcceptDrop(details.data),
       onAcceptWithDetails: (details) => onModuleDropped(details.data),
       builder: (context, candidateData, rejectedData) {
         final candidate = candidateData.isEmpty ? null : candidateData.first;
@@ -499,12 +485,12 @@ class _CircuitCell extends StatelessWidget {
                               : Column(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    ModuleGlyph(
+                                    ModuleHardware(
                                       kind: candidate.kind,
                                       color: visuals.modules.moduleColorFor(
                                         candidate.kind,
                                       ),
-                                      size: 28,
+                                      size: 34,
                                     ),
                                     const SizedBox(height: 3),
                                     Text(
@@ -525,11 +511,29 @@ class _CircuitCell extends StatelessWidget {
                               child: Padding(
                                 padding: EdgeInsets.all(coreGate ? 20 : 16),
                                 child: Center(
-                                  child: ModuleGlyph(
-                                    kind: module.kind,
-                                    key: ValueKey('module-glyph-${module.id}'),
-                                    color: color,
-                                    size: coreGate ? 34 : 44,
+                                  child: AnimatedSwitcher(
+                                    duration: const Duration(milliseconds: 260),
+                                    switchInCurve: Curves.easeOutBack,
+                                    switchOutCurve: Curves.easeIn,
+                                    transitionBuilder: (child, animation) =>
+                                        FadeTransition(
+                                          opacity: animation,
+                                          child: ScaleTransition(
+                                            scale: Tween<double>(
+                                              begin: 0.76,
+                                              end: 1,
+                                            ).animate(animation),
+                                            child: child,
+                                          ),
+                                        ),
+                                    child: ModuleHardware(
+                                      kind: module.kind,
+                                      key: ValueKey(
+                                        'module-glyph-${module.id}',
+                                      ),
+                                      color: color,
+                                      size: coreGate ? 42 : 56,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -691,6 +695,9 @@ class _CircuitCell extends StatelessWidget {
         if (module == null) {
           return cell;
         }
+        if (!moduleDraggingEnabled) {
+          return portAnchoredCell;
+        }
         return Draggable<ModuleDragData>(
           data: ModuleDragData.board(kind: module.kind, cellIndex: cellIndex),
           maxSimultaneousDrags: 1,
@@ -725,13 +732,19 @@ class _CoreCellBackdrop extends StatelessWidget {
       label: 'Pasif çekirdek hücresi',
       child: Material(
         color: visuals.board.cell,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(
+          CircuitPresentationSpec.cellCornerRadius,
+        ),
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(
+            CircuitPresentationSpec.cellCornerRadius,
+          ),
           child: DecoratedBox(
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(
+                CircuitPresentationSpec.cellCornerRadius,
+              ),
               border: Border.all(
                 color: visuals.board.core.withValues(alpha: 0.34),
               ),
@@ -762,7 +775,9 @@ class _CoreHub extends StatelessWidget {
           ],
           stops: const [0.0, 0.58, 1.0],
         ),
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(
+          CircuitPresentationSpec.coreCornerRadius,
+        ),
         border: Border.all(
           color: visuals.board.core.withValues(alpha: 0.90),
           width: 2,
@@ -859,7 +874,9 @@ class _CoreHub extends StatelessWidget {
             child: DecoratedBox(
               decoration: BoxDecoration(
                 color: const Color(0xFF061116),
-                borderRadius: BorderRadius.circular(24),
+                borderRadius: BorderRadius.circular(
+                  CircuitPresentationSpec.coreCornerRadius,
+                ),
                 border: Border.all(
                   color: visuals.board.core.withValues(alpha: 0.36),
                   width: 2,
@@ -986,7 +1003,11 @@ class _BoardDragFeedback extends StatelessWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    ModuleGlyph(kind: placement.kind, color: color, size: 25),
+                    ModuleHardware(
+                      kind: placement.kind,
+                      color: color,
+                      size: 34,
+                    ),
                     const SizedBox(width: 9),
                     Column(
                       mainAxisSize: MainAxisSize.min,
@@ -1023,11 +1044,11 @@ class _BoardDragFeedback extends StatelessWidget {
 }
 
 abstract final class CircuitTraceGeometry {
-  static const double gridPadding = 4;
-  static const double cellPadding = 4;
+  static const double gridPadding = CircuitPresentationSpec.boardContentInset;
+  static const double cellPadding = CircuitPresentationSpec.cellInset;
   static const double modulePortDiameter = 9;
   static const double modulePortEdgeOffset = -1;
-  static const double coreScale = 0.48;
+  static const double coreScale = CircuitPresentationSpec.coreExtentFactor;
   static const double corePortDiameter = 10;
 
   static Offset modulePortAnchor(
@@ -1035,8 +1056,10 @@ abstract final class CircuitTraceGeometry {
     ModulePlacement module,
     RelayDirection direction,
   ) {
-    final cellWidth = (size.width - gridPadding * 2) / relayBoardSize;
-    final cellHeight = (size.height - gridPadding * 2) / relayBoardSize;
+    final cellWidth =
+        (size.width - gridPadding * 2) / CircuitPresentationSpec.gridSize;
+    final cellHeight =
+        (size.height - gridPadding * 2) / CircuitPresentationSpec.gridSize;
     final center = Offset(
       gridPadding + (module.column + 0.5) * cellWidth,
       gridPadding + (module.row + 0.5) * cellHeight,
@@ -1093,12 +1116,12 @@ class _CircuitTracePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final cellWidth = size.width / 4;
-    final cellHeight = size.height / 4;
+    final cellWidth = size.width / CircuitPresentationSpec.gridSize;
+    final cellHeight = size.height / CircuitPresentationSpec.gridSize;
     final faintPaint = Paint()
       ..color = visuals.board.grid
       ..strokeWidth = 1;
-    for (var index = 1; index < 4; index += 1) {
+    for (var index = 1; index < CircuitPresentationSpec.gridSize; index += 1) {
       canvas
         ..drawLine(
           Offset(index * cellWidth, 0),
@@ -1119,8 +1142,12 @@ class _CircuitTracePainter extends CustomPainter {
         RelayDirection.south,
       ]) {
         final neighborIndex = switch (direction) {
-          RelayDirection.east when module.column < 3 => entry.key + 1,
-          RelayDirection.south when module.row < 3 => entry.key + 4,
+          RelayDirection.east
+              when module.column < CircuitPresentationSpec.gridSize - 1 =>
+            entry.key + 1,
+          RelayDirection.south
+              when module.row < CircuitPresentationSpec.gridSize - 1 =>
+            entry.key + CircuitPresentationSpec.gridSize,
           _ => -1,
         };
         final neighbor = placements[neighborIndex];
@@ -1139,22 +1166,13 @@ class _CircuitTracePainter extends CustomPainter {
         );
         final energized =
             poweredIds.contains(module.id) && poweredIds.contains(neighbor.id);
-        final glow = Paint()
-          ..color = energized
-              ? visuals.modules.accent.withValues(alpha: 0.28)
-              : visuals.board.traceMuted.withValues(alpha: 0.34)
-          ..strokeWidth = energized ? 12 : 8
-          ..strokeCap = StrokeCap.round;
-        final trace = Paint()
-          ..color = energized
-              ? visuals.modules.accent
-              : visuals.board.traceMuted
-          ..strokeWidth = energized ? 4 : 3
-          ..strokeCap = StrokeCap.round;
-        final cable = _circuitCablePath(start, end);
-        canvas
-          ..drawPath(cable, glow)
-          ..drawPath(cable, trace);
+        final cable = CircuitCableVisual.path(start, end);
+        CircuitCableVisual.drawCable(
+          canvas,
+          cable,
+          color: energized ? visuals.modules.accent : visuals.board.traceMuted,
+          energized: energized,
+        );
       }
     }
 
@@ -1173,20 +1191,14 @@ class _CircuitTracePainter extends CustomPainter {
       );
       final corePort = CircuitTraceGeometry.corePortAnchor(size, entry.value);
       final energized = poweredIds.contains(module.id);
-      final trace = Paint()
-        ..color = energized ? visuals.board.gate : visuals.board.traceMuted
-        ..strokeWidth = energized ? 4 : 3
-        ..strokeCap = StrokeCap.round;
-      final glow = Paint()
-        ..color = energized
-            ? visuals.board.gate.withValues(alpha: 0.28)
-            : visuals.board.traceMuted.withValues(alpha: 0.20)
-        ..strokeWidth = energized ? 12 : 8
-        ..strokeCap = StrokeCap.round;
-      final cable = _circuitCablePath(modulePort, corePort);
-      canvas
-        ..drawPath(cable, glow)
-        ..drawPath(cable, trace);
+      final cable = CircuitCableVisual.path(modulePort, corePort);
+      CircuitCableVisual.drawCable(
+        canvas,
+        cable,
+        color: energized ? visuals.board.gate : visuals.board.traceMuted,
+        energized: energized,
+        emphasized: true,
+      );
     }
   }
 
@@ -1206,25 +1218,6 @@ class _CircuitTracePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _CircuitTracePainter oldDelegate) => true;
-}
-
-Path _circuitCablePath(Offset from, Offset to) {
-  final delta = to - from;
-  final distance = delta.distance;
-  if (distance < 1) return Path()..moveTo(from.dx, from.dy);
-  final direction = delta / distance;
-  final normal = Offset(-direction.dy, direction.dx);
-  final bend = (distance * 0.10).clamp(2.0, 7.0);
-  return Path()
-    ..moveTo(from.dx, from.dy)
-    ..cubicTo(
-      from.dx + delta.dx * 0.34 + normal.dx * bend,
-      from.dy + delta.dy * 0.34 + normal.dy * bend,
-      from.dx + delta.dx * 0.66 - normal.dx * bend,
-      from.dy + delta.dy * 0.66 - normal.dy * bend,
-      to.dx,
-      to.dy,
-    );
 }
 
 class _AnimatedCircuitFlow extends StatefulWidget {
@@ -1327,8 +1320,12 @@ class _CircuitFlowPainter extends CustomPainter {
         RelayDirection.south,
       ]) {
         final neighborIndex = switch (direction) {
-          RelayDirection.east when module.column < 3 => entry.key + 1,
-          RelayDirection.south when module.row < 3 => entry.key + 4,
+          RelayDirection.east
+              when module.column < CircuitPresentationSpec.gridSize - 1 =>
+            entry.key + 1,
+          RelayDirection.south
+              when module.row < CircuitPresentationSpec.gridSize - 1 =>
+            entry.key + CircuitPresentationSpec.gridSize,
           _ => -1,
         };
         final neighbor = placements[neighborIndex];
@@ -1408,8 +1405,12 @@ class _CircuitFlowPainter extends CustomPainter {
           RelayDirection.south,
         ]) {
           final neighborIndex = switch (direction) {
-            RelayDirection.east when module.column < 3 => entry.key + 1,
-            RelayDirection.south when module.row < 3 => entry.key + 4,
+            RelayDirection.east
+                when module.column < CircuitPresentationSpec.gridSize - 1 =>
+              entry.key + 1,
+            RelayDirection.south
+                when module.row < CircuitPresentationSpec.gridSize - 1 =>
+              entry.key + CircuitPresentationSpec.gridSize,
             _ => -1,
           };
           final neighbor = placements[neighborIndex];
@@ -1468,85 +1469,26 @@ class _CircuitFlowPainter extends CustomPainter {
     _CircuitFlowKind kind, {
     bool bidirectional = false,
   }) {
-    final cable = _circuitCablePath(from, to);
-    final metrics = cable.computeMetrics().toList(growable: false);
-    if (metrics.isEmpty || metrics.first.length < 1) return;
-    final metric = metrics.first;
+    final cable = CircuitCableVisual.path(from, to);
     final color = _flowColor(kind);
-    for (final seed in const [0.0, 0.34, 0.68]) {
-      _drawPacket(
+    for (final seed in const [0.0, 0.50]) {
+      CircuitCableVisual.drawPacket(
         canvas,
-        metric,
-        (seed + progress) % 1,
-        color,
-        kind,
+        cable,
+        phase: (seed + progress) % 1,
+        color: color,
         opacity: 1,
       );
-      if (bidirectional && seed < 0.4) {
-        _drawPacket(
+      if (bidirectional && seed == 0) {
+        CircuitCableVisual.drawPacket(
           canvas,
-          metric,
-          1 - ((seed + progress * 0.72) % 1),
-          color,
-          _CircuitFlowKind.energy,
+          cable,
+          phase: 1 - ((seed + progress * 0.72) % 1),
+          color: color,
           opacity: 0.52,
         );
       }
     }
-  }
-
-  void _drawPacket(
-    Canvas canvas,
-    PathMetric metric,
-    double fraction,
-    Color color,
-    _CircuitFlowKind kind, {
-    required double opacity,
-  }) {
-    final tangent = metric.getTangentForOffset(metric.length * fraction);
-    if (tangent == null) return;
-    final vectorLength = tangent.vector.distance;
-    if (vectorLength < 0.001) return;
-    final direction = tangent.vector / vectorLength;
-    final normal = Offset(-direction.dy, direction.dx);
-    final center = tangent.position;
-    canvas.drawCircle(
-      center,
-      7,
-      Paint()
-        ..color = color.withValues(alpha: 0.28 * opacity)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4),
-    );
-    final paint = Paint()
-      ..color = color.withValues(alpha: opacity)
-      ..strokeWidth = 1.8
-      ..strokeCap = StrokeCap.round
-      ..style = PaintingStyle.fill;
-    if (kind == _CircuitFlowKind.repair) {
-      canvas
-        ..drawCircle(center, 3.2, paint)
-        ..drawLine(center - direction * 4, center + direction * 4, paint)
-        ..drawLine(center - normal * 4, center + normal * 4, paint);
-      return;
-    }
-    if (kind == _CircuitFlowKind.cooling) {
-      final diamond = Path()
-        ..moveTo((center + direction * 4.6).dx, (center + direction * 4.6).dy)
-        ..lineTo((center + normal * 3.4).dx, (center + normal * 3.4).dy)
-        ..lineTo((center - direction * 4.6).dx, (center - direction * 4.6).dy)
-        ..lineTo((center - normal * 3.4).dx, (center - normal * 3.4).dy)
-        ..close();
-      canvas.drawPath(diamond, paint);
-      return;
-    }
-    final tip = center + direction * 4.4;
-    final tail = center - direction * 4.0;
-    final arrow = Path()
-      ..moveTo(tip.dx, tip.dy)
-      ..lineTo(tail.dx + normal.dx * 3.1, tail.dy + normal.dy * 3.1)
-      ..lineTo(tail.dx - normal.dx * 3.1, tail.dy - normal.dy * 3.1)
-      ..close();
-    canvas.drawPath(arrow, paint);
   }
 
   bool _connects(

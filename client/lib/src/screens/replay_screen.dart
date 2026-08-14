@@ -206,16 +206,6 @@ class _ReplayScreenState extends ConsumerState<ReplayScreen> {
   @override
   Widget build(BuildContext context) {
     final result = widget.match.result;
-    final resultLabel = switch (result.winner) {
-      'left' => 'ZAFER',
-      'right' => 'YENİLGİ',
-      _ => 'BERABERE',
-    };
-    final resultColor = switch (result.winner) {
-      'left' => RelayColors.mint,
-      'right' => RelayColors.coral,
-      _ => RelayColors.amber,
-    };
     return Scaffold(
       appBar: AppBar(
         leadingWidth: 224,
@@ -251,18 +241,18 @@ class _ReplayScreenState extends ConsumerState<ReplayScreen> {
                       ),
                       const SizedBox(height: 3),
                     ],
-                    Text(
-                      snapshot.complete ? resultLabel : 'SAVAŞ SÜRÜYOR',
-                      style: Theme.of(context).textTheme.headlineMedium
-                          ?.copyWith(
-                            color: snapshot.complete
-                                ? resultColor
-                                : RelayColors.amber,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: 4,
-                          ),
-                    ),
-                    const SizedBox(height: 3),
+                    if (!snapshot.complete) ...[
+                      Text(
+                        'SAVAŞ SÜRÜYOR',
+                        style: Theme.of(context).textTheme.headlineMedium
+                            ?.copyWith(
+                              color: RelayColors.amber,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 4,
+                            ),
+                      ),
+                      const SizedBox(height: 3),
+                    ],
                     Text(
                       '${result.left.name}  ×  ${widget.match.opponent.displayName}',
                       style: const TextStyle(color: RelayColors.muted),
@@ -361,20 +351,12 @@ class _ReplayScreenState extends ConsumerState<ReplayScreen> {
     return ReplayPlaybackControls(
       playing: _playing,
       soundEnabled: _soundEnabled,
-      speed: _speed,
       onTogglePlayback: _togglePlayback,
       onRestart: _restart,
       onToggleSound: () {
         final enabled = !_soundEnabled;
         ref.read(appSettingsProvider.notifier).setReplaySoundEnabled(enabled);
         setState(() => _soundEnabled = enabled);
-      },
-      onSpeedChanged: (value) {
-        ref.read(appSettingsProvider.notifier).setReplaySpeed(value);
-        setState(() {
-          _speed = value;
-          _game.speed = value;
-        });
       },
       onNewGame: _primaryAction,
       primaryActionLabel: widget.primaryActionLabel,

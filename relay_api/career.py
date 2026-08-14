@@ -12,9 +12,17 @@ from sqlalchemy import desc, select
 
 from relay_engine import (
     BattleModifiers,
+    BattleEvent,
     BoardLayout,
+    Direction,
+    InterventionError,
+    InterventionWindowState,
+    LiveBattleSession,
     ModuleKind,
     ModulePlacement,
+    ReplayStateFrame,
+    ReserveModule,
+    Side,
 )
 from relay_engine.catalog import get_spec
 from relay_engine.models import scaled_value
@@ -27,11 +35,13 @@ from .content import (
 )
 from .database import Database
 from .db_models import (
+    CareerBattleSessionRecord,
     CareerBoardRecord,
     CareerRunRecord,
     PlayerProgressionRecord,
     PlayerRecord,
 )
+from .collection import CollectionService
 from .online import OnlinePlayService, SavedBoard
 from .progression import (
     BoosterMastery,
@@ -39,7 +49,7 @@ from .progression import (
     RewardGrant,
 )
 from .service import MatchService
-from .store import OpponentSnapshot, StoredMatch
+from .store import MatchNotFoundError, OpponentSnapshot, StoredMatch
 
 CAREER_STAGES: tuple[CareerStageDefinition, ...] = (
     DEFAULT_CAREER_SECTOR.stages
@@ -176,6 +186,26 @@ class CareerBattleResult:
     run: CareerRunSnapshot
 
 
+@dataclass(frozen=True, slots=True)
+class CareerBattleSessionSnapshot:
+    session_id: str
+    run_id: str
+    stage_index: int
+    total_stages: int
+    status: str
+    tick: int
+    complete: bool
+    player_board: BoardLayout
+    opponent_board: BoardLayout
+    frame: ReplayStateFrame
+    intervention: InterventionWindowState
+    reserves: tuple[ReserveModule, ...]
+    events: tuple[BattleEvent, ...]
+    opponent: CareerOpponentPreview
+    run: CareerRunSnapshot
+    match: StoredMatch | None
+
+
 class CareerRunService:
     def __init__(
         self,
@@ -183,6 +213,7 @@ class CareerRunService:
         match_service: MatchService,
         online_service: OnlinePlayService,
         progression_service: ProgressionService,
+        collection_service: CollectionService | None = None,
         *,
         clock: Callable[[], datetime] | None = None,
         id_source: Callable[[], str] | None = None,
@@ -193,6 +224,10 @@ class CareerRunService:
         self.progression_service = progression_service
         self.clock = clock or (lambda: datetime.now(UTC))
         self.id_source = id_source or (lambda: uuid.uuid4().hex)
+        self.collection_service = collection_service or CollectionService(
+            database,
+            clock=self.clock,
+        )
 
     def save_board(self, player_id: str, board: BoardLayout) -> SavedBoard:
         """Save the independent career circuit without touching async PvP."""
@@ -229,6 +264,24 @@ class CareerRunService:
                 .limit(1)
                 .with_for_update()
             )
+            if active_run is not None:
+                live_battle = session.scalar(
+                    select(CareerBattleSessionRecord)
+                    .where(
+                        CareerBattleSessionRecord.run_id == active_run.id,
+                        CareerBattleSessionRecord.stage_index
+                        == active_run.stage_index,
+                        CareerBattleSessionRecord.status.in_(
+                            ("active", "resolving")
+                        ),
+                    )
+                    .limit(1)
+                )
+                if live_battle is not None:
+                    raise CareerRunError(
+                        "battle_session_active",
+                        "Canlı savaş sürerken kariyer devresi değiştirilemez.",
+                    )
             if active_run is not None and record is not None:
                 previous_kinds = {
                     str(item["module_id"]): str(item["kind"])
@@ -470,6 +523,217 @@ class CareerRunService:
             session.flush()
         return self._snapshot(player_id, record)
 
+    def start_battle_session(
+        self,
+        player_id: str,
+    ) -> CareerBattleSessionSnapshot:
+        board = self.get_board(player_id)
+        if board is None:
+            raise CareerRunError(
+                "board_required",
+                "Savaştan önce geçerli devrenizi kaydedin.",
+            )
+        with self.database.session() as session:
+            run = self._active_record(session, player_id, lock=False)
+            if run.status != "active":
+                raise CareerRunError(
+                    "battle_not_ready",
+                    "Kariyer savaşı bu koşu durumunda başlatılamaz.",
+                )
+            stage_index = run.stage_index
+            module_kinds = {
+                item.module_id: item.kind.value for item in board.board.modules
+            }
+            selected_boosters = list(run.selected_boosters or [])
+            selected_upgrades = self._upgrade_records(run, module_kinds)
+            run_id = run.id
+        if not 0 <= stage_index < TOTAL_STAGES:
+            raise CareerRunError(
+                "career_stage_invalid",
+                "Kariyer koşusu aşaması geçersiz.",
+            )
+
+        stage = CAREER_STAGES[stage_index]
+        bot = get_bot(stage.bot_id)
+        opponent_board = bot.board_for_count(len(board.board.modules))
+        player_board = self._apply_module_upgrades(
+            board.board,
+            selected_upgrades,
+        )
+        player_modifiers = self._modifiers(
+            player_id,
+            selected_boosters,
+            selected_upgrades,
+        )
+        reserves = self._career_reserves(
+            player_id,
+            player_board,
+            stage_index=stage_index,
+        )
+        now = self.clock()
+
+        with self.database.session() as session:
+            run = session.scalar(
+                select(CareerRunRecord)
+                .where(
+                    CareerRunRecord.id == run_id,
+                    CareerRunRecord.player_id == player_id,
+                )
+                .with_for_update()
+            )
+            if (
+                run is None
+                or run.status != "active"
+                or run.stage_index != stage_index
+            ):
+                raise CareerRunError(
+                    "career_state_changed",
+                    "Kariyer koşusu değişti; ekranı yenileyin.",
+                )
+            record = session.scalar(
+                select(CareerBattleSessionRecord).where(
+                    CareerBattleSessionRecord.run_id == run_id,
+                    CareerBattleSessionRecord.stage_index == stage_index,
+                )
+            )
+            if record is None:
+                record = CareerBattleSessionRecord(
+                    id=self.id_source(),
+                    run_id=run_id,
+                    player_id=player_id,
+                    stage_index=stage_index,
+                    status="active",
+                    seed=self.match_service.seed_source(),
+                    player_board=player_board.to_dict(),
+                    opponent_board=opponent_board.to_dict(),
+                    player_modifiers=player_modifiers.to_dict(),
+                    opponent_modifiers=BattleModifiers().to_dict(),
+                    player_reserves=[item.to_dict() for item in reserves],
+                    commands=[],
+                    current_tick=0,
+                    final_match_id=None,
+                    created_at=now,
+                    updated_at=now,
+                    completed_at=None,
+                )
+                session.add(record)
+                session.flush()
+            record_id = record.id
+            record_status = record.status
+
+        if record_status in {"completed", "resolving"}:
+            return self._finalize_battle_session(player_id, record_id)
+        return self._battle_session_snapshot(
+            player_id,
+            record,
+            self._rebuild_battle_session(record),
+        )
+
+    def current_battle_session(
+        self,
+        player_id: str,
+    ) -> CareerBattleSessionSnapshot:
+        with self.database.session() as session:
+            record = self._latest_battle_session_record(
+                session,
+                player_id,
+                lock=False,
+            )
+        if record.status in {"completed", "resolving"}:
+            return self._finalize_battle_session(player_id, record.id)
+        battle = self._rebuild_battle_session(record)
+        if battle.complete:
+            return self._finalize_battle_session(player_id, record.id)
+        return self._battle_session_snapshot(player_id, record, battle)
+
+    def advance_battle_session(
+        self,
+        player_id: str,
+        *,
+        ticks: int = 1,
+    ) -> CareerBattleSessionSnapshot:
+        if not 1 <= ticks <= 12:
+            raise CareerRunError(
+                "advance_ticks_invalid",
+                "Canlı savaş tek istekte 1 ile 12 adım ilerletilebilir.",
+                status_code=422,
+            )
+        now = self.clock()
+        with self.database.session() as session:
+            record = self._latest_battle_session_record(
+                session,
+                player_id,
+                lock=True,
+            )
+            if record.status == "completed":
+                record_id = record.id
+                complete = True
+            elif record.status != "active":
+                raise CareerRunError(
+                    "battle_session_not_active",
+                    "Canlı savaş oturumu etkin değil.",
+                )
+            else:
+                battle = self._rebuild_battle_session(record)
+                battle.advance_to(battle.tick + ticks)
+                record.current_tick = battle.tick
+                record.updated_at = now
+                complete = battle.complete
+                if complete:
+                    record.status = "resolving"
+                session.flush()
+                record_id = record.id
+
+        if complete:
+            return self._finalize_battle_session(player_id, record_id)
+        return self._battle_session_snapshot(player_id, record, battle)
+
+    def swap_battle_module(
+        self,
+        player_id: str,
+        *,
+        outgoing_id: str,
+        incoming_id: str,
+        orientation: Direction | None = None,
+    ) -> CareerBattleSessionSnapshot:
+        now = self.clock()
+        with self.database.session() as session:
+            record = self._latest_battle_session_record(
+                session,
+                player_id,
+                lock=True,
+            )
+            if record.status != "active":
+                raise CareerRunError(
+                    "battle_session_not_active",
+                    "Tamamlanmış savaşta modül değiştirilemez.",
+                )
+            battle = self._rebuild_battle_session(record)
+            try:
+                battle.queue_swap(
+                    side=Side.LEFT,
+                    outgoing_id=outgoing_id,
+                    incoming_id=incoming_id,
+                    orientation=orientation,
+                )
+            except InterventionError as error:
+                raise CareerRunError(error.code, str(error)) from error
+            commands = list(record.commands or [])
+            commands.append(
+                {
+                    "tick": battle.tick,
+                    "outgoing_id": outgoing_id,
+                    "incoming_id": incoming_id,
+                    "orientation": (
+                        orientation.value if orientation is not None else None
+                    ),
+                }
+            )
+            record.commands = commands
+            record.updated_at = now
+            session.flush()
+        return self._battle_session_snapshot(player_id, record, battle)
+
     def battle(self, player_id: str) -> CareerBattleResult:
         board = self.get_board(player_id)
         if board is None:
@@ -524,10 +788,7 @@ class CareerRunService:
             player_modifiers=modifiers,
         )
 
-        won = match.result.get("winner") == "left"
         now = self.clock()
-        terminal_completed = False
-        terminal_failed = False
         with self.database.session() as session:
             record = session.scalar(
                 select(CareerRunRecord)
@@ -548,27 +809,11 @@ class CareerRunService:
                     "career_state_changed",
                     "Kariyer koşusu başka bir işlemle değişti; ekranı yenileyin.",
                 )
-            record.last_match_id = match.match_id
-            if won:
-                record.wins += 1
-                record.stage_index += 1
-                if record.stage_index >= TOTAL_STAGES:
-                    record.status = "completed"
-                    record.offered_boosters = []
-                    record.ended_at = now
-                    terminal_completed = True
-                elif record.stage_index == TOTAL_STAGES - 1:
-                    record.status = "awaiting_booster"
-                    record.offered_boosters = list(_BOSS_BOOSTER_OFFERS)
-                else:
-                    record.status = "awaiting_upgrade"
-                    record.offered_boosters = []
-            else:
-                record.status = "failed"
-                record.offered_boosters = []
-                record.ended_at = now
-                terminal_failed = True
-            record.updated_at = now
+            terminal_completed, terminal_failed = self._apply_match_to_run(
+                record,
+                match,
+                now,
+            )
             session.flush()
 
         if terminal_completed or terminal_failed:
@@ -591,8 +836,378 @@ class CareerRunService:
             record.offered_boosters = []
             record.ended_at = now
             record.updated_at = now
+            live_battle = session.scalar(
+                select(CareerBattleSessionRecord)
+                .where(
+                    CareerBattleSessionRecord.run_id == record.id,
+                    CareerBattleSessionRecord.status.in_(
+                        ("active", "resolving")
+                    ),
+                )
+                .order_by(desc(CareerBattleSessionRecord.created_at))
+                .limit(1)
+                .with_for_update()
+            )
+            if live_battle is not None:
+                live_battle.status = "abandoned"
+                live_battle.updated_at = now
+                live_battle.completed_at = now
             session.flush()
         return self._snapshot(player_id, record)
+
+    def _latest_battle_session_record(
+        self,
+        session,
+        player_id: str,
+        *,
+        lock: bool,
+    ) -> CareerBattleSessionRecord:
+        query = (
+            select(CareerBattleSessionRecord)
+            .where(CareerBattleSessionRecord.player_id == player_id)
+            .order_by(desc(CareerBattleSessionRecord.created_at))
+            .limit(1)
+        )
+        if lock:
+            query = query.with_for_update()
+        record = session.scalar(query)
+        if record is None:
+            raise CareerRunError(
+                "battle_session_not_found",
+                "Canlı kariyer savaşı bulunamadı.",
+                status_code=404,
+            )
+        return record
+
+    def _rebuild_battle_session(
+        self,
+        record: CareerBattleSessionRecord,
+    ) -> LiveBattleSession:
+        battle = self.match_service.engine.start_live_session(
+            self._board_from_payload(record.player_board),
+            self._board_from_payload(record.opponent_board),
+            seed=record.seed,
+            left_modifiers=self._modifiers_from_payload(
+                record.player_modifiers
+            ),
+            right_modifiers=self._modifiers_from_payload(
+                record.opponent_modifiers
+            ),
+            left_reserves=tuple(
+                ReserveModule(
+                    module_id=str(item["module_id"]),
+                    kind=ModuleKind(str(item["kind"])),
+                    level=int(item.get("level", 1)),
+                )
+                for item in list(record.player_reserves or [])
+            ),
+            overload=False,
+            max_ticks=self.match_service.engine.config.live_max_ticks,
+        )
+        for command in list(record.commands or []):
+            command_tick = int(command["tick"])
+            if command_tick > record.current_tick:
+                raise CareerRunError(
+                    "battle_session_corrupt",
+                    "Canlı savaş komutu kayıtlı adımdan ileride.",
+                    status_code=500,
+                )
+            battle.advance_to(command_tick)
+            orientation_value = command.get("orientation")
+            try:
+                battle.queue_swap(
+                    side=Side.LEFT,
+                    outgoing_id=str(command["outgoing_id"]),
+                    incoming_id=str(command["incoming_id"]),
+                    orientation=(
+                        Direction(str(orientation_value))
+                        if orientation_value is not None
+                        else None
+                    ),
+                )
+            except (InterventionError, ValueError) as error:
+                raise CareerRunError(
+                    "battle_session_corrupt",
+                    f"Canlı savaş komutu yeniden kurulamadı: {error}",
+                    status_code=500,
+                ) from error
+        battle.advance_to(record.current_tick)
+        return battle
+
+    def _battle_session_snapshot(
+        self,
+        player_id: str,
+        record: CareerBattleSessionRecord,
+        battle: LiveBattleSession,
+        match: StoredMatch | None = None,
+    ) -> CareerBattleSessionSnapshot:
+        stage = CAREER_STAGES[record.stage_index]
+        bot = get_bot(stage.bot_id)
+        intervention = battle.intervention_state(Side.LEFT)
+        module_catalog = {
+            item.module_id: ReserveModule(
+                module_id=item.module_id,
+                kind=item.kind,
+                level=item.level,
+            )
+            for item in self._board_from_payload(record.player_board).modules
+        }
+        module_catalog.update(
+            {
+                str(item["module_id"]): ReserveModule(
+                    module_id=str(item["module_id"]),
+                    kind=ModuleKind(str(item["kind"])),
+                    level=int(item.get("level", 1)),
+                )
+                for item in list(record.player_reserves or [])
+            }
+        )
+        reserves = tuple(
+            module_catalog[module_id]
+            for module_id in intervention.reserve_module_ids
+            if module_id in module_catalog
+        )
+        return CareerBattleSessionSnapshot(
+            session_id=record.id,
+            run_id=record.run_id,
+            stage_index=record.stage_index,
+            total_stages=TOTAL_STAGES,
+            status=record.status,
+            tick=battle.tick,
+            complete=battle.complete,
+            player_board=battle.layout(Side.LEFT),
+            opponent_board=battle.layout(Side.RIGHT),
+            frame=battle.snapshot().frame,
+            intervention=intervention,
+            reserves=reserves,
+            events=battle.events,
+            opponent=CareerOpponentPreview(
+                stage_number=stage.stage_number,
+                total_stages=TOTAL_STAGES,
+                title=stage.title,
+                briefing=stage.briefing,
+                is_boss=stage.is_boss,
+                opponent_id=bot.bot_id,
+                display_name=bot.display_name,
+                description=bot.description,
+                board=self._board_from_payload(record.opponent_board),
+            ),
+            run=self.current(player_id),
+            match=match,
+        )
+
+    def _finalize_battle_session(
+        self,
+        player_id: str,
+        record_id: str,
+    ) -> CareerBattleSessionSnapshot:
+        with self.database.session() as session:
+            record = session.get(CareerBattleSessionRecord, record_id)
+            if record is None or record.player_id != player_id:
+                raise CareerRunError(
+                    "battle_session_not_found",
+                    "Canlı kariyer savaşı bulunamadı.",
+                    status_code=404,
+                )
+        battle = self._rebuild_battle_session(record)
+        if not battle.complete:
+            raise CareerRunError(
+                "battle_in_progress",
+                "Savaş sonucu oturum tamamlanmadan üretilemez.",
+            )
+
+        match_id = hashlib.sha256(
+            f"career-live:{record.id}".encode("utf-8")
+        ).hexdigest()[:32]
+        try:
+            match = self.match_service.get_match(match_id)
+        except MatchNotFoundError:
+            stage = CAREER_STAGES[record.stage_index]
+            bot = get_bot(stage.bot_id)
+            match = StoredMatch(
+                match_id=match_id,
+                created_at=self._as_utc(record.created_at),
+                source="career",
+                requester_player_id=player_id,
+                opponent_player_id=None,
+                opponent=OpponentSnapshot(
+                    kind="career_bot",
+                    opponent_id=bot.bot_id,
+                    display_name=bot.display_name,
+                    description=(
+                        f"Kariyer {stage.stage_number}/5 • {stage.title}"
+                    ),
+                ),
+                player_board=self._board_from_payload(record.player_board),
+                opponent_board=self._board_from_payload(record.opponent_board),
+                result=battle.result().to_dict(include_events=True),
+                player_modifiers=dict(record.player_modifiers or {}),
+                opponent_modifiers=dict(record.opponent_modifiers or {}),
+            )
+            self.match_service.store.save(match)
+
+        now = self.clock()
+        terminal_completed = False
+        terminal_failed = False
+        with self.database.session() as session:
+            record = session.scalar(
+                select(CareerBattleSessionRecord)
+                .where(
+                    CareerBattleSessionRecord.id == record_id,
+                    CareerBattleSessionRecord.player_id == player_id,
+                )
+                .with_for_update()
+            )
+            if record is None:
+                raise CareerRunError(
+                    "battle_session_not_found",
+                    "Canlı kariyer savaşı bulunamadı.",
+                    status_code=404,
+                )
+            run = session.scalar(
+                select(CareerRunRecord)
+                .where(
+                    CareerRunRecord.id == record.run_id,
+                    CareerRunRecord.player_id == player_id,
+                )
+                .with_for_update()
+            )
+            if run is None:
+                raise CareerRunError(
+                    "career_run_not_found",
+                    "Kariyer koşusu bulunamadı.",
+                    status_code=404,
+                )
+            if record.final_match_id is None:
+                if run.status != "active" or run.stage_index != record.stage_index:
+                    raise CareerRunError(
+                        "career_state_changed",
+                        "Kariyer koşusu savaş tamamlanmadan değişti.",
+                    )
+                terminal_completed, terminal_failed = self._apply_match_to_run(
+                    run,
+                    match,
+                    now,
+                )
+                record.final_match_id = match.match_id
+            record.status = "completed"
+            record.current_tick = battle.tick
+            record.updated_at = now
+            record.completed_at = record.completed_at or now
+            session.flush()
+
+        if terminal_completed or terminal_failed:
+            self.progression_service.grant_career_run(
+                player_id,
+                record.run_id,
+                wins=run.wins,
+                completed=terminal_completed,
+            )
+        return self._battle_session_snapshot(player_id, record, battle, match)
+
+    def _career_reserves(
+        self,
+        player_id: str,
+        board: BoardLayout,
+        *,
+        stage_index: int,
+    ) -> tuple[ReserveModule, ...]:
+        kit = self.collection_service.snapshot(player_id).kits["career"]
+        used = Counter(module.kind for module in board.modules)
+        reserves: list[ReserveModule] = []
+        for slot, kind in enumerate(kit.module_kinds, start=1):
+            if used[kind] > 0:
+                used[kind] -= 1
+                continue
+            reserves.append(
+                ReserveModule(
+                    module_id=(
+                        f"reserve-{stage_index + 1}-{slot}-{kind.value}"
+                    ),
+                    kind=kind,
+                    level=1,
+                )
+            )
+        return tuple(reserves)
+
+    @staticmethod
+    def _board_from_payload(payload: dict[str, object]) -> BoardLayout:
+        return BoardLayout(
+            name=str(payload["name"]),
+            modules=tuple(
+                ModulePlacement(
+                    module_id=str(item["module_id"]),
+                    kind=ModuleKind(str(item["kind"])),
+                    row=int(item["row"]),
+                    column=int(item["column"]),
+                    orientation=Direction(
+                        str(item.get("orientation", Direction.EAST.value))
+                    ),
+                    level=int(item.get("level", 1)),
+                )
+                for item in list(payload["modules"])
+            ),
+        )
+
+    @staticmethod
+    def _modifiers_from_payload(
+        payload: dict[str, object],
+    ) -> BattleModifiers:
+        return BattleModifiers(
+            generator_output_multiplier=float(
+                payload.get("generator_output_multiplier", 1.0)
+            ),
+            initial_shield=float(payload.get("initial_shield", 0.0)),
+            module_hp_bonus=float(payload.get("module_hp_bonus", 0.0)),
+            initial_energy_reserve=float(
+                payload.get("initial_energy_reserve", 0.0)
+            ),
+            reserve_capacity_bonus=float(
+                payload.get("reserve_capacity_bonus", 0.0)
+            ),
+            efficient_module_ids=tuple(
+                str(item)
+                for item in list(payload.get("efficient_module_ids", []))
+            ),
+            focused_amplifier_ids=tuple(
+                str(item)
+                for item in list(
+                    payload.get("focused_amplifier_ids", [])
+                )
+            ),
+        )
+
+    @staticmethod
+    def _apply_match_to_run(
+        record: CareerRunRecord,
+        match: StoredMatch,
+        now: datetime,
+    ) -> tuple[bool, bool]:
+        won = match.result.get("winner") == "left"
+        terminal_completed = False
+        terminal_failed = False
+        record.last_match_id = match.match_id
+        if won:
+            record.wins += 1
+            record.stage_index += 1
+            if record.stage_index >= TOTAL_STAGES:
+                record.status = "completed"
+                record.offered_boosters = []
+                record.ended_at = now
+                terminal_completed = True
+            elif record.stage_index == TOTAL_STAGES - 1:
+                record.status = "awaiting_booster"
+                record.offered_boosters = list(_BOSS_BOOSTER_OFFERS)
+            else:
+                record.status = "awaiting_upgrade"
+                record.offered_boosters = []
+        else:
+            record.status = "failed"
+            record.offered_boosters = []
+            record.ended_at = now
+            terminal_failed = True
+        record.updated_at = now
+        return terminal_completed, terminal_failed
 
     def _active_record(self, session, player_id: str, *, lock: bool):
         query = (

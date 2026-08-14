@@ -2,11 +2,52 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:project_relay_client/src/game/replay_event_formatter.dart';
+import 'package:project_relay_client/src/game/replay_game.dart';
 import 'package:project_relay_client/src/models/relay_models.dart';
 import 'package:project_relay_client/src/widgets/battle_analysis_panel.dart';
 import 'package:project_relay_client/src/widgets/replay_event_feed.dart';
 
 void main() {
+  test('modül değişimi replay kartındaki donanım yerleşimini günceller', () {
+    final match = _match();
+    const swap = BattleEvent(
+      tick: 1,
+      side: 'left',
+      type: 'module_swap',
+      actorId: 'reserve-shield',
+      targetId: 'P-LASER',
+      amount: 35,
+      detail: 'window=60;kind=shield;row=0;column=2;orientation=west',
+    );
+    final replay = ReplayResponse(
+      matchId: match.id,
+      rulesVersion: 'test',
+      checksum: 'swap',
+      events: const [swap],
+      stateFrames: const [],
+    );
+    final game = RelayReplayGame(
+      match: match,
+      replay: replay,
+      moduleSpecs: const {},
+      formatter: ReplayEventFormatter(match),
+      onFrame: (_) {},
+      onEvents: (_) {},
+    );
+
+    game.update(1);
+
+    final replacement = game.debugLeftLayout.modules.singleWhere(
+      (module) => module.id == 'reserve-shield',
+    );
+    expect(replacement.kind, ModuleKind.shield);
+    expect(replacement.cellIndex, 2);
+    expect(
+      game.debugLeftLayout.modules.any((module) => module.id == 'P-LASER'),
+      isFalse,
+    );
+  });
+
   test('teknik modül kimliklerini Türkçe olay metnine dönüştürür', () {
     final formatter = ReplayEventFormatter(_match());
     const event = BattleEvent(
@@ -354,6 +395,22 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('ZAFER'), findsOneWidget);
+    expect(find.text('SAVAŞ ANALİZİ'), findsNothing);
+
+    final scrollbar = tester.widget<Scrollbar>(
+      find.byKey(const ValueKey('battle-center-analysis-scrollbar')),
+    );
+    expect(scrollbar.controller, isNotNull);
+    expect(scrollbar.controller!.hasClients, isTrue);
+
+    final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+    await mouse.addPointer(location: Offset.zero);
+    await mouse.moveTo(
+      tester.getCenter(
+        find.byKey(const ValueKey('battle-center-analysis-scrollbar')),
+      ),
+    );
+    await tester.pump();
     expect(tester.takeException(), isNull);
   });
 }

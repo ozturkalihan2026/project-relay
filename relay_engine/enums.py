@@ -60,6 +60,7 @@ class Side(str, Enum):
 
 
 class EventType(str, Enum):
+    MODULE_SWAP = "module_swap"
     OVERLOAD = "overload"
     ENERGY_STARVED = "energy_starved"
     OVERHEAT = "overheat"

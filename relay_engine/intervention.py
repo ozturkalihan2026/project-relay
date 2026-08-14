@@ -3,6 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Mapping
 
+from .enums import ModuleKind
+
 
 @dataclass(frozen=True, slots=True)
 class InterventionPolicy:
@@ -17,6 +19,65 @@ class InterventionPolicy:
             raise ValueError("Müdahale pencereleri sıralı ve benzersiz olmalıdır.")
         if self.max_swaps <= 0 or self.max_swaps_per_window <= 0:
             raise ValueError("Müdahale hakları pozitif olmalıdır.")
+
+    def window_for_tick(self, tick: int) -> int | None:
+        """Return the rolling intervention window containing ``tick``.
+
+        A window opens at its configured tick and remains available until the
+        next window begins. The final window remains open until the battle
+        ends. This lets the battle keep advancing while the player decides.
+        """
+
+        if tick < self.windows[0]:
+            return None
+        for index, window in enumerate(self.windows[:-1]):
+            if window <= tick < self.windows[index + 1]:
+                return window
+        return self.windows[-1]
+
+
+@dataclass(frozen=True, slots=True)
+class ReserveModule:
+    module_id: str
+    kind: ModuleKind
+    level: int = 1
+
+    def validate(self) -> None:
+        if not self.module_id.strip():
+            raise ValueError("Yedek modül kimliği boş olamaz.")
+        if not 1 <= self.level <= 3:
+            raise ValueError("Yedek modül seviyesi 1 ile 3 arasında olmalıdır.")
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "module_id": self.module_id,
+            "kind": self.kind.value,
+            "level": self.level,
+        }
+
+
+@dataclass(frozen=True, slots=True)
+class InterventionWindowState:
+    tick: int
+    window_tick: int | None
+    active: bool
+    pending: bool
+    swaps_used: int
+    swaps_remaining: int
+    active_module_ids: tuple[str, ...]
+    reserve_module_ids: tuple[str, ...]
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "tick": self.tick,
+            "window_tick": self.window_tick,
+            "active": self.active,
+            "pending": self.pending,
+            "swaps_used": self.swaps_used,
+            "swaps_remaining": self.swaps_remaining,
+            "active_module_ids": list(self.active_module_ids),
+            "reserve_module_ids": list(self.reserve_module_ids),
+        }
 
 
 @dataclass(frozen=True, slots=True)
@@ -36,6 +97,7 @@ class ModuleVitality:
 @dataclass(frozen=True, slots=True)
 class ModuleSwapResult:
     tick: int
+    window_tick: int
     outgoing: ModuleVitality
     incoming: ModuleVitality
     swaps_used: int
@@ -44,6 +106,7 @@ class ModuleSwapResult:
     def to_dict(self) -> dict[str, object]:
         return {
             "tick": self.tick,
+            "window_tick": self.window_tick,
             "outgoing": self.outgoing.to_dict(),
             "incoming": self.incoming.to_dict(),
             "swaps_used": self.swaps_used,
@@ -111,6 +174,20 @@ class ModuleHealthRack:
     def used_windows(self) -> frozenset[int]:
         return frozenset(self._used_windows)
 
+    @property
+    def reserve_ids(self) -> frozenset[str]:
+        return frozenset(set(self._max_hp) - self._active_ids)
+
+    def active_window(self, tick: int) -> int | None:
+        window_tick = self.policy.window_for_tick(tick)
+        if (
+            window_tick is None
+            or window_tick in self._used_windows
+            or self._swaps_used >= self.policy.max_swaps
+        ):
+            return None
+        return window_tick
+
     def update_active_hp(self, module_id: str, hp: float) -> ModuleVitality:
         if module_id not in self._active_ids:
             raise InterventionError(
@@ -137,12 +214,13 @@ class ModuleHealthRack:
         outgoing_id: str,
         incoming_id: str,
     ) -> ModuleSwapResult:
-        if tick not in self.policy.windows:
+        window_tick = self.policy.window_for_tick(tick)
+        if window_tick is None:
             raise InterventionError(
                 "window_closed",
-                "Modül değişimi yalnız 60, 90 ve 120. adımlarda yapılabilir.",
+                "Modül değişimi ilk müdahale penceresi açılmadan yapılamaz.",
             )
-        if tick in self._used_windows:
+        if window_tick in self._used_windows:
             raise InterventionError(
                 "window_already_used",
                 "Bu müdahale penceresinde bir değişim zaten yapıldı.",
@@ -181,10 +259,11 @@ class ModuleHealthRack:
 
         self._active_ids.remove(outgoing_id)
         self._active_ids.add(incoming_id)
-        self._used_windows.add(tick)
+        self._used_windows.add(window_tick)
         self._swaps_used += 1
         return ModuleSwapResult(
             tick=tick,
+            window_tick=window_tick,
             outgoing=ModuleVitality(
                 outgoing_id,
                 outgoing_hp,

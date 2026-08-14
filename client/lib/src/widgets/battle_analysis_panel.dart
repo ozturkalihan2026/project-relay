@@ -221,7 +221,7 @@ class BattleAnalysisPanel extends StatelessWidget {
   }
 }
 
-class BattleCenterAnalysisPanel extends StatelessWidget {
+class BattleCenterAnalysisPanel extends StatefulWidget {
   const BattleCenterAnalysisPanel({
     required this.match,
     required this.replay,
@@ -234,9 +234,27 @@ class BattleCenterAnalysisPanel extends StatelessWidget {
   final List<ModuleSpec> modules;
 
   @override
+  State<BattleCenterAnalysisPanel> createState() =>
+      _BattleCenterAnalysisPanelState();
+}
+
+class _BattleCenterAnalysisPanelState extends State<BattleCenterAnalysisPanel> {
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final analysis = BattleAnalysis.fromMatch(match, replay, modules);
-    final result = match.result;
+    final analysis = BattleAnalysis.fromMatch(
+      widget.match,
+      widget.replay,
+      widget.modules,
+    );
+    final result = widget.match.result;
     final resultLabel = switch (result.winner) {
       'left' => 'ZAFER',
       'right' => 'YENİLGİ',
@@ -247,29 +265,22 @@ class BattleCenterAnalysisPanel extends StatelessWidget {
       'right' => RelayColors.coral,
       _ => RelayColors.amber,
     };
-    final reward = match.progressionReward;
+    final reward = widget.match.progressionReward;
     return Container(
       key: const ValueKey('battle-center-analysis'),
       decoration: RelayDecorations.panel(accent: resultColor),
       clipBehavior: Clip.antiAlias,
       child: Scrollbar(
+        key: const ValueKey('battle-center-analysis-scrollbar'),
+        controller: _scrollController,
         child: SingleChildScrollView(
           key: const ValueKey('battle-center-analysis-scroll'),
+          controller: _scrollController,
+          primary: false,
           padding: const EdgeInsets.all(12),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Text(
-                'SAVAŞ ANALİZİ',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: RelayColors.cyan,
-                  fontSize: 9,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: 1.1,
-                ),
-              ),
-              const SizedBox(height: 3),
               Text(
                 resultLabel,
                 textAlign: TextAlign.center,
@@ -339,7 +350,7 @@ class BattleCenterAnalysisPanel extends StatelessWidget {
               _CenterAnalysisMetric(
                 label: 'AYAKTA KALAN',
                 value:
-                    '${result.left.survivingModules}/${match.playerBoard.modules.length}',
+                    '${result.left.survivingModules}/${widget.match.playerBoard.modules.length}',
                 comparison:
                     'Çekirdek ${result.left.coreHp.toStringAsFixed(0)}/${result.left.coreMaxHp.toStringAsFixed(0)}',
                 color: RelayColors.cyan,
@@ -386,7 +397,7 @@ class BattleCenterAnalysisPanel extends StatelessWidget {
               ),
               const SizedBox(height: 7),
               Text(
-                '${replay.events.length} olay • ${result.ticks} adım',
+                '${widget.replay.events.length} olay • ${result.ticks} adım',
                 textAlign: TextAlign.center,
                 style: const TextStyle(color: RelayColors.muted, fontSize: 8),
               ),

@@ -5,20 +5,22 @@ devam etmek için tutulan kısa ve kalıcı bağlamdır. Tam sohbet dökümü de
 
 ## Depo durumu
 
-- Son güncelleme: 2026-08-14 (Europe/Istanbul)
+- Son güncelleme: 2026-08-15 (Europe/Istanbul)
 - Depo: `https://github.com/ozturkalihan2026/project-relay.git`
 - Aktif dal: `main` (`origin/main` takip ediliyor)
-- Son doğrulanmış commit: `1bc2805` — `a comprehensive visual overhaul of the project`
+- Son doğrulanmış commit: `59f6a93` — `feat: improve battle presentation and add overload mechanics`
 - Senkronizasyon: Belge oluşturulurken yerel `main` ile `origin/main` aynı
   commit'i gösteriyordu.
 
 ## Aktif amaç
 
-Kullanıcının `Öneri Düzenleme.docx` belgesinde onayladığı arayüz, ses ve savaş
-mekaniği iyileştirmelerini aşamalı olarak uygulamak. Görsel paket ile asenkron
-aşırı yük tamamlandı; 60/90/120 müdahale pencerelerinin kural ve can-rafı çekirdeği
-hazır. Sıradaki geliştirme, bu çekirdeği kariyer için kalıcı durdur/sürdür savaş
-oturumuna ve daha sonra canlı WebSocket eşleştirmesine bağlamaktır.
+Kullanıcının onayladığı kesin uygulama sırasını tamamlamak. Hazırlık ve savaş
+kartları ortak geometri/kablo/donanım görsel diline geçirildi; kariyer savaşı
+sunucu-otoriter, kalıcı ve kesintisiz canlı oturum üzerinden çalışıyor.
+60/90/120 pencerelerinde alt raf etkinleşiyor, geçerli ilk sürükleme rafı
+kilitliyor ve değişim savaş durmadan bir sonraki tick sınırında uygulanıyor.
+Sıradaki ana geliştirme aynı komut modelini gerçek zamanlı oyuncu eşleştirmesine
+taşımak ve gerçek tarayıcıda görsel/işitsel kabul yapmaktır.
 
 ## Tamamlananlar
 
@@ -87,13 +89,55 @@ oturumuna ve daha sonra canlı WebSocket eşleştirmesine bağlamaktır.
 - `InterventionPolicy` ve `ModuleHealthRack` çekirdeği eklendi. 60/90/120
   pencereleri, savaşta toplam iki değişim, pencerede en fazla bir değişim, ilk
   yedeğin tam canla girmesi ve raftaki/giren modülün korunmuş canla dönmesi testli.
+- `LiveBattleSession` eklendi. Mevcut `simulate()` aynı sonuç sözleşmesini koruyarak
+  bu tick bazlı oturumu kullanıyor; kesintisiz simülasyon ile adım adım ilerletilen
+  oturum aynı seed için birebir aynı replay sonucunu üretiyor.
+- Müdahale rafı 60–89, 90–119 ve 120–savaş sonu aralıklarında savaş durmadan açık
+  kalıyor. Geçerli sürükleme isteği mevcut aralığı hemen tüketiyor, modül değişimi
+  bir sonraki güvenli tick sınırında uygulanıyor ve `module_swap` replay olayı
+  üretiliyor.
+- Canlı oturum; güncel kartları, state frame'i, kalan hakları, aktif/yedek modül
+  kimliklerini ve bekleyen değişimi taşıyan API'ye hazır bir snapshot üretiyor.
+- Savaş merkez analizindeki `Scrollbar` için kalıcı ve hem `Scrollbar` hem içerik
+  tarafından paylaşılan özel denetleyici eklendi; fare hover sırasında oluşan
+  `ScrollController has no ScrollPosition` hatası regresyon testiyle kapatıldı.
+- Hazırlık ve savaş kartı ölçüleri `CircuitPresentationSpec`, fiziksel kablo yolu,
+  kaplaması, ışığı ve hareketli enerji paketleri `CircuitCableVisual` altında
+  ortaklaştırıldı. Hazırlık kartının gereksiz vida/alt uç süsleri kaldırıldı.
+- Modüller düz simge yerine kasası, iç plakası, bağlantı noktaları ve türe özgü
+  mekanizması bulunan `ModuleHardware` donanımına geçirildi. Canlı değişimde yeni
+  donanım `AnimatedSwitcher` ile bir sonraki tickte kartın üzerine oturuyor.
+- Tekrarda merkezdeki yinelenen “Savaş Analizi” başlığı, tamamlanınca üstte kalan
+  ikinci sonuç etiketi ve alt hız seçici kaldırıldı. Hız ayarlardaki kayıtlı değerle
+  uygulanmaya devam ediyor; ana menü müziği `0.28` seviyesine çıkarıldı.
+- `career_battle_sessions` tablosu ve `20260814_0016` Alembic göçü eklendi.
+  Başlangıç kartları, seed, modifier'lar, yedekler, komut günlüğü, güncel tick ve
+  kesin maç kimliği saklanıyor; servis yeniden başlasa da aynı savaş kuruluyor.
+- Kariyer canlı savaş başlatma/okuma/ilerletme/değişim endpoint'leri ve Flutter
+  istemci modelleri eklendi. Eski tek çağrılı kariyer savaş endpoint'i geriye
+  uyumluluk için korunuyor.
+- `CareerLiveBattleScreen` eklendi. İki devre ve enerji akışları savaş boyunca
+  güncelleniyor; alt raf sürekli görünür, yalnız müdahale hakkı açıkken sürüklenir,
+  tek değişimden sonra kilitlenir ve simülasyon isteği hiçbir modal/pause olmadan
+  sürer. Savaş tamamlanınca kesin replay ekranına geçilir.
+- `module_swap` replay olayı artık tekrar yerleşimini de güncelliyor; yeni modül
+  olaydan önce değil, değişimin uygulandığı tickten itibaren doğru hücre ve yönde
+  çiziliyor.
 
 ## Mevcut kullanıcı çalışması
 
-- `client/pubspec.lock` çalışma öncesinde değiştirilmiş görünüyordu; anlamlı diff
-  göstermeyen bu dosya kullanıcıya ait kabul edilmeli ve korunmalıdır.
-- Mevcut öneri paketi değişiklikleri henüz commit edilmedi. `AGENTS.md` ve bu devir
-  dosyası da henüz takip edilmeyen dosyalardır.
+- Çalışma başında depo temizdi ve `main`, yerel takip bilgisine göre `origin/main`
+  ile aynı `59f6a93` commit'indeydi.
+- Kesin uygulama paketinin motor, API, Alembic, Flutter ve test değişiklikleri
+  henüz commit edilmedi. Değişikliklerin tamamı bu görev kapsamındadır; `.env`
+  izlenmiyor ve hiçbir gizli içerik değişikliklere alınmadı.
+- Yeni temel dosyalar: `relay_engine/intervention.py`,
+  `tests/test_live_battle_session.py`,
+  `alembic/versions/20260814_0016_live_career_battles.py`,
+  `client/lib/src/theme/circuit_presentation.dart`,
+  `client/lib/src/theme/circuit_cable.dart`,
+  `client/lib/src/screens/career_live_battle_screen.dart` ve
+  `client/test/career_live_battle_screen_test.dart`.
 
 ## Alınan kararlar
 
@@ -110,15 +154,17 @@ oturumuna ve daha sonra canlı WebSocket eşleştirmesine bağlamaktır.
 - Bilgisayar değiştirmeden önce test, devir güncellemesi, commit ve push;
   diğer bilgisayarda işe başlamadan önce `git pull --ff-only` yapılır.
 - Yeni savaş modu yönü: mevcut asenkron eşleştirme 90. adımdan sonra kademeli
-  aşırı yük kullanacak. Kariyer ve kurulacak canlı oyuncu eşleştirmesi ise 60.
-  adımdan itibaren toplam iki modül değişimiyle sınırlı müdahale hakkı verecek.
+  aşırı yük kullanacak. Kariyer ve kurulacak canlı oyuncu eşleştirmesi ise savaş
+  durmadan 60. adımdan itibaren toplam iki modül değişimiyle sınırlı müdahale hakkı
+  verecek.
   Rafa alınan modül mevcut canını koruyacak; ilk kez giren yedek tam canla,
   daha önce kullanılmış bir modül ise rafta saklanan canıyla dönecek.
-- Müdahale pencereleri 60, 90 ve 120. adımlarda açılacak. Savaş genelinde toplam
-  iki değişim hakkı var; her pencerede en fazla bir değişim yapılabilir ve
-  kullanılmayan hak sonraki pencereye taşınır. Böylece raftaki bir modül sonraki
-  pencerede korunmuş canıyla geri çağrılabilir. Canlı eşleştirmede seçimler iki
-  oyuncuya aynı anda açılıp gizli kilitlenecek.
+- Müdahale pencereleri 60, 90 ve 120. adımlarda açılacak; savaş ve replay oynatımı
+  durmayacak. Raf 60–89, 90–119 ve 120–savaş sonu aralıklarında, o aralıkta değişim
+  yapılana kadar aktif kalacak. Savaş genelinde toplam iki değişim hakkı var ve her
+  aralıkta en fazla bir değişim yapılabilir. Geçerli seçim rafı anında kilitler,
+  sunucu değişimi sonraki tick sınırında uygular. Kullanılmayan hak sonraki aralığa
+  taşınır; raftaki modül korunmuş canıyla geri çağrılabilir.
 - Kariyer ve canlı savaş sunumu mevcut varsayılandan daha yavaş, sabit ve iki
   oyuncu arasında senkron bir taktik temposuna geçirilecek. Kesin hız katsayısı
   görsel kabul sırasında ayarlanacak; başlangıç adayı `0.65×`.
@@ -126,24 +172,28 @@ oturumuna ve daha sonra canlı WebSocket eşleştirmesine bağlamaktır.
 ## Doğrulama
 
 - `git rev-parse --show-toplevel`: `D:/Projects/project-relay`
-- Python test paketi: Başarılı, 196 test geçti.
+- Python test paketi: Başarılı, 204 test ve 514 alt test geçti.
+- Canlı kariyer API, kalıcı oturum, müdahale aralığı, süreç yeniden başlatma ve
+  göç testleri: Başarılı, hedefli paket 45 test geçti.
 - `flutter analyze`: Başarılı, sorun bulunmadı.
-- `flutter test`: Başarılı, 87 test geçti.
-- Hedefli tekrar/oynatma ve seviye kutlaması testleri: Başarılı, 11 test geçti.
+- `flutter test`: Başarılı, 92 test geçti.
+- Son modül oturtma animasyonu sonrası canlı raf/devre hedefli testleri:
+  Başarılı, 12 test geçti.
+- Hedefli tekrar/oynatma ve dinamik `module_swap` testleri: Başarılı, 11 test
+  geçti.
 - İlk kullanım turu durum testleri: Başarılı, 2 test geçti.
 - `git diff --check`: Başarılı; yalnız çalışma ağacının mevcut LF/CRLF dönüşüm
   uyarıları görüldü.
 
 ## Sıradaki işler
 
-1. Motoru belirli bir adımda durdurup durum görüntüsü üretebilen, doğrulanmış
-   değişim kararından sonra aynı durumdan deterministik devam edebilen oturum
-   modeline dönüştür.
-2. Bu oturumu önce kariyer savaşında 60/90/120 müdahale ekranına bağla; ardından
-   aynı gizli kilit/senkron çözüm protokolünü WebSocket canlı eşleştirmeye uygula.
-3. Paketi gerçek tarayıcı boyutlarında görsel ve işitsel olarak doğrula; özellikle
-   kısa ekran yüksekliği, kariyer çift-devre alanı, merkez analiz, havai fişek,
-   aşırı yük uyarısı ve web ses kilidini kontrol et.
+1. Paketi gerçek tarayıcı boyutlarında görsel ve işitsel olarak doğrula; özellikle
+   kısa ekran yüksekliği, canlı raftan hedefe sürükleme, bir sonraki tickte modül
+   oturması, kariyer sonucu geçişi ve web ses kilidini kontrol et.
+2. Aynı sunucu-otoriter komut modelini WebSocket canlı eşleştirmeye uygula; iki
+   oyuncunun pencerelerini aynı sunucu tick'inde aç ve gecikme telafisini belirle.
+3. Canlı savaşta geçici bağlantı kesintisi için istemci geri alma/jitter politikasını
+   ve aynı komutun iki kez ulaşmasına karşı açık idempotency anahtarını ekle.
 4. Kullanıcı istediğinde mevcut değişiklikleri kontrollü biçimde commit edip
    GitHub'a gönder.
 
@@ -151,9 +201,12 @@ oturumuna ve daha sonra canlı WebSocket eşleştirmesine bağlamaktır.
 
 - Gerçek `.env` dosyası yerelde bulunuyor; içeriği hiçbir belgeye veya commit'e
   alınmamalıdır.
-- Yerel Flutter web sunucusu açıldı ancak bu Codex oturumundaki tarayıcı
-  bağlantısı `C:\Users\SERVER\AppData` okuma izni nedeniyle kurulamadı. Gerçek
+- Yerel Flutter web sunucusu ve API açıldı ancak bu Codex oturumundaki uygulama
+  içi tarayıcı bağlantısı `C:\Users\S-A\AppData` okuma izni nedeniyle kurulamadı. Gerçek
   tarayıcı görsel/işitsel kabulü hâlâ manuel olarak yapılmalıdır.
+- Kariyer canlı oturumu HTTP tick çağrılarıyla ilerliyor; tarayıcı sekmesi arka
+  plana alındığında timer kısıtlaması savaş temposunu yavaşlatabilir. Gerçek zamanlı
+  PvP aşamasında tempo WebSocket üzerinden sunucu saatine bağlanmalıdır.
 
 ## Sonraki oturuma başlangıç istemi
 

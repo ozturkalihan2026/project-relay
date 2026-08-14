@@ -9,7 +9,7 @@ from relay_api.app import create_app
 from relay_api.config import Settings
 from relay_api.database import Database
 from relay_api.service import MatchService
-from relay_engine import compute_replay_checksum
+from relay_engine import BattleConfig, compute_replay_checksum
 
 
 def player_board() -> dict:
@@ -189,6 +189,83 @@ class RelayApiTests(unittest.TestCase):
             refreshed.json()["opponent"]["board"],
             payload["opponent"]["board"],
         )
+
+    def test_live_career_battle_api_advances_without_pausing_for_swap(
+        self,
+    ) -> None:
+        self.client.app.state.match_service.engine.config = BattleConfig(
+            core_hp=10_000,
+            live_max_ticks=130,
+        )
+        guest = self.client.post("/api/v1/auth/guest").json()
+        headers = {
+            "Authorization": f"Bearer {guest['tokens']['access_token']}"
+        }
+        saved = self.client.put(
+            "/api/v1/me/career-board",
+            headers=headers,
+            json=player_board(),
+        )
+        self.assertEqual(saved.status_code, 200, saved.text)
+        started_run = self.client.post(
+            "/api/v1/me/career-run/start",
+            headers=headers,
+        )
+        self.assertEqual(started_run.status_code, 200, started_run.text)
+
+        started = self.client.post(
+            "/api/v1/me/career-run/battle-session",
+            headers=headers,
+        )
+        self.assertEqual(started.status_code, 200, started.text)
+        payload = started.json()
+        self.assertEqual(payload["tick"], 0)
+        self.assertFalse(payload["intervention"]["active"])
+        self.assertIsNone(payload["match"])
+
+        for expected_tick in (12, 24, 36, 48, 60):
+            advanced = self.client.post(
+                "/api/v1/me/career-run/battle-session/advance",
+                headers=headers,
+                json={"ticks": 12},
+            )
+            self.assertEqual(advanced.status_code, 200, advanced.text)
+            payload = advanced.json()
+            self.assertEqual(payload["tick"], expected_tick)
+        self.assertTrue(payload["intervention"]["active"])
+        reserve = next(
+            item for item in payload["reserves"] if item["kind"] == "shield"
+        )
+
+        swapped = self.client.post(
+            "/api/v1/me/career-run/battle-session/swap",
+            headers=headers,
+            json={
+                "outgoing_id": "P-LASER",
+                "incoming_id": reserve["module_id"],
+            },
+        )
+        self.assertEqual(swapped.status_code, 200, swapped.text)
+        self.assertTrue(swapped.json()["intervention"]["pending"])
+
+        applied = self.client.post(
+            "/api/v1/me/career-run/battle-session/advance",
+            headers=headers,
+            json={"ticks": 1},
+        )
+        self.assertEqual(applied.status_code, 200, applied.text)
+        self.assertEqual(applied.json()["tick"], 61)
+        self.assertIn(
+            "module_swap",
+            {event["type"] for event in applied.json()["events"]},
+        )
+
+        resumed = self.client.get(
+            "/api/v1/me/career-run/battle-session",
+            headers=headers,
+        )
+        self.assertEqual(resumed.status_code, 200, resumed.text)
+        self.assertEqual(resumed.json()["tick"], 61)
 
 
     def test_collection_api_exposes_starters_and_saves_controlled_kit(self) -> None:

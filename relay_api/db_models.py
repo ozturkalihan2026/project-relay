@@ -514,6 +514,73 @@ class CareerRunRecord(Base):
     )
 
 
+class CareerBattleSessionRecord(Base):
+    __tablename__ = "career_battle_sessions"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True)
+    run_id: Mapped[str] = mapped_column(
+        ForeignKey("career_runs.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    player_id: Mapped[str] = mapped_column(
+        ForeignKey("players.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    stage_index: Mapped[int] = mapped_column(Integer, nullable=False)
+    status: Mapped[str] = mapped_column(String(16), nullable=False)
+    seed: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    player_board: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    opponent_board: Mapped[dict[str, Any]] = mapped_column(JSON, nullable=False)
+    player_modifiers: Mapped[dict[str, Any]] = mapped_column(
+        JSON,
+        nullable=False,
+    )
+    opponent_modifiers: Mapped[dict[str, Any]] = mapped_column(
+        JSON,
+        nullable=False,
+    )
+    player_reserves: Mapped[list[dict[str, Any]]] = mapped_column(
+        JSON,
+        nullable=False,
+        default=list,
+    )
+    commands: Mapped[list[dict[str, Any]]] = mapped_column(
+        JSON,
+        nullable=False,
+        default=list,
+    )
+    current_tick: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    final_match_id: Mapped[str | None] = mapped_column(
+        ForeignKey("matches.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+    )
+    completed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+    )
+
+    __table_args__ = (
+        UniqueConstraint(
+            "run_id",
+            "stage_index",
+            name="uq_career_battle_sessions_run_stage",
+        ),
+        Index(
+            "ix_career_battle_sessions_player_status",
+            "player_id",
+            "status",
+        ),
+    )
+
+
 class PlayerCosmeticRecord(Base):
     __tablename__ = "player_cosmetics"
 

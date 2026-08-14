@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:project_relay_client/src/game/replay_game.dart';
 import 'package:project_relay_client/src/models/relay_models.dart';
+import 'package:project_relay_client/src/theme/circuit_cable.dart';
 import 'package:project_relay_client/src/widgets/circuit_board.dart';
 import 'package:project_relay_client/src/widgets/module_visuals.dart';
 
@@ -40,6 +41,20 @@ void main() {
       109.5,
       53,
     );
+  });
+
+  test('ortak kablo yolu iki portu kıvrımlı ve kesintisiz birleştirir', () {
+    const from = Offset(20, 40);
+    const to = Offset(120, 40);
+    final path = CircuitCableVisual.path(from, to);
+    final metrics = path.computeMetrics().toList(growable: false);
+
+    expect(metrics, hasLength(1));
+    final metric = metrics.single;
+    expect(metric.length, greaterThan((to - from).distance));
+    _expectOffset(metric.getTangentForOffset(0)!.position, from.dx, from.dy);
+    final end = metric.getTangentForOffset(metric.length - 0.001)!.position;
+    _expectOffset(end, to.dx, to.dy);
   });
 
   test('çekirdek kapısı çizgisi hücre merkezi yerine iki porta gider', () {
@@ -245,7 +260,7 @@ void main() {
         find.byKey(const ValueKey('module-glyph-gate-generator')),
         findsOneWidget,
       );
-      expect(find.byType(ModuleGlyph), findsOneWidget);
+      expect(find.byType(ModuleHardware), findsOneWidget);
       expect(
         find.byKey(const ValueKey('module-name-gate-generator')),
         findsNothing,
@@ -255,6 +270,71 @@ void main() {
         findsNothing,
       );
       expect(find.text('ÇEKİRDEK KAPISI'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    '3B hazırlık kartı yükseltilmiş modülleri fiziksel yüzeyde kırpar',
+    (tester) async {
+      const battery = ModulePlacement(
+        id: 'bottom-battery',
+        kind: ModuleKind.battery,
+        row: 3,
+        column: 3,
+      );
+      const spec = ModuleSpec(
+        kind: ModuleKind.battery,
+        displayName: 'Batarya',
+        description: 'Enerji depolar.',
+        maxHp: 38,
+        ports: {
+          RelayDirection.north,
+          RelayDirection.east,
+          RelayDirection.south,
+          RelayDirection.west,
+        },
+        energyOutput: 0,
+        batteryCapacity: 20,
+        energyCost: 0,
+        cooldownTicks: 0,
+        heatPerAction: 0,
+        damage: 0,
+        shield: 0,
+        cooling: 0,
+        repair: 0,
+        threat: 55,
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: Center(
+              child: SizedBox.square(
+                dimension: 460,
+                child: CircuitBoard(
+                  placements: const {15: battery},
+                  specs: const {ModuleKind.battery: spec},
+                  poweredIds: const {'bottom-battery'},
+                  validationVisible: true,
+                  selectedCell: 15,
+                  onCellTap: (_) {},
+                  onModuleDropped: (_, _) {},
+                  onRotateModule: (_) {},
+                  presentation3d: true,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 300));
+
+      final faceClip = tester.widget<ClipRRect>(
+        find.byKey(const ValueKey('circuit-board-face-clip')),
+      );
+      expect(faceClip.clipBehavior, Clip.antiAlias);
+      expect(find.byType(ModuleChassis), findsOneWidget);
       expect(tester.takeException(), isNull);
     },
   );

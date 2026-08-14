@@ -574,7 +574,7 @@ class _KitEditor extends StatelessWidget {
                           initialValue: slots[index],
                           decoration: InputDecoration(
                             labelText: 'Yuva ${index + 1}',
-                            prefixIcon: ModuleGlyph(
+                            prefixIcon: ModuleHardware(
                               kind: slots[index],
                               color: moduleColor(slots[index]),
                               size: 22,

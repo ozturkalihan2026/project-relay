@@ -19,7 +19,7 @@ import '../widgets/module_palette.dart';
 import '../widgets/module_visuals.dart';
 import '../widgets/relay_notice.dart';
 import '../widgets/relay_dialog.dart';
-import 'career_battle_screen.dart';
+import 'career_live_battle_screen.dart';
 import 'collection_screen.dart';
 
 class CareerScreen extends ConsumerStatefulWidget {
@@ -416,20 +416,14 @@ class _CareerScreenState extends ConsumerState<CareerScreen> {
     try {
       final api = ref.read(relayApiProvider);
       await _validateAndSaveCareerBoard();
-      final outcome = await api.battleCareerRun();
-      final replay = await api.fetchReplay(outcome.match.id);
-      if (replay.checksum != outcome.match.replayChecksum) {
-        throw const RelayApiException(
-          'Kariyer replay özeti maç sonucuyla uyuşmuyor.',
-        );
-      }
+      final session = await api.startCareerBattleSession();
       if (mounted) {
         await Navigator.of(context).push(
           MaterialPageRoute<void>(
-            builder: (context) => CareerBattleScreen(
-              outcome: outcome,
-              replay: replay,
+            builder: (context) => CareerLiveBattleScreen(
+              initialSession: session,
               modules: modules,
+              visuals: _visuals,
               stageNumber: stageNumber,
             ),
           ),
@@ -952,7 +946,7 @@ class _CareerModuleInspector extends StatelessWidget {
           children: [
             Row(
               children: [
-                ModuleGlyph(kind: module.kind, color: color, size: 36),
+                ModuleHardware(kind: module.kind, color: color, size: 36),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
@@ -1187,7 +1181,7 @@ class _CareerRunCard extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    ModuleGlyph(
+                    ModuleHardware(
                       kind: entry.value.first.kind,
                       color: moduleColor(entry.value.first.kind),
                       size: 26,

@@ -19,6 +19,7 @@ from relay_api.progression import ProgressionService
 from relay_api.service import MatchService
 from relay_api.store import DatabaseMatchStore, OpponentSnapshot, StoredMatch
 from relay_engine import BoardLayout, Direction, ModuleKind, ModulePlacement
+from relay_engine import BattleConfig, CircuitBattleEngine
 
 
 def _board() -> BoardLayout:
@@ -186,6 +187,109 @@ class CareerRunServiceTests(unittest.TestCase):
         self.assertEqual(result.run.stage_index, 1)
         self.assertEqual(result.run.offered_boosters, ())
         self.assertTrue(result.run.can_choose_upgrade)
+
+    def test_live_battle_session_survives_service_restart_and_records_swap(
+        self,
+    ) -> None:
+        matches = MatchService(
+            engine=CircuitBattleEngine(
+                BattleConfig(core_hp=10_000, live_max_ticks=130)
+            ),
+            store=DatabaseMatchStore(self.database),
+            seed_source=lambda: 919,
+            id_source=lambda: "unused-live-match-id",
+            clock=lambda: self.now,
+        )
+        online = OnlinePlayService(
+            self.database,
+            matches,
+            self.settings,
+            clock=lambda: self.now,
+            id_source=lambda: "career-board-live",
+        )
+        progression = ProgressionService(
+            self.database,
+            clock=lambda: self.now,
+            id_source=(
+                lambda counter=itertools.count(1):
+                f"live-grant-{next(counter)}"
+            ),
+        )
+        ids = iter(("live-board", "live-run", "live-session"))
+        career = CareerRunService(
+            self.database,
+            matches,
+            online,
+            progression,
+            clock=lambda: self.now,
+            id_source=lambda: next(ids),
+        )
+        career.save_board("player-a", _board())
+        career.start("player-a")
+
+        opened = career.start_battle_session("player-a")
+        self.assertEqual(opened.tick, 0)
+        self.assertFalse(opened.intervention.active)
+        self.assertGreaterEqual(len(opened.reserves), 2)
+
+        opened = career.advance_battle_session("player-a", ticks=12)
+        for _ in range(4):
+            opened = career.advance_battle_session("player-a", ticks=12)
+        self.assertEqual(opened.tick, 60)
+        self.assertTrue(opened.intervention.active)
+        shield = next(
+            item for item in opened.reserves
+            if item.kind is ModuleKind.SHIELD
+        )
+        pending = career.swap_battle_module(
+            "player-a",
+            outgoing_id="P-LASER",
+            incoming_id=shield.module_id,
+        )
+        self.assertTrue(pending.intervention.pending)
+        self.assertFalse(pending.intervention.active)
+
+        resumed_service = CareerRunService(
+            self.database,
+            matches,
+            online,
+            progression,
+            clock=lambda: self.now,
+            id_source=lambda: "unused-resume-id",
+        )
+        resumed = resumed_service.current_battle_session("player-a")
+        self.assertEqual(resumed.tick, 60)
+        self.assertTrue(resumed.intervention.pending)
+
+        applied = resumed_service.advance_battle_session(
+            "player-a",
+            ticks=1,
+        )
+        self.assertEqual(applied.tick, 61)
+        self.assertIn(
+            shield.module_id,
+            {item.module_id for item in applied.player_board.modules},
+        )
+        self.assertTrue(
+            any(event.event_type.value == "module_swap" for event in applied.events)
+        )
+
+        completed = applied
+        while not completed.complete:
+            completed = resumed_service.advance_battle_session(
+                "player-a",
+                ticks=12,
+            )
+        self.assertEqual(completed.status, "completed")
+        self.assertIsNotNone(completed.match)
+        self.assertEqual(completed.run.last_match_id, completed.match.match_id)
+        replay_types = {
+            event["type"] for event in completed.match.result["events"]
+        }
+        self.assertIn("module_swap", replay_types)
+
+        reread = resumed_service.current_battle_session("player-a")
+        self.assertEqual(reread.match.match_id, completed.match.match_id)
 
     def test_upgrade_offers_are_effective_and_use_separate_storage(self) -> None:
         career, _, _, matches = self._service(["left", "left"])

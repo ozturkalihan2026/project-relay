@@ -385,6 +385,17 @@ class GameManualScreen extends StatelessWidget {
                       ),
                       _ManualParagraph(
                         text:
+                            'Kariyer savaşında alt müdahale rafı her zaman '
+                            'görünür; savaş 60, 90 ve 120. sinyal '
+                            'pencerelerinden birine ulaştığında etkinleşir. '
+                            'Yedek modülü devredeki bir modülün üzerine '
+                            'sürükleyin. Geçerli ilk seçim o pencereyi kilitler '
+                            've değişim savaş durmadan bir sonraki sinyalde '
+                            'uygulanır. Bir savaşta toplam iki değişim hakkı '
+                            'vardır; kullanılmayan hak sonraki pencereye taşınır.',
+                      ),
+                      _ManualParagraph(
+                        text:
                             'Kariyer savaşları kendine ait savaş ekranında '
                             'oynanır. Savaş sonucu kesinleşince Yeni Oyun yerine '
                             'Sonraki Savaş düğmesi görünür. Bu düğme yeni savaşı '
@@ -1119,7 +1130,7 @@ class _ModuleGuideCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                ModuleGlyph(kind: guide.kind, color: color, size: 26),
+                ModuleHardware(kind: guide.kind, color: color, size: 26),
                 const SizedBox(width: 9),
                 Expanded(
                   child: Column(

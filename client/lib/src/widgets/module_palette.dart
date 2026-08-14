@@ -493,7 +493,7 @@ class _PaletteTile extends StatelessWidget {
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              ModuleGlyph(
+                              ModuleHardware(
                                 kind: module.kind,
                                 color: color,
                                 size: dense
@@ -627,7 +627,11 @@ class _CompactPaletteTile extends StatelessWidget {
                     child: Stack(
                       alignment: Alignment.center,
                       children: [
-                        ModuleGlyph(kind: module.kind, color: color, size: 31),
+                        ModuleHardware(
+                          kind: module.kind,
+                          color: color,
+                          size: 40,
+                        ),
                         Positioned(
                           right: 5,
                           top: 4,
@@ -724,7 +728,7 @@ class _DragFeedback extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  ModuleGlyph(kind: module.kind, color: color, size: 27),
+                  ModuleHardware(kind: module.kind, color: color, size: 36),
                   const SizedBox(height: 4),
                   Text(
                     module.displayName,

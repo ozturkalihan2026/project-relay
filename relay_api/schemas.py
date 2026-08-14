@@ -575,6 +575,52 @@ class CareerBattleResponse(ApiModel):
     run: CareerRunResponse
 
 
+class CareerReserveModuleResponse(ApiModel):
+    module_id: str
+    kind: ModuleKind
+    level: int
+
+
+class CareerInterventionStateResponse(ApiModel):
+    tick: int
+    window_tick: int | None
+    active: bool
+    pending: bool
+    swaps_used: int
+    swaps_remaining: int
+    active_module_ids: list[str]
+    reserve_module_ids: list[str]
+
+
+class CareerBattleSessionResponse(ApiModel):
+    session_id: str
+    run_id: str
+    stage_index: int
+    total_stages: int
+    status: str
+    tick: int
+    complete: bool
+    player_board: BoardPayload
+    opponent_board: BoardPayload
+    frame: ReplayStateFrameResponse
+    intervention: CareerInterventionStateResponse
+    reserves: list[CareerReserveModuleResponse]
+    events: list[BattleEventResponse]
+    opponent: CareerOpponentPreviewResponse
+    run: CareerRunResponse
+    match: MatchResponse | None
+
+
+class CareerBattleAdvanceRequest(ApiModel):
+    ticks: int = Field(default=1, ge=1, le=12)
+
+
+class CareerBattleSwapRequest(ApiModel):
+    outgoing_id: str = Field(min_length=1, max_length=80)
+    incoming_id: str = Field(min_length=1, max_length=80)
+    orientation: Direction | None = None
+
+
 class ControlledKitResponse(ApiModel):
     name: str
     module_kinds: list[ModuleKind]

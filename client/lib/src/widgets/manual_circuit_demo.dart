@@ -226,7 +226,7 @@ class _DemoNode extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          ModuleGlyph(kind: kind, color: color, size: 26),
+          ModuleHardware(kind: kind, color: color, size: 26),
           const SizedBox(height: 6),
           Text(
             title,

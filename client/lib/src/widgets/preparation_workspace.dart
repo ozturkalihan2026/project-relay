@@ -257,7 +257,7 @@ class SelectedModuleInspector extends StatelessWidget {
                   ),
                   child: Padding(
                     padding: const EdgeInsets.all(10),
-                    child: ModuleGlyph(
+                    child: ModuleHardware(
                       kind: module.kind,
                       color: color,
                       size: 28,

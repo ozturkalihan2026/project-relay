@@ -5,6 +5,14 @@ from dataclasses import dataclass, replace
 
 from .catalog import get_spec, world_ports
 from .enums import Direction, EventType, ModuleKind, Side
+from .intervention import (
+    InterventionError,
+    InterventionPolicy,
+    InterventionWindowState,
+    ModuleHealthRack,
+    ModuleSwapResult,
+    ReserveModule,
+)
 from .models import (
     BattleConfig,
     BattleModifiers,
@@ -68,6 +76,40 @@ class _Intent:
     target_core: bool = False
 
 
+@dataclass(frozen=True, slots=True)
+class LiveBattleSessionSnapshot:
+    tick: int
+    complete: bool
+    left_layout: BoardLayout
+    right_layout: BoardLayout
+    frame: ReplayStateFrame
+    left_intervention: InterventionWindowState
+    right_intervention: InterventionWindowState
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "tick": self.tick,
+            "complete": self.complete,
+            "left_layout": self.left_layout.to_dict(),
+            "right_layout": self.right_layout.to_dict(),
+            "frame": self.frame.to_dict(),
+            "left_intervention": self.left_intervention.to_dict(),
+            "right_intervention": self.right_intervention.to_dict(),
+        }
+
+
+@dataclass(frozen=True, slots=True)
+class _PendingModuleSwap:
+    side: Side
+    apply_tick: int
+    window_tick: int
+    outgoing_id: str
+    incoming: ReserveModule
+    placement: ModulePlacement
+    incoming_hp: float
+    incoming_max_hp: float
+
+
 class CircuitBattleEngine:
     """Server-authoritative deterministic circuit combat simulation."""
 
@@ -84,71 +126,47 @@ class CircuitBattleEngine:
         right_modifiers: BattleModifiers | None = None,
         overload: bool = False,
     ) -> BattleResult:
-        left_layout.validate(self.config.board_size)
-        right_layout.validate(self.config.board_size)
-
-        states = {
-            Side.LEFT: self._create_state(
-                left_layout, left_modifiers or BattleModifiers()
-            ),
-            Side.RIGHT: self._create_state(
-                right_layout, right_modifiers or BattleModifiers()
-            ),
-        }
-        events: list[BattleEvent] = []
-        state_frames = [self._snapshot_frame(0, states)]
-        winner: Side | None = None
-        reason = "draw"
-        final_tick = 0
-
-        max_ticks = self.config.async_max_ticks if overload else self.config.max_ticks
-        for tick in range(1, max_ticks + 1):
-            final_tick = tick
-            left_intents = self._plan_tick(
-                tick, Side.LEFT, states[Side.LEFT], states[Side.RIGHT], seed, events
-            )
-            right_intents = self._plan_tick(
-                tick, Side.RIGHT, states[Side.RIGHT], states[Side.LEFT], seed, events
-            )
-
-            intents = left_intents + right_intents
-            if overload:
-                intents = self._apply_overload(tick, intents, events)
-            self._apply_support_intents(intents, states, events)
-            self._apply_attack_intents(intents, states, events)
-            state_frames.append(self._snapshot_frame(tick, states))
-
-            left_dead = states[Side.LEFT].core_hp <= 0
-            right_dead = states[Side.RIGHT].core_hp <= 0
-            if left_dead or right_dead:
-                if left_dead and right_dead:
-                    winner = None
-                    reason = "mutual_core_destruction"
-                elif right_dead:
-                    winner = Side.LEFT
-                    reason = "core_destroyed"
-                else:
-                    winner = Side.RIGHT
-                    reason = "core_destroyed"
-                break
-        else:
-            winner, reason = self._resolve_timeout(states)
-
-        left_summary = self._summarize(states[Side.LEFT])
-        right_summary = self._summarize(states[Side.RIGHT])
-        decision = self._build_decision(states, reason)
-        checksum = compute_replay_checksum(events)
-        return BattleResult(
-            winner=winner,
-            reason=reason,
-            ticks=final_tick,
+        session = self.start_live_session(
+            left_layout,
+            right_layout,
             seed=seed,
-            left=left_summary,
-            right=right_summary,
-            decision=decision,
-            events=tuple(events),
-            state_frames=tuple(state_frames),
-            replay_checksum=checksum,
+            left_modifiers=left_modifiers,
+            right_modifiers=right_modifiers,
+            overload=overload,
+            max_ticks=(
+                self.config.async_max_ticks if overload else self.config.max_ticks
+            ),
+        )
+        return session.run_to_completion()
+
+    def start_live_session(
+        self,
+        left_layout: BoardLayout,
+        right_layout: BoardLayout,
+        *,
+        seed: int = 1,
+        left_modifiers: BattleModifiers | None = None,
+        right_modifiers: BattleModifiers | None = None,
+        left_reserves: tuple[ReserveModule, ...] = (),
+        right_reserves: tuple[ReserveModule, ...] = (),
+        intervention_policy: InterventionPolicy | None = None,
+        overload: bool = False,
+        max_ticks: int | None = None,
+    ) -> LiveBattleSession:
+        return LiveBattleSession(
+            engine=self,
+            left_layout=left_layout,
+            right_layout=right_layout,
+            seed=seed,
+            left_modifiers=left_modifiers or BattleModifiers(),
+            right_modifiers=right_modifiers or BattleModifiers(),
+            left_reserves=left_reserves,
+            right_reserves=right_reserves,
+            intervention_policy=intervention_policy or InterventionPolicy(),
+            overload=overload,
+            max_ticks=(
+                self.config.live_max_ticks if max_ticks is None else max_ticks
+            ),
         )
 
     def _apply_overload(
@@ -938,3 +956,367 @@ class CircuitBattleEngine:
             energy_spent=board.energy_spent,
             modules=modules,
         )
+
+
+class LiveBattleSession:
+    """Incremental server-authoritative battle that never pauses for input.
+
+    The caller advances the session one or more ticks at a time. Intervention
+    windows roll forward while combat continues. A validated swap immediately
+    consumes the current window and is applied at the next tick boundary.
+    """
+
+    def __init__(
+        self,
+        *,
+        engine: CircuitBattleEngine,
+        left_layout: BoardLayout,
+        right_layout: BoardLayout,
+        seed: int,
+        left_modifiers: BattleModifiers,
+        right_modifiers: BattleModifiers,
+        left_reserves: tuple[ReserveModule, ...],
+        right_reserves: tuple[ReserveModule, ...],
+        intervention_policy: InterventionPolicy,
+        overload: bool,
+        max_ticks: int,
+    ) -> None:
+        left_layout.validate(engine.config.board_size)
+        right_layout.validate(engine.config.board_size)
+        intervention_policy.validate()
+        if max_ticks <= 0:
+            raise ValueError("Canlı savaş adım sınırı pozitif olmalıdır.")
+
+        self.engine = engine
+        self.seed = seed
+        self.overload = overload
+        self.max_ticks = max_ticks
+        self.intervention_policy = intervention_policy
+        self._modifiers = {
+            Side.LEFT: left_modifiers,
+            Side.RIGHT: right_modifiers,
+        }
+        self._states = {
+            Side.LEFT: engine._create_state(left_layout, left_modifiers),
+            Side.RIGHT: engine._create_state(right_layout, right_modifiers),
+        }
+        self._events: list[BattleEvent] = []
+        self._state_frames = [engine._snapshot_frame(0, self._states)]
+        self._tick = 0
+        self._winner: Side | None = None
+        self._reason = "draw"
+        self._complete = False
+        self._pending_swaps: dict[Side, _PendingModuleSwap] = {}
+        self._reserve_modules: dict[Side, dict[str, ReserveModule]] = {}
+        self._racks: dict[Side, ModuleHealthRack] = {}
+
+        for side, reserves in (
+            (Side.LEFT, left_reserves),
+            (Side.RIGHT, right_reserves),
+        ):
+            state = self._states[side]
+            reserve_map: dict[str, ReserveModule] = {}
+            for reserve in reserves:
+                reserve.validate()
+                if reserve.module_id in reserve_map:
+                    raise ValueError(
+                        f"Tekrarlanan yedek modül kimliği: {reserve.module_id}"
+                    )
+                reserve_map[reserve.module_id] = reserve
+            active = {
+                module.placement.module_id: (module.hp, module.max_hp)
+                for module in state.modules.values()
+            }
+            overlap = set(active).intersection(reserve_map)
+            if overlap:
+                raise ValueError(
+                    f"Modül hem aktif hem rafta olamaz: {sorted(overlap)}"
+                )
+            reserve_hp = {
+                module_id: self._reserve_max_hp(side, reserve)
+                for module_id, reserve in reserve_map.items()
+            }
+            self._reserve_modules[side] = reserve_map
+            self._racks[side] = ModuleHealthRack(
+                active=active,
+                reserves=reserve_hp,
+                policy=intervention_policy,
+            )
+
+    @property
+    def tick(self) -> int:
+        return self._tick
+
+    @property
+    def complete(self) -> bool:
+        return self._complete
+
+    @property
+    def events(self) -> tuple[BattleEvent, ...]:
+        return tuple(self._events)
+
+    @property
+    def state_frames(self) -> tuple[ReplayStateFrame, ...]:
+        return tuple(self._state_frames)
+
+    def layout(self, side: Side) -> BoardLayout:
+        return self._states[side].layout
+
+    def intervention_state(self, side: Side) -> InterventionWindowState:
+        rack = self._racks[side]
+        window_tick = self.intervention_policy.window_for_tick(self._tick)
+        pending = side in self._pending_swaps
+        active = (
+            not self._complete
+            and not pending
+            and bool(rack.reserve_ids)
+            and rack.active_window(self._tick) is not None
+        )
+        return InterventionWindowState(
+            tick=self._tick,
+            window_tick=window_tick,
+            active=active,
+            pending=pending,
+            swaps_used=rack.swaps_used,
+            swaps_remaining=rack.swaps_remaining,
+            active_module_ids=tuple(sorted(rack.active_ids)),
+            reserve_module_ids=tuple(sorted(rack.reserve_ids)),
+        )
+
+    def snapshot(self) -> LiveBattleSessionSnapshot:
+        return LiveBattleSessionSnapshot(
+            tick=self._tick,
+            complete=self._complete,
+            left_layout=self.layout(Side.LEFT),
+            right_layout=self.layout(Side.RIGHT),
+            frame=self._state_frames[-1],
+            left_intervention=self.intervention_state(Side.LEFT),
+            right_intervention=self.intervention_state(Side.RIGHT),
+        )
+
+    def queue_swap(
+        self,
+        *,
+        side: Side,
+        outgoing_id: str,
+        incoming_id: str,
+        orientation: Direction | None = None,
+    ) -> ModuleSwapResult:
+        if self._complete:
+            raise InterventionError(
+                "battle_complete",
+                "Tamamlanmış savaşta modül değiştirilemez.",
+            )
+        if side in self._pending_swaps:
+            raise InterventionError(
+                "swap_pending",
+                "Önceki modül değişimi bir sonraki adımda uygulanmayı bekliyor.",
+            )
+
+        state = self._states[side]
+        outgoing_position = next(
+            (
+                position
+                for position, module in state.modules.items()
+                if module.placement.module_id == outgoing_id
+            ),
+            None,
+        )
+        if outgoing_position is None:
+            raise InterventionError(
+                "outgoing_not_active",
+                "Çıkarılacak modül aktif devrede bulunmuyor.",
+            )
+        incoming = self._reserve_modules[side].get(incoming_id)
+        if incoming is None:
+            raise InterventionError(
+                "incoming_not_available",
+                "Girecek modül müdahale rafında bulunmuyor.",
+            )
+
+        outgoing_state = state.modules[outgoing_position]
+        outgoing = outgoing_state.placement
+        placement = ModulePlacement(
+            module_id=incoming.module_id,
+            kind=incoming.kind,
+            row=outgoing.row,
+            column=outgoing.column,
+            orientation=orientation or outgoing.orientation,
+            level=incoming.level,
+        )
+        candidate_layout = BoardLayout(
+            name=state.layout.name,
+            modules=tuple(
+                placement if module.module_id == outgoing_id else module
+                for module in state.layout.modules
+            ),
+        )
+        try:
+            candidate_layout.validate(self.engine.config.board_size)
+        except ValueError as error:
+            raise InterventionError("invalid_swap_layout", str(error)) from error
+
+        rack = self._racks[side]
+        rack.update_active_hp(outgoing_id, outgoing_state.hp)
+        swap = rack.swap(
+            tick=self._tick,
+            outgoing_id=outgoing_id,
+            incoming_id=incoming_id,
+        )
+        self._pending_swaps[side] = _PendingModuleSwap(
+            side=side,
+            apply_tick=self._tick + 1,
+            window_tick=swap.window_tick,
+            outgoing_id=outgoing_id,
+            incoming=incoming,
+            placement=placement,
+            incoming_hp=swap.incoming.hp,
+            incoming_max_hp=swap.incoming.max_hp,
+        )
+        return swap
+
+    def advance(self) -> LiveBattleSessionSnapshot:
+        if self._complete:
+            return self.snapshot()
+
+        tick = self._tick + 1
+        for side in (Side.LEFT, Side.RIGHT):
+            pending = self._pending_swaps.get(side)
+            if pending is not None and pending.apply_tick == tick:
+                self._apply_pending_swap(pending)
+
+        left_intents = self.engine._plan_tick(
+            tick,
+            Side.LEFT,
+            self._states[Side.LEFT],
+            self._states[Side.RIGHT],
+            self.seed,
+            self._events,
+        )
+        right_intents = self.engine._plan_tick(
+            tick,
+            Side.RIGHT,
+            self._states[Side.RIGHT],
+            self._states[Side.LEFT],
+            self.seed,
+            self._events,
+        )
+        intents = left_intents + right_intents
+        if self.overload:
+            intents = self.engine._apply_overload(tick, intents, self._events)
+        self.engine._apply_support_intents(intents, self._states, self._events)
+        self.engine._apply_attack_intents(intents, self._states, self._events)
+
+        self._tick = tick
+        self._state_frames.append(
+            self.engine._snapshot_frame(tick, self._states)
+        )
+        self._resolve_completion()
+        return self.snapshot()
+
+    def advance_to(self, tick: int) -> LiveBattleSessionSnapshot:
+        if tick < self._tick:
+            raise ValueError("Canlı savaş oturumu geriye sarılamaz.")
+        while not self._complete and self._tick < min(tick, self.max_ticks):
+            self.advance()
+        return self.snapshot()
+
+    def run_to_completion(self) -> BattleResult:
+        while not self._complete:
+            self.advance()
+        return self.result()
+
+    def result(self) -> BattleResult:
+        if not self._complete:
+            raise InterventionError(
+                "battle_in_progress",
+                "Savaş sonucu oturum tamamlanmadan üretilemez.",
+            )
+        left_summary = self.engine._summarize(self._states[Side.LEFT])
+        right_summary = self.engine._summarize(self._states[Side.RIGHT])
+        decision = self.engine._build_decision(self._states, self._reason)
+        return BattleResult(
+            winner=self._winner,
+            reason=self._reason,
+            ticks=self._tick,
+            seed=self.seed,
+            left=left_summary,
+            right=right_summary,
+            decision=decision,
+            events=tuple(self._events),
+            state_frames=tuple(self._state_frames),
+            replay_checksum=compute_replay_checksum(self._events),
+        )
+
+    def _reserve_max_hp(self, side: Side, reserve: ReserveModule) -> float:
+        hp_bonus = (
+            self._modifiers[side].module_hp_bonus
+            if reserve.kind is not ModuleKind.GENERATOR
+            else 0.0
+        )
+        return scaled_value(get_spec(reserve.kind).max_hp, reserve.level) + hp_bonus
+
+    def _apply_pending_swap(self, pending: _PendingModuleSwap) -> None:
+        state = self._states[pending.side]
+        outgoing_position = next(
+            position
+            for position, module in state.modules.items()
+            if module.placement.module_id == pending.outgoing_id
+        )
+        outgoing = state.modules[outgoing_position].placement
+        state.modules[outgoing_position] = _ModuleState(
+            placement=pending.placement,
+            hp=pending.incoming_hp,
+            max_hp=pending.incoming_max_hp,
+        )
+        state.layout = BoardLayout(
+            name=state.layout.name,
+            modules=tuple(
+                pending.placement
+                if module.module_id == pending.outgoing_id
+                else module
+                for module in state.layout.modules
+            ),
+        )
+        reserves = self._reserve_modules[pending.side]
+        reserves.pop(pending.incoming.module_id)
+        reserves[outgoing.module_id] = ReserveModule(
+            module_id=outgoing.module_id,
+            kind=outgoing.kind,
+            level=outgoing.level,
+        )
+        self._events.append(
+            BattleEvent(
+                tick=pending.apply_tick,
+                side=pending.side,
+                event_type=EventType.MODULE_SWAP,
+                actor_id=pending.incoming.module_id,
+                target_id=pending.outgoing_id,
+                amount=pending.incoming_hp,
+                detail=(
+                    f"window={pending.window_tick};kind={pending.incoming.kind.value};"
+                    f"row={pending.placement.row};column={pending.placement.column};"
+                    f"orientation={pending.placement.orientation.value}"
+                ),
+            )
+        )
+        del self._pending_swaps[pending.side]
+
+    def _resolve_completion(self) -> None:
+        left_dead = self._states[Side.LEFT].core_hp <= 0
+        right_dead = self._states[Side.RIGHT].core_hp <= 0
+        if left_dead or right_dead:
+            self._complete = True
+            if left_dead and right_dead:
+                self._winner = None
+                self._reason = "mutual_core_destruction"
+            elif right_dead:
+                self._winner = Side.LEFT
+                self._reason = "core_destroyed"
+            else:
+                self._winner = Side.RIGHT
+                self._reason = "core_destroyed"
+            return
+        if self._tick >= self.max_ticks:
+            self._winner, self._reason = self.engine._resolve_timeout(self._states)
+            self._complete = True

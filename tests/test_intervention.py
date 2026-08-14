@@ -50,6 +50,22 @@ class ModuleHealthRackTests(unittest.TestCase):
         )
         self.assertEqual(second.swaps_used, 2)
 
+    def test_window_stays_open_while_battle_advances_then_locks_after_swap(self) -> None:
+        rack = ModuleHealthRack(
+            active={"generator": (120, 120), "laser": (80, 80)},
+            reserves={"shield": 95},
+        )
+
+        self.assertIsNone(rack.active_window(59))
+        self.assertEqual(rack.active_window(60), 60)
+        self.assertEqual(rack.active_window(89), 60)
+
+        swap = rack.swap(tick=75, outgoing_id="laser", incoming_id="shield")
+        self.assertEqual(swap.tick, 75)
+        self.assertEqual(swap.window_tick, 60)
+        self.assertIsNone(rack.active_window(76))
+        self.assertEqual(rack.active_window(90), 90)
+
     def test_closed_window_and_third_swap_are_rejected(self) -> None:
         rack = ModuleHealthRack(
             active={"generator": (120, 120), "laser": (80, 80)},
@@ -57,7 +73,7 @@ class ModuleHealthRackTests(unittest.TestCase):
             policy=InterventionPolicy(),
         )
         with self.assertRaises(InterventionError) as closed:
-            rack.swap(tick=75, outgoing_id="laser", incoming_id="shield")
+            rack.swap(tick=59, outgoing_id="laser", incoming_id="shield")
         self.assertEqual(closed.exception.code, "window_closed")
 
         rack.swap(tick=60, outgoing_id="laser", incoming_id="shield")

@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../models/relay_models.dart';
+import '../theme/circuit_presentation.dart';
 import '../theme/relay_theme.dart';
 
 Color moduleColor(ModuleKind kind) => switch (kind) {
@@ -16,9 +17,9 @@ Color moduleColor(ModuleKind kind) => switch (kind) {
   ModuleKind.repair => const Color(0xFF62D89A),
 };
 
-/// Material ikon yerine her modülün çalışma biçimini anlatan devre parçası.
-class ModuleGlyph extends StatelessWidget {
-  const ModuleGlyph({
+/// A compact, code-native 2.5D hardware representation of a module.
+class ModuleHardware extends StatelessWidget {
+  const ModuleHardware({
     required this.kind,
     required this.color,
     this.size = 28,
@@ -36,7 +37,7 @@ class ModuleGlyph extends StatelessWidget {
     return SizedBox.square(
       dimension: size,
       child: CustomPaint(
-        painter: _ModuleGlyphPainter(
+        painter: _ModuleHardwarePainter(
           kind: kind,
           color: color,
           intensity: intensity,
@@ -46,7 +47,98 @@ class ModuleGlyph extends StatelessWidget {
   }
 }
 
-void paintModuleGlyph(
+void paintModuleHardware(
+  Canvas canvas,
+  ModuleKind kind,
+  Offset center,
+  double size,
+  Color color, {
+  double intensity = 1,
+}) {
+  final alpha = intensity.clamp(0.18, 1.0).toDouble();
+  canvas.save();
+  canvas.translate(center.dx, center.dy);
+  canvas.scale(size / 48);
+
+  final housingRect = RRect.fromRectAndRadius(
+    const Rect.fromLTWH(-21, -18, 42, 36),
+    const Radius.circular(7),
+  );
+  final innerRect = RRect.fromRectAndRadius(
+    const Rect.fromLTWH(-18, -15, 36, 29),
+    const Radius.circular(5),
+  );
+  canvas.drawRRect(
+    housingRect.shift(const Offset(0, 4)),
+    Paint()
+      ..color = const Color(0xD9000000)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3),
+  );
+  canvas.drawRRect(
+    housingRect,
+    Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [
+          Color.alphaBlend(
+            color.withValues(alpha: 0.34 * alpha),
+            const Color(0xFF31444B),
+          ),
+          const Color(0xFF132129),
+          const Color(0xFF060C10),
+        ],
+        stops: const [0, 0.48, 1],
+      ).createShader(housingRect.outerRect),
+  );
+  canvas.drawRRect(
+    housingRect,
+    Paint()
+      ..color = color.withValues(alpha: 0.64 * alpha)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.3,
+  );
+  canvas.drawRRect(
+    innerRect,
+    Paint()
+      ..shader = const LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [Color(0xFF17272E), Color(0xFF091116)],
+      ).createShader(innerRect.outerRect),
+  );
+  canvas.drawLine(
+    const Offset(-15, -13),
+    const Offset(15, -13),
+    Paint()
+      ..color = Colors.white.withValues(alpha: 0.16 * alpha)
+      ..strokeWidth = 1,
+  );
+  final mountPaint = Paint()..color = color.withValues(alpha: 0.72 * alpha);
+  for (final mount in const [
+    Offset(-17, -14),
+    Offset(17, -14),
+    Offset(-17, 14),
+    Offset(17, 14),
+  ]) {
+    canvas
+      ..drawCircle(mount, 2.2, Paint()..color = const Color(0xFF02070A))
+      ..drawCircle(mount, 1.1, mountPaint);
+  }
+
+  canvas.scale(0.72);
+  _paintModuleMechanismFace(
+    canvas,
+    kind,
+    Offset.zero,
+    48,
+    color,
+    intensity: intensity,
+  );
+  canvas.restore();
+}
+
+void _paintModuleMechanismFace(
   Canvas canvas,
   ModuleKind kind,
   Offset center,
@@ -249,8 +341,8 @@ void paintModuleGlyph(
   canvas.restore();
 }
 
-class _ModuleGlyphPainter extends CustomPainter {
-  const _ModuleGlyphPainter({
+class _ModuleHardwarePainter extends CustomPainter {
+  const _ModuleHardwarePainter({
     required this.kind,
     required this.color,
     required this.intensity,
@@ -263,23 +355,7 @@ class _ModuleGlyphPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final center = size.center(Offset.zero);
-    paintModuleGlyph(
-      canvas,
-      kind,
-      center + Offset(0, size.shortestSide * 0.075),
-      size.shortestSide,
-      Color.alphaBlend(color.withValues(alpha: 0.32), const Color(0xFF020609)),
-      intensity: intensity * 0.82,
-    );
-    paintModuleGlyph(
-      canvas,
-      kind,
-      center + Offset(0, size.shortestSide * 0.035),
-      size.shortestSide,
-      color.withValues(alpha: 0.58),
-      intensity: intensity * 0.90,
-    );
-    paintModuleGlyph(
+    paintModuleHardware(
       canvas,
       kind,
       center,
@@ -290,7 +366,7 @@ class _ModuleGlyphPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _ModuleGlyphPainter oldDelegate) =>
+  bool shouldRepaint(covariant _ModuleHardwarePainter oldDelegate) =>
       oldDelegate.kind != kind ||
       oldDelegate.color != color ||
       oldDelegate.intensity != intensity;
@@ -357,8 +433,12 @@ class ModuleChassis extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     Widget buildAt(double settled) {
-      final sideDepth = compact ? 5.0 : 8.0;
-      final inset = compact ? 2.5 : 4.5;
+      final sideDepth = compact
+          ? CircuitPresentationSpec.compactModuleDepth
+          : CircuitPresentationSpec.moduleDepth;
+      final inset = compact
+          ? CircuitPresentationSpec.compactModuleInset
+          : CircuitPresentationSpec.moduleInset;
       final restingLift = compact ? 1.5 : 3.5;
       final approachLift = compact ? 8.0 : 14.0;
       final extraLift = lifted ? (compact ? 4.0 : 7.0) : 0.0;

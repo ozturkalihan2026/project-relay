@@ -37,6 +37,7 @@ from .competitive import (
     MatchRatingChange,
 )
 from .career import (
+    CareerBattleSessionSnapshot,
     CareerRunError,
     CareerRunService,
     CareerRunSnapshot,
@@ -61,6 +62,9 @@ from .schemas import (
     AlphaFeedbackResponse,
     AlphaSafetyResponse,
     CareerBattleResponse,
+    CareerBattleAdvanceRequest,
+    CareerBattleSessionResponse,
+    CareerBattleSwapRequest,
     CareerBoosterSelectionRequest,
     CareerModuleUpgradeSelectionRequest,
     CareerResponse,
@@ -534,6 +538,45 @@ def _career_run_payload(snapshot: CareerRunSnapshot) -> dict[str, Any]:
     }
 
 
+def _career_battle_session_payload(
+    snapshot: CareerBattleSessionSnapshot,
+    *,
+    player_id: str,
+) -> dict[str, Any]:
+    return {
+        "session_id": snapshot.session_id,
+        "run_id": snapshot.run_id,
+        "stage_index": snapshot.stage_index,
+        "total_stages": snapshot.total_stages,
+        "status": snapshot.status,
+        "tick": snapshot.tick,
+        "complete": snapshot.complete,
+        "player_board": snapshot.player_board.to_dict(),
+        "opponent_board": snapshot.opponent_board.to_dict(),
+        "frame": snapshot.frame.to_dict(),
+        "intervention": snapshot.intervention.to_dict(),
+        "reserves": [item.to_dict() for item in snapshot.reserves],
+        "events": [item.to_dict() for item in snapshot.events],
+        "opponent": {
+            "stage_number": snapshot.opponent.stage_number,
+            "total_stages": snapshot.opponent.total_stages,
+            "title": snapshot.opponent.title,
+            "briefing": snapshot.opponent.briefing,
+            "is_boss": snapshot.opponent.is_boss,
+            "opponent_id": snapshot.opponent.opponent_id,
+            "display_name": snapshot.opponent.display_name,
+            "description": snapshot.opponent.description,
+            "board": snapshot.opponent.board.to_dict(),
+        },
+        "run": _career_run_payload(snapshot.run),
+        "match": (
+            _match_payload(snapshot.match, viewer_player_id=player_id)
+            if snapshot.match is not None
+            else None
+        ),
+    }
+
+
 
 def _season_payload(snapshot: SeasonSnapshot) -> dict[str, Any]:
     return {
@@ -782,14 +825,15 @@ def create_app(
         resolved_database,
         clock=match_service.clock,
     )
+    resolved_collection = collection_service or CollectionService(
+        resolved_database
+    )
     resolved_career = career_service or CareerRunService(
         resolved_database,
         match_service,
         resolved_online,
         resolved_progression,
-    )
-    resolved_collection = collection_service or CollectionService(
-        resolved_database
+        resolved_collection,
     )
     resolved_season = season_service or SeasonService(
         resolved_database,
@@ -1297,6 +1341,83 @@ def create_app(
                 request.module_id,
                 request.branch,
             )
+        )
+
+    @application.post(
+        "/api/v1/me/career-run/battle-session",
+        response_model=CareerBattleSessionResponse,
+        responses={401: {"model": ErrorResponse}, 409: {"model": ErrorResponse}},
+        tags=["career"],
+    )
+    def start_career_battle_session(
+        player: PlayerView = Depends(current_player),
+    ) -> dict[str, Any]:
+        return _career_battle_session_payload(
+            resolved_career.start_battle_session(player.player_id),
+            player_id=player.player_id,
+        )
+
+    @application.get(
+        "/api/v1/me/career-run/battle-session",
+        response_model=CareerBattleSessionResponse,
+        responses={
+            401: {"model": ErrorResponse},
+            404: {"model": ErrorResponse},
+        },
+        tags=["career"],
+    )
+    def get_career_battle_session(
+        player: PlayerView = Depends(current_player),
+    ) -> dict[str, Any]:
+        return _career_battle_session_payload(
+            resolved_career.current_battle_session(player.player_id),
+            player_id=player.player_id,
+        )
+
+    @application.post(
+        "/api/v1/me/career-run/battle-session/advance",
+        response_model=CareerBattleSessionResponse,
+        responses={
+            401: {"model": ErrorResponse},
+            404: {"model": ErrorResponse},
+            409: {"model": ErrorResponse},
+        },
+        tags=["career"],
+    )
+    def advance_career_battle_session(
+        request: CareerBattleAdvanceRequest,
+        player: PlayerView = Depends(current_player),
+    ) -> dict[str, Any]:
+        return _career_battle_session_payload(
+            resolved_career.advance_battle_session(
+                player.player_id,
+                ticks=request.ticks,
+            ),
+            player_id=player.player_id,
+        )
+
+    @application.post(
+        "/api/v1/me/career-run/battle-session/swap",
+        response_model=CareerBattleSessionResponse,
+        responses={
+            401: {"model": ErrorResponse},
+            404: {"model": ErrorResponse},
+            409: {"model": ErrorResponse},
+        },
+        tags=["career"],
+    )
+    def swap_career_battle_module(
+        request: CareerBattleSwapRequest,
+        player: PlayerView = Depends(current_player),
+    ) -> dict[str, Any]:
+        return _career_battle_session_payload(
+            resolved_career.swap_battle_module(
+                player.player_id,
+                outgoing_id=request.outgoing_id,
+                incoming_id=request.incoming_id,
+                orientation=request.orientation,
+            ),
+            player_id=player.player_id,
         )
 
     @application.post(

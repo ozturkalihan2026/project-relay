@@ -51,7 +51,7 @@ class MainMenuScreen extends ConsumerWidget {
     return AmbientMusic(
       asset: 'sounds/menu_ambient.wav',
       enabled: ref.watch(appSettingsProvider).replaySoundEnabled,
-      volume: 0.22,
+      volume: 0.28,
       child: Stack(
         children: [
           Scaffold(

@@ -5,6 +5,8 @@ import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 
 import '../models/relay_models.dart';
+import '../theme/circuit_cable.dart';
+import '../theme/circuit_presentation.dart';
 import '../theme/cosmetic_visuals.dart';
 import '../theme/relay_theme.dart';
 import '../widgets/module_visuals.dart';
@@ -43,8 +45,9 @@ abstract final class ReplayStageGeometry {
     );
   }
 
-  static const double perspectiveShear = 0.018;
-  static const double platformDepth = 20;
+  static const double perspectiveShear =
+      CircuitPresentationSpec.battlePerspectiveShear;
+  static const double platformDepth = CircuitPresentationSpec.platformDepth;
 
   static ui.Offset perspectivePoint(
     ui.Offset point,
@@ -82,13 +85,13 @@ abstract final class ReplayStageGeometry {
 
 abstract final class ReplayCircuitGeometry {
   static ui.Rect moduleRect(ModulePlacement module, ui.Rect boardRect) {
-    final cellSize = boardRect.width / relayBoardSize;
+    final cellSize = boardRect.width / CircuitPresentationSpec.gridSize;
     return ui.Rect.fromLTWH(
       boardRect.left + module.column * cellSize,
       boardRect.top + module.row * cellSize,
       cellSize,
       cellSize,
-    ).deflate(4);
+    ).deflate(CircuitPresentationSpec.cellInset);
   }
 
   static ui.Offset modulePortAnchor(
@@ -106,20 +109,19 @@ abstract final class ReplayCircuitGeometry {
   }
 
   static ui.Rect coreRect(ui.Rect boardRect) {
-    final cellSize = boardRect.width / relayBoardSize;
-    return ui.Rect.fromLTWH(
-      boardRect.left + cellSize,
-      boardRect.top + cellSize,
-      cellSize * 2,
-      cellSize * 2,
-    ).deflate(4);
+    final extent = boardRect.width * CircuitPresentationSpec.coreExtentFactor;
+    return ui.Rect.fromCenter(
+      center: boardRect.center,
+      width: extent,
+      height: extent,
+    );
   }
 
   static ui.Offset corePortAnchor(
     RelayDirection gateDirection,
     ui.Rect boardRect,
   ) {
-    final cellSize = boardRect.width / relayBoardSize;
+    final cellSize = boardRect.width / CircuitPresentationSpec.gridSize;
     final rect = coreRect(boardRect);
     return switch (gateDirection) {
       RelayDirection.south => ui.Offset(
@@ -185,6 +187,14 @@ class RelayReplayGame extends FlameGame {
   }) : _cursor = ReplayPlaybackCursor(replay.events),
        _leftHp = match.result.left.coreMaxHp,
        _rightHp = match.result.right.coreMaxHp {
+    _leftLayout = match.playerBoard;
+    _rightLayout = match.opponentBoard;
+    for (final module in [
+      ...match.playerBoard.modules,
+      ...match.opponentBoard.modules,
+    ]) {
+      _knownPlacements[module.id] = module;
+    }
     for (final summary in match.result.left.modules) {
       _leftModuleHp[summary.id] = summary.maxHp;
       _moduleMaxHp[summary.id] = summary.maxHp;
@@ -230,10 +240,13 @@ class RelayReplayGame extends FlameGame {
   final Map<String, ModuleReplayState> _rightModuleStates = {};
   final Map<String, _ModuleDelta> _leftModuleDeltas = {};
   final Map<String, _ModuleDelta> _rightModuleDeltas = {};
+  final Map<String, ModulePlacement> _knownPlacements = {};
   final Map<String, double> _moduleActionStartedAt = {};
   final Set<String> _destroyedIds = {};
   late BoardReplayState _leftBoardState;
   late BoardReplayState _rightBoardState;
+  late BoardDraft _leftLayout;
+  late BoardDraft _rightLayout;
 
   static const _defaultFrameDelay = 0.58;
   double speed = 1;
@@ -247,6 +260,9 @@ class RelayReplayGame extends FlameGame {
   String _lastEvent = 'Sistemler hazırlanıyor';
   BattleEvent? _lastEventData;
   bool _completionSent = false;
+
+  @visibleForTesting
+  BoardDraft get debugLeftLayout => _leftLayout;
 
   @override
   void update(double dt) {
@@ -295,6 +311,7 @@ class RelayReplayGame extends FlameGame {
       _setReplayState(stateFrame);
     }
     for (final event in frame.events) {
+      _applyModuleSwapLayout(event);
       if (stateFrame == null) {
         _applyEventState(event);
       }
@@ -323,6 +340,46 @@ class RelayReplayGame extends FlameGame {
         complete: false,
       ),
     );
+  }
+
+  void _applyModuleSwapLayout(BattleEvent event) {
+    if (event.type != 'module_swap' || event.targetId == null) return;
+    final current = event.side == 'left' ? _leftLayout : _rightLayout;
+    final outgoingIndex = current.modules.indexWhere(
+      (module) => module.id == event.targetId,
+    );
+    if (outgoingIndex < 0) return;
+    final fields = <String, String>{};
+    for (final field in (event.detail ?? '').split(';')) {
+      final separator = field.indexOf('=');
+      if (separator <= 0 || separator == field.length - 1) continue;
+      fields[field.substring(0, separator)] = field.substring(separator + 1);
+    }
+    final row = int.tryParse(fields['row'] ?? '');
+    final column = int.tryParse(fields['column'] ?? '');
+    if (row == null || column == null || fields['kind'] == null) return;
+    try {
+      final previous = _knownPlacements[event.actorId];
+      final incoming = ModulePlacement(
+        id: event.actorId,
+        kind: ModuleKind.parse(fields['kind']!),
+        row: row,
+        column: column,
+        orientation: RelayDirection.parse(fields['orientation'] ?? 'east'),
+        level: previous?.level ?? 1,
+      );
+      _knownPlacements[incoming.id] = incoming;
+      final modules = List<ModulePlacement>.from(current.modules);
+      modules[outgoingIndex] = incoming;
+      final next = BoardDraft(name: current.name, modules: modules);
+      if (event.side == 'left') {
+        _leftLayout = next;
+      } else {
+        _rightLayout = next;
+      }
+    } on FormatException {
+      // Bozuk eski replay ayrıntısı görsel akışı durdurmamalıdır.
+    }
   }
 
   double _delayFor(List<BattleEvent> events) {
@@ -491,7 +548,7 @@ class RelayReplayGame extends FlameGame {
       draw: () => _drawBoard(
         canvas,
         rect: leftBoard,
-        board: match.playerBoard,
+        board: _leftLayout,
         hp: _leftModuleHp,
         states: _leftModuleStates,
         deltas: _leftModuleDeltas,
@@ -517,7 +574,7 @@ class RelayReplayGame extends FlameGame {
       draw: () => _drawBoard(
         canvas,
         rect: rightBoard,
-        board: match.opponentBoard,
+        board: _rightLayout,
         hp: _rightModuleHp,
         states: _rightModuleStates,
         deltas: _rightModuleDeltas,
@@ -685,9 +742,12 @@ class RelayReplayGame extends FlameGame {
     required double coreHp,
     required double coreMaxHp,
   }) {
-    final cellSize = rect.width / 4;
+    final cellSize = rect.width / CircuitPresentationSpec.gridSize;
     canvas.drawRRect(
-      ui.RRect.fromRectAndRadius(rect, const ui.Radius.circular(10)),
+      ui.RRect.fromRectAndRadius(
+        rect,
+        const ui.Radius.circular(CircuitPresentationSpec.boardCornerRadius),
+      ),
       Paint()
         ..shader = ui.Gradient.linear(rect.topCenter, rect.bottomCenter, [
           Color.alphaBlend(
@@ -701,29 +761,39 @@ class RelayReplayGame extends FlameGame {
     canvas.drawRRect(
       ui.RRect.fromRectAndRadius(
         rect.inflate(1.5),
-        const ui.Radius.circular(11),
+        const ui.Radius.circular(CircuitPresentationSpec.boardCornerRadius + 1),
       ),
       Paint()
         ..color = color.withValues(alpha: boardBreath)
         ..style = PaintingStyle.stroke
         ..strokeWidth = 1.4,
     );
-    for (var row = 0; row < 4; row += 1) {
-      for (var column = 0; column < 4; column += 1) {
+    for (var row = 0; row < CircuitPresentationSpec.gridSize; row += 1) {
+      for (
+        var column = 0;
+        column < CircuitPresentationSpec.gridSize;
+        column += 1
+      ) {
         final cell = ui.Rect.fromLTWH(
           rect.left + column * cellSize,
           rect.top + row * cellSize,
           cellSize,
           cellSize,
-        ).deflate(2);
+        ).deflate(CircuitPresentationSpec.boardBorderWidth);
         canvas.drawRRect(
-          ui.RRect.fromRectAndRadius(cell, const ui.Radius.circular(5)),
+          ui.RRect.fromRectAndRadius(
+            cell,
+            const ui.Radius.circular(CircuitPresentationSpec.cellCornerRadius),
+          ),
           Paint()
             ..color = visuals.board.cell
             ..style = PaintingStyle.fill,
         );
         canvas.drawRRect(
-          ui.RRect.fromRectAndRadius(cell, const ui.Radius.circular(5)),
+          ui.RRect.fromRectAndRadius(
+            cell,
+            const ui.Radius.circular(CircuitPresentationSpec.cellCornerRadius),
+          ),
           Paint()
             ..color = visuals.board.border.withValues(alpha: 0.78)
             ..style = PaintingStyle.stroke
@@ -767,7 +837,10 @@ class RelayReplayGame extends FlameGame {
           _lastEventData?.targetId == module.id;
       final isActor = _lastEventData?.actorId == module.id;
       final isTarget = _lastEventData?.targetId == module.id;
-      final chassisDepth = math.max(5.0, cellSize * 0.065);
+      final chassisDepth = math.max(
+        CircuitPresentationSpec.compactModuleDepth,
+        cellSize * CircuitPresentationSpec.battleModuleDepthFactor,
+      );
       canvas.drawRRect(
         ui.RRect.fromRectAndRadius(
           cell.shift(ui.Offset(0, chassisDepth)),
@@ -877,12 +950,12 @@ class RelayReplayGame extends FlameGame {
         destroyed: destroyed,
         visuals: visuals,
       );
-      _drawModuleIcon(
+      _drawModuleHardware(
         canvas,
         module.kind,
         ui.Offset(cell.center.dx, cell.top + math.max(18.0, cellSize * 0.20)),
         color: destroyed ? RelayColors.muted : moduleColorValue,
-        size: math.max(18.0, cellSize * 0.21),
+        size: math.max(24.0, cellSize * 0.28),
       );
       if (!destroyed) {
         final actionStartedAt = _moduleActionStartedAt[module.id];
@@ -1084,25 +1157,23 @@ class RelayReplayGame extends FlameGame {
     required Map<String, ModuleReplayState> states,
     required EquippedVisuals visuals,
   }) {
-    final powered = board.modules
+    final installed = board.modules.toList(growable: false);
+    final powered = installed
         .where(
           (module) =>
               (states[module.id]?.powered ?? false) &&
               (states[module.id]?.hp ?? 0) > 0,
         )
         .toList(growable: false);
-    if (powered.isEmpty) {
-      return;
-    }
+    final poweredIds = powered.map((module) => module.id).toSet();
     final generators = powered
         .where((module) => module.kind == ModuleKind.generator)
         .toList(growable: false);
-    if (generators.isEmpty) {
-      return;
-    }
 
-    final distances = <String, int>{generators.first.id: 0};
-    final frontier = <ModulePlacement>[generators.first];
+    final distances = <String, int>{
+      for (final generator in generators) generator.id: 0,
+    };
+    final frontier = <ModulePlacement>[...generators];
     while (frontier.isNotEmpty) {
       final current = frontier.removeAt(0);
       final nextDistance = distances[current.id]! + 1;
@@ -1117,14 +1188,14 @@ class RelayReplayGame extends FlameGame {
     }
 
     var linkIndex = 0;
-    for (var firstIndex = 0; firstIndex < powered.length; firstIndex += 1) {
+    for (var firstIndex = 0; firstIndex < installed.length; firstIndex += 1) {
       for (
         var secondIndex = firstIndex + 1;
-        secondIndex < powered.length;
+        secondIndex < installed.length;
         secondIndex += 1
       ) {
-        var fromModule = powered[firstIndex];
-        var toModule = powered[secondIndex];
+        var fromModule = installed[firstIndex];
+        var toModule = installed[secondIndex];
         if (!_modulesConnected(fromModule, toModule)) {
           continue;
         }
@@ -1155,20 +1226,31 @@ class RelayReplayGame extends FlameGame {
             .toDouble();
         final glow =
             0.65 + 0.35 * math.sin((_animationTime + linkIndex) * math.pi * 2);
+        final energized =
+            poweredIds.contains(fromModule.id) &&
+            poweredIds.contains(toModule.id) &&
+            distances.containsKey(fromModule.id) &&
+            distances.containsKey(toModule.id);
 
         _drawEnergyLink(
           canvas,
           from: from,
           to: to,
-          color: visuals.board.trace,
+          color: energized
+              ? _flowColor(source: fromModule, target: toModule)
+              : visuals.board.traceMuted,
           phase: phase,
           glow: glow,
+          energized: energized,
+          bidirectional:
+              fromModule.kind == ModuleKind.battery ||
+              toModule.kind == ModuleKind.battery,
         );
         linkIndex += 1;
       }
     }
 
-    for (final module in powered.where(_moduleHasCorePort)) {
+    for (final module in installed.where(_moduleHasCorePort)) {
       final generatorToCore = module.kind == ModuleKind.generator;
       final gateDirection = coreGateDirections[module.cellIndex]!;
       final modulePort = ReplayCircuitGeometry.modulePortAnchor(
@@ -1183,13 +1265,16 @@ class RelayReplayGame extends FlameGame {
       final from = generatorToCore ? modulePort : corePort;
       final to = generatorToCore ? corePort : modulePort;
       final phase = ((_animationTime * 1.65 + linkIndex * 0.27) % 1).toDouble();
+      final energized =
+          poweredIds.contains(module.id) && distances.containsKey(module.id);
       _drawEnergyLink(
         canvas,
         from: from,
         to: to,
-        color: visuals.board.gate,
+        color: energized ? visuals.board.gate : visuals.board.traceMuted,
         phase: phase,
         glow: 1,
+        energized: energized,
         stronger: true,
       );
       linkIndex += 1;
@@ -1203,62 +1288,52 @@ class RelayReplayGame extends FlameGame {
     required Color color,
     required double phase,
     required double glow,
+    required bool energized,
     bool stronger = false,
+    bool bidirectional = false,
   }) {
-    final baseWidth = stronger ? 3.0 : 2.6;
-    canvas.drawLine(
-      from,
-      to,
-      Paint()
-        ..color = color.withValues(alpha: stronger ? 0.20 : 0.15)
-        ..strokeWidth = stronger ? 8 : 6
-        ..strokeCap = StrokeCap.round
-        ..maskFilter = const ui.MaskFilter.blur(ui.BlurStyle.normal, 5),
+    final cable = CircuitCableVisual.path(from, to);
+    CircuitCableVisual.drawCable(
+      canvas,
+      cable,
+      color: color,
+      energized: energized,
+      emphasized: stronger,
     );
-    canvas.drawLine(
-      from,
-      to,
-      Paint()
-        ..color = color.withValues(alpha: stronger ? 0.48 : 0.36)
-        ..strokeWidth = baseWidth
-        ..strokeCap = StrokeCap.round,
-    );
+    if (!energized) return;
 
-    for (var trail = 0; trail < 4; trail += 1) {
-      final trailPhase = (phase - trail * 0.085) % 1;
-      final point = ui.Offset.lerp(from, to, trailPhase)!;
-      final opacity = (1 - trail * 0.20) * glow;
-      final radius = (stronger ? 4.2 : 3.5) - trail * 0.34;
-      canvas.drawCircle(
-        point,
-        radius * 2.1,
-        Paint()
-          ..color = color.withValues(alpha: 0.10 * opacity)
-          ..maskFilter = const ui.MaskFilter.blur(ui.BlurStyle.normal, 5),
-      );
-      canvas.drawCircle(
-        point,
-        radius,
-        Paint()..color = color.withValues(alpha: 0.90 * opacity),
+    for (final seed in const [0.0, 0.50]) {
+      CircuitCableVisual.drawPacket(
+        canvas,
+        cable,
+        phase: (phase + seed) % 1,
+        color: color,
+        opacity: glow,
+        emphasized: stronger,
       );
     }
-
-    final direction = to - from;
-    final length = direction.distance;
-    if (length > 0.01) {
-      final unit = direction / length;
-      final head = ui.Offset.lerp(from, to, phase)!;
-      final tail = head - unit * (stronger ? 13 : 10);
-      canvas.drawLine(
-        tail,
-        head,
-        Paint()
-          ..color = RelayColors.white.withValues(alpha: 0.72 * glow)
-          ..strokeWidth = stronger ? 2.2 : 1.8
-          ..strokeCap = StrokeCap.round,
+    if (bidirectional) {
+      CircuitCableVisual.drawPacket(
+        canvas,
+        cable,
+        phase: 1 - ((phase * 0.72) % 1),
+        color: color,
+        opacity: 0.56 * glow,
+        emphasized: stronger,
       );
     }
   }
+
+  Color _flowColor({
+    required ModulePlacement source,
+    required ModulePlacement target,
+  }) => switch (source.kind) {
+    ModuleKind.repair => RelayColors.mint,
+    ModuleKind.cooler => RelayColors.cyan,
+    ModuleKind.amplifier => RelayColors.violet,
+    _ when target.kind == ModuleKind.shield => RelayColors.electricBlue,
+    _ => RelayColors.amber,
+  };
 
   bool _energyConnected(ModulePlacement first, ModulePlacement second) {
     return _modulesConnected(first, second) ||
@@ -1346,7 +1421,7 @@ class RelayReplayGame extends FlameGame {
     required double maxHp,
     required EquippedVisuals visuals,
   }) {
-    final cellSize = rect.width / 4;
+    final cellSize = rect.width / CircuitPresentationSpec.gridSize;
     final coreRect = ReplayCircuitGeometry.coreRect(rect);
     final center = coreRect.center;
     final ratio = (hp / maxHp).clamp(0.0, 1.0).toDouble();
@@ -1356,7 +1431,7 @@ class RelayReplayGame extends FlameGame {
     canvas.drawRRect(
       ui.RRect.fromRectAndRadius(
         coreRect.shift(const ui.Offset(0, 10)),
-        const ui.Radius.circular(12),
+        const ui.Radius.circular(CircuitPresentationSpec.coreCornerRadius),
       ),
       Paint()
         ..color = Color.alphaBlend(
@@ -1383,11 +1458,17 @@ class RelayReplayGame extends FlameGame {
     }
     canvas
       ..drawRRect(
-        ui.RRect.fromRectAndRadius(coreRect, const ui.Radius.circular(12)),
+        ui.RRect.fromRectAndRadius(
+          coreRect,
+          const ui.Radius.circular(CircuitPresentationSpec.coreCornerRadius),
+        ),
         Paint()..color = visuals.board.coreSurface,
       )
       ..drawRRect(
-        ui.RRect.fromRectAndRadius(coreRect, const ui.Radius.circular(12)),
+        ui.RRect.fromRectAndRadius(
+          coreRect,
+          const ui.Radius.circular(CircuitPresentationSpec.coreCornerRadius),
+        ),
         Paint()
           ..color = color
           ..style = PaintingStyle.stroke
@@ -1458,7 +1539,7 @@ class RelayReplayGame extends FlameGame {
     final from =
         _modulePoint(
           event.actorId,
-          event.side == 'left' ? match.playerBoard : match.opponentBoard,
+          event.side == 'left' ? _leftLayout : _rightLayout,
           event.side == 'left' ? leftBoard : rightBoard,
         ) ??
         (event.side == 'left' ? leftCore : rightCore);
@@ -1468,8 +1549,8 @@ class RelayReplayGame extends FlameGame {
         event.type == 'core_damage' ||
         event.type == 'shield_absorb';
     final targetBoard = targetOnEnemy
-        ? (event.side == 'left' ? match.opponentBoard : match.playerBoard)
-        : (event.side == 'left' ? match.playerBoard : match.opponentBoard);
+        ? (event.side == 'left' ? _rightLayout : _leftLayout)
+        : (event.side == 'left' ? _leftLayout : _rightLayout);
     final targetRect = targetOnEnemy
         ? (event.side == 'left' ? rightBoard : leftBoard)
         : (event.side == 'left' ? leftBoard : rightBoard);
@@ -1527,7 +1608,7 @@ class RelayReplayGame extends FlameGame {
     }
     for (final module in board.modules) {
       if (module.id == id) {
-        final cellSize = rect.width / 4;
+        final cellSize = rect.width / CircuitPresentationSpec.gridSize;
         final raw = ui.Offset(
           rect.left + (module.column + 0.5) * cellSize,
           rect.top + (module.row + 0.5) * cellSize,
@@ -1535,7 +1616,7 @@ class RelayReplayGame extends FlameGame {
         return ReplayStageGeometry.perspectivePoint(
           raw,
           rect,
-          leftSide: identical(board, match.playerBoard),
+          leftSide: identical(board, _leftLayout),
         );
       }
     }
@@ -1753,30 +1834,14 @@ class RelayReplayGame extends FlameGame {
     }
   }
 
-  void _drawModuleIcon(
+  void _drawModuleHardware(
     ui.Canvas canvas,
     ModuleKind kind,
     ui.Offset center, {
     required Color color,
     required double size,
   }) {
-    paintModuleGlyph(
-      canvas,
-      kind,
-      center + ui.Offset(0, size * 0.09),
-      size,
-      Color.alphaBlend(color.withValues(alpha: 0.28), const Color(0xFF020609)),
-      intensity: 0.84,
-    );
-    paintModuleGlyph(
-      canvas,
-      kind,
-      center + ui.Offset(0, size * 0.04),
-      size,
-      color.withValues(alpha: 0.58),
-      intensity: 0.92,
-    );
-    paintModuleGlyph(canvas, kind, center, size, color);
+    paintModuleHardware(canvas, kind, center, size, color);
   }
 
   void _drawText(
