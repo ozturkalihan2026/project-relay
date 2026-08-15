@@ -25,6 +25,37 @@ okumalıdır.
 - `alembic/`: veritabanı göçleri.
 - `docs/`: ürün, sürüm ve çalışma devri belgeleri.
 
+## Aktif sürüm yönü: v0.8.23
+
+Aktif iş paketi **v0.8.23 - Tek Savaş Sahnesi ve Fiziksel Devre Görünümü**'dür.
+Ayrıntılı ilerleme ve güncel depo durumu `docs/CODEX_HANDOFF.md` içinde tutulur.
+Bu paket üzerinde çalışan her oturum aşağıdaki ürün kararlarını korumalıdır:
+
+1. Kariyer savaşı başlangıçtan sonuca kadar tek canlı sahnede yürür. Savaş
+   bittikten sonra otomatik ikinci replay açılmaz; replay yalnız maç geçmişinden
+   isteğe bağlı erişilen ayrı bir özellik olabilir.
+2. Modül rafı savaş boyunca görünür kalır. 60/90/120. adım pencerelerinde
+   etkinleşir; savaş durmadan bir geçerli sürükle-bırak kabul eder, hemen
+   kilitlenir ve değişiklik sonraki güvenli sunucu tick'inde uygulanır. Koşu
+   başına toplam iki, pencere başına en fazla bir değişim hakkı korunur.
+3. Hazırlık, kariyer ve savaş aynı devre kartı geometrisini, çekirdeği, fiziksel
+   modül donanımını, portları, kabloları ve enerji akış dilini kullanır.
+4. Kablo ve enerji parçacıkları gerçek porttan gerçek porta bağlanır. Batarya
+   bağlantıları çift yönlüdür; görsel olaylar sunucunun replay/snapshot olaylarıyla
+   eşleşir ve istemci bağımsız savaş sonucu üretmez.
+5. Modüller ikon kutusu olarak değil, işlevi gövdesinden okunan fiziksel donanım
+   olarak çizilir. Lazer ve mermiler görünür namlu/emitör noktasından çıkar;
+   kalkan, hasar, onarım ve enerji kayıtlarının eş zamanlı görsel karşılığı olur.
+6. Teknoloji amaç değil araçtır. Varsayılan taban Flutter/CustomPainter'dır;
+   Flame, Rive ve özellikle `flutter_unity_widget` üzerinden Unity, yalnız ölçülen
+   bir prototip fiziksel görünüm veya performans ihtiyacını doğrularsa eklenir.
+   Unity değerlendirmesinde web/Android uyumu, açılış süresi, bellek, paket boyutu,
+   giriş katmanları, asset hattı ve bakım maliyeti birlikte ölçülür.
+7. Ürün/API/istemci sürümü, paket kabul ölçütleri tamamlanmadan topluca
+   yükseltilmez. Sürüm değişikliği yapılırken `pyproject.toml`, API sabiti,
+   Flutter `pubspec.yaml`, README, Docker başlangıç/göç akışı ve test raporları
+   birlikte kontrol edilir.
+
 ## Değişiklik kuralları
 
 - Önce mevcut davranışı ve ilgili testleri oku; sonra dar kapsamlı değişiklik yap.

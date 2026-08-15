@@ -8,19 +8,21 @@ devam etmek için tutulan kısa ve kalıcı bağlamdır. Tam sohbet dökümü de
 - Son güncelleme: 2026-08-15 (Europe/Istanbul)
 - Depo: `https://github.com/ozturkalihan2026/project-relay.git`
 - Aktif dal: `main` (`origin/main` takip ediliyor)
-- Son doğrulanmış commit: `59f6a93` — `feat: improve battle presentation and add overload mechanics`
-- Senkronizasyon: Belge oluşturulurken yerel `main` ile `origin/main` aynı
+- Son doğrulanmış commit: `aaa24da` — `hotfix`
+- Senkronizasyon: Bu güncelleme hazırlanırken yerel `main` ile `origin/main` aynı
   commit'i gösteriyordu.
+- Çalışma ağacı: Güncelleme başlamadan önce temizdi.
 
 ## Aktif amaç
 
-Kullanıcının onayladığı kesin uygulama sırasını tamamlamak. Hazırlık ve savaş
-kartları ortak geometri/kablo/donanım görsel diline geçirildi; kariyer savaşı
-sunucu-otoriter, kalıcı ve kesintisiz canlı oturum üzerinden çalışıyor.
-60/90/120 pencerelerinde alt raf etkinleşiyor, geçerli ilk sürükleme rafı
-kilitliyor ve değişim savaş durmadan bir sonraki tick sınırında uygulanıyor.
-Sıradaki ana geliştirme aynı komut modelini gerçek zamanlı oyuncu eşleştirmesine
-taşımak ve gerçek tarayıcıda görsel/işitsel kabul yapmaktır.
+**v0.8.23 - Tek Savaş Sahnesi ve Fiziksel Devre Görünümü** paketini uygulamak.
+Mevcut sunucu-otoriter ve kalıcı canlı kariyer oturumu korunacak; ancak savaş
+tamamlandığında otomatik replay ekranına geçilmeyecek. Hazırlık, gerçek savaş,
+kesintisiz raf müdahalesi ve sonuç tek sahnede birleşecek. Hazırlık/kariyer/savaş
+kartları aynı fiziksel modül, çekirdek, port, kablo ve enerji akış sistemini
+kullanacak. Araç seçimi Flutter, Flame, Rive veya `flutter_unity_widget`/Unity
+etiketine göre değil, hedeflenen fiziksel görünüm ile ölçülen platform maliyetine
+göre yapılacak.
 
 ## Tamamlananlar
 
@@ -119,25 +121,20 @@ taşımak ve gerçek tarayıcıda görsel/işitsel kabul yapmaktır.
 - `CareerLiveBattleScreen` eklendi. İki devre ve enerji akışları savaş boyunca
   güncelleniyor; alt raf sürekli görünür, yalnız müdahale hakkı açıkken sürüklenir,
   tek değişimden sonra kilitlenir ve simülasyon isteği hiçbir modal/pause olmadan
-  sürer. Savaş tamamlanınca kesin replay ekranına geçilir.
+  sürer. Mevcut uygulamada savaş tamamlanınca kesin replay ekranına geçilir;
+  v0.8.23'ün ilk işi bu ikinci oynatımı kaldırmaktır.
 - `module_swap` replay olayı artık tekrar yerleşimini de güncelliyor; yeni modül
   olaydan önce değil, değişimin uygulandığı tickten itibaren doğru hücre ve yönde
   çiziliyor.
 
 ## Mevcut kullanıcı çalışması
 
-- Çalışma başında depo temizdi ve `main`, yerel takip bilgisine göre `origin/main`
-  ile aynı `59f6a93` commit'indeydi.
-- Kesin uygulama paketinin motor, API, Alembic, Flutter ve test değişiklikleri
-  henüz commit edilmedi. Değişikliklerin tamamı bu görev kapsamındadır; `.env`
-  izlenmiyor ve hiçbir gizli içerik değişikliklere alınmadı.
-- Yeni temel dosyalar: `relay_engine/intervention.py`,
-  `tests/test_live_battle_session.py`,
-  `alembic/versions/20260814_0016_live_career_battles.py`,
-  `client/lib/src/theme/circuit_presentation.dart`,
-  `client/lib/src/theme/circuit_cable.dart`,
-  `client/lib/src/screens/career_live_battle_screen.dart` ve
-  `client/test/career_live_battle_screen_test.dart`.
+- Önceki canlı savaş, müdahale, Alembic, API ve Flutter değişiklikleri `aaa24da`
+  commit'inde yer alıyor ve `origin/main` üzerine gönderilmiş durumda.
+- Bu belge güncellenmeden önce izlenen veya izlenmeyen kullanıcı değişikliği yoktu.
+- Yeni v0.8.23 iş paketi henüz kodlanmaya başlanmadı. İlk kod değişikliği,
+  `CareerLiveBattleScreen` tamamlanma akışından otomatik replay geçişini kaldırıp
+  sonucu aynı canlı sahnede göstermelidir.
 
 ## Alınan kararlar
 
@@ -145,8 +142,10 @@ taşımak ve gerçek tarayıcıda görsel/işitsel kabul yapmaktır.
 - Kalıcı proje kuralları `AGENTS.md` içinde tutulur.
 - Oturumlar arası kısa teknik bağlam bu dosyada tutulur.
 - Gizli bilgiler ve tam sohbet geçmişi depoya yazılmaz.
-- Rive entegrasyonu şimdilik yapılmayacak; yeniden gündeme gelirse bağımlılık,
-  kaynak kodu, asset kaydı ve testleri ayrı bir çalışma olarak ele alınacak.
+- Rive doğrudan seçilmiş mimari değildir. Flame ve `flutter_unity_widget`/Unity ile
+  birlikte yalnız kısa bir görsel/performans prototipinde değerlendirilir;
+  prototip ihtiyacı kanıtlamadan bağımlılık, asset veya platform yapılandırması
+  eklenmez.
 - Canlı savaş ekranı toplam tur/adım süresini göstermeyecek; ayrıntılı teknik adım
   bilgisi yalnız savaş sonu analizinde bulunabilir.
 - Savaş analizi ayrı bir düğme veya alt panel açmadan, savaş tamamlandığında iki
@@ -168,6 +167,31 @@ taşımak ve gerçek tarayıcıda görsel/işitsel kabul yapmaktır.
 - Kariyer ve canlı savaş sunumu mevcut varsayılandan daha yavaş, sabit ve iki
   oyuncu arasında senkron bir taktik temposuna geçirilecek. Kesin hız katsayısı
   görsel kabul sırasında ayarlanacak; başlangıç adayı `0.65×`.
+- Kariyer savaşının gerçek canlı sahnesi sonuç ekranına kadar kesintisiz sürer;
+  savaş sonunda otomatik ikinci replay oynatılmaz. Replay yalnız maç geçmişinden
+  kullanıcı isterse açılabilir.
+- Hazırlık/kariyer/savaş kartlarının görsel doğruluk kaynağı ortak sunum
+  bileşenleridir. Kablolar ve enerji parçacıkları görünür porttan görünür porta
+  bağlanır; batarya akışı çift yönlü kalır.
+- Hazırlık alanındaki yinelenen `6/6 modül enerjili` kartı, dikey kaydırma çubuğu,
+  `KAPI`/`ÇEKİRDEK KAPISI` yazıları ve kırpılan alt sınırlar kaldırılacaktır.
+  Bağlantı doğrulaması kısa süreli merkez bildirimi olarak gösterilecektir.
+- Modüller ikon kutusu değildir. Her tür hacimli ve işlevi okunabilen fiziksel
+  bir gövdeye sahip olur; saldırı görünür namlu/emitörden çıkar ve her savaş
+  kaydının eş zamanlı görsel karşılığı bulunur.
+
+## v0.8.23 kabul ölçütleri
+
+- Canlı kariyer savaşı sonunda otomatik ikinci replay başlamaz.
+- Raf 60/90/120. adım pencerelerinde savaşı durdurmadan açılır, geçerli bir
+  değişiklikten sonra kilitlenir ve değişim sonraki sunucu tick'inde görünür.
+- Hazırlık, kariyer ve savaş aynı kart/çekirdek/modül tasarım sistemini kullanır.
+- Kablo ve enerji animasyonları gerçek porttan gerçek porta gider.
+- Lazer/mermi görünür namludan çıkar; kalkan, hasar, onarım ve enerji olaylarının
+  metin kaydıyla eş zamanlı görsel geri bildirimi vardır.
+- Kısa ekran yüksekliğinde kart altı kırpılmaz ve istenmeyen kaydırma oluşmaz.
+- Web ve Android testlerinde yeni giriş, ses, kare hızı veya yaşam döngüsü sorunu
+  oluşmaz.
 
 ## Doğrulama
 
@@ -187,15 +211,38 @@ taşımak ve gerçek tarayıcıda görsel/işitsel kabul yapmaktır.
 
 ## Sıradaki işler
 
-1. Paketi gerçek tarayıcı boyutlarında görsel ve işitsel olarak doğrula; özellikle
-   kısa ekran yüksekliği, canlı raftan hedefe sürükleme, bir sonraki tickte modül
-   oturması, kariyer sonucu geçişi ve web ses kilidini kontrol et.
-2. Aynı sunucu-otoriter komut modelini WebSocket canlı eşleştirmeye uygula; iki
-   oyuncunun pencerelerini aynı sunucu tick'inde aç ve gecikme telafisini belirle.
-3. Canlı savaşta geçici bağlantı kesintisi için istemci geri alma/jitter politikasını
-   ve aynı komutun iki kez ulaşmasına karşı açık idempotency anahtarını ekle.
-4. Kullanıcı istediğinde mevcut değişiklikleri kontrollü biçimde commit edip
-   GitHub'a gönder.
+Kesin uygulama sırası aşağıdadır; sonraki oturum ilk tamamlanmamış maddeden devam
+etmelidir:
+
+1. **Tek canlı savaş akışı (P0):** Kariyer tamamlanınca otomatik replay'e geçişi
+   kaldır; sonuç/analizi aynı canlı sahnede göster. Sunucu kesin sonucu ve replay
+   kaydı korunacak.
+2. **Canlı müdahale rafı kabulü (P0):** Mevcut 60/90/120 ve iki hak davranışını
+   gerçek tarayıcıda doğrula; raf bir geçerli değişiklikten sonra kilitlenmeli,
+   savaş durmamalı ve donanım sonraki tickte oturmalı.
+3. **Savaş olayı-görsel senkronu (P0):** Ateş, kalkan, hasar, onarım ve enerji
+   günlüklerini görünür olaylarla birebir eşle; boş ve açıklamasız beklemeyi azalt.
+4. **Ortak sahne sunumu (P1):** Hazırlık, kariyer ve savaşın kart, çekirdek,
+   perspektif, ışık ve fiziksel modül bileşenlerini tek doğruluk kaynağına bağla.
+5. **Port/kablo doğruluğu (P1):** Tüm kablo ve enerji paketlerini gerçek portlar
+   arasında üret; batarya çift yönünü ve döndürülmüş modülleri test et.
+6. **Hazırlık ekranı temizliği (P1):** Yinelenen enerji kartını, scrollbar'ı ve
+   kapı etiketlerini kaldır; doğrulamayı merkez toast yap; alt sınır kırpılmasını
+   düzelt. Aynı kabulü kariyer hazırlığında uygula.
+7. **Fiziksel modül gövdeleri (P2):** Sekiz modül türünü ikon kutusundan çıkar;
+   işlevi silüet/mekanizma/port üzerinden okunan tutarlı donanıma dönüştür.
+8. **Namlu ve darbe sistemi (P2):** Lazer ve darbe topu çıkışını fiziksel
+   emitöre bağla; ateşleme durumu, hareket ve çarpma geri bildirimi ekle.
+9. **Teknoloji prototipi (P2):** Bir jeneratör, lazer, kalkan, enerji akışı ve
+   tek atışla Flutter/CustomPainter + Flame tabanını; gerekirse Rive ve
+   `flutter_unity_widget` + Unity seçeneğini ölç. Görsel kalite, kare süresi,
+   açılış, bellek, paket boyutu, web/Android uyumu ve bakım maliyetine göre en
+   küçük yeterli yığını seç.
+10. **Ses ve son kabul (P3):** Menü müziğini daha sakin seviyede ve daha az
+    kasvetli içerikle doğrula; web ses kilidi, Android yaşam döngüsü, kısa ekran,
+    sürükleme ve performans kabulünü tamamla.
+11. Yukarıdakiler geçince sürüm numaralarını birlikte `v0.8.23` olarak güncelle,
+    test raporunu yaz ve kullanıcı isterse commit/push kapsamını hazırla.
 
 ## Riskler ve engeller
 
@@ -207,6 +254,15 @@ taşımak ve gerçek tarayıcıda görsel/işitsel kabul yapmaktır.
 - Kariyer canlı oturumu HTTP tick çağrılarıyla ilerliyor; tarayıcı sekmesi arka
   plana alındığında timer kısıtlaması savaş temposunu yavaşlatabilir. Gerçek zamanlı
   PvP aşamasında tempo WebSocket üzerinden sunucu saatine bağlanmalıdır.
+- `flutter_unity_widget`/Unity seçeneği gerçek 3D görünümü güçlendirebilir; ancak
+  Flutter web uyumu, platform görünümü katmanlama, açılış/bellek/paket maliyeti ve
+  iki ayrı asset/derleme hattı önemli risktir. Ölçümlü prototipten önce ana
+  mimari kararı verilmemelidir.
+- Hazırlık ve savaşın ortak bileşene taşınması görsel tutarlılığı artırırken
+  widget testlerinin finder/scroll varsayımlarını bozabilir; geçiş küçük adımlarla
+  ve hedefli regresyon testleriyle yapılmalıdır.
+- Olay metni ile görsel efektin ayrı zaman kaynaklarından beslenmesi yeniden
+  eşzamansızlık üretebilir; ikisi aynı replay/snapshot olayından türetilmelidir.
 
 ## Sonraki oturuma başlangıç istemi
 
