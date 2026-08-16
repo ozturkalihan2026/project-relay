@@ -1087,7 +1087,7 @@ class RelayReplayGame extends FlameGame {
         module.kind,
         ui.Offset(cell.center.dx, cell.top + math.max(18.0, cellSize * 0.20)),
         color: destroyed ? RelayColors.muted : moduleColorValue,
-        size: math.max(24.0, cellSize * 0.28),
+        size: math.max(28.0, cellSize * 0.34),
       );
       if (!destroyed) {
         final actionStartedAt = _moduleActionStartedAt[module.id];

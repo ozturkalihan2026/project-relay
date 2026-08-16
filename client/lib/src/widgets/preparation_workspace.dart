@@ -260,7 +260,7 @@ class SelectedModuleInspector extends StatelessWidget {
                     child: ModuleHardware(
                       kind: module.kind,
                       color: color,
-                      size: 28,
+                      size: 32,
                     ),
                   ),
                 ),

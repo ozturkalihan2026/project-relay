@@ -1130,7 +1130,7 @@ class _ModuleGuideCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                ModuleHardware(kind: guide.kind, color: color, size: 26),
+                ModuleHardware(kind: guide.kind, color: color, size: 30),
                 const SizedBox(width: 9),
                 Expanded(
                   child: Column(

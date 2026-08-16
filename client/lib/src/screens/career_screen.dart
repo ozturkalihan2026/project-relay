@@ -946,7 +946,7 @@ class _CareerModuleInspector extends StatelessWidget {
           children: [
             Row(
               children: [
-                ModuleHardware(kind: module.kind, color: color, size: 36),
+                ModuleHardware(kind: module.kind, color: color, size: 40),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
@@ -1184,7 +1184,7 @@ class _CareerRunCard extends StatelessWidget {
                     ModuleHardware(
                       kind: entry.value.first.kind,
                       color: moduleColor(entry.value.first.kind),
-                      size: 26,
+                      size: 30,
                     ),
                     const SizedBox(width: 9),
                     Text(

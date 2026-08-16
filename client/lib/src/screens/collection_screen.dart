@@ -577,7 +577,7 @@ class _KitEditor extends StatelessWidget {
                             prefixIcon: ModuleHardware(
                               kind: slots[index],
                               color: moduleColor(slots[index]),
-                              size: 22,
+                              size: 26,
                             ),
                           ),
                           items: [

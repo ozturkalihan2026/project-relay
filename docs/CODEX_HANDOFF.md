@@ -5,7 +5,7 @@ devam etmek için tutulan kısa ve kalıcı bağlamdır. Tam sohbet dökümü de
 
 ## Depo durumu
 
-- Son güncelleme: 2026-08-16 (Europe/Istanbul, üçüncü oturum)
+- Son güncelleme: 2026-08-17 (Europe/Istanbul, dördüncü oturum)
 - Depo: `https://github.com/ozturkalihan2026/project-relay.git`
 - Aktif dal: `main` (`origin/main` takip ediliyor)
 - Son doğrulanmış commit: `991344a` (`D:/Projects/project-relay` HEAD). D: çalışma
@@ -220,6 +220,34 @@ göre yapılacak.
   `test_shield_stays_idle_when_enemy_does_not_attack` (0 kalkan olayı, 0 enerji
   harcaması). `test_balance.py` kalkan assertion'ı 26 yapıldı. Kalkan visual/ses
   tarafında değişiklik yok; olay semantiği aynı.
+- **Dördüncü oturum — Fiziksel 3D modül gövdeleri (madde 7):** `module_solid3d.dart`
+  yeniden yazıldı: "küp içinde ufak simge" görünümü tamamen kaldırıldı; yerine ince
+  kaide plakası (yükseklik 4, 44×44, accent karışımlı koyu plaka) üzerinde hücreyi
+  dolduran, yandan okunabilen tip gövdeleri geldi. Gövde tasarımları:
+  generator=oktagon reaktör kulesi (r14 h16) + tepe halkası/glow + 3 yüksek destek
+  direği; battery=3 dikey silindir hücre (r5.5 h16) + üst bağlantı barası +
+  terminaller; laser=kalın gövde + 28 uzun namlu + namlu ağzı halkası + nişangah
+  kanadı; pulseCannon=yükseltilmiş kule + çift uzun namlu (∓3.5); shield=3 katmanlı
+  disk yığını (r20→r15→r10) + tepe glow; cooler=14-gen gövde + dik duran 4 kanat +
+  merkez göbek; amplifier=22×22×10 çekirdek blok + 3 dikey port düğümü;
+  repair=çapraz kol ünitesi + yükseltilmiş baş. Kamera sabit (animasyon yok, test
+  determinizmi): `_cameraYaw = -0.45`, `_cameraTilt = 0.60`, `_cameraFov = 46`,
+  `_cameraDistance = 100`; ışık `_Vec3(0.15, 0.25, 0.95)`, ambient 0.48, diffuse
+  0.55; yüz görünürlüğü `normal·viewDirection > 0.02`; painter's algorithm uzak→yakın.
+  `module_visuals.dart` sadeleştirildi: üst yüz glif callback'i ve
+  `_paintModuleMechanismFace` + `import 'dart:math'` silindi; `paintModuleHardware`
+  imzası korunuyor (`(canvas, kind, center, size, color, {intensity})`), doğrudan
+  `paintModuleSolid3D`'ye yönlendiriyor.
+- **Dördüncü oturum — boyut artışı:** ModuleHardware size'ları kritik yüzeylerde
+  artırıldı (hücre sınırını aşmadan): circuit_board yerleşik modül 42/56→48/62 ve
+  drag geri bildirimi 34→40; module_palette slot 40→48, raf 24→28, kompakt 18→20;
+  career_live_battle yedek rafı 48→56; career_screen 36→40 ve 26→30;
+  collection_screen 22→26; game_manual ve manual_circuit_demo 26→30;
+  preparation_workspace 28→32; replay_game savaş modülleri
+  `max(24, cellSize*0.28)` → `max(28, cellSize*0.34)`. Önceki oturumlardaki devre
+  kartı derinlik güncellemeleri (circuit_presentation perspectiveDepth 0.00140,
+  deckTilt −0.26; circuit_board `_deckLayer` 17→22, kenar/gölge) çalışma ağacında
+  duruyor ve bu paketle birlikte aktarılacak.
 
 ## Mevcut kullanıcı çalışması
 
@@ -240,6 +268,15 @@ göre yapılacak.
   patlamasına yükseltildi. `flutter analyze` temiz, `flutter test` 99/99. İkinci
   oturumun motor/sunucu değişiklikleri (reaktif kalkan, shield=26) aynen geçerli;
   D: kopyasında `engine.py` ESKİ kalıyor.
+- **Dördüncü oturum:** Fiziksel 3D modül gövdeleri (madde 7) tamamlandı ve
+  kullanıcı görsel onayı verdi (kamera yaw=−0.45 / tilt=0.60 / fov=46 / d=100).
+  Modüller küp+simge görünümünden çıkarıldı; ince kaide üzerinde hücreyi dolduran
+  fiziksel cihazlar olarak çiziliyor. Görsel inceleme sırasında `tmp_solid_preview_test.dart`
+  ile PNG üretildi (`C:\Users\S-A\AppData\Local\Temp\opencode\solid_preview.png`);
+  onay sonrası geçici test dosyası silindi. Bu model görüntü okuyamıyor — görsel
+  doğrulama kullanıcı tarafından yapıldı; gerçek ekran kabulü (madde 2/3) yine elle.
+  `flutter analyze` temiz, `flutter test` 99/99. D: kopyasında `engine.py` ESKİ
+  kalıyor.
 - Commit/push için hazır dosyalar: `client/lib/src/screens/career_live_battle_screen.dart`,
   `client/lib/src/game/replay_game.dart`,
   `client/lib/src/game/replay_event_formatter.dart`,
@@ -267,6 +304,18 @@ göre yapılacak.
   `client/lib/src/widgets/replay_attack_overlay.dart` (çekirdek patlaması),
   `client/test/career_live_battle_screen_test.dart` (yeni `_SwapRelayApi` + drop
   regresyon testi).
+- Dördüncü oturumun ek dosyaları:
+  `client/lib/src/widgets/module_solid3d.dart` (yeni 3D motor, YENİ dosya),
+  `client/lib/src/widgets/module_visuals.dart` (glif kaldırıldı, `paintModuleSolid3D`
+  yönlendirmesi), `client/lib/src/widgets/circuit_board.dart` (62/48/40 boyutlar),
+  `client/lib/src/widgets/module_palette.dart` (48/28/20), `client/lib/src/screens/career_live_battle_screen.dart`
+  (56), `client/lib/src/screens/career_screen.dart` (40/30), `client/lib/src/screens/collection_screen.dart`
+  (26), `client/lib/src/widgets/game_manual.dart` (30), `client/lib/src/widgets/manual_circuit_demo.dart`
+  (30), `client/lib/src/widgets/preparation_workspace.dart` (32),
+  `client/lib/src/game/replay_game.dart` (cellSize*0.34). Önceki çalışma ağacından
+  aktarılacak: `client/lib/src/theme/circuit_presentation.dart` (0.00140/−0.26) ve
+  `circuit_board.dart` `_deckLayer` derinlik/gölge. Geçici `tmp_solid_preview_test.dart`
+  silindi; yeniden görsel inceleme gerekirse aynı şablonla yeniden yazılabilir.
 
 ## Alınan kararlar
 
@@ -311,6 +360,12 @@ göre yapılacak.
 - Modüller ikon kutusu değildir. Her tür hacimli ve işlevi okunabilen fiziksel
   bir gövdeye sahip olur; saldırı görünür namlu/emitörden çıkar ve her savaş
   kaydının eş zamanlı görsel karşılığı bulunur.
+- **3D modül render kararı (dördüncü oturum):** CustomPainter + `Matrix4` yerine
+  sıfır bağımlılıklı özel projeksiyon kullanılıyor (AGENTS.md kural 6). Sabit
+  kamera yaw=−0.45 / tilt=0.60, fov=46, cameraDistance=100; ışık (0.15,0.25,0.95),
+  ambient 0.48, diffuse 0.55; yüzler painter's algorithm ile uzak→yakın sıralanıyor
+  (animasyon yok → test determinizmi). Modeller 48 birimlik hücrede, `canvas.scale(size/48)`
+  ile ölçekleniyor; size hiçbir yüzeyde hücre boyutunu aşmıyor.
 - Kalkan modülü reaktiftir: yalnız düşman saldırdığında enerji harcar; sessiz
   tick'lerde boşa enerji biriktirmez. Bu davranış korunur ve denge kalkan değeri
   (şu an 26) üzerinden ayarlanır. Sürüm değişikliği yapılmadı; paket kabul ölçütleri
@@ -368,6 +423,12 @@ göre yapılacak.
 - Üçüncü oturum doğrulaması: `flutter analyze` temiz; `flutter test` 99/99 geçti
   (98 + yeni "yedek modül imlecin altındaki modüle bırakılır"). Python tarafında
   değişiklik yok, önceki 204/529 sonucu geçerli.
+- Dördüncü oturum doğrulaması: `flutter analyze` temiz (const hatası giderildi,
+  12 hata → 0); `flutter test` geçici preview testi dahil 100/100, sonrasında
+  geçici test silinince 99/99 geçti. Python tarafında değişiklik yok. Görsel
+  inceleme: `tmp_solid_preview_test.dart` ile 1400px PNG (`solid_preview.png`)
+  üretildi, kullanıcı 5 kamera iterasyonu sonunda yaw −0.45 / tilt 0.60 değerini
+  onayladı; bu model görüntü girişi desteklemediği için görsel onay kullanıcıda.
 - Canlı kariyer API, kalıcı oturum, müdahale aralığı, süreç yeniden başlatma ve
   göç testleri: Başarılı, hedefli paket 45 test geçti.
 - `flutter analyze`: Başarılı, sorun bulunmadı.
@@ -428,8 +489,10 @@ etmelidir:
    kapı etiketleri bu oturumda tamamlandı. Kalan: alt sınır kırpılmasını gerçek
    tarayıcıda doğrula; aynı kabulü kariyer hazırlığında gözden geçir (kariyer
    tarafında scrollbar zaten yok, etiketler paylaşılan bileşenden kaldırıldı).
-7. **Fiziksel modül gövdeleri (P2):** Sekiz modül türünü ikon kutusundan çıkar;
-   işlevi silüet/mekanizma/port üzerinden okunan tutarlı donanıma dönüştür.
+7. **Fiziksel modül gövdeleri (P2):** ✅ Tamamlandı (dördüncü oturum). Sekiz tür
+   ikon kutusundan çıkarıldı; kaide üzerinde hücreyi dolduran fiziksel cihazlara
+   dönüştürüldü (yaw −0.45 / tilt 0.60). Gerçek tarayıcıda/Android'de elle görsel
+   kabul hâlâ gerekli.
 8. **Namlu ve darbe sistemi (P2):** Lazer ve darbe topu çıkışını fiziksel
    emitöre bağla; ateşleme durumu, hareket ve çarpma geri bildirimi ekle.
    Not: saldırı ışınları artık hedefe bakan kenar portundan çıkıyor; kalan iş
@@ -472,6 +535,9 @@ etmelidir:
   tarayıcıda elle doğrulanması gerekir.
 - Web sesinde `getCurrentPosition` dispose hatası boş position updater ile
   kesildi; doğrulama yalnız gerçek tarayıcıda yapılabilir (bu ortamda yok).
+- Bu model görüntü girişi desteklemiyor; 3D modül görünümüne ait görsel doğrulama
+  kullanıcı tarafından yapılır. Görsel inceleme gerekirse `tmp_solid_preview_test.dart`
+  şablonu yeniden oluşturularak PNG üretilebilir (silinmişti).
 
 ## Sonraki oturuma başlangıç istemi
 

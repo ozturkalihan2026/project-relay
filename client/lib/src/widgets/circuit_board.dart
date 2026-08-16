@@ -487,7 +487,7 @@ class _CircuitCell extends StatelessWidget {
                                       color: visuals.modules.moduleColorFor(
                                         candidate.kind,
                                       ),
-                                      size: 34,
+                                      size: 40,
                                     ),
                                     const SizedBox(height: 3),
                                     Text(
@@ -529,7 +529,7 @@ class _CircuitCell extends StatelessWidget {
                                         'module-glyph-${module.id}',
                                       ),
                                       color: color,
-                                      size: coreGate ? 42 : 56,
+                                      size: coreGate ? 48 : 62,
                                     ),
                                   ),
                                 ),
@@ -985,7 +985,7 @@ class _BoardDragFeedback extends StatelessWidget {
                     ModuleHardware(
                       kind: placement.kind,
                       color: color,
-                      size: 34,
+                      size: 40,
                     ),
                     const SizedBox(width: 9),
                     Column(

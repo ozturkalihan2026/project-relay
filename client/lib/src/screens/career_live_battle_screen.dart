@@ -763,7 +763,7 @@ class _ReserveTile extends StatelessWidget {
       ),
       child: Row(
         children: [
-          ModuleHardware(kind: reserve.kind, color: color, size: 48),
+          ModuleHardware(kind: reserve.kind, color: color, size: 56),
           const SizedBox(width: 8),
           Expanded(
             child: Column(

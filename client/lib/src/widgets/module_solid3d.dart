@@ -4,14 +4,14 @@ import 'package:flutter/material.dart';
 
 import '../models/relay_models.dart';
 
-typedef ModuleTopGlyphPainter = void Function(Canvas canvas);
-
 /// Draws a module as physical 3D hardware instead of a flat icon box.
 ///
 /// The module is modelled in a 48-unit cell with the board plane on xy and the
-/// height on z. A fixed camera (yaw + tilt) plus a directional light produce a
-/// consistent dimetric look across every scene; faces are sorted back-to-front
-/// (painter's algorithm) so stacking works without a z-buffer.
+/// height on z. Each kind builds a distinct device body that fills the cell;
+/// a thin base plate seats it on the board. A fixed camera (yaw + tilt) plus a
+/// directional light produce a consistent dimetric look across every scene;
+/// faces are sorted back-to-front (painter's algorithm) so stacking works
+/// without a z-buffer.
 void paintModuleSolid3D(
   Canvas canvas,
   ModuleKind kind,
@@ -19,14 +19,13 @@ void paintModuleSolid3D(
   double size,
   Color color, {
   double intensity = 1,
-  ModuleTopGlyphPainter? topGlyphPainter,
 }) {
   final alpha = intensity.clamp(0.18, 1.0).toDouble();
   canvas.save();
   canvas.translate(center.dx, center.dy);
   canvas.scale(size / 48);
   final scene = _SolidScene(canvas, color, alpha);
-  scene.paintModule(kind, topGlyphPainter: topGlyphPainter);
+  scene.paintModule(kind);
   canvas.restore();
 }
 
@@ -76,14 +75,16 @@ class _SolidScene {
   final Color _accent;
   final double _alpha;
 
-  static const double _cameraYaw = -0.68;
-  static const double _cameraTilt = 0.52;
+  static const double _cameraYaw = -0.45;
+  static const double _cameraTilt = 0.60;
   static const double _cameraFov = 46;
-  static const double _cameraDistance = 96;
+  static const double _cameraDistance = 100;
 
   static const double _ambient = 0.48;
   static const double _diffuse = 0.55;
   static const _Vec3 _light = _Vec3(0.15, 0.25, 0.95);
+
+  static const double _baseHeight = 4;
 
   late final double _cosYaw = math.cos(_cameraYaw);
   late final double _sinYaw = math.sin(_cameraYaw);
@@ -116,38 +117,12 @@ class _SolidScene {
 
   Color _brighter(Color color) => Color.lerp(color, Colors.white, 0.32)!;
 
-  void paintModule(
-    ModuleKind kind, {
-    ModuleTopGlyphPainter? topGlyphPainter,
-  }) {
-    final chassisHeight = _chassisHeight(kind);
+  void paintModule(ModuleKind kind) {
     _drawGroundShadow();
-    _addChassis(chassisHeight);
-    _addMechanism(kind, chassisHeight);
-    if (_usesTopGlyph(kind) && topGlyphPainter != null) {
-      _paintTopGlyph(chassisHeight, topGlyphPainter);
-    }
+    _addBasePlate();
+    _addDevice(kind);
     _render();
   }
-
-  double _chassisHeight(ModuleKind kind) => switch (kind) {
-    ModuleKind.generator => 13,
-    ModuleKind.battery => 15,
-    ModuleKind.laser => 8,
-    ModuleKind.pulseCannon => 9,
-    ModuleKind.shield => 8,
-    ModuleKind.cooler => 11,
-    ModuleKind.amplifier => 9,
-    ModuleKind.repair => 9,
-  };
-
-  bool _usesTopGlyph(ModuleKind kind) => switch (kind) {
-    ModuleKind.generator ||
-    ModuleKind.battery ||
-    ModuleKind.amplifier ||
-    ModuleKind.repair => true,
-    _ => false,
-  };
 
   void _drawGroundShadow() {
     final projected = [
@@ -162,176 +137,177 @@ class _SolidScene {
     _canvas.drawPath(
       Path()..addPolygon(projected, true),
       Paint()
-        ..color = const Color(0xFF000000).withValues(alpha: 0.36 * _alpha)
+        ..color = const Color(0xFF000000).withValues(alpha: 0.34 * _alpha)
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4),
     );
   }
 
-  void _addChassis(double height) {
+  void _addBasePlate() {
     final color = Color.alphaBlend(
-      _accent.withValues(alpha: 0.20 * _alpha),
-      const Color(0xFF16252D),
+      _accent.withValues(alpha: 0.18 * _alpha),
+      const Color(0xFF0E1A21),
     );
-    final topHalf = _Vec3(20, 20, height);
-    const baseHalf = _Vec3(22, 22, 0);
+    final height = _baseHeight;
     _addQuad(
       [
-        _Vec3(-topHalf.x, -topHalf.y, height),
-        _Vec3(topHalf.x, -topHalf.y, height),
-        _Vec3(baseHalf.x, -baseHalf.y, 0),
-        _Vec3(-baseHalf.x, -baseHalf.y, 0),
+        _Vec3(-22, -22, height),
+        _Vec3(22, -22, height),
+        _Vec3(22, 22, height),
+        _Vec3(-22, 22, height),
+      ],
+      const _Vec3(0, 0, 1),
+      color,
+      accentEdge: true,
+    );
+    _addQuad(
+      [
+        _Vec3(-22, -22, height),
+        _Vec3(22, -22, height),
+        _Vec3(22, -22, 0),
+        _Vec3(-22, -22, 0),
       ],
       const _Vec3(0, -1, 0),
       color,
     );
     _addQuad(
       [
-        _Vec3(-topHalf.x, topHalf.y, height),
-        _Vec3(topHalf.x, topHalf.y, height),
-        _Vec3(baseHalf.x, baseHalf.y, 0),
-        _Vec3(-baseHalf.x, baseHalf.y, 0),
+        _Vec3(-22, 22, height),
+        _Vec3(22, 22, height),
+        _Vec3(22, 22, 0),
+        _Vec3(-22, 22, 0),
       ],
       const _Vec3(0, 1, 0),
       color,
     );
     _addQuad(
       [
-        _Vec3(topHalf.x, -topHalf.y, height),
-        _Vec3(topHalf.x, topHalf.y, height),
-        _Vec3(baseHalf.x, baseHalf.y, 0),
-        _Vec3(baseHalf.x, -baseHalf.y, 0),
+        _Vec3(22, -22, height),
+        _Vec3(22, 22, height),
+        _Vec3(22, 22, 0),
+        _Vec3(22, -22, 0),
       ],
       const _Vec3(1, 0, 0),
       color,
     );
     _addQuad(
       [
-        _Vec3(-topHalf.x, -topHalf.y, height),
-        _Vec3(-topHalf.x, topHalf.y, height),
-        _Vec3(-baseHalf.x, baseHalf.y, 0),
-        _Vec3(-baseHalf.x, -baseHalf.y, 0),
+        _Vec3(-22, -22, height),
+        _Vec3(-22, 22, height),
+        _Vec3(-22, 22, 0),
+        _Vec3(-22, -22, 0),
       ],
       const _Vec3(-1, 0, 0),
       color,
     );
-    _addQuad(
-      [
-        _Vec3(-topHalf.x, -topHalf.y, height),
-        _Vec3(topHalf.x, -topHalf.y, height),
-        _Vec3(topHalf.x, topHalf.y, height),
-        _Vec3(-topHalf.x, topHalf.y, height),
-      ],
-      const _Vec3(0, 0, 1),
-      color,
-      accentEdge: true,
-    );
   }
 
-  void _addMechanism(ModuleKind kind, double chassisHeight) {
+  void _addDevice(ModuleKind kind) {
+    final z = _baseHeight;
     switch (kind) {
       case ModuleKind.generator:
-        _addPrism(8, 15, 6, _Vec3(0, 0, chassisHeight), _accent);
-        _glowDisc(_Vec3(0, 0, chassisHeight + 6), 4.0, _accent);
+        _addPrism(8, 14, 16, _Vec3(0, 0, z), _accent);
+        _addPrism(8, 16, 2.5, _Vec3(0, 0, z + 16), _brighter(_accent));
+        _glowDisc(_Vec3(0, 0, z + 19.5), 4.5, _accent);
         for (var index = 0; index < 3; index += 1) {
           final angle = -math.pi / 2 + index * math.pi * 2 / 3;
-          final tip = _Vec3(
+          final position = _Vec3(
             math.cos(angle) * 19,
             math.sin(angle) * 19,
-            chassisHeight,
+            z,
           );
-          _addPrism(8, 3, 3, tip, _accent);
+          _addPrism(8, 3.5, 12, position, _accent);
           _glowDisc(
-            _Vec3(tip.x, tip.y, chassisHeight + 3),
-            1.6,
+            _Vec3(position.x, position.y, z + 12),
+            1.8,
             _accent,
           );
         }
         break;
       case ModuleKind.battery:
         for (var index = 0; index < 3; index += 1) {
-          final y = -7.0 + index * 7.0;
-          _box(
-            _Vec3(0, y, chassisHeight),
-            17,
+          final y = -8.5 + index * 8.5;
+          _addPrism(
+            8,
             5.5,
-            4.5,
+            16,
+            _Vec3(0, y, z),
             index == 2 ? _brighter(_accent) : _accent,
           );
+          _glowDisc(_Vec3(0, y, z + 16), 2.2, _accent);
         }
-        _glowDisc(_Vec3(0, 0, chassisHeight + 4.5), 4.5, _accent);
-        _box(_Vec3(0, 16, chassisHeight + 1.5), 9, 4, 3, _accent);
+        _box(_Vec3(0, 0, z + 16), 30, 5, 3, _accent);
+        _glowDisc(_Vec3(0, 0, z + 19.5), 4.0, _accent);
         break;
       case ModuleKind.laser:
-        _box(_Vec3(-15, 0, chassisHeight + 2), 10, 9, 4, _accent);
-        _box(_Vec3(11, 0, chassisHeight + 2.5), 16, 6, 5, _accent);
-        _box(_Vec3(4, 0, chassisHeight + 2), 3, 10, 4, _accent);
-        _glowDisc(_Vec3(19, 0, chassisHeight + 2.5), 3.2, _accent);
+        _box(_Vec3(0, 0, z), 34, 14, 6, _accent);
+        _box(_Vec3(8, 0, z + 8.5), 28, 8, 5, _accent);
+        _box(_Vec3(23, 0, z + 8.5), 6, 11, 6, _accent);
+        _box(_Vec3(-16, 0, z + 8.5), 8, 12, 5, _accent);
+        _box(_Vec3(2, 0, z + 8.5), 3, 12, 4, _accent);
+        _box(_Vec3(14, 0, z + 13.5), 7, 2, 3, _accent);
+        _glowDisc(_Vec3(26, 0, z + 8.5), 4.5, _accent);
         break;
       case ModuleKind.pulseCannon:
-        _box(_Vec3(-12, 0, chassisHeight + 1.5), 10, 12, 3, _accent);
-        _box(_Vec3(10, -4, chassisHeight + 2.5), 18, 4.5, 5, _accent);
-        _box(_Vec3(10, 4, chassisHeight + 2.5), 18, 4.5, 5, _accent);
-        _box(_Vec3(6, 0, chassisHeight + 2.5), 5, 11, 5, _accent);
-        _glowDisc(_Vec3(19, -4, chassisHeight + 2.5), 2.2, _accent);
-        _glowDisc(_Vec3(19, 4, chassisHeight + 2.5), 2.2, _accent);
+        _box(_Vec3(0, 0, z), 18, 20, 8, _accent);
+        _box(_Vec3(6, 0, z + 10), 8, 12, 6, _accent);
+        _box(_Vec3(11, -3.5, z + 10), 24, 4, 4.5, _accent);
+        _box(_Vec3(11, 3.5, z + 10), 24, 4, 4.5, _accent);
+        _box(_Vec3(4, 0, z + 10), 4, 13, 5, _accent);
+        _glowDisc(_Vec3(23, -3.5, z + 10), 3.0, _accent);
+        _glowDisc(_Vec3(23, 3.5, z + 10), 3.0, _accent);
         break;
       case ModuleKind.shield:
-        _addPrism(8, 16, 3, _Vec3(0, 0, chassisHeight), _accent);
-        _addPrism(8, 12, 3, _Vec3(0, 0, chassisHeight + 3), _accent);
-        _glowDisc(_Vec3(0, 0, chassisHeight + 6), 6.0, _accent);
-        _glowDisc(_Vec3(0, 0, chassisHeight + 6), 2.6, _brighter(_accent));
+        _addPrism(8, 20, 6, _Vec3(0, 0, z), _accent);
+        _addPrism(8, 15, 5, _Vec3(0, 0, z + 6), _accent);
+        _addPrism(8, 10, 4, _Vec3(0, 0, z + 11), _brighter(_accent));
+        _glowDisc(_Vec3(0, 0, z + 15), 9.0, _accent);
+        _glowDisc(_Vec3(0, 0, z + 15), 4.0, _brighter(_accent));
         break;
       case ModuleKind.cooler:
-        _addPrism(14, 16, 6, _Vec3(0, 0, chassisHeight), _accent);
+        _addPrism(14, 20, 7, _Vec3(0, 0, z), _accent);
         _addPrism(
           16,
-          11,
-          0.5,
-          _Vec3(0, 0, chassisHeight + 6),
+          14,
+          0.8,
+          _Vec3(0, 0, z + 7),
           const Color(0xFF050A0E),
         );
         for (var index = 0; index < 4; index += 1) {
           final angle = math.pi / 4 + index * math.pi / 2;
           _box(
             _Vec3(
-              math.cos(angle) * 6.5,
-              math.sin(angle) * 6.5,
-              chassisHeight + 6.6,
+              math.cos(angle) * 8.5,
+              math.sin(angle) * 8.5,
+              z + 7.8,
             ),
-            12,
-            3.2,
-            1.2,
+            17,
+            3.5,
+            3,
             _accent,
             rotate: angle,
           );
         }
-        _box(_Vec3(0, 0, chassisHeight + 6.6), 6, 6, 1.4, _accent);
-        _glowDisc(_Vec3(0, 0, chassisHeight + 7.2), 2.4, _accent);
+        _box(_Vec3(0, 0, z + 7.8), 7, 7, 5, _accent);
+        _glowDisc(_Vec3(0, 0, z + 12.8), 2.6, _accent);
         break;
       case ModuleKind.amplifier:
-        _box(_Vec3(0, 0, chassisHeight + 2), 11, 11, 4, _accent);
-        _glowDisc(_Vec3(0, 0, chassisHeight + 4), 3.2, _accent);
+        _box(_Vec3(0, 0, z), 22, 22, 10, _accent);
+        _glowDisc(_Vec3(0, 0, z + 10), 4.0, _accent);
         for (final position in const [
-          (11.0, -12.0),
-          (11.0, 12.0),
-          (-16.0, 0.0),
+          (15.0, -14.0),
+          (15.0, 14.0),
+          (-17.0, 0.0),
         ]) {
-          _addPrism(
-            8,
-            3.4,
-            3.5,
-            _Vec3(position.$1, position.$2, chassisHeight),
-            _accent,
-          );
+          _addPrism(8, 5, 6, _Vec3(position.$1, position.$2, z), _accent);
           _glowDisc(
-            _Vec3(position.$1, position.$2, chassisHeight + 3.5),
-            1.8,
+            _Vec3(position.$1, position.$2, z + 6),
+            2.2,
             _accent,
           );
         }
         break;
       case ModuleKind.repair:
-        _box(_Vec3(0, 0, chassisHeight + 1), 9, 9, 2, _accent);
+        _box(_Vec3(0, 0, z), 18, 18, 4, _accent);
         for (final direction in const [
           (-1.0, 0.0),
           (1.0, 0.0),
@@ -340,23 +316,15 @@ class _SolidScene {
         ]) {
           final horizontal = direction.$1 != 0;
           _box(
-            _Vec3(
-              direction.$1 * 7,
-              direction.$2 * 7,
-              chassisHeight + 1.5,
-            ),
-            horizontal ? 9 : 4,
-            horizontal ? 4 : 9,
-            3,
+            _Vec3(direction.$1 * 12, direction.$2 * 12, z + 4.5),
+            horizontal ? 20 : 6,
+            horizontal ? 6 : 20,
+            5,
             _accent,
           );
         }
-        _box(_Vec3(0, 16, chassisHeight + 2), 7, 7, 4, _accent);
-        _glowDisc(
-          _Vec3(0, 19.6, chassisHeight + 3),
-          2.6,
-          _accent,
-        );
+        _box(_Vec3(0, 16, z + 7), 10, 10, 6, _accent);
+        _glowDisc(_Vec3(0, 21.5, z + 10.5), 3.5, _accent);
         break;
     }
   }
@@ -392,8 +360,7 @@ class _SolidScene {
     ];
     for (final face in faces) {
       final baseNormal = _Vec3(face.$1, face.$2, face.$3);
-      final normal =
-          rotate == 0 ? baseNormal : baseNormal.rotatedZ(rotate);
+      final normal = rotate == 0 ? baseNormal : baseNormal.rotatedZ(rotate);
       _addQuad(
         [for (final index in face.$4) corners[index]],
         normal,
@@ -476,47 +443,6 @@ class _SolidScene {
     );
   }
 
-  void _paintTopGlyph(double chassisHeight, ModuleTopGlyphPainter painter) {
-    final projectedCorners = [
-      for (final corner in const [
-        (-20.0, -20.0),
-        (20.0, -20.0),
-        (20.0, 20.0),
-        (-20.0, 20.0),
-      ])
-        _project(_Vec3(corner.$1, corner.$2, chassisHeight)),
-    ];
-    final glyphDepth =
-        projectedCorners.fold<double>(0, (sum, p) => sum + p.depth) /
-            projectedCorners.length +
-        0.01;
-    final clip = Path()..addPolygon(
-      [for (final p in projectedCorners) p.point],
-      true,
-    );
-    final affine = _fitAffine(
-      const [
-        Offset(-24, -24),
-        Offset(24, -24),
-        Offset(24, 24),
-        Offset(-24, 24),
-      ],
-      [for (final p in projectedCorners) p.point],
-    );
-    _items.add(
-      _RenderItem(
-        depth: glyphDepth,
-        draw: (canvas) {
-          canvas.save();
-          canvas.clipPath(clip);
-          canvas.transform(affine.storage);
-          painter(canvas);
-          canvas.restore();
-        },
-      ),
-    );
-  }
-
   void _glowDisc(_Vec3 center, double radius, Color glow) {
     final projected = _project(center);
     _items.add(
@@ -547,76 +473,5 @@ class _SolidScene {
     for (final item in _items) {
       item.draw(_canvas);
     }
-  }
-
-  Matrix4 _fitAffine(List<Offset> source, List<Offset> target) {
-    var sxx = 0.0, sxy = 0.0, syy = 0.0;
-    var sx = 0.0, sy = 0.0, sn = 0.0;
-    var sux = 0.0, svx = 0.0;
-    var suy = 0.0, svy = 0.0;
-    var sumX = 0.0, sumY = 0.0;
-    for (var index = 0; index < source.length; index += 1) {
-      final u = source[index].dx;
-      final v = source[index].dy;
-      final x = target[index].dx;
-      final y = target[index].dy;
-      sxx += u * u;
-      sxy += u * v;
-      syy += v * v;
-      sx += u;
-      sy += v;
-      sn += 1;
-      sux += u * x;
-      svx += v * x;
-      suy += u * y;
-      svy += v * y;
-      sumX += x;
-      sumY += y;
-    }
-    final normal = <List<double>>[
-      [sxx, sxy, sx],
-      [sxy, syy, sy],
-      [sx, sy, sn],
-    ];
-    final xSolution = _solve3x3(normal, [sux, svx, sumX]);
-    final ySolution = _solve3x3(normal, [suy, svy, sumY]);
-    return Matrix4(
-      xSolution[0],
-      ySolution[0],
-      0,
-      0,
-      xSolution[1],
-      ySolution[1],
-      0,
-      0,
-      0,
-      0,
-      1,
-      0,
-      xSolution[2],
-      ySolution[2],
-      0,
-      1,
-    );
-  }
-
-  List<double> _solve3x3(List<List<double>> matrix, List<double> vector) {
-    double determinant(List<List<double>> m) {
-      return m[0][0] * (m[1][1] * m[2][2] - m[1][2] * m[2][1]) -
-          m[0][1] * (m[1][0] * m[2][2] - m[1][2] * m[2][0]) +
-          m[0][2] * (m[1][0] * m[2][1] - m[1][1] * m[2][0]);
-    }
-
-    final base = determinant(matrix);
-    return List<double>.generate(3, (column) {
-      final replaced = [
-        for (var row = 0; row < 3; row += 1)
-          [
-            for (var entry = 0; entry < 3; entry += 1)
-              entry == column ? vector[row] : matrix[row][entry],
-          ],
-      ];
-      return determinant(replaced) / base;
-    });
   }
 }

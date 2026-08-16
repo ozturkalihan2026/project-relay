@@ -497,10 +497,10 @@ class _PaletteTile extends StatelessWidget {
                                 kind: module.kind,
                                 color: color,
                                 size: dense
-                                    ? 18
+                                    ? 20
                                     : compact
-                                    ? 18
-                                    : 24,
+                                    ? 20
+                                    : 28,
                               ),
                               SizedBox(width: dense ? 4 : 6),
                               Flexible(
@@ -630,7 +630,7 @@ class _CompactPaletteTile extends StatelessWidget {
                         ModuleHardware(
                           kind: module.kind,
                           color: color,
-                          size: 40,
+                          size: 48,
                         ),
                         Positioned(
                           right: 5,
@@ -730,7 +730,7 @@ class _DragFeedback extends StatelessWidget {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                  ModuleHardware(kind: module.kind, color: color, size: 36),
+                  ModuleHardware(kind: module.kind, color: color, size: 40),
                   const SizedBox(height: 4),
                   Text(
                     module.displayName,
