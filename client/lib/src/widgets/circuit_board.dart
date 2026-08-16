@@ -224,9 +224,16 @@ class _PreparationStageShell extends StatelessWidget {
                 CircuitPresentationSpec.boardCornerRadius + 2,
               ),
               border: Border.all(
-                color: boardTheme.core.withValues(alpha: 0.24 + opacity),
+                color: boardTheme.core.withValues(alpha: 0.34 + opacity),
                 width: 2,
               ),
+              boxShadow: [
+                BoxShadow(
+                  color: boardTheme.core.withValues(alpha: 0.30),
+                  blurRadius: 16,
+                  spreadRadius: -4,
+                ),
+              ],
             ),
           ),
         ),
@@ -268,7 +275,7 @@ class _PreparationStageShell extends StatelessWidget {
               Positioned.fill(
                 child: _deckLayer(
                   color: const Color(0xFF06131A),
-                  depth: 17,
+                  depth: 22,
                   opacity: 0.09,
                 ),
               ),
@@ -470,16 +477,6 @@ class _CircuitCell extends StatelessWidget {
                                           : const Color(0x774C7785),
                                       size: coreGate ? 20 : 22,
                                     ),
-                                    if (coreGate)
-                                      const Text(
-                                        'KAPI',
-                                        style: TextStyle(
-                                          color: RelayColors.amber,
-                                          fontSize: 8,
-                                          fontWeight: FontWeight.w900,
-                                          letterSpacing: 0.8,
-                                        ),
-                                      ),
                                   ],
                                 )
                               : Column(
@@ -615,24 +612,6 @@ class _CircuitCell extends StatelessWidget {
                                       ? RelayColors.cyan
                                       : RelayColors.coral,
                                   size: 15,
-                                ),
-                              ),
-                            if (coreGate)
-                              const Positioned(
-                                left: 5,
-                                right: 5,
-                                bottom: 4,
-                                child: Text(
-                                  'ÇEKİRDEK KAPISI',
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                    color: RelayColors.amber,
-                                    fontSize: 7,
-                                    fontWeight: FontWeight.w900,
-                                    letterSpacing: 0.4,
-                                  ),
                                 ),
                               ),
                             if (dropActive)

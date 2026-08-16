@@ -289,19 +289,14 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
                 children: [boardPanel, const SizedBox(height: 14), actionPanel],
               );
 
-        return Scrollbar(
-          key: const ValueKey('editor-page-scrollbar'),
+        return SingleChildScrollView(
+          key: const ValueKey('editor-scroll-view'),
           controller: _editorScrollController,
-          thumbVisibility: true,
-          child: SingleChildScrollView(
-            key: const ValueKey('editor-scroll-view'),
-            controller: _editorScrollController,
-            padding: const EdgeInsets.fromLTRB(14, 4, 14, 28),
-            child: Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 1360),
-                child: panels,
-              ),
+          padding: const EdgeInsets.fromLTRB(14, 4, 14, 28),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 1360),
+              child: panels,
             ),
           ),
         );

@@ -12,14 +12,18 @@ import '../theme/relay_theme.dart';
 class ReplayAttackOverlay extends StatefulWidget {
   const ReplayAttackOverlay({
     required this.events,
-    required this.match,
+    required this.playerBoard,
+    required this.opponentBoard,
+    this.finalTick,
     this.leftVisuals = const EquippedVisuals.defaults(),
     this.rightVisuals = const EquippedVisuals.defaults(),
     super.key,
   });
 
   final ValueListenable<List<BattleEvent>> events;
-  final MatchResponse match;
+  final BoardDraft playerBoard;
+  final BoardDraft opponentBoard;
+  final int? finalTick;
   final EquippedVisuals leftVisuals;
   final EquippedVisuals rightVisuals;
 
@@ -91,8 +95,8 @@ class _ReplayAttackOverlayState extends State<ReplayAttackOverlay>
       if (target == null) continue;
       _destroyedIds.add(target);
       final enemyBoard = event.side == 'left'
-          ? widget.match.opponentBoard
-          : widget.match.playerBoard;
+          ? widget.opponentBoard
+          : widget.playerBoard;
       ModulePlacement? targetModule;
       for (final module in enemyBoard.modules) {
         if (module.id == target) {
@@ -115,7 +119,8 @@ class _ReplayAttackOverlayState extends State<ReplayAttackOverlay>
     if (_events.any(
       (event) =>
           event.type == 'core_damage' &&
-          event.tick >= widget.match.result.ticks,
+          widget.finalTick != null &&
+          event.tick >= widget.finalTick!,
     )) {
       _phaseCue = 'ÇEKİRDEK ÇÖKTÜ';
     }
@@ -130,7 +135,9 @@ class _ReplayAttackOverlayState extends State<ReplayAttackOverlay>
         builder: (context, child) => CustomPaint(
           painter: _AttackPainter(
             events: _events,
-            match: widget.match,
+            playerBoard: widget.playerBoard,
+            opponentBoard: widget.opponentBoard,
+            finalTick: widget.finalTick,
             progress: Curves.easeOutCubic.transform(_controller.value),
             rawProgress: _controller.value,
             leftVisuals: widget.leftVisuals,
@@ -146,7 +153,9 @@ class _ReplayAttackOverlayState extends State<ReplayAttackOverlay>
 class _AttackPainter extends CustomPainter {
   const _AttackPainter({
     required this.events,
-    required this.match,
+    required this.playerBoard,
+    required this.opponentBoard,
+    required this.finalTick,
     required this.progress,
     required this.rawProgress,
     required this.leftVisuals,
@@ -155,7 +164,9 @@ class _AttackPainter extends CustomPainter {
   });
 
   final List<BattleEvent> events;
-  final MatchResponse match;
+  final BoardDraft playerBoard;
+  final BoardDraft opponentBoard;
+  final int? finalTick;
   final double progress;
   final double rawProgress;
   final EquippedVisuals leftVisuals;
@@ -305,8 +316,8 @@ class _AttackPainter extends CustomPainter {
     required Offset rightCore,
   }) {
     final actorBoard = event.side == 'left'
-        ? match.playerBoard
-        : match.opponentBoard;
+        ? playerBoard
+        : opponentBoard;
     final actorRect = event.side == 'left' ? leftBoard : rightBoard;
     final targetOnEnemy =
         event.type == 'attack' ||
@@ -314,7 +325,7 @@ class _AttackPainter extends CustomPainter {
         event.type == 'shield_absorb' ||
         event.type == 'destroyed';
     final targetBoard = targetOnEnemy
-        ? (event.side == 'left' ? match.opponentBoard : match.playerBoard)
+        ? (event.side == 'left' ? opponentBoard : playerBoard)
         : actorBoard;
     final targetRect = targetOnEnemy
         ? (event.side == 'left' ? rightBoard : leftBoard)
@@ -339,7 +350,11 @@ class _AttackPainter extends CustomPainter {
     };
 
     if (event.type == 'attack' || event.type == 'core_damage') {
-      final cue = BattleVisualDirector.cueFor(event, match);
+      final cue = BattleVisualDirector.cueFor(
+        event,
+        playerBoard: playerBoard,
+        opponentBoard: opponentBoard,
+      );
       if (cue.weapon == BattleWeapon.pulseCannon) {
         _drawProjectileEvent(canvas, event, from, to, color, fade, eventIndex);
       } else {
@@ -468,7 +483,9 @@ class _AttackPainter extends CustomPainter {
           .clamp(0.0, 1.0)
           .toDouble();
       _drawImpactBurst(canvas, to, color, impactProgress, fade);
-      if (event.type == 'core_damage' && event.tick >= match.result.ticks) {
+      if (event.type == 'core_damage' &&
+          finalTick != null &&
+          event.tick >= finalTick!) {
         _drawCoreCollapse(canvas, to, color, impactProgress, fade);
       }
       _drawTargetHitFrame(canvas, to, color, impactProgress, fade);
@@ -858,36 +875,172 @@ class _AttackPainter extends CustomPainter {
     double phase,
     double fade,
   ) {
-    final flash = (1 - phase).clamp(0.0, 1.0);
-    canvas.drawCircle(
-      center,
-      26 + phase * 112,
-      Paint()
-        ..color = RelayColors.white.withValues(alpha: 0.52 * fade * flash)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 24),
-    );
-    canvas.drawCircle(
-      center,
-      18 + phase * 76,
-      Paint()
-        ..color = color.withValues(alpha: 0.80 * fade * (1 - phase * 0.42))
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 5,
-    );
-    for (var i = 0; i < 28; i++) {
-      final angle = i * math.pi * 2 / 28 + phase * 0.35;
-      final distance = 20 + phase * (64 + (i % 5) * 11);
-      final point =
-          center + Offset(math.cos(angle), math.sin(angle)) * distance;
-      canvas.drawLine(
-        center + Offset(math.cos(angle), math.sin(angle)) * 8,
-        point,
+    final t = phase;
+    double window(double start, double end) => ((t - start) / (end - start))
+        .clamp(0.0, 1.0)
+        .toDouble();
+    final out = Curves.easeOut.transform;
+
+    final ember = window(0.45, 1);
+    if (ember > 0) {
+      canvas.drawCircle(
+        center,
+        16 + out(ember) * 52,
         Paint()
-          ..color = (i.isEven ? color : RelayColors.amber).withValues(
-            alpha: 0.82 * fade * (1 - phase * 0.35),
+          ..color = color.withValues(alpha: 0.13 * fade * (1 - ember))
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 20),
+      );
+      for (var i = 0; i < 18; i++) {
+        final baseAngle = (i * 0.61803 + 1.7) * math.pi * 2;
+        final rise = ember * (10 + (i % 5) * 9);
+        final sway = math.sin(ember * math.pi * 3 + i * 0.9) * 7;
+        final particle =
+            center +
+            Offset(math.cos(baseAngle) * 12 + sway, math.sin(baseAngle) * 8 - rise);
+        canvas.drawCircle(
+          particle,
+          math.max(0.6, 1.6 - ember * 0.8),
+          Paint()
+            ..color = RelayColors.coral.withValues(
+              alpha: 0.55 * fade * (1 - ember) * (0.5 + (i % 4) * 0.15),
+            ),
+        );
+      }
+    }
+
+    final implode = window(0, 0.22);
+    if (implode > 0) {
+      canvas.drawCircle(
+        center,
+        (46 - implode * 36) * (1 - t * 0.2),
+        Paint()
+          ..color = RelayColors.white.withValues(
+            alpha: 0.9 * fade * (1 - implode),
           )
-          ..strokeWidth = i % 3 == 0 ? 4.0 : 2.0
-          ..strokeCap = StrokeCap.round,
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 3 + implode * 5
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4),
+      );
+    }
+
+    final flash = window(0, 0.34) * (1 - t * 0.9);
+    if (flash > 0) {
+      canvas.drawCircle(
+        center,
+        8 + out(t) * 46,
+        Paint()
+          ..color = RelayColors.white.withValues(alpha: 0.85 * fade * flash)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 26),
+      );
+      canvas.drawCircle(
+        center,
+        5 + out(t) * 30,
+        Paint()
+          ..color = color.withValues(alpha: 0.95 * fade * flash)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 14),
+      );
+    }
+
+    final fireball = window(0, 0.5);
+    final fireballRadius = 6 + out(fireball) * 80;
+    if (fireball > 0) {
+      final fireballAlpha = fireball * (1 - t * 0.55);
+      if (fireballAlpha > 0) {
+        canvas.drawCircle(
+          center,
+          fireballRadius,
+          Paint()
+            ..shader = RadialGradient(
+              colors: [
+                RelayColors.white.withValues(
+                  alpha: 0.96 * fade * fireballAlpha,
+                ),
+                RelayColors.amber.withValues(alpha: 0.9 * fade * fireballAlpha),
+                color.withValues(alpha: 0.62 * fade * fireballAlpha),
+                color.withValues(alpha: 0.0),
+              ],
+              stops: const [0.0, 0.32, 0.7, 1.0],
+            ).createShader(Rect.fromCircle(center: center, radius: fireballRadius)),
+        );
+      }
+      canvas.drawCircle(
+        center,
+        fireballRadius,
+        Paint()
+          ..color = RelayColors.white.withValues(alpha: 0.7 * fade * fireballAlpha)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 3 + 4 * (1 - fireball),
+      );
+    }
+
+    final rays = window(0, 0.62);
+    if (rays > 0) {
+      final rayAlpha = 0.95 * fade * (1 - t * 0.4);
+      for (var i = 0; i < 26; i++) {
+        final angle = i * math.pi * 2 / 26 + t * 0.55;
+        final longLance = i % 5 == 0;
+        final length = out(rays) * (longLance ? 120 : 84) + (i % 7) * 6 * (1 - t);
+        final direction = Offset(math.cos(angle), math.sin(angle));
+        final tip = center + direction * length;
+        canvas.drawLine(
+          center + direction * 6,
+          tip,
+          Paint()
+            ..color = (i.isEven ? RelayColors.amber : color)
+                .withValues(alpha: rayAlpha)
+            ..strokeWidth = (longLance ? 5.0 : 2.2) * (1 - t * 0.45)
+            ..strokeCap = StrokeCap.round
+            ..maskFilter = longLance
+                ? const MaskFilter.blur(BlurStyle.normal, 3)
+                : null,
+        );
+        canvas.drawCircle(
+          tip,
+          longLance ? 2.4 : 1.4,
+          Paint()
+            ..color = (longLance ? RelayColors.white : RelayColors.amber)
+                .withValues(alpha: rayAlpha * 0.9),
+        );
+      }
+    }
+
+    final sparks = window(0.12, 0.95);
+    if (sparks > 0) {
+      final sparkAlpha = 0.95 * fade * (1 - sparks);
+      for (var i = 0; i < 34; i++) {
+        final baseAngle = (i * 0.61803) * math.pi * 2;
+        final spread = ((i * 37) % 29) / 29.0;
+        final angle = baseAngle + (spread - 0.5) * 0.55;
+        final speed = 16 + ((i * 13) % 23) / 23.0 * 84;
+        final drift = Offset(math.cos(angle), math.sin(angle));
+        final distance = speed * out(sparks);
+        final particle = center + drift * distance + Offset(0, sparks * sparks * 16);
+        canvas.drawCircle(
+          particle,
+          math.max(0.7, 2.8 - sparks * 1.8),
+          Paint()
+            ..color = (i % 3 == 0 ? RelayColors.white : RelayColors.amber)
+                .withValues(alpha: sparkAlpha * 0.85),
+        );
+      }
+    }
+
+    for (var i = 0; i < 3; i++) {
+      final wave = window(0.2 + i * 0.1, 0.9 + i * 0.04);
+      if (wave <= 0) continue;
+      final radius = 14 + out(wave) * (94 + i * 26);
+      final alpha = (0.85 - i * 0.2) * fade * (1 - wave);
+      canvas.drawCircle(
+        center,
+        radius,
+        Paint()
+          ..color = (i.isEven ? RelayColors.white : color)
+              .withValues(alpha: alpha)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = (2.6 - i * 0.5) + (1 - wave) * 3
+          ..maskFilter = i == 0
+              ? const MaskFilter.blur(BlurStyle.normal, 4)
+              : null,
       );
     }
   }
@@ -989,7 +1142,7 @@ class _AttackPainter extends CustomPainter {
         return ReplayStageGeometry.perspectivePoint(
           raw,
           rect,
-          leftSide: identical(board, match.playerBoard),
+          leftSide: identical(board, playerBoard),
         );
       }
     }
@@ -1001,7 +1154,9 @@ class _AttackPainter extends CustomPainter {
     return oldDelegate.events != events ||
         oldDelegate.progress != progress ||
         oldDelegate.rawProgress != rawProgress ||
-        oldDelegate.match != match ||
+        oldDelegate.playerBoard != playerBoard ||
+        oldDelegate.opponentBoard != opponentBoard ||
+        oldDelegate.finalTick != finalTick ||
         oldDelegate.leftVisuals.modules.id != leftVisuals.modules.id ||
         oldDelegate.rightVisuals.modules.id != rightVisuals.modules.id ||
         oldDelegate.phaseCue != phaseCue;

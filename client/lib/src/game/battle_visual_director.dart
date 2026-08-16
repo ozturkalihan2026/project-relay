@@ -21,8 +21,16 @@ class BattleVisualCue {
 }
 
 abstract final class BattleVisualDirector {
-  static BattleVisualCue cueFor(BattleEvent event, MatchResponse match) {
-    final kind = _kindForActor(event.actorId, match);
+  static BattleVisualCue cueFor(
+    BattleEvent event, {
+    required BoardDraft playerBoard,
+    required BoardDraft opponentBoard,
+  }) {
+    final kind = _kindForActor(
+      event.actorId,
+      playerBoard: playerBoard,
+      opponentBoard: opponentBoard,
+    );
     final weapon = switch (kind) {
       ModuleKind.laser => BattleWeapon.laser,
       ModuleKind.pulseCannon => BattleWeapon.pulseCannon,
@@ -42,11 +50,15 @@ abstract final class BattleVisualDirector {
     );
   }
 
-  static ModuleKind? _kindForActor(String id, MatchResponse match) {
-    for (final module in match.playerBoard.modules) {
+  static ModuleKind? _kindForActor(
+    String id, {
+    required BoardDraft playerBoard,
+    required BoardDraft opponentBoard,
+  }) {
+    for (final module in playerBoard.modules) {
       if (module.id == id) return module.kind;
     }
-    for (final module in match.opponentBoard.modules) {
+    for (final module in opponentBoard.modules) {
       if (module.id == id) return module.kind;
     }
     return null;

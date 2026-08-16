@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../models/relay_models.dart';
 import '../theme/circuit_presentation.dart';
 import '../theme/relay_theme.dart';
+import 'module_solid3d.dart';
 
 Color moduleColor(ModuleKind kind) => switch (kind) {
   ModuleKind.generator => RelayColors.amber,
@@ -55,87 +56,24 @@ void paintModuleHardware(
   Color color, {
   double intensity = 1,
 }) {
-  final alpha = intensity.clamp(0.18, 1.0).toDouble();
-  canvas.save();
-  canvas.translate(center.dx, center.dy);
-  canvas.scale(size / 48);
-
-  final housingRect = RRect.fromRectAndRadius(
-    const Rect.fromLTWH(-21, -18, 42, 36),
-    const Radius.circular(7),
-  );
-  final innerRect = RRect.fromRectAndRadius(
-    const Rect.fromLTWH(-18, -15, 36, 29),
-    const Radius.circular(5),
-  );
-  canvas.drawRRect(
-    housingRect.shift(const Offset(0, 4)),
-    Paint()
-      ..color = const Color(0xD9000000)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3),
-  );
-  canvas.drawRRect(
-    housingRect,
-    Paint()
-      ..shader = LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: [
-          Color.alphaBlend(
-            color.withValues(alpha: 0.34 * alpha),
-            const Color(0xFF31444B),
-          ),
-          const Color(0xFF132129),
-          const Color(0xFF060C10),
-        ],
-        stops: const [0, 0.48, 1],
-      ).createShader(housingRect.outerRect),
-  );
-  canvas.drawRRect(
-    housingRect,
-    Paint()
-      ..color = color.withValues(alpha: 0.64 * alpha)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.3,
-  );
-  canvas.drawRRect(
-    innerRect,
-    Paint()
-      ..shader = const LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: [Color(0xFF17272E), Color(0xFF091116)],
-      ).createShader(innerRect.outerRect),
-  );
-  canvas.drawLine(
-    const Offset(-15, -13),
-    const Offset(15, -13),
-    Paint()
-      ..color = Colors.white.withValues(alpha: 0.16 * alpha)
-      ..strokeWidth = 1,
-  );
-  final mountPaint = Paint()..color = color.withValues(alpha: 0.72 * alpha);
-  for (final mount in const [
-    Offset(-17, -14),
-    Offset(17, -14),
-    Offset(-17, 14),
-    Offset(17, 14),
-  ]) {
-    canvas
-      ..drawCircle(mount, 2.2, Paint()..color = const Color(0xFF02070A))
-      ..drawCircle(mount, 1.1, mountPaint);
-  }
-
-  canvas.scale(0.72);
-  _paintModuleMechanismFace(
+  paintModuleSolid3D(
     canvas,
     kind,
-    Offset.zero,
-    48,
+    center,
+    size,
     color,
     intensity: intensity,
+    topGlyphPainter: (glyphCanvas) {
+      _paintModuleMechanismFace(
+        glyphCanvas,
+        kind,
+        Offset.zero,
+        48,
+        color,
+        intensity: intensity,
+      );
+    },
   );
-  canvas.restore();
 }
 
 void _paintModuleMechanismFace(

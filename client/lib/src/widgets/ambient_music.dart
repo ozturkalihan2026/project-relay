@@ -3,6 +3,16 @@ import 'dart:async';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 
+class _NoopPositionUpdater extends PositionUpdater {
+  _NoopPositionUpdater() : super(getPosition: () async => null);
+
+  @override
+  void start() {}
+
+  @override
+  void stop() {}
+}
+
 class AmbientMusic extends StatefulWidget {
   const AmbientMusic({
     required this.asset,
@@ -37,6 +47,7 @@ class _AmbientMusicState extends State<AmbientMusic>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _player = AudioPlayer(playerId: 'ambient-${widget.asset}')
+      ..positionUpdater = _NoopPositionUpdater()
       ..setReleaseMode(ReleaseMode.loop);
   }
 

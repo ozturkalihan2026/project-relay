@@ -175,7 +175,7 @@ class ReplaySnapshot {
 
 class RelayReplayGame extends FlameGame {
   RelayReplayGame({
-    required this.match,
+    required MatchResponse match,
     required this.replay,
     required this.moduleSpecs,
     required this.formatter,
@@ -184,9 +184,14 @@ class RelayReplayGame extends FlameGame {
     this.leftVisuals = const EquippedVisuals.defaults(),
     this.rightVisuals = const EquippedVisuals.defaults(),
     this.moduleUpgradeBranches = const {},
-  }) : _cursor = ReplayPlaybackCursor(replay.events),
+  }) : live = false,
+       match = match,
+       _cursor = ReplayPlaybackCursor(replay.events),
        _leftHp = match.result.left.coreMaxHp,
        _rightHp = match.result.right.coreMaxHp {
+    _leftCoreMaxHp = match.result.left.coreMaxHp;
+    _rightCoreMaxHp = match.result.right.coreMaxHp;
+    _rightLabel = match.opponent.displayName.toUpperCase();
     _leftLayout = match.playerBoard;
     _rightLayout = match.opponentBoard;
     for (final module in [
@@ -222,8 +227,70 @@ class RelayReplayGame extends FlameGame {
     );
   }
 
-  final MatchResponse match;
+  /// Canlı savaş modu: tüm kareler önceden yüklenmiş bir replay yerine
+  /// [feedLiveFrame] ile dışarıdan beslenir; kursor oynatması yapılmaz.
+  RelayReplayGame.live({
+    required BoardDraft playerBoard,
+    required BoardDraft opponentBoard,
+    required ReplayStateFrame initialFrame,
+    required String opponentName,
+    required double leftCoreMaxHp,
+    required double rightCoreMaxHp,
+    required this.moduleSpecs,
+    required this.formatter,
+    required this.onFrame,
+    required this.onEvents,
+    this.leftVisuals = const EquippedVisuals.defaults(),
+    this.rightVisuals = const EquippedVisuals.defaults(),
+    this.moduleUpgradeBranches = const {},
+  }) : live = true,
+       match = null,
+       replay = const ReplayResponse(
+         matchId: '',
+         rulesVersion: '',
+         checksum: '',
+         events: [],
+         stateFrames: [],
+       ),
+       _cursor = ReplayPlaybackCursor(const []),
+       _leftHp = leftCoreMaxHp,
+       _rightHp = rightCoreMaxHp {
+    _leftCoreMaxHp = leftCoreMaxHp;
+    _rightCoreMaxHp = rightCoreMaxHp;
+    _rightLabel = opponentName.toUpperCase();
+    _leftLayout = playerBoard;
+    _rightLayout = opponentBoard;
+    for (final module in [...playerBoard.modules, ...opponentBoard.modules]) {
+      _knownPlacements[module.id] = module;
+    }
+    for (final module in initialFrame.left.modules) {
+      _leftModuleHp[module.id] = module.hp;
+      _moduleMaxHp[module.id] = module.maxHp;
+    }
+    for (final module in initialFrame.right.modules) {
+      _rightModuleHp[module.id] = module.hp;
+      _moduleMaxHp[module.id] = module.maxHp;
+    }
+    _leftBoardState = initialFrame.left;
+    _rightBoardState = initialFrame.right;
+    _applyBoardState(
+      _leftBoardState,
+      hp: _leftModuleHp,
+      states: _leftModuleStates,
+      deltas: _leftModuleDeltas,
+    );
+    _applyBoardState(
+      _rightBoardState,
+      hp: _rightModuleHp,
+      states: _rightModuleStates,
+      deltas: _rightModuleDeltas,
+    );
+    _tick = initialFrame.tick;
+  }
+
+  final MatchResponse? match;
   final ReplayResponse replay;
+  final bool live;
   final Map<ModuleKind, ModuleSpec> moduleSpecs;
   final ReplayEventFormatter formatter;
   final ValueChanged<ReplaySnapshot> onFrame;
@@ -247,6 +314,9 @@ class RelayReplayGame extends FlameGame {
   late BoardReplayState _rightBoardState;
   late BoardDraft _leftLayout;
   late BoardDraft _rightLayout;
+  late double _leftCoreMaxHp;
+  late double _rightCoreMaxHp;
+  late String _rightLabel;
 
   static const _defaultFrameDelay = 0.58;
   double speed = 1;
@@ -260,20 +330,26 @@ class RelayReplayGame extends FlameGame {
   String _lastEvent = 'Sistemler hazırlanıyor';
   BattleEvent? _lastEventData;
   bool _completionSent = false;
+  bool _complete = false;
 
   @visibleForTesting
   BoardDraft get debugLeftLayout => _leftLayout;
+
+  @visibleForTesting
+  int get debugPulseCount => _pulses.length;
 
   @override
   void update(double dt) {
     super.update(dt);
     _elapsed += dt * speed;
     _animationTime += dt * speed;
-    while (_elapsed >= _frameDelay && !_cursor.isComplete) {
-      _elapsed -= _frameDelay;
-      final frame = _cursor.next();
-      if (frame != null) {
-        _applyFrame(frame);
+    if (!live) {
+      while (_elapsed >= _frameDelay && !_cursor.isComplete) {
+        _elapsed -= _frameDelay;
+        final frame = _cursor.next();
+        if (frame != null) {
+          _applyFrame(frame);
+        }
       }
     }
 
@@ -282,21 +358,21 @@ class RelayReplayGame extends FlameGame {
     }
     _pulses.removeWhere((pulse) => pulse.life <= 0);
 
-    if (_cursor.isComplete && !_completionSent) {
+    if (!live && _cursor.isComplete && !_completionSent) {
       _completionSent = true;
-      _tick = match.result.ticks;
-      final finalFrame = replay.stateAt(match.result.ticks);
+      _tick = match!.result.ticks;
+      final finalFrame = replay.stateAt(match!.result.ticks);
       if (finalFrame != null) {
         _setReplayState(finalFrame);
       }
-      _leftHp = match.result.left.coreHp;
-      _rightHp = match.result.right.coreHp;
+      _leftHp = match!.result.left.coreHp;
+      _rightHp = match!.result.right.coreHp;
       onFrame(
         ReplaySnapshot(
           tick: _tick,
           leftHp: _leftHp,
           rightHp: _rightHp,
-          lastEvent: _resultLabel(match.result.winner),
+          lastEvent: _resultLabel(match!.result.winner),
           visibleEventCount: _processedEventCount,
           complete: true,
         ),
@@ -338,6 +414,62 @@ class RelayReplayGame extends FlameGame {
         lastEvent: _lastEvent,
         visibleEventCount: _processedEventCount,
         complete: false,
+      ),
+    );
+  }
+
+  /// Canlı savaşta sunucudan gelen kareyi ve bu karedeki yeni olayları işler.
+  void feedLiveFrame({
+    required ReplayStateFrame frame,
+    required List<BattleEvent> newEvents,
+  }) {
+    assert(live);
+    _tick = frame.tick;
+    _setReplayState(frame);
+    _leftCoreMaxHp = math.max(_leftCoreMaxHp, frame.left.coreHp);
+    _rightCoreMaxHp = math.max(_rightCoreMaxHp, frame.right.coreHp);
+    for (final event in newEvents) {
+      _applyModuleSwapLayout(event);
+      _pulses.add(
+        _VisualPulse.fromEvent(
+          event,
+          attackColor: event.side == 'left'
+              ? leftVisuals.modules.attack
+              : rightVisuals.modules.attack,
+        ),
+      );
+      _lastEventData = event;
+      _moduleActionStartedAt[event.actorId] = _animationTime;
+      _lastEvent = formatter.eventLabel(event);
+      _processedEventCount += 1;
+    }
+    onEvents(newEvents);
+    onFrame(
+      ReplaySnapshot(
+        tick: _tick,
+        leftHp: _leftHp,
+        rightHp: _rightHp,
+        lastEvent: _lastEvent,
+        visibleEventCount: _processedEventCount,
+        complete: _complete,
+      ),
+    );
+  }
+
+  /// Canlı savaş tamamlandığında son kareye işaret eden bildirimi yayınlar.
+  void markLiveComplete({required int finalTick, required String resultLabel}) {
+    assert(live);
+    _complete = true;
+    _tick = finalTick;
+    _lastEvent = resultLabel;
+    onFrame(
+      ReplaySnapshot(
+        tick: _tick,
+        leftHp: _leftHp,
+        rightHp: _rightHp,
+        lastEvent: resultLabel,
+        visibleEventCount: _processedEventCount,
+        complete: true,
       ),
     );
   }
@@ -557,7 +689,7 @@ class RelayReplayGame extends FlameGame {
         label: 'SEN',
         visuals: leftVisuals,
         coreHp: _leftHp,
-        coreMaxHp: match.result.left.coreMaxHp,
+        coreMaxHp: _leftCoreMaxHp,
       ),
     );
     _drawBoardPlatform(
@@ -580,10 +712,10 @@ class RelayReplayGame extends FlameGame {
         deltas: _rightModuleDeltas,
         boardState: _rightBoardState,
         color: RelayColors.coral,
-        label: match.opponent.displayName.toUpperCase(),
+        label: _rightLabel,
         visuals: rightVisuals,
         coreHp: _rightHp,
-        coreMaxHp: match.result.right.coreMaxHp,
+        coreMaxHp: _rightCoreMaxHp,
       ),
     );
 
@@ -1536,29 +1668,15 @@ class RelayReplayGame extends FlameGame {
     required ui.Offset rightCore,
   }) {
     final event = pulse.event;
-    final from =
-        _modulePoint(
-          event.actorId,
-          event.side == 'left' ? _leftLayout : _rightLayout,
-          event.side == 'left' ? leftBoard : rightBoard,
-        ) ??
-        (event.side == 'left' ? leftCore : rightCore);
-    final targetOnEnemy =
-        event.type == 'attack' ||
-        event.type == 'destroyed' ||
-        event.type == 'core_damage' ||
-        event.type == 'shield_absorb';
-    final targetBoard = targetOnEnemy
-        ? (event.side == 'left' ? _rightLayout : _leftLayout)
-        : (event.side == 'left' ? _leftLayout : _rightLayout);
-    final targetRect = targetOnEnemy
-        ? (event.side == 'left' ? rightBoard : leftBoard)
-        : (event.side == 'left' ? leftBoard : rightBoard);
-    final targetCore = event.side == 'left' ? rightCore : leftCore;
-    final to = event.type == 'core_damage'
-        ? targetCore
-        : _modulePoint(event.targetId, targetBoard, targetRect) ??
-              (targetOnEnemy ? targetRect.center : from);
+    final endpoints = _beamEndpoints(
+      event,
+      leftBoard: leftBoard,
+      rightBoard: rightBoard,
+      leftCore: leftCore,
+      rightCore: rightCore,
+    );
+    final from = endpoints.from;
+    final to = endpoints.to;
     final opacity = pulse.life.clamp(0.0, 1.0).toDouble();
     final color = pulse.color.withValues(alpha: opacity);
 
@@ -1600,6 +1718,128 @@ class RelayReplayGame extends FlameGame {
         ..style = PaintingStyle.stroke
         ..strokeWidth = 4,
     );
+  }
+
+  /// Işın ve halka olaylarının sahne koordinatlarını hesaplar. Saldırı ışınları
+  /// saldıran modülün hedefe bakan gerçek portundan (namlu/emitör) çıkar ve hedef
+  /// modülün kaynağa bakan portuna düşer; kalkan/onarım halkaları hedefte çizilir.
+  ({ui.Offset from, ui.Offset to}) _beamEndpoints(
+    BattleEvent event, {
+    required ui.Rect leftBoard,
+    required ui.Rect rightBoard,
+    required ui.Offset leftCore,
+    required ui.Offset rightCore,
+  }) {
+    final fromIsLeft = event.side == 'left';
+    final fromLayout = fromIsLeft ? _leftLayout : _rightLayout;
+    final fromRect = fromIsLeft ? leftBoard : rightBoard;
+    final fromModule = _layoutModule(event.actorId, fromLayout);
+    final fromCenter = fromModule == null
+        ? (fromIsLeft ? leftCore : rightCore)
+        : _modulePoint(fromModule.id, fromLayout, fromRect) ??
+              (fromIsLeft ? leftCore : rightCore);
+
+    final targetOnEnemy =
+        event.type == 'attack' ||
+        event.type == 'destroyed' ||
+        event.type == 'core_damage' ||
+        event.type == 'shield_absorb';
+    final targetLayout = targetOnEnemy
+        ? (fromIsLeft ? _rightLayout : _leftLayout)
+        : fromLayout;
+    final targetRect = targetOnEnemy
+        ? (fromIsLeft ? rightBoard : leftBoard)
+        : fromRect;
+    final targetCore = fromIsLeft ? rightCore : leftCore;
+    final toModule = _layoutModule(event.targetId, targetLayout);
+    final to = event.type == 'core_damage'
+        ? targetCore
+        : toModule == null
+        ? (targetOnEnemy ? targetRect.center : fromCenter)
+        : _facingPortPoint(
+            module: toModule,
+            boardRect: targetRect,
+            leftSide: identical(targetLayout, _leftLayout),
+            toward: fromCenter,
+          );
+
+    final beam = event.type == 'attack' || event.type == 'core_damage';
+    final from = beam && fromModule != null
+        ? _facingPortPoint(
+            module: fromModule,
+            boardRect: fromRect,
+            leftSide: fromIsLeft,
+            toward: to,
+          )
+        : fromCenter;
+    return (from: from, to: to);
+  }
+
+  @visibleForTesting
+  ({ui.Offset from, ui.Offset to}) debugBeamEndpoints(
+    BattleEvent event,
+    ui.Size stageSize,
+  ) {
+    final leftBoard = ReplayStageGeometry.leftBoard(stageSize);
+    final rightBoard = ReplayStageGeometry.rightBoard(stageSize);
+    return _beamEndpoints(
+      event,
+      leftBoard: leftBoard,
+      rightBoard: rightBoard,
+      leftCore: leftBoard.center,
+      rightCore: rightBoard.center,
+    );
+  }
+
+  ModulePlacement? _layoutModule(String? id, BoardDraft board) {
+    if (id == null) {
+      return null;
+    }
+    for (final module in board.modules) {
+      if (module.id == id) {
+        return module;
+      }
+    }
+    return null;
+  }
+
+  /// Modülün [toward] yönüne bakan kenarındaki port noktasını döndürür. Savaş
+  /// hedeflemesi motor tarafında yönelimden bağımsız yapıldığı için namlu/emitör
+  /// görselde hedefe bakan kenarın orta portu olarak çizilir; böylece ışın her
+  /// devrede görünür kenardan çıkar ve hedefin karşı kenarına düşer.
+  ui.Offset _facingPortPoint({
+    required ModulePlacement module,
+    required ui.Rect boardRect,
+    required bool leftSide,
+    required ui.Offset toward,
+  }) {
+    final center = _modulePoint(
+      module.id,
+      leftSide ? _leftLayout : _rightLayout,
+      boardRect,
+    );
+    if (center == null) {
+      return boardRect.center;
+    }
+    final direction = _facingDirection(center, toward);
+    final raw = ReplayCircuitGeometry.modulePortAnchor(
+      module,
+      direction,
+      boardRect,
+    );
+    return ReplayStageGeometry.perspectivePoint(
+      raw,
+      boardRect,
+      leftSide: leftSide,
+    );
+  }
+
+  RelayDirection _facingDirection(ui.Offset from, ui.Offset toward) {
+    final delta = toward - from;
+    if (delta.dx.abs() >= delta.dy.abs()) {
+      return delta.dx >= 0 ? RelayDirection.east : RelayDirection.west;
+    }
+    return delta.dy >= 0 ? RelayDirection.south : RelayDirection.north;
   }
 
   ui.Offset? _modulePoint(String? id, BoardDraft board, ui.Rect rect) {

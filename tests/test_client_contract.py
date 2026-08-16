@@ -111,7 +111,7 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertNotIn("module-name-${module.id}", board)
         self.assertNotIn("module-stat-badges-${module.id}", board)
         self.assertIn("tooltip: '90° döndür'", board)
-        self.assertIn("'ÇEKİRDEK KAPISI'", board)
+        self.assertNotIn("'ÇEKİRDEK KAPISI'", board)
 
         # v0.4.10: geniş editör, ayrı geri kartı ve sade sunucu sunumu.
         self.assertIn("BoxConstraints(maxWidth: 1360)", editor)
@@ -1189,7 +1189,7 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("/api/v1/me/career-board", api)
         self.assertIn("fetchCareerBoard", editor)
         self.assertIn("saveCareerBoard", editor)
-        self.assertIn("editor-page-scrollbar", editor)
+        self.assertNotIn("editor-page-scrollbar", editor)
         self.assertIn("thumbVisibility: true", editor)
         self.assertIn("SONRAKİ SAVAŞA İLERLE", career)
         self.assertIn("BOSS ÖNCESİ GÜÇLENDİRİCİ MAĞAZASI", career)
@@ -1222,7 +1222,9 @@ class FlutterClientContractTests(unittest.TestCase):
         ).read_text(encoding="utf-8")
         self.assertIn("CareerLiveBattleScreen(", career)
         self.assertIn("startCareerBattleSession", career)
-        self.assertIn("CareerBattleScreen(", live_battle)
+        self.assertNotIn("CareerBattleScreen(", live_battle)
+        self.assertIn("BattleCenterAnalysisPanel(", live_battle)
+        self.assertIn("markLiveComplete", live_battle)
         self.assertIn("Timer.periodic", live_battle)
         self.assertIn("advanceCareerBattleSession", live_battle)
         self.assertIn("swapCareerBattleModule", live_battle)

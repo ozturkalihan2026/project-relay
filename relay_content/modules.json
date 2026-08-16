@@ -52,7 +52,7 @@
       "energy_cost": 5,
       "cooldown_ticks": 3,
       "heat_per_action": 11,
-      "shield": 14,
+      "shield": 26,
       "threat": 120
     },
     {

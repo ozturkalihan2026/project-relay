@@ -725,9 +725,11 @@ class _DragFeedback extends StatelessWidget {
             ),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
                   ModuleHardware(kind: module.kind, color: color, size: 36),
                   const SizedBox(height: 4),
                   Text(
@@ -752,6 +754,7 @@ class _DragFeedback extends StatelessWidget {
                     ),
                   ),
                 ],
+                ),
               ),
             ),
           ),

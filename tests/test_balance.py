@@ -231,7 +231,7 @@ class BattleBalanceTests(unittest.TestCase):
         self.assertEqual(pulse.damage, 16)
         self.assertEqual(pulse.heat_per_action, 30)
         self.assertEqual(generator.energy_output, 8)
-        self.assertEqual(shield.shield, 14)
+        self.assertEqual(shield.shield, 26)
         self.assertGreater(shield.threat, pulse.threat)
 
 

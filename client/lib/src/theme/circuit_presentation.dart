@@ -14,8 +14,8 @@ abstract final class CircuitPresentationSpec {
   static const double coreExtentFactor = 0.48;
   static const double coreCornerRadius = 24;
 
-  static const double preparationPerspectiveDepth = 0.00115;
-  static const double preparationDeckTilt = -0.20;
+  static const double preparationPerspectiveDepth = 0.00140;
+  static const double preparationDeckTilt = -0.26;
   static const double preparationDeckYaw = 0.008;
   static const double battlePerspectiveShear = 0.018;
   static const double platformDepth = 20;

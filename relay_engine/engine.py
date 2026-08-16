@@ -262,6 +262,7 @@ class CircuitBattleEngine:
         enemy: _BoardState,
         seed: int,
         events: list[BattleEvent],
+        enemy_attacks: bool = False,
     ) -> list[_Intent]:
         for module in own.modules.values():
             if not module.alive:
@@ -353,6 +354,10 @@ class CircuitBattleEngine:
                 target_core = target_position is None
             elif spec.shield > 0:
                 if projected_shield >= self.config.max_board_shield - 1e-9:
+                    module.energy_wait_ticks = 0
+                    module.energy_starved_reported = False
+                    continue
+                if not enemy_attacks:
                     module.energy_wait_ticks = 0
                     module.energy_starved_reported = False
                     continue
@@ -620,6 +625,16 @@ class CircuitBattleEngine:
                         target_id=target.placement.module_id,
                     )
                 )
+
+    def _will_attack(self, board: _BoardState) -> bool:
+        powered = self._powered_positions(board)
+        return any(
+            (module := board.modules[position]).placement.kind
+            in (ModuleKind.LASER, ModuleKind.PULSE_CANNON)
+            and not module.overheated
+            and module.cooldown <= 1
+            for position in powered
+        )
 
     def _powered_positions(self, board: _BoardState) -> set[tuple[int, int]]:
         generators = [
@@ -1185,6 +1200,8 @@ class LiveBattleSession:
             if pending is not None and pending.apply_tick == tick:
                 self._apply_pending_swap(pending)
 
+        left_attacks = self.engine._will_attack(self._states[Side.LEFT])
+        right_attacks = self.engine._will_attack(self._states[Side.RIGHT])
         left_intents = self.engine._plan_tick(
             tick,
             Side.LEFT,
@@ -1192,6 +1209,7 @@ class LiveBattleSession:
             self._states[Side.RIGHT],
             self.seed,
             self._events,
+            enemy_attacks=right_attacks,
         )
         right_intents = self.engine._plan_tick(
             tick,
@@ -1200,6 +1218,7 @@ class LiveBattleSession:
             self._states[Side.LEFT],
             self.seed,
             self._events,
+            enemy_attacks=left_attacks,
         )
         intents = left_intents + right_intents
         if self.overload:

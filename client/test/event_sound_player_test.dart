@@ -32,18 +32,15 @@ void main() {
     );
 
     expect(channels, hasLength(12));
-    expect(
-      channels.map((channel) => channel.asset).toSet(),
-      {'sounds/shield_charge.wav'},
-    );
+    expect(channels.map((channel) => channel.asset).toSet(), {
+      'sounds/shield_charge.wav',
+    });
     expect(channels.every((channel) => !channel.isDisposed), isTrue);
 
     for (final channel in channels) {
       channel.complete();
     }
-    await Future.wait(
-      channels.map((channel) => channel.whenDisposed),
-    );
+    await Future.wait(channels.map((channel) => channel.whenDisposed));
 
     expect(channels.every((channel) => channel.isDisposed), isTrue);
     await soundPlayer.dispose();
@@ -80,14 +77,11 @@ void main() {
     ]);
 
     expect(channels, hasLength(3));
-    expect(
-      channels.map((channel) => channel.asset).toSet(),
-      {
-        'sounds/laser.wav',
-        'sounds/attack.wav',
-        'sounds/repair.wav',
-      },
-    );
+    expect(channels.map((channel) => channel.asset).toSet(), {
+      'sounds/laser.wav',
+      'sounds/attack.wav',
+      'sounds/repair.wav',
+    });
     await soundPlayer.dispose();
     expect(channels.every((channel) => channel.isDisposed), isTrue);
 
@@ -102,11 +96,61 @@ void main() {
     ]);
     expect(channels, hasLength(3));
   });
+
+  test('canlı kartlardan kurulan sesçi silah türünü kartlardan okur', () async {
+    final channels = <_FakeSoundChannel>[];
+    final soundPlayer = EventSoundPlayer.fromBoards(
+      playerBoard: const BoardDraft(
+        name: 'Oyuncu',
+        modules: [
+          ModulePlacement(
+            id: 'P-LASER',
+            kind: ModuleKind.laser,
+            row: 1,
+            column: 1,
+          ),
+        ],
+      ),
+      opponentBoard: const BoardDraft(
+        name: 'Rakip',
+        modules: [
+          ModulePlacement(
+            id: 'BOT-SHIELD',
+            kind: ModuleKind.shield,
+            row: 2,
+            column: 1,
+          ),
+        ],
+      ),
+      channelFactory: () {
+        final channel = _FakeSoundChannel();
+        channels.add(channel);
+        return channel;
+      },
+    );
+
+    await soundPlayer.playFrame([
+      const BattleEvent(
+        tick: 1,
+        side: 'left',
+        type: 'attack',
+        actorId: 'P-LASER',
+        targetId: 'BOT-SHIELD',
+        amount: 8,
+      ),
+    ]);
+
+    expect(channels.map((channel) => channel.asset).toSet(), {
+      'sounds/laser.wav',
+      'sounds/attack.wav',
+    });
+    await soundPlayer.dispose();
+    expect(channels.every((channel) => channel.isDisposed), isTrue);
+  });
 }
 
 class _FakeSoundChannel implements EventSoundChannel {
-  final StreamController<void> _completion =
-      StreamController<void>.broadcast();
+  final StreamController<void> _completion = StreamController<void>.broadcast();
   final Completer<void> _disposed = Completer<void>();
 
   String? asset;

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
@@ -27,6 +28,7 @@ class _BattleArenaAtmosphereState extends State<BattleArenaAtmosphere>
   late final AnimationController _controller;
   Color _impactColor = RelayColors.cyan;
   double _impactStrength = 0;
+  Timer? _impactResetTimer;
 
   @override
   void initState() {
@@ -65,13 +67,15 @@ class _BattleArenaAtmosphereState extends State<BattleArenaAtmosphere>
           ? RelayColors.mint
           : RelayColors.coral;
     });
-    Future<void>.delayed(const Duration(milliseconds: 420), () {
+    _impactResetTimer?.cancel();
+    _impactResetTimer = Timer(const Duration(milliseconds: 420), () {
       if (mounted) setState(() => _impactStrength = 0);
     });
   }
 
   @override
   void dispose() {
+    _impactResetTimer?.cancel();
     widget.events.removeListener(_onEvents);
     _controller.dispose();
     super.dispose();

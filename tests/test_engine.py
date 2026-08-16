@@ -970,8 +970,22 @@ class CircuitBattleEngineTests(unittest.TestCase):
                 ),
             )
         )
+        enemy = BoardLayout(
+            modules=(
+                generator("ENEMY"),
+                placement("ENEMY-LASER", ModuleKind.LASER, 0, 2),
+                placement("ENEMY-BAT", ModuleKind.BATTERY, 1, 3),
+                placement(
+                    "ENEMY-PULSE",
+                    ModuleKind.PULSE_CANNON,
+                    0,
+                    3,
+                    Direction.NORTH,
+                ),
+            )
+        )
 
-        result = engine.simulate(board, generator_only("ENEMY"), seed=7)
+        result = engine.simulate(board, enemy, seed=7)
         shield_events = [
             event
             for event in result.events
@@ -1000,7 +1014,7 @@ class CircuitBattleEngineTests(unittest.TestCase):
             all(event.detail == "streak_started" for event in starvation_events)
         )
 
-    def test_shield_never_spends_energy_when_pool_is_full(self) -> None:
+    def test_shield_stays_idle_when_enemy_does_not_attack(self) -> None:
         engine = CircuitBattleEngine(BattleConfig(max_ticks=30))
         board = BoardLayout(
             modules=(
@@ -1017,9 +1031,8 @@ class CircuitBattleEngineTests(unittest.TestCase):
             and event.event_type is EventType.SHIELD
         ]
 
-        self.assertTrue(shield_events)
-        self.assertTrue(all(event.amount > 0 for event in shield_events))
-        self.assertEqual(result.left.energy_spent, len(shield_events) * 5)
+        self.assertEqual(shield_events, [])
+        self.assertEqual(result.left.energy_spent, 0)
 
     def test_repair_restores_damaged_module(self) -> None:
         engine = CircuitBattleEngine(BattleConfig(max_ticks=12))

@@ -8,13 +8,17 @@ import '../models/relay_models.dart';
 class BattleCameraRig extends StatefulWidget {
   const BattleCameraRig({
     required this.events,
-    required this.match,
+    required this.playerBoard,
+    required this.opponentBoard,
+    this.finalTick,
     required this.child,
     super.key,
   });
 
   final ValueListenable<List<BattleEvent>> events;
-  final MatchResponse match;
+  final BoardDraft playerBoard;
+  final BoardDraft opponentBoard;
+  final int? finalTick;
   final Widget child;
 
   @override
@@ -49,7 +53,10 @@ class _BattleCameraRigState extends State<BattleCameraRig>
     if (events.isEmpty) return;
     _strength = events.fold<double>(0, (value, event) {
       final next = switch (event.type) {
-        'core_damage' => event.tick >= widget.match.result.ticks ? 1.35 : 1.0,
+        'core_damage' =>
+          widget.finalTick != null && event.tick >= widget.finalTick!
+              ? 1.35
+              : 1.0,
         'destroyed' => 0.78,
         'attack' => _isPulse(event.actorId) ? 0.58 : 0.24,
         'shield_absorb' => 0.30,
@@ -61,7 +68,10 @@ class _BattleCameraRigState extends State<BattleCameraRig>
   }
 
   bool _isPulse(String id) {
-    for (final module in [...widget.match.playerBoard.modules, ...widget.match.opponentBoard.modules]) {
+    for (final module in [
+      ...widget.playerBoard.modules,
+      ...widget.opponentBoard.modules,
+    ]) {
       if (module.id == id) return module.kind == ModuleKind.pulseCannon;
     }
     return false;

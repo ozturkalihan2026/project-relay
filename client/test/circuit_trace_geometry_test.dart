@@ -269,7 +269,8 @@ void main() {
         find.byKey(const ValueKey('module-stat-badges-gate-generator')),
         findsNothing,
       );
-      expect(find.text('ÇEKİRDEK KAPISI'), findsOneWidget);
+      expect(find.text('ÇEKİRDEK KAPISI'), findsNothing);
+      expect(find.text('KAPI'), findsNothing);
       expect(tester.takeException(), isNull);
     },
   );

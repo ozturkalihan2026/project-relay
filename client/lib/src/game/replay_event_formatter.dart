@@ -1,16 +1,36 @@
 import '../models/relay_models.dart';
 
 class ReplayEventFormatter {
-  ReplayEventFormatter(this.match)
+  ReplayEventFormatter(MatchResponse match)
     : _modules = {
         for (final module in match.playerBoard.modules)
           module.id: _KnownModule(module, 'Sen'),
         for (final module in match.opponentBoard.modules)
           module.id: _KnownModule(module, match.opponent.displayName),
-      };
+      },
+      _sideLabel = _labelFrom(match.opponent.displayName);
 
-  final MatchResponse match;
+  ReplayEventFormatter.fromBoards({
+    required BoardDraft playerBoard,
+    required BoardDraft opponentBoard,
+    required String opponentName,
+  }) : _modules = {
+         for (final module in playerBoard.modules)
+           module.id: _KnownModule(module, 'Sen'),
+         for (final module in opponentBoard.modules)
+           module.id: _KnownModule(module, opponentName),
+       },
+       _sideLabel = _labelFrom(opponentName);
+
   final Map<String, _KnownModule> _modules;
+  final String Function(String side) _sideLabel;
+
+  static String Function(String side) _labelFrom(String opponentName) =>
+      (side) => switch (side) {
+        'left' => 'SEN',
+        'right' => opponentName.toUpperCase(),
+        _ => 'SİSTEM',
+      };
 
   String moduleLabel(String? id) {
     if (id == null) {
@@ -53,11 +73,7 @@ class ReplayEventFormatter {
     };
   }
 
-  String sideLabel(String side) => switch (side) {
-    'left' => 'SEN',
-    'right' => match.opponent.displayName.toUpperCase(),
-    _ => 'SİSTEM',
-  };
+  String sideLabel(String side) => _sideLabel(side);
 }
 
 class _KnownModule {

@@ -267,7 +267,9 @@ class _ReplayScreenState extends ConsumerState<ReplayScreen> {
                           events: _attackOverlayEvents,
                           child: BattleCameraRig(
                             events: _attackOverlayEvents,
-                            match: widget.match,
+                            playerBoard: widget.match.playerBoard,
+                            opponentBoard: widget.match.opponentBoard,
+                            finalTick: widget.match.result.ticks,
                             child: Stack(
                               children: [
                                 Positioned.fill(
@@ -279,7 +281,9 @@ class _ReplayScreenState extends ConsumerState<ReplayScreen> {
                                 Positioned.fill(
                                   child: ReplayAttackOverlay(
                                     events: _attackOverlayEvents,
-                                    match: widget.match,
+                                    playerBoard: widget.match.playerBoard,
+                                    opponentBoard: widget.match.opponentBoard,
+                                    finalTick: widget.match.result.ticks,
                                     leftVisuals: _leftVisuals,
                                   ),
                                 ),

@@ -5,13 +5,19 @@ devam etmek için tutulan kısa ve kalıcı bağlamdır. Tam sohbet dökümü de
 
 ## Depo durumu
 
-- Son güncelleme: 2026-08-15 (Europe/Istanbul)
+- Son güncelleme: 2026-08-16 (Europe/Istanbul, üçüncü oturum)
 - Depo: `https://github.com/ozturkalihan2026/project-relay.git`
 - Aktif dal: `main` (`origin/main` takip ediliyor)
-- Son doğrulanmış commit: `aaa24da` — `hotfix`
-- Senkronizasyon: Bu güncelleme hazırlanırken yerel `main` ile `origin/main` aynı
-  commit'i gösteriyordu.
-- Çalışma ağacı: Güncelleme başlamadan önce temizdi.
+- Son doğrulanmış commit: `991344a` (`D:/Projects/project-relay` HEAD). D: çalışma
+  ağacında commit'lenmemiş canlı savaş yeniden yazımı var; `replay_game.dart` dahil
+  değişen dosyaların içeriği bu oturumda Desktop kopyasıyla birebir aynı (SHA256
+  eşit) doğrulandı.
+- Senkronizasyon: Yerel `main` ile `origin/main` aynı commit'i gösteriyordu; yerel
+  değişiklik varken otomatik pull yapılmadı.
+- Bu oturum `C:\Users\S-A\Desktop\Project Relay` kopyasında çalıştı; bu kopya git
+  deposu değildir (`.git` eklenmedi, kullanıcı kararı). Değişiklikler yalnız dosya
+  sisteminde; commit/push, değişiklikler git etkinleştirilen depoya aktarıldıktan
+  sonra yapılabilir.
 
 ## Aktif amaç
 
@@ -121,20 +127,146 @@ göre yapılacak.
 - `CareerLiveBattleScreen` eklendi. İki devre ve enerji akışları savaş boyunca
   güncelleniyor; alt raf sürekli görünür, yalnız müdahale hakkı açıkken sürüklenir,
   tek değişimden sonra kilitlenir ve simülasyon isteği hiçbir modal/pause olmadan
-  sürer. Mevcut uygulamada savaş tamamlanınca kesin replay ekranına geçilir;
-  v0.8.23'ün ilk işi bu ikinci oynatımı kaldırmaktır.
+  sürer. Savaş tamamlanınca artık otomatik replay ekranına geçilmiyor; sonuç aynı
+  canlı sahnede analiz paneliyle gösteriliyor (aşağıdaki v0.8.23 maddeleri).
 - `module_swap` replay olayı artık tekrar yerleşimini de güncelliyor; yeni modül
   olaydan önce değil, değişimin uygulandığı tickten itibaren doğru hücre ve yönde
   çiziliyor.
+- v0.8.23 kariyer savaşı tek canlı sahneye geçirildi. `RelayReplayGame.live`
+  live-feed modu eklendi: `feedLiveFrame`, `markLiveComplete`, opsiyonel
+  `match` + `live` bayrağı ve çekirdek canı max takibi; canlı modda `update()`/
+  `render()` match bağımlılıklarından arındırıldı.
+- `ReplayEventFormatter.fromBoards` eklendi; biçimlendirici `match` yerine
+  `_sideLabel` fonksiyonu tutuyor. `BattleVisualDirector.cueFor`,
+  `ReplayAttackOverlay` ve `BattleCameraRig` `MatchResponse` yerine
+  `playerBoard`/`opponentBoard` ve opsiyonel `finalTick` alacak şekilde yeniden
+  düzenlendi; canlı snapshot'lar da aynı görsel katmanı kullanıyor.
+- `CareerLiveBattleScreen` yeniden yazıldı: savaş aynı sahnede `GameWidget` +
+  Flame ile canlı oynatılıyor, saldırı/kalkan/onarım olayları `ReplayAttackOverlay`
+  ile eş zamanlı gösteriliyor, müdahale sol devreye gerçek hücre hesabıyla
+  bırakılıyor ve savaş tamamlanınca otomatik replay geçişi yerine aynı sahnede
+  `BattleCenterAnalysisPanel` açılıyor. `CareerBattleScreen`'e `pushReplacement`
+  kaldırıldı.
+- Eski davranışı test eden `tests/test_client_contract.py` sözleşme testi yeni
+  davranışa göre güncellendi (canlı ekranda `CareerBattleScreen` referansı
+  beklenmemesi; `BattleCenterAnalysisPanel`, `markLiveComplete` beklenmesi).
+- Saldırı/kalkan görsel olayları gerçek kenar portlarından oynatılıyor:
+  `_drawPulse` ışın ve halka koordinatlarını `_beamEndpoints` üzerinden hesaplar;
+  saldırı ışını saldıran modülün hedefe bakan kenar portundan (namlu/emitör)
+  çıkar ve hedef modülün kaynağa bakan kenar portuna düşer. Savaş hedeflemesi
+  motor tarafında yönelimden bağımsız olduğu için namlu "hedefe bakan kenar"
+  olarak çizilir. `debugBeamEndpoints` test kancası eklendi.
+- Canlı savaş ekranı olay seslerini de oynatıyor: `EventSoundPlayer.fromBoards`
+  eklendi; canlı modda henüz maç kaydı yokken silah/tür sesleri kartlardan
+  okunuyor ve `_feedSession` yeni olayları `replaySoundEnabled` açıksa sesçiye
+  iletiyor. `event_sound_player_test.dart`'e `fromBoards` birim testi eklendi.
+- Hazırlık ekranı temizliği (madde 6 kapsamı): online hazırlık sayfasındaki her
+  zaman görünür `editor-page-scrollbar` kaldırıldı (kaydırma davranışı korunuyor);
+  paylaşılan `CircuitBoard` üzerindeki `KAPI` ve `ÇEKİRDEK KAPISI` etiketleri
+  kaldırıldı; etiket bekleyen geometri testi, etiketlerin artık görünmediğini
+  doğrulayacak şekilde güncellendi. Yinelenen enerji kartı ve merkez toast daha
+  önce tamamlanmıştı. `test_client_contract.py` eski beklentileri negatife çevirerek
+  güncellendi (`'ÇEKİRDEK KAPISI'` ve `editor-page-scrollbar` artık bulunmamalı).
+- Işın kaybolması araştırması (kullanıcı raporu) tamamlandı; sonuç: **canlı savaş
+  ekranındaki saldırı ışınları akışı sağlam.** Sunucu olaylarının kümülatif olduğu
+  (`battle.events` → snapshot `events`) doğrulandı; `_feedSession` yeni olayları
+  alt listeler, `feedLiveFrame` pulse ekler, `_setReplayState` pulse'ları
+  temizlemez ve `render` tahtalardan sonra çizer. Piksel probe testi
+  (`RelayReplayGame.live` + saldırı olayı + `render`) 7144 kırmızı piksel üretti;
+  tam widget probe testi 540ms timer → `advance` → `feedLiveFrame` → `pulses=1`
+  akışını doğruladı. HEAD sürümünün canlı ekranında hiç ışın yoktu (sahne
+  `CircuitBoard` ile çiziliyordu); mevcut çalışma kopyası ışınlı ilk sürüm.
+  Kullanıcı raporu büyük olasılıkla eski/cache'li bir web derlemesinden; gerçek
+  tarayıcı kabulü (madde 2/3) yine de elle yapılmalı.
+- `BattleArenaAtmosphere` zamanlayıcı sızıntısı düzeltildi: darbe sıfırlaması
+  `Future.delayed` yerine `Timer` ile tutulup `dispose`'ta iptal ediliyor (widget
+  testlerinde "Timer is still pending" hatası ve gerçek ekranda gereksiz setState).
+- Kullanıcının `hata1.txt` raporu giderildi: `module_palette.dart` `_DragFeedback`
+  içeriği `FittedBox(fit: BoxFit.scaleDown)` ile sarıldı; 112x86 geri bildirim
+  kutusundaki ~5.5px dikey RenderFlex taşması artık oluşmuyor ve uzun modül
+  adlarında da güvenli. `module_palette_layout_test.dart`'e sürükleme geri
+  bildirimi taşmasız render testi eklendi.
+- Kullanıcının `hata2.txt` raporu giderildi: web'de `audioplayers` varsayılan
+  `FramePositionUpdater` her karede `getCurrentPosition` çağırıyor; oynatıcı
+  kapanırken askıda kalan bir kare `PlatformException(WebAudioError, Player has
+  not yet been created or has already been disposed.)` üretiyordu. Konum akışı
+  kullanılmadığı için hem `EventSoundPlayer` kanallarına hem `AmbientMusic`
+  oynatıcısına boş `_NoopPositionUpdater` bağlandı; çağrılar tamamen kesildi.
+- Kalıcı regresyon testleri eklendi: `career_live_battle_screen_test.dart`'e
+  "canlı saat saldırı olayını oyun kuyruğuna besler" (sahte `RelayApi.advance` +
+  `GameWidget` üzerinden `debugPulseCount`) ve `replay_game.dart`'e
+  `debugPulseCount` test kancası. Geçici probe dosyaları silindi
+  (`tmp_beam_probe_test.dart`, `tmp_live_pipeline_probe_test.dart`).
+- **Reaktif kalkan (motor):** Kalkan modülü artık yalnız düşman o tickte saldırdığında
+  (en az bir düşman saldırganının cooldown'ı ≤1) şarj oluyor ve enerji harcıyor.
+  Sessiz tick'lerde şarj girişimi yok, `ENERGY_STARVED` üretilmiyor. Kök neden:
+  kalkan, "kullanılmayan enerjiyi havuza biriktir" davranışıyla savaşın durağan
+  bölümlerinde bile 5 enerjiye karşılık hiçbir fayda üretmiyordu. `_plan_tick`'e
+  `enemy_attacks` parametresi eklendi; `advance()` iki tarafın saldırı niyetini
+  planlamadan önce `_will_attack` ile simetrik hesaplıyor. Önceki hatalı
+  `_enemy_has_ready_attacker` yaklaşımı kaldırıldı.
+- **Kalkan dengesi (rebalance, kullanıcı onayı):** Reaktif kalkan korunup denge
+  hemen ayarlandı. 21 tohum × tüm eşleşme matrisi taranarak kalkan değeri
+  `relay_content/modules.json`'da 14 → 26 yapıldı (cooldown 3, enerji 5, ısı 11
+  değişmedi; repair değişmedi). Shield=26/cd=3 ile tüm denge değişmezleri geçti:
+  5 döngü çifti 0/42, 9 botun tamamının counter'ı var, kariyer 5 aşama ≥3 counter,
+  fortress vs pulse_spam 40-2, sayı-eşlenmiş varyantlar ve 9 botluk geçerlilik.
+  Bot kartları ve kariyer aşamalarında değişiklik gerekmedi. Client kalkan değerini
+  server JSON'dan dinamik okuyor (`module_palette.dart`/`career_screen.dart`),
+  hardcode 14 yok; 26 otomatik gösteriliyor.
+- **Kalkan testleri güncellendi:** `test_energy_priority_rotates_and_coalesces_...`
+  düşmanı saldıran board'a (E-LASER + E-PULSE + E-BAT) çevrildi, tüm assertion'lar
+  aynı kaldı; `test_shield_never_spends_energy_when_pool_is_full` →
+  `test_shield_stays_idle_when_enemy_does_not_attack` (0 kalkan olayı, 0 enerji
+  harcaması). `test_balance.py` kalkan assertion'ı 26 yapıldı. Kalkan visual/ses
+  tarafında değişiklik yok; olay semantiği aynı.
 
 ## Mevcut kullanıcı çalışması
 
 - Önceki canlı savaş, müdahale, Alembic, API ve Flutter değişiklikleri `aaa24da`
   commit'inde yer alıyor ve `origin/main` üzerine gönderilmiş durumda.
-- Bu belge güncellenmeden önce izlenen veya izlenmeyen kullanıcı değişikliği yoktu.
-- Yeni v0.8.23 iş paketi henüz kodlanmaya başlanmadı. İlk kod değişikliği,
-  `CareerLiveBattleScreen` tamamlanma akışından otomatik replay geçişini kaldırıp
-  sonucu aynı canlı sahnede göstermelidir.
+- Bu oturumda v0.8.23'ün P0 madde 1 (tek canlı savaş akışı) kodlandı ve doğrulandı;
+  ayrıca canlı savaş olay sesi ve madde 6'nın scrollbar/kapı etiketi bölümleri
+  tamamlandı. Değişiklikler git etkinleştirilmemiş Desktop kopyasında duruyor,
+  commit edilmedi.
+- **İkinci oturum:** Reaktif kalkan motor değişikliği + shield=26 rebalance'ı
+  Desktop kopyasında tamamlandı ve doğrulandı. **D: kopyasında `engine.py` ESKİ**
+  (reaktif değişiklik yok); Desktop `tests/` ile D: `tests/` içerik olarak aynı.
+  Kullanıcı dosyaları D:'ye elle aktaracak — aktarımda mutlaka `relay_engine/engine.py`,
+  `relay_content/modules.json`, `tests/test_engine.py`, `tests/test_balance.py` ve bu
+  belge gidecek.
+- **Üçüncü oturum:** Canlı savaş modül sürükle-bırak yerleştirme hatası düzeltildi
+  (kök neden + kalıcı regresyon testi) ve çekirdek çöküşü görseli katmanlı reaktör
+  patlamasına yükseltildi. `flutter analyze` temiz, `flutter test` 99/99. İkinci
+  oturumun motor/sunucu değişiklikleri (reaktif kalkan, shield=26) aynen geçerli;
+  D: kopyasında `engine.py` ESKİ kalıyor.
+- Commit/push için hazır dosyalar: `client/lib/src/screens/career_live_battle_screen.dart`,
+  `client/lib/src/game/replay_game.dart`,
+  `client/lib/src/game/replay_event_formatter.dart`,
+  `client/lib/src/game/battle_visual_director.dart`,
+  `client/lib/src/game/event_sound_player.dart`,
+  `client/lib/src/widgets/replay_attack_overlay.dart`,
+  `client/lib/src/widgets/battle_camera_rig.dart`,
+  `client/lib/src/widgets/battle_arena_atmosphere.dart`,
+  `client/lib/src/widgets/ambient_music.dart`,
+  `client/lib/src/widgets/module_palette.dart`,
+  `client/lib/src/widgets/circuit_board.dart`,
+  `client/lib/src/screens/replay_screen.dart`,
+  `client/lib/src/screens/editor_screen.dart`,
+  `client/test/career_live_battle_screen_test.dart`,
+  `client/test/event_sound_player_test.dart`,
+  `client/test/module_palette_layout_test.dart`,
+  `client/test/circuit_trace_geometry_test.dart`,
+  `tests/test_client_contract.py`, `docs/CODEX_HANDOFF.md`.
+- İkinci oturumun commit için hazır ek dosyaları: `relay_engine/engine.py` (reaktif
+  kalkan), `relay_content/modules.json` (kalkan 14→26),
+  `tests/test_engine.py` (iki kalkan testi yeniden yazıldı),
+  `tests/test_balance.py` (kalkan assertion'ı 26).
+- Üçüncü oturumun ek dosyaları (aynı listedeki istemci dosyaları üzerinde):
+  `client/lib/src/screens/career_live_battle_screen.dart` (sürükle-bırak düzeltmesi),
+  `client/lib/src/widgets/replay_attack_overlay.dart` (çekirdek patlaması),
+  `client/test/career_live_battle_screen_test.dart` (yeni `_SwapRelayApi` + drop
+  regresyon testi).
 
 ## Alınan kararlar
 
@@ -173,12 +305,43 @@ göre yapılacak.
 - Hazırlık/kariyer/savaş kartlarının görsel doğruluk kaynağı ortak sunum
   bileşenleridir. Kablolar ve enerji parçacıkları görünür porttan görünür porta
   bağlanır; batarya akışı çift yönlü kalır.
-- Hazırlık alanındaki yinelenen `6/6 modül enerjili` kartı, dikey kaydırma çubuğu,
-  `KAPI`/`ÇEKİRDEK KAPISI` yazıları ve kırpılan alt sınırlar kaldırılacaktır.
-  Bağlantı doğrulaması kısa süreli merkez bildirimi olarak gösterilecektir.
+- Hazırlık alanındaki yinelenen `6/6 modül enerjili` kartı, dikey kaydırma çubuğu
+  ve `KAPI`/`ÇEKİRDEK KAPISI` yazıları kaldırıldı; kırpılan alt sınır kontrolü hâlâ
+  açık. Bağlantı doğrulaması kısa süreli merkez bildirimi olarak gösteriliyor.
 - Modüller ikon kutusu değildir. Her tür hacimli ve işlevi okunabilen fiziksel
   bir gövdeye sahip olur; saldırı görünür namlu/emitörden çıkar ve her savaş
   kaydının eş zamanlı görsel karşılığı bulunur.
+- Kalkan modülü reaktiftir: yalnız düşman saldırdığında enerji harcar; sessiz
+  tick'lerde boşa enerji biriktirmez. Bu davranış korunur ve denge kalkan değeri
+  (şu an 26) üzerinden ayarlanır. Sürüm değişikliği yapılmadı; paket kabul ölçütleri
+   tamamlanınca `v0.8.23` toplu güncellenecek.
+- **Canlı savaş modül sürükle-bırak yerleştirme hatası (üçüncü oturum):** Kök neden
+  bulundu: `DragTargetDetails.offset` imleci değil, geri bildirim kutusunun sol-üst
+  konumunu veriyor (Flutter kaynağı `drag_target.dart:893`:
+  `_lastOffset = globalPosition - dragStartPoint`). Kullanıcı raf kutusunu nereden
+  tutarsa drop o kadar hücre kayıyordu (bir hücre ~59.67px). Düzeltme
+  `career_live_battle_screen.dart`: `_ReserveTile` `pointerDragAnchorStrategy`
+  kullanıyor, 158×82 geri bildirim `Transform.translate(-79,-41)` ile imleç altında
+  ortalanıyor; `_cellForDrop` artık ters perspektif kayması uyguluyor
+  (`unskewedX = local.dx - shear*(local.dy - board.height/2)`,
+  `shear = ReplayStageGeometry.perspectiveShear`); DragTarget builder'ı kabul/red
+  görseli çiziyor (amber çerçeve = kabul edilebilir, coral = reddedildi). Hazırlık
+  ekranı drop'u etkilenmiyor (per-hücre DragTarget kullanıyor, offset hesaplamıyor).
+  Geçici `tmp_drop_probe_test.dart` ile 4 tutuş noktası × 4 modül doğrulandı; prob
+  testi kalıcı regresyon testine çevrildi ve geçici dosya silindi.
+- **Çekirdek çöküşü görkemi (üçüncü oturum):** `replay_attack_overlay.dart`
+  `_drawCoreCollapse` yeniden yazıldı (çağrı yeri ~489, yöntem ~871). Tek beyaz
+  patlama + halka + 28 ışın yerine katmanlı reaktör patlaması: içe çöken
+  implosion halkası (0–0.22), beyaz/renkli ignisyon flaşı (0–0.34), radyal
+  gradyanlı fireball (beyaz→amber→accent, 0–0.5), 26 enerji mızrağı (bazıları uzun
+  jette, 0–0.62), yerçekimli 34 enkaz kıvılcımı (0.12–0.95), 3 gecikmeli şok
+  dalgası halkası (0.2–1) ve yukarı süzülen 18 kızıl köz (0.45–1). Yönler altın
+  açı sabitiyle deterministik; hedef noktası çekirdek merkezi (core_damage son
+  tick). `ÇEKİRDEK ÇÖKTÜ` ekran geneli bildirimi zaten vardı.
+- Canlı savaş ekranı widget testleri: `career_live_battle_screen_test.dart`'e
+  `_SwapRelayApi` fake'i + "yedek modül imlecin altındaki modüle bırakılır" testi
+  eklendi (laser üzerine reserve-shield; `lastSwap` eşleşmesi). `flutter test`
+  98 → 99.
 
 ## v0.8.23 kabul ölçütleri
 
@@ -196,11 +359,30 @@ göre yapılacak.
 ## Doğrulama
 
 - `git rev-parse --show-toplevel`: `D:/Projects/project-relay`
-- Python test paketi: Başarılı, 204 test ve 514 alt test geçti.
+- Python test paketi: Başarılı, 204 test ve 529 alt test geçti.
+- İkinci oturum doğrulaması: `pytest` tam suite 204 test / 529 alt test geçti;
+  hedefli `tests/test_engine.py + tests/test_balance.py` 38 test / 461 alt test
+  geçti. `flutter analyze` temiz, `flutter test` 98/98 geçti. (Önemli: pytest
+  Desktop kopyasını çalıştırıyor; traceback'te görünen D: yolları stale `.pyc`
+  artefaktıydı, `tests/__pycache__` ve `relay_engine/__pycache__` temizlendi.)
+- Üçüncü oturum doğrulaması: `flutter analyze` temiz; `flutter test` 99/99 geçti
+  (98 + yeni "yedek modül imlecin altındaki modüle bırakılır"). Python tarafında
+  değişiklik yok, önceki 204/529 sonucu geçerli.
 - Canlı kariyer API, kalıcı oturum, müdahale aralığı, süreç yeniden başlatma ve
   göç testleri: Başarılı, hedefli paket 45 test geçti.
 - `flutter analyze`: Başarılı, sorun bulunmadı.
-- `flutter test`: Başarılı, 92 test geçti.
+- `flutter test`: Başarılı, 99 test geçti (önceki 98 + yedek modül sürükleme
+  yerleştirme regresyon testi).
+- Canlı savaş sahnesi hedefli widget/unit testleri (yeni `career_live_battle_screen_test.dart`):
+  Başarılı, 6 test geçti (pencere sürükleme, pencere kapalı, tamamlanan savaşta
+  otomatik replay yok + aynı sahnede analiz, canlı besleme modül değişimi, saldırı
+  ışınının hedefe bakan kenar portundan çıkışı, canlı saat→kuyruk besleme).
+- Olay sesçisi hedefli testler (`event_sound_player_test.dart`): Başarılı, 3 test
+  geçti (kanal yeniden kullanımı, güvenli kapanış, `fromBoards` kart kaynağı).
+- Madde 6 hedefli widget/unit testleri (geometri, kart kontrolcüsü, palette,
+  merkez toast): Başarılı, 47 test geçti.
+- Sunucu sözleşme testi `test_client_contract.py::test_v061_rev3...`: yeni davranışa
+  göre güncellendi, geçti.
 - Son modül oturtma animasyonu sonrası canlı raf/devre hedefli testleri:
   Başarılı, 12 test geçti.
 - Hedefli tekrar/oynatma ve dinamik `module_swap` testleri: Başarılı, 11 test
@@ -214,25 +396,44 @@ göre yapılacak.
 Kesin uygulama sırası aşağıdadır; sonraki oturum ilk tamamlanmamış maddeden devam
 etmelidir:
 
-1. **Tek canlı savaş akışı (P0):** Kariyer tamamlanınca otomatik replay'e geçişi
-   kaldır; sonuç/analizi aynı canlı sahnede göster. Sunucu kesin sonucu ve replay
-   kaydı korunacak.
+0. **Kullanıcı raporları (üçüncü oturum):** ✅ Tamamlandı. Canlı savaş modül
+   sürükle-bırak yerleştirme hatası kök nedenle düzeltildi (pointerDragAnchorStrategy
+   + ortalanmış geri bildirim + ters perspektif `_cellForDrop`) ve çekirdek çöküşü
+   görseli katmanlı reaktör patlamasına yükseltildi. Her ikisi de kalıcı testlerle
+   doğrulandı; güncel derlemeyi gerçek tarayıcıda elle görsel olarak doğrula.
+
+
+1. **Tek canlı savaş akışı (P0):** ✅ Tamamlandı (bu oturum). Kariyer tamamlanınca
+   otomatik replay'e geçiş kaldırıldı; sonuç/analiz aynı canlı sahnede
+   `BattleCenterAnalysisPanel` ile gösteriliyor. Sunucu kesin sonucu ve replay
+   kaydı korunuyor.
 2. **Canlı müdahale rafı kabulü (P0):** Mevcut 60/90/120 ve iki hak davranışını
    gerçek tarayıcıda doğrula; raf bir geçerli değişiklikten sonra kilitlenmeli,
    savaş durmamalı ve donanım sonraki tickte oturmalı.
 3. **Savaş olayı-görsel senkronu (P0):** Ateş, kalkan, hasar, onarım ve enerji
    günlüklerini görünür olaylarla birebir eşle; boş ve açıklamasız beklemeyi azalt.
+   Not: canlı ekran görsel olayları aynı snapshot olay akışından
+   (`_visualEventTypes` + `ReplayAttackOverlay`) besliyor ve saldırı ışınları
+   gerçek kenar portlarından çıkıyor; tüm boru hattı (540ms timer → advance →
+   `feedLiveFrame` → pulse → çizim) testlerle doğrulandı (7144 kırmızı piksel
+   probe'u + widget probe). Kullanıcının "ışın kayboluyor" raporu yeniden
+   üretilemedi; büyük olasılıkla eski web derlemesi. Son adım: güncel derlemeyi
+   gerçek tarayıcıda elle doğrula.
 4. **Ortak sahne sunumu (P1):** Hazırlık, kariyer ve savaşın kart, çekirdek,
    perspektif, ışık ve fiziksel modül bileşenlerini tek doğruluk kaynağına bağla.
 5. **Port/kablo doğruluğu (P1):** Tüm kablo ve enerji paketlerini gerçek portlar
    arasında üret; batarya çift yönünü ve döndürülmüş modülleri test et.
-6. **Hazırlık ekranı temizliği (P1):** Yinelenen enerji kartını, scrollbar'ı ve
-   kapı etiketlerini kaldır; doğrulamayı merkez toast yap; alt sınır kırpılmasını
-   düzelt. Aynı kabulü kariyer hazırlığında uygula.
+6. **Hazırlık ekranı temizliği (P1):** ✅ Kısmen tamamlandı (bu oturum). Yinelenen
+   enerji kartı ve merkez toast daha önce, online hazırlık sayfası scrollbar'ı ve
+   kapı etiketleri bu oturumda tamamlandı. Kalan: alt sınır kırpılmasını gerçek
+   tarayıcıda doğrula; aynı kabulü kariyer hazırlığında gözden geçir (kariyer
+   tarafında scrollbar zaten yok, etiketler paylaşılan bileşenden kaldırıldı).
 7. **Fiziksel modül gövdeleri (P2):** Sekiz modül türünü ikon kutusundan çıkar;
    işlevi silüet/mekanizma/port üzerinden okunan tutarlı donanıma dönüştür.
 8. **Namlu ve darbe sistemi (P2):** Lazer ve darbe topu çıkışını fiziksel
    emitöre bağla; ateşleme durumu, hareket ve çarpma geri bildirimi ekle.
+   Not: saldırı ışınları artık hedefe bakan kenar portundan çıkıyor; kalan iş
+   yalnız ateşleme hareketi ve çarpma partikülü kabulüdür.
 9. **Teknoloji prototipi (P2):** Bir jeneratör, lazer, kalkan, enerji akışı ve
    tek atışla Flutter/CustomPainter + Flame tabanını; gerekirse Rive ve
    `flutter_unity_widget` + Unity seçeneğini ölç. Görsel kalite, kare süresi,
@@ -240,7 +441,10 @@ etmelidir:
    küçük yeterli yığını seç.
 10. **Ses ve son kabul (P3):** Menü müziğini daha sakin seviyede ve daha az
     kasvetli içerikle doğrula; web ses kilidi, Android yaşam döngüsü, kısa ekran,
-    sürükleme ve performans kabulünü tamamla.
+    sürükleme ve performans kabulünü tamamla. Not: kullanıcının rapor ettiği iki
+    konsol hatası bu oturumda giderildi — raf sürükleme geri bildirim taşması
+    (hata1) ve audioplayers web `getCurrentPosition` dispose hatası (hata2);
+    ikisini de güncel derlemede elle doğrula.
 11. Yukarıdakiler geçince sürüm numaralarını birlikte `v0.8.23` olarak güncelle,
     test raporunu yaz ve kullanıcı isterse commit/push kapsamını hazırla.
 
@@ -263,6 +467,11 @@ etmelidir:
   ve hedefli regresyon testleriyle yapılmalıdır.
 - Olay metni ile görsel efektin ayrı zaman kaynaklarından beslenmesi yeniden
   eşzamansızlık üretebilir; ikisi aynı replay/snapshot olayından türetilmelidir.
+- Işın "kaybolma" raporu güncel kodla yeniden üretilemedi (boru hattı testli);
+  kullanıcı eski bir web derlemesini görüyor olabilir. Güncel derlemenin gerçek
+  tarayıcıda elle doğrulanması gerekir.
+- Web sesinde `getCurrentPosition` dispose hatası boş position updater ile
+  kesildi; doğrulama yalnız gerçek tarayıcıda yapılabilir (bu ortamda yok).
 
 ## Sonraki oturuma başlangıç istemi
 

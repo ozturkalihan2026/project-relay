@@ -18,13 +18,22 @@ class EventSoundPlayer {
   EventSoundPlayer(
     MatchResponse match, {
     EventSoundChannelFactory? channelFactory,
-  })  : _moduleKinds = {
-          for (final module in match.playerBoard.modules)
-            module.id: module.kind,
-          for (final module in match.opponentBoard.modules)
-            module.id: module.kind,
-        },
-        _channelFactory = channelFactory ?? _createEventSoundChannel;
+  }) : this.fromBoards(
+         playerBoard: match.playerBoard,
+         opponentBoard: match.opponentBoard,
+         channelFactory: channelFactory,
+       );
+
+  /// Canlı savaş modu için: henüz maç kaydı yokken ses türleri kartlardan okunur.
+  EventSoundPlayer.fromBoards({
+    required BoardDraft playerBoard,
+    required BoardDraft opponentBoard,
+    EventSoundChannelFactory? channelFactory,
+  }) : _moduleKinds = {
+         for (final module in playerBoard.modules) module.id: module.kind,
+         for (final module in opponentBoard.modules) module.id: module.kind,
+       },
+       _channelFactory = channelFactory ?? _createEventSoundChannel;
 
   final Map<String, ModuleKind> _moduleKinds;
   final EventSoundChannelFactory _channelFactory;
@@ -40,7 +49,8 @@ class EventSoundPlayer {
       if (_disposed) {
         return;
       }
-      final weaponEvent = event.type == 'attack' ||
+      final weaponEvent =
+          event.type == 'attack' ||
           event.type == 'core_damage' ||
           event.type == 'shield_absorb';
       if (weaponEvent) {
@@ -118,28 +128,30 @@ class EventSoundPlayer {
       };
 
   String? _soundAsset(BattleEvent event) => switch (event.type) {
-        'shield' => 'shield_charge.wav',
-        'cool' => 'cool.wav',
-        'repair' => 'repair.wav',
-        'recovered' => 'recovered.wav',
-        'overheat' => 'overheat.wav',
-        'energy_starved' => 'energy_starved.wav',
-        'destroyed' => 'destroyed.wav',
-        _ => null,
-      };
+    'shield' => 'shield_charge.wav',
+    'cool' => 'cool.wav',
+    'repair' => 'repair.wav',
+    'recovered' => 'recovered.wav',
+    'overheat' => 'overheat.wav',
+    'energy_starved' => 'energy_starved.wav',
+    'destroyed' => 'destroyed.wav',
+    _ => null,
+  };
 
   double _volume(BattleEvent event) => switch (event.type) {
-        'attack' || 'core_damage' => 0.54,
-        'shield' || 'shield_absorb' => 0.58,
-        'destroyed' => 0.62,
-        _ => 0.48,
-      };
+    'attack' || 'core_damage' => 0.54,
+    'shield' || 'shield_absorb' => 0.58,
+    'destroyed' => 0.62,
+    _ => 0.48,
+  };
 }
 
 EventSoundChannel _createEventSoundChannel() => _AudioPlayerSoundChannel();
 
 class _AudioPlayerSoundChannel implements EventSoundChannel {
-  _AudioPlayerSoundChannel() : _player = AudioPlayer();
+  _AudioPlayerSoundChannel() : _player = AudioPlayer() {
+    _player.positionUpdater = _NoopPositionUpdater();
+  }
 
   final AudioPlayer _player;
 
@@ -148,12 +160,24 @@ class _AudioPlayerSoundChannel implements EventSoundChannel {
 
   @override
   Future<void> play(String asset, double volume) {
-    return _player.play(
-      AssetSource(asset),
-      volume: volume,
-    );
+    return _player.play(AssetSource(asset), volume: volume);
   }
 
   @override
   Future<void> dispose() => _player.dispose();
+}
+
+/// Varsayılan [FramePositionUpdater] web'de her karede `getCurrentPosition`
+/// çağırır. Oynatıcı kapanırken askıda kalan bir kare, oynatıcı platform
+/// haritasından düşmüşse `PlatformException(WebAudioError, ...)` üretip
+/// konsolu doldurur. Tek seferlik efekt seslerinde konum akışı kullanılmadığı
+/// için boş bir updater ile bu çağrılar tamamen kesilir.
+class _NoopPositionUpdater extends PositionUpdater {
+  _NoopPositionUpdater() : super(getPosition: () async => null);
+
+  @override
+  void start() {}
+
+  @override
+  void stop() {}
 }
