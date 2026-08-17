@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import '../models/relay_models.dart';
@@ -88,6 +90,10 @@ class CircuitBoard extends StatelessWidget {
                       specs: specs,
                       poweredIds: poweredIds,
                       visuals: visuals,
+                      moduleLift: presentation3d
+                          ? CircuitPresentationSpec.moduleRestingLift
+                          : 0,
+                      coreLift: presentation3d ? 11.0 : 0,
                     ),
                   ),
                 ),
@@ -163,6 +169,10 @@ class CircuitBoard extends StatelessWidget {
                       specs: specs,
                       poweredIds: poweredIds,
                       visuals: visuals,
+                      moduleLift: presentation3d
+                          ? CircuitPresentationSpec.moduleRestingLift
+                          : 0,
+                      coreLift: presentation3d ? 11.0 : 0,
                     ),
                   ),
                 ),
@@ -502,36 +512,49 @@ class _CircuitCell extends StatelessWidget {
                                   ],
                                 ),
                         )
-                      : Stack(
+                       : Stack(
                           children: [
                             Positioned.fill(
                               child: Padding(
-                                padding: EdgeInsets.all(coreGate ? 20 : 16),
-                                child: Center(
-                                  child: AnimatedSwitcher(
-                                    duration: const Duration(milliseconds: 260),
-                                    switchInCurve: Curves.easeOutBack,
-                                    switchOutCurve: Curves.easeIn,
-                                    transitionBuilder: (child, animation) =>
-                                        FadeTransition(
-                                          opacity: animation,
-                                          child: ScaleTransition(
-                                            scale: Tween<double>(
-                                              begin: 0.76,
-                                              end: 1,
-                                            ).animate(animation),
-                                            child: child,
-                                          ),
+                                padding: EdgeInsets.all(
+                                  raised ? 0 : (coreGate ? 20 : 16),
+                                ),
+                                child: LayoutBuilder(
+                                  builder: (context, constraints) {
+                                    final fit = math.min(
+                                      constraints.maxWidth,
+                                      constraints.maxHeight,
+                                    );
+                                    return Center(
+                                      child: AnimatedSwitcher(
+                                        duration: const Duration(
+                                          milliseconds: 260,
                                         ),
-                                    child: ModuleHardware(
-                                      kind: module.kind,
-                                      key: ValueKey(
-                                        'module-glyph-${module.id}',
+                                        switchInCurve: Curves.easeOutBack,
+                                        switchOutCurve: Curves.easeIn,
+                                        transitionBuilder:
+                                            (child, animation) =>
+                                                FadeTransition(
+                                                  opacity: animation,
+                                                  child: ScaleTransition(
+                                                    scale: Tween<double>(
+                                                      begin: 0.76,
+                                                      end: 1,
+                                                    ).animate(animation),
+                                                    child: child,
+                                                  ),
+                                                ),
+                                        child: ModuleHardware(
+                                          kind: module.kind,
+                                          key: ValueKey(
+                                            'module-glyph-${module.id}',
+                                          ),
+                                          color: color,
+                                          size: fit,
+                                        ),
                                       ),
-                                      color: color,
-                                      size: coreGate ? 48 : 62,
-                                    ),
-                                  ),
+                                    );
+                                  },
                                 ),
                               ),
                             ),
@@ -593,15 +616,6 @@ class _CircuitCell extends StatelessWidget {
                                   ),
                                 ),
                               ),
-                            if (spec != null && !raised)
-                              for (final port in usableBoardPorts(
-                                module,
-                                spec!.worldPorts(module.orientation),
-                              ))
-                                _PortMarker(
-                                  direction: port,
-                                  energized: powered,
-                                ),
                             if (validationVisible)
                               Positioned(
                                 right: 5,
@@ -658,24 +672,11 @@ class _CircuitCell extends StatelessWidget {
                 child: cell,
               )
             : cell;
-        final portAnchoredCell = raised && module != null && spec != null
-            ? Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  Positioned.fill(child: presentedCell),
-                  for (final port in usableBoardPorts(
-                    module,
-                    spec!.worldPorts(module.orientation),
-                  ))
-                    _PortMarker(direction: port, energized: powered),
-                ],
-              )
-            : presentedCell;
         if (module == null) {
           return cell;
         }
         if (!moduleDraggingEnabled) {
-          return portAnchoredCell;
+          return presentedCell;
         }
         return Draggable<ModuleDragData>(
           data: ModuleDragData.board(kind: module.kind, cellIndex: cellIndex),
@@ -685,10 +686,10 @@ class _CircuitCell extends StatelessWidget {
             placement: module,
             displayName: spec?.displayName ?? module.kind.displayName,
           ),
-          childWhenDragging: Opacity(opacity: 0.24, child: portAnchoredCell),
+          childWhenDragging: Opacity(opacity: 0.24, child: presentedCell),
           child: MouseRegion(
             cursor: SystemMouseCursors.grab,
-            child: portAnchoredCell,
+            child: presentedCell,
           ),
         );
       },
@@ -810,32 +811,6 @@ class _CoreHub extends StatelessWidget {
             accent: visuals.board.core,
             secondary: RelayColors.violet,
           ),
-          for (final alignment in const [
-            Alignment(-0.5, -1),
-            Alignment(1, -0.5),
-            Alignment(0.5, 1),
-            Alignment(-1, 0.5),
-          ])
-            Align(
-              alignment: alignment,
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  color: visuals.board.gate,
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: RelayColors.white.withValues(alpha: 0.55),
-                    width: 1,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: visuals.board.gate.withValues(alpha: 0.72),
-                      blurRadius: 11,
-                    ),
-                  ],
-                ),
-                child: const SizedBox(width: 11, height: 11),
-              ),
-            ),
         ],
       ),
     );
@@ -873,52 +848,6 @@ class _CoreHub extends StatelessWidget {
         ),
         Transform.translate(offset: const Offset(0, -11), child: hub),
       ],
-    );
-  }
-}
-
-class _PortMarker extends StatelessWidget {
-  const _PortMarker({required this.direction, required this.energized});
-
-  final RelayDirection direction;
-  final bool energized;
-
-  @override
-  Widget build(BuildContext context) {
-    final position = switch (direction) {
-      RelayDirection.north => const {'top': -1.0, 'left': 0.0, 'right': 0.0},
-      RelayDirection.east => const {'right': -1.0, 'top': 0.0, 'bottom': 0.0},
-      RelayDirection.south => const {'bottom': -1.0, 'left': 0.0, 'right': 0.0},
-      RelayDirection.west => const {'left': -1.0, 'top': 0.0, 'bottom': 0.0},
-    };
-    return Positioned(
-      top: position['top'],
-      right: position['right'],
-      bottom: position['bottom'],
-      left: position['left'],
-      child: Align(
-        alignment: Alignment.center,
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: energized
-                ? CosmeticVisualScope.of(context).modules.accent
-                : const Color(0xFF7896A0),
-            shape: BoxShape.circle,
-            border: Border.all(color: const Color(0xFF07161C), width: 1.5),
-            boxShadow: energized
-                ? [
-                    BoxShadow(
-                      color: CosmeticVisualScope.of(
-                        context,
-                      ).modules.accent.withValues(alpha: 0.6),
-                      blurRadius: 7,
-                    ),
-                  ]
-                : null,
-          ),
-          child: const SizedBox(width: 9, height: 9),
-        ),
-      ),
     );
   }
 }
@@ -1028,20 +957,20 @@ abstract final class CircuitTraceGeometry {
   static const double modulePortDiameter = 9;
   static const double modulePortEdgeOffset = -1;
   static const double coreScale = CircuitPresentationSpec.coreExtentFactor;
-  static const double corePortDiameter = 10;
 
   static Offset modulePortAnchor(
     Size size,
     ModulePlacement module,
-    RelayDirection direction,
-  ) {
+    RelayDirection direction, {
+    double moduleLift = 0,
+  }) {
     final cellWidth =
         (size.width - gridPadding * 2) / CircuitPresentationSpec.gridSize;
     final cellHeight =
         (size.height - gridPadding * 2) / CircuitPresentationSpec.gridSize;
     final center = Offset(
       gridPadding + (module.column + 0.5) * cellWidth,
-      gridPadding + (module.row + 0.5) * cellHeight,
+      gridPadding + (module.row + 0.5) * cellHeight - moduleLift,
     );
     final horizontalInset =
         cellPadding + modulePortDiameter / 2 + modulePortEdgeOffset;
@@ -1050,8 +979,8 @@ abstract final class CircuitTraceGeometry {
     final left = gridPadding + module.column * cellWidth + horizontalInset;
     final right =
         gridPadding + (module.column + 1) * cellWidth - horizontalInset;
-    final top = gridPadding + module.row * cellHeight + verticalInset;
-    final bottom = gridPadding + (module.row + 1) * cellHeight - verticalInset;
+    final top = gridPadding + module.row * cellHeight + verticalInset - moduleLift;
+    final bottom = gridPadding + (module.row + 1) * cellHeight - verticalInset - moduleLift;
     return switch (direction) {
       RelayDirection.north => Offset(center.dx, top),
       RelayDirection.east => Offset(right, center.dy),
@@ -1060,13 +989,15 @@ abstract final class CircuitTraceGeometry {
     };
   }
 
-  static Offset corePortAnchor(Size size, RelayDirection gateDirection) {
+  static Offset corePortAnchor(
+    Size size,
+    RelayDirection gateDirection, {
+    double coreLift = 0,
+  }) {
     final coreWidth = size.width * coreScale;
     final coreHeight = size.height * coreScale;
     final coreLeft = (size.width - coreWidth) / 2;
     final coreTop = (size.height - coreHeight) / 2;
-    final usableWidth = coreWidth - corePortDiameter;
-    final usableHeight = coreHeight - corePortDiameter;
     final alignment = switch (gateDirection) {
       RelayDirection.south => const Alignment(-0.5, -1),
       RelayDirection.west => const Alignment(1, -0.5),
@@ -1074,8 +1005,8 @@ abstract final class CircuitTraceGeometry {
       RelayDirection.east => const Alignment(-1, 0.5),
     };
     return Offset(
-      coreLeft + usableWidth * (alignment.x + 1) / 2 + corePortDiameter / 2,
-      coreTop + usableHeight * (alignment.y + 1) / 2 + corePortDiameter / 2,
+      coreLeft + coreWidth * (alignment.x + 1) / 2,
+      coreTop + coreHeight * (alignment.y + 1) / 2 - coreLift,
     );
   }
 }
@@ -1086,30 +1017,37 @@ class _CircuitTracePainter extends CustomPainter {
     required this.specs,
     required this.poweredIds,
     required this.visuals,
+    this.moduleLift = 0,
+    this.coreLift = 0,
   });
 
   final Map<int, ModulePlacement> placements;
   final Map<ModuleKind, ModuleSpec> specs;
   final Set<String> poweredIds;
   final EquippedVisuals visuals;
+  final double moduleLift;
+  final double coreLift;
 
   @override
   void paint(Canvas canvas, Size size) {
-    final cellWidth = size.width / CircuitPresentationSpec.gridSize;
-    final cellHeight = size.height / CircuitPresentationSpec.gridSize;
+    final padding = CircuitTraceGeometry.gridPadding;
+    final cellWidth =
+        (size.width - padding * 2) / CircuitPresentationSpec.gridSize;
+    final cellHeight =
+        (size.height - padding * 2) / CircuitPresentationSpec.gridSize;
     final faintPaint = Paint()
       ..color = visuals.board.grid
       ..strokeWidth = 1;
     for (var index = 1; index < CircuitPresentationSpec.gridSize; index += 1) {
       canvas
         ..drawLine(
-          Offset(index * cellWidth, 0),
-          Offset(index * cellWidth, size.height),
+          Offset(padding + index * cellWidth, padding),
+          Offset(padding + index * cellWidth, size.height - padding),
           faintPaint,
         )
         ..drawLine(
-          Offset(0, index * cellHeight),
-          Offset(size.width, index * cellHeight),
+          Offset(padding, padding + index * cellHeight),
+          Offset(size.width - padding, padding + index * cellHeight),
           faintPaint,
         );
     }
@@ -1137,11 +1075,13 @@ class _CircuitTracePainter extends CustomPainter {
           size,
           module,
           direction,
+          moduleLift: moduleLift,
         );
         final end = CircuitTraceGeometry.modulePortAnchor(
           size,
           neighbor,
           direction.opposite,
+          moduleLift: moduleLift,
         );
         final energized =
             poweredIds.contains(module.id) && poweredIds.contains(neighbor.id);
@@ -1167,8 +1107,13 @@ class _CircuitTracePainter extends CustomPainter {
         size,
         module,
         entry.value,
+        moduleLift: moduleLift,
       );
-      final corePort = CircuitTraceGeometry.corePortAnchor(size, entry.value);
+      final corePort = CircuitTraceGeometry.corePortAnchor(
+        size,
+        entry.value,
+        coreLift: coreLift,
+      );
       final energized = poweredIds.contains(module.id);
       final cable = CircuitCableVisual.path(modulePort, corePort);
       CircuitCableVisual.drawCable(
@@ -1178,6 +1123,71 @@ class _CircuitTracePainter extends CustomPainter {
         energized: energized,
         emphasized: true,
       );
+    }
+
+    final portRadius = CircuitTraceGeometry.modulePortDiameter / 2;
+    final portFill = Paint()..style = PaintingStyle.fill;
+    final portStroke = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.5
+      ..color = const Color(0xFF07161C);
+
+    for (final entry in placements.entries) {
+      final module = entry.value;
+      final spec = specs[module.kind];
+      if (spec == null) continue;
+      final energized = poweredIds.contains(module.id);
+      for (final port in usableBoardPorts(
+        module,
+        spec.worldPorts(module.orientation),
+      )) {
+        final pos = CircuitTraceGeometry.modulePortAnchor(
+          size,
+          module,
+          port,
+          moduleLift: moduleLift,
+        );
+        portFill.color = energized
+            ? visuals.modules.accent
+            : const Color(0xFF7896A0);
+        canvas
+          ..drawCircle(pos, portRadius, portFill)
+          ..drawCircle(pos, portRadius, portStroke);
+        if (energized) {
+          final glowPaint = Paint()
+            ..color = visuals.modules.accent.withValues(alpha: 0.6)
+            ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 7);
+          canvas.drawCircle(pos, portRadius, glowPaint);
+        }
+      }
+    }
+
+    for (final entry in coreGateDirections.entries) {
+      final module = placements[entry.key];
+      final spec = module == null ? null : specs[module.kind];
+      if (module == null ||
+          spec == null ||
+          !spec.worldPorts(module.orientation).contains(entry.value)) {
+        continue;
+      }
+      final pos = CircuitTraceGeometry.corePortAnchor(
+        size,
+        entry.value,
+        coreLift: coreLift,
+      );
+      final energized = poweredIds.contains(module.id);
+      portFill.color = energized
+          ? visuals.board.gate
+          : const Color(0xFF7896A0);
+      canvas
+        ..drawCircle(pos, portRadius, portFill)
+        ..drawCircle(pos, portRadius, portStroke);
+      if (energized) {
+        final glowPaint = Paint()
+          ..color = visuals.board.gate.withValues(alpha: 0.6)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 7);
+        canvas.drawCircle(pos, portRadius, glowPaint);
+      }
     }
   }
 
@@ -1205,12 +1215,16 @@ class _AnimatedCircuitFlow extends StatefulWidget {
     required this.specs,
     required this.poweredIds,
     required this.visuals,
+    this.moduleLift = 0,
+    this.coreLift = 0,
   });
 
   final Map<int, ModulePlacement> placements;
   final Map<ModuleKind, ModuleSpec> specs;
   final Set<String> poweredIds;
   final EquippedVisuals visuals;
+  final double moduleLift;
+  final double coreLift;
 
   @override
   State<_AnimatedCircuitFlow> createState() => _AnimatedCircuitFlowState();
@@ -1266,13 +1280,15 @@ class _AnimatedCircuitFlowState extends State<_AnimatedCircuitFlow>
           poweredIds: widget.poweredIds,
           visuals: widget.visuals,
           progress: _controller.value,
+          moduleLift: widget.moduleLift,
+          coreLift: widget.coreLift,
         ),
       ),
     );
   }
 }
 
-enum _CircuitFlowKind { energy, repair, cooling, shield, amplified }
+enum _FlowKind { energy, repair, cooling, shield, amplified }
 
 class _CircuitFlowPainter extends CustomPainter {
   const _CircuitFlowPainter({
@@ -1281,6 +1297,8 @@ class _CircuitFlowPainter extends CustomPainter {
     required this.poweredIds,
     required this.visuals,
     required this.progress,
+    this.moduleLift = 0,
+    this.coreLift = 0,
   });
 
   final Map<int, ModulePlacement> placements;
@@ -1288,6 +1306,8 @@ class _CircuitFlowPainter extends CustomPainter {
   final Set<String> poweredIds;
   final EquippedVisuals visuals;
   final double progress;
+  final double moduleLift;
+  final double coreLift;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -1319,22 +1339,24 @@ class _CircuitFlowPainter extends CustomPainter {
         final moduleFirst = moduleDistance != neighborDistance
             ? moduleDistance < neighborDistance
             : _preferAsSource(module, neighbor);
-        final firstPort = CircuitTraceGeometry.modulePortAnchor(
+        final from = CircuitTraceGeometry.modulePortAnchor(
           size,
-          module,
-          direction,
+          moduleFirst ? module : neighbor,
+          moduleFirst ? direction : direction.opposite,
+          moduleLift: moduleLift,
         );
-        final secondPort = CircuitTraceGeometry.modulePortAnchor(
+        final to = CircuitTraceGeometry.modulePortAnchor(
           size,
-          neighbor,
-          direction.opposite,
+          moduleFirst ? neighbor : module,
+          moduleFirst ? direction.opposite : direction,
+          moduleLift: moduleLift,
         );
         final source = moduleFirst ? module : neighbor;
         final target = moduleFirst ? neighbor : module;
         _drawFlow(
           canvas,
-          moduleFirst ? firstPort : secondPort,
-          moduleFirst ? secondPort : firstPort,
+          from,
+          to,
           _flowKind(source: source, target: target),
           bidirectional:
               module.kind == ModuleKind.battery ||
@@ -1356,14 +1378,16 @@ class _CircuitFlowPainter extends CustomPainter {
         size,
         module,
         entry.value,
+        moduleLift: moduleLift,
       );
-      final corePort = CircuitTraceGeometry.corePortAnchor(size, entry.value);
-      _drawFlow(
-        canvas,
-        module.kind == ModuleKind.generator ? modulePort : corePort,
-        module.kind == ModuleKind.generator ? corePort : modulePort,
-        _CircuitFlowKind.energy,
+      final corePort = CircuitTraceGeometry.corePortAnchor(
+        size,
+        entry.value,
+        coreLift: coreLift,
       );
+      final from = module.kind == ModuleKind.generator ? modulePort : corePort;
+      final to = module.kind == ModuleKind.generator ? corePort : modulePort;
+      _drawFlow(canvas, from, to, _FlowKind.energy);
     }
   }
 
@@ -1420,32 +1444,32 @@ class _CircuitFlowPainter extends CustomPainter {
     return first.cellIndex < second.cellIndex;
   }
 
-  _CircuitFlowKind _flowKind({
+  _FlowKind _flowKind({
     required ModulePlacement source,
     required ModulePlacement target,
   }) {
     return switch (source.kind) {
-      ModuleKind.repair => _CircuitFlowKind.repair,
-      ModuleKind.cooler => _CircuitFlowKind.cooling,
-      ModuleKind.amplifier => _CircuitFlowKind.amplified,
-      _ when target.kind == ModuleKind.shield => _CircuitFlowKind.shield,
-      _ => _CircuitFlowKind.energy,
+      ModuleKind.repair => _FlowKind.repair,
+      ModuleKind.cooler => _FlowKind.cooling,
+      ModuleKind.amplifier => _FlowKind.amplified,
+      _ when target.kind == ModuleKind.shield => _FlowKind.shield,
+      _ => _FlowKind.energy,
     };
   }
 
-  Color _flowColor(_CircuitFlowKind kind) => switch (kind) {
-    _CircuitFlowKind.energy => RelayColors.amber,
-    _CircuitFlowKind.repair => RelayColors.mint,
-    _CircuitFlowKind.cooling => RelayColors.cyan,
-    _CircuitFlowKind.shield => RelayColors.electricBlue,
-    _CircuitFlowKind.amplified => RelayColors.violet,
+  Color _flowColor(_FlowKind kind) => switch (kind) {
+    _FlowKind.energy => RelayColors.amber,
+    _FlowKind.repair => RelayColors.mint,
+    _FlowKind.cooling => RelayColors.cyan,
+    _FlowKind.shield => RelayColors.electricBlue,
+    _FlowKind.amplified => RelayColors.violet,
   };
 
   void _drawFlow(
     Canvas canvas,
     Offset from,
     Offset to,
-    _CircuitFlowKind kind, {
+    _FlowKind kind, {
     bool bidirectional = false,
   }) {
     final cable = CircuitCableVisual.path(from, to);

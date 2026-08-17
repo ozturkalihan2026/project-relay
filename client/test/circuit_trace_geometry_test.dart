@@ -77,7 +77,7 @@ void main() {
     );
 
     _expectOffset(modulePort, 151, 94.5);
-    _expectOffset(corePort, 154.5, 109);
+    _expectOffset(corePort, 152, 104);
     expect(modulePort, isNot(const Offset(151, 53)));
     expect(corePort, isNot(const Offset(200, 200)));
   });
@@ -85,23 +85,23 @@ void main() {
   test('dört çekirdek kapısının her biri kendi görünür porta bağlanır', () {
     _expectOffset(
       CircuitTraceGeometry.corePortAnchor(boardSize, RelayDirection.south),
-      154.5,
-      109,
+      152,
+      104,
     );
     _expectOffset(
       CircuitTraceGeometry.corePortAnchor(boardSize, RelayDirection.west),
-      291,
-      154.5,
+      296,
+      152,
     );
     _expectOffset(
       CircuitTraceGeometry.corePortAnchor(boardSize, RelayDirection.north),
-      245.5,
-      291,
+      248,
+      296,
     );
     _expectOffset(
       CircuitTraceGeometry.corePortAnchor(boardSize, RelayDirection.east),
-      109,
-      245.5,
+      104,
+      248,
     );
   });
 

@@ -20,9 +20,14 @@ abstract final class CircuitPresentationSpec {
   static const double battlePerspectiveShear = 0.018;
   static const double platformDepth = 20;
 
-  static const double moduleDepth = 8;
-  static const double compactModuleDepth = 5;
-  static const double moduleInset = 4.5;
-  static const double compactModuleInset = 2.5;
+  static const double moduleDepth = 3;
+  static const double compactModuleDepth = 2;
+  static const double moduleInset = 1.5;
+  static const double compactModuleInset = 1.0;
   static const double battleModuleDepthFactor = 0.065;
+
+  static const double moduleRestingLift = 3.5;
+  static const double moduleLiftedExtra = 7.0;
+  static const double compactModuleRestingLift = 1.5;
+  static const double compactModuleLiftedExtra = 4.0;
 }

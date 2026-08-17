@@ -9,8 +9,8 @@ from .enums import ModuleKind
 @dataclass(frozen=True, slots=True)
 class InterventionPolicy:
     windows: tuple[int, ...] = (60, 90, 120)
-    max_swaps: int = 2
-    max_swaps_per_window: int = 1
+    max_swaps: int = 999
+    max_swaps_per_window: int = 999
 
     def validate(self) -> None:
         if not self.windows or any(window <= 0 for window in self.windows):

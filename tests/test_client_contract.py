@@ -285,7 +285,7 @@ class FlutterClientContractTests(unittest.TestCase):
         )
         self.assertRegex(
             palette,
-            r"size:\s*dense\s*\?\s*18\s*:\s*compact\s*\?\s*18\s*:\s*24",
+            r"size:\s*dense\s*\?\s*20\s*:\s*compact\s*\?\s*20\s*:\s*28",
         )
         self.assertGreaterEqual(editor.count("_EditorMenuBackCard(busy: busy)"), 3)
         self.assertIn("void loadSavedBoard(SavedBoard saved)", board_controller)
@@ -844,7 +844,7 @@ class FlutterClientContractTests(unittest.TestCase):
         )
         self.assertRegex(
             palette_source,
-            r"size:\s*dense\s*\?\s*18\s*:\s*compact\s*\?\s*18\s*:\s*24",
+            r"size:\s*dense\s*\?\s*20\s*:\s*compact\s*\?\s*20\s*:\s*28",
         )
         self.assertIn("module-glyph-${module.id}", board_source)
         self.assertIn("ModuleHardware(", board_source)
@@ -894,7 +894,7 @@ class FlutterClientContractTests(unittest.TestCase):
             CLIENT / "lib" / "src" / "widgets" / "module_visuals.dart"
         ).read_text(encoding="utf-8")
 
-        self.assertIn("_PortMarker", board_source)
+        self.assertIn("portFill.color", board_source)
         self.assertIn("worldPorts(module.orientation)", board_source)
         self.assertIn("_CoreHub", board_source)
         self.assertIn("isCoreCell(index)", board_source)
@@ -1938,13 +1938,13 @@ def test_v0822_rev1_preparation_scene_rebuild_contract():
     editor = (CLIENT / 'lib' / 'src' / 'screens' / 'editor_screen.dart').read_text(encoding='utf-8')
     career = (CLIENT / 'lib' / 'src' / 'screens' / 'career_screen.dart').read_text(encoding='utf-8')
     assert '_PreparationStageShell' in board
-    assert 'preparationDeckTilt = -0.20' in presentation
-    assert 'preparationPerspectiveDepth = 0.00115' in presentation
+    assert 'preparationDeckTilt = -0.26' in presentation
+    assert 'preparationPerspectiveDepth = 0.00140' in presentation
     assert 'CircuitPresentationSpec.preparationDeckTilt' in board
     assert 'CircuitPresentationSpec.preparationPerspectiveDepth' in board
     assert '_RaisedModuleShell' in board
     assert '_DeckFastener' not in board
-    assert 'depth: 17' in board
+    assert 'depth: 22' in board
     assert 'offset: const Offset(0, -11)' in board
     assert 'viewportHeight * 0.57' in editor
     assert 'presentation3d: true' in editor
@@ -1960,8 +1960,8 @@ def test_v0822_rev1_fix1_preparation_perspective_and_lock_sound_contract():
     career = (CLIENT / 'lib' / 'src' / 'screens' / 'career_screen.dart').read_text(encoding='utf-8')
     placement_sound = (CLIENT / 'lib' / 'src' / 'game' / 'module_placement_sound_player.dart').read_text(encoding='utf-8')
 
-    assert 'preparationDeckTilt = -0.20' in presentation
-    assert 'preparationPerspectiveDepth = 0.00115' in presentation
+    assert 'preparationDeckTilt = -0.26' in presentation
+    assert 'preparationPerspectiveDepth = 0.00140' in presentation
     assert 'CircuitPresentationSpec.preparationDeckTilt' in board
     assert 'CircuitPresentationSpec.preparationPerspectiveDepth' in board
     assert "ValueKey('module-seat-$placementId')" in board

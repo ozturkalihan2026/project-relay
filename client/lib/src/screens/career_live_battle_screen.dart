@@ -1,17 +1,14 @@
 import 'dart:async';
 
-import 'package:flame/game.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../api/relay_api.dart';
 import '../game/event_sound_player.dart';
-import '../game/replay_event_formatter.dart';
 import '../game/replay_game.dart';
 import '../models/relay_models.dart';
 import '../state/app_settings.dart';
-import '../theme/circuit_presentation.dart';
 import '../theme/cosmetic_visuals.dart';
 import '../theme/relay_theme.dart';
 import '../widgets/ambient_music.dart';
@@ -71,11 +68,9 @@ class _CareerLiveBattleScreenState
 
   late CareerBattleSessionSnapshot _session;
   late final Map<ModuleKind, ModuleSpec> _specs;
-  late final ReplayEventFormatter _formatter;
   late final EventSoundPlayer _soundPlayer;
   late final ValueNotifier<List<BattleEvent>> _attackOverlayEvents;
   late final Timer _battleTimer;
-  late RelayReplayGame _game;
   bool _advancing = false;
   bool _swapping = false;
   bool _resultLoading = false;
@@ -88,18 +83,12 @@ class _CareerLiveBattleScreenState
     super.initState();
     _session = widget.initialSession;
     _specs = {for (final module in widget.modules) module.kind: module};
-    _formatter = ReplayEventFormatter.fromBoards(
-      playerBoard: _session.playerBoard,
-      opponentBoard: _session.opponentBoard,
-      opponentName: _session.opponent.displayName,
-    );
     _soundPlayer = EventSoundPlayer.fromBoards(
       playerBoard: _session.playerBoard,
       opponentBoard: _session.opponentBoard,
     );
     _attackOverlayEvents = ValueNotifier<List<BattleEvent>>(const []);
     _processedEventCount = _session.events.length;
-    _game = _createLiveGame();
     _battleTimer = Timer.periodic(
       _tickInterval,
       (_) => unawaited(_advanceBattle()),
@@ -116,22 +105,6 @@ class _CareerLiveBattleScreenState
     unawaited(_soundPlayer.dispose());
     _attackOverlayEvents.dispose();
     super.dispose();
-  }
-
-  RelayReplayGame _createLiveGame() {
-    return RelayReplayGame.live(
-      playerBoard: _session.playerBoard,
-      opponentBoard: _session.opponentBoard,
-      initialFrame: _session.frame,
-      opponentName: _session.opponent.displayName,
-      leftCoreMaxHp: _session.frame.left.coreHp,
-      rightCoreMaxHp: _session.frame.right.coreHp,
-      moduleSpecs: _specs,
-      formatter: _formatter,
-      leftVisuals: widget.visuals,
-      onFrame: (_) {},
-      onEvents: (_) {},
-    );
   }
 
   Future<void> _advanceBattle() async {
@@ -151,10 +124,6 @@ class _CareerLiveBattleScreenState
       _feedSession(next);
       if (next.complete) {
         _battleTimer.cancel();
-        _game.markLiveComplete(
-          finalTick: next.tick,
-          resultLabel: _resultLabel(next.match?.result.winner),
-        );
         unawaited(_loadResultReplay());
       }
     } on RelayApiException catch (error) {
@@ -171,7 +140,6 @@ class _CareerLiveBattleScreenState
         ? const <BattleEvent>[]
         : session.events.sublist(_processedEventCount);
     _processedEventCount = session.events.length;
-    _game.feedLiveFrame(frame: session.frame, newEvents: newEvents);
     if (newEvents.isNotEmpty &&
         ref.read(appSettingsProvider).replaySoundEnabled) {
       unawaited(_soundPlayer.playFrame(newEvents));
@@ -261,15 +229,8 @@ class _CareerLiveBattleScreenState
   bool get _interventionUsable =>
       _session.intervention.active &&
       !_session.intervention.pending &&
-      _session.intervention.swapsRemaining > 0 &&
       !_swapping &&
       !_session.complete;
-
-  static String _resultLabel(String? winner) => switch (winner) {
-    'left' => 'ZAFER',
-    'right' => 'YENİLGİ',
-    _ => 'BERABERE',
-  };
 
   Map<int, ModulePlacement> _placements(BoardDraft board) => {
     for (final module in board.modules) module.cellIndex: module,
@@ -305,7 +266,7 @@ class _CareerLiveBattleScreenState
               Expanded(
                 child: _LiveBattleStage(
                   session: _session,
-                  game: _game,
+                  specs: _specs,
                   visuals: widget.visuals,
                   attackOverlayEvents: _attackOverlayEvents,
                   interventionUsable: _interventionUsable,
@@ -446,7 +407,7 @@ class _CoreHealth extends StatelessWidget {
 class _LiveBattleStage extends StatefulWidget {
   const _LiveBattleStage({
     required this.session,
-    required this.game,
+    required this.specs,
     required this.visuals,
     required this.attackOverlayEvents,
     required this.interventionUsable,
@@ -456,7 +417,7 @@ class _LiveBattleStage extends StatefulWidget {
   });
 
   final CareerBattleSessionSnapshot session;
-  final RelayReplayGame game;
+  final Map<ModuleKind, ModuleSpec> specs;
   final EquippedVisuals visuals;
   final ValueListenable<List<BattleEvent>> attackOverlayEvents;
   final bool interventionUsable;
@@ -469,16 +430,17 @@ class _LiveBattleStage extends StatefulWidget {
 }
 
 class _LiveBattleStageState extends State<_LiveBattleStage> {
-  final GlobalKey _dropTargetKey = GlobalKey();
-
-  Map<int, ModulePlacement> _placements(BoardDraft board) => {
-    for (final module in board.modules) module.cellIndex: module,
-  };
-
   @override
   Widget build(BuildContext context) {
     final session = widget.session;
-    final placements = _placements(session.playerBoard);
+    final playerPlacements = {
+      for (final module in session.playerBoard.modules)
+        module.cellIndex: module,
+    };
+    final opponentPlacements = {
+      for (final module in session.opponentBoard.modules)
+        module.cellIndex: module,
+    };
     final finalTick = session.complete ? session.tick : null;
     return Card(
       key: const ValueKey('career-live-battle-stage'),
@@ -495,14 +457,47 @@ class _LiveBattleStageState extends State<_LiveBattleStage> {
             builder: (context, constraints) {
               final size = constraints.biggest;
               final leftBoard = ReplayStageGeometry.leftBoard(size);
-              final cellSize =
-                  leftBoard.width / CircuitPresentationSpec.gridSize;
+              final rightBoard = ReplayStageGeometry.rightBoard(size);
               return Stack(
                 fit: StackFit.expand,
                 children: [
-                  GameWidget<RelayReplayGame>(
-                    key: ValueKey(widget.game),
-                    game: widget.game,
+                  Positioned.fromRect(
+                    rect: leftBoard,
+                    child: CircuitBoard(
+                      placements: playerPlacements,
+                      specs: widget.specs,
+                      poweredIds: {
+                        for (final m in session.playerBoard.modules) m.id,
+                      },
+                      validationVisible: false,
+                      selectedCell: null,
+                      onCellTap: (_) {},
+                      onModuleDropped: (_, _) {},
+                      onRotateModule: (_) {},
+                      visuals: widget.visuals,
+                      presentation3d: true,
+                      moduleDraggingEnabled: widget.interventionUsable,
+                    ),
+                  ),
+                  Positioned.fromRect(
+                    rect: rightBoard,
+                    child: IgnorePointer(
+                      child: CircuitBoard(
+                        placements: opponentPlacements,
+                        specs: widget.specs,
+                        poweredIds: {
+                          for (final m in session.opponentBoard.modules) m.id,
+                        },
+                        validationVisible: false,
+                        selectedCell: null,
+                        onCellTap: (_) {},
+                        onModuleDropped: (_, _) {},
+                        onRotateModule: (_) {},
+                        visuals: widget.visuals,
+                        presentation3d: true,
+                        moduleDraggingEnabled: false,
+                      ),
+                    ),
                   ),
                   ReplayAttackOverlay(
                     events: widget.attackOverlayEvents,
@@ -511,52 +506,6 @@ class _LiveBattleStageState extends State<_LiveBattleStage> {
                     finalTick: finalTick,
                     leftVisuals: widget.visuals,
                   ),
-                  if (widget.interventionUsable)
-                    Positioned.fromRect(
-                      rect: leftBoard,
-                      child: DragTarget<ModuleDragData>(
-                        key: _dropTargetKey,
-                        onWillAcceptWithDetails: (details) {
-                          final cell = _cellForDrop(
-                            context,
-                            details.offset,
-                            leftBoard,
-                            cellSize,
-                          );
-                          return details.data.moduleId != null &&
-                              placements.containsKey(cell);
-                        },
-                        onAcceptWithDetails: (details) {
-                          final cell = _cellForDrop(
-                            context,
-                            details.offset,
-                            leftBoard,
-                            cellSize,
-                          );
-                          widget.onModuleDropped(cell, details.data);
-                        },
-                        builder: (context, candidates, rejects) {
-                          final hovering = candidates.isNotEmpty;
-                          final rejected = !hovering && rejects.isNotEmpty;
-                          return AnimatedContainer(
-                            duration: const Duration(milliseconds: 140),
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(
-                                CircuitPresentationSpec.boardCornerRadius,
-                              ),
-                              border: Border.all(
-                                color: hovering
-                                    ? RelayColors.amber.withValues(alpha: 0.95)
-                                    : rejected
-                                    ? RelayColors.coral.withValues(alpha: 0.55)
-                                    : RelayColors.amber.withValues(alpha: 0.0),
-                                width: 2.5,
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
                   if (session.complete &&
                       session.match != null &&
                       widget.resultReplay != null)
@@ -572,26 +521,6 @@ class _LiveBattleStageState extends State<_LiveBattleStage> {
         ),
       ),
     );
-  }
-
-  int _cellForDrop(
-    BuildContext context,
-    Offset global,
-    Rect board,
-    double cellSize,
-  ) {
-    final object = _dropTargetKey.currentContext?.findRenderObject();
-    final renderBox = object is RenderBox ? object : null;
-    final local = renderBox == null
-        ? board.topLeft
-        : renderBox.globalToLocal(global);
-    final grid = CircuitPresentationSpec.gridSize;
-    final shear = ReplayStageGeometry.perspectiveShear;
-    final centerY = board.height / 2;
-    final unskewedX = local.dx - shear * (local.dy - centerY);
-    final row = (local.dy / cellSize).floor().clamp(0, grid - 1);
-    final column = (unskewedX / cellSize).floor().clamp(0, grid - 1);
-    return row * grid + column;
   }
 
   Widget _analysisOverlay(
@@ -645,10 +574,9 @@ class _InterventionShelf extends StatelessWidget {
         ? 'DEĞİŞİM SIRAYA ALINDI • RAF KİLİTLENDİ'
         : enabled
         ? 'MÜDAHALE RAFI AKTİF • YEDEĞİ DEVREDEKİ MODÜLÜN ÜZERİNE SÜRÜKLE'
-        : state.swapsRemaining == 0
-        ? 'MÜDAHALE HAKLARI KULLANILDI'
         : 'MÜDAHALE RAFI • SİNYAL BEKLENİYOR';
     final accent = enabled ? RelayColors.amber : RelayColors.cyan;
+    final allModules = session.reserves;
     return AnimatedContainer(
       key: const ValueKey('career-live-intervention-shelf'),
       duration: const Duration(milliseconds: 180),
@@ -688,7 +616,7 @@ class _InterventionShelf extends StatelessWidget {
                 ),
                 const SizedBox(height: 7),
                 Text(
-                  '${state.swapsRemaining}/2 değişim hakkı • savaş duraklatılmaz',
+                  '${allModules.length} yedek modül • savaş duraklatılmaz',
                   style: const TextStyle(
                     color: RelayColors.muted,
                     fontSize: 10,
@@ -700,7 +628,7 @@ class _InterventionShelf extends StatelessWidget {
           ),
           const VerticalDivider(width: 24),
           Expanded(
-            child: session.reserves.isEmpty
+            child: allModules.isEmpty
                 ? const Center(
                     child: Text(
                       'Rafta kullanılabilir yedek modül yok.',
@@ -710,10 +638,10 @@ class _InterventionShelf extends StatelessWidget {
                 : ListView.separated(
                     key: const ValueKey('career-live-reserve-list'),
                     scrollDirection: Axis.horizontal,
-                    itemCount: session.reserves.length,
+                    itemCount: allModules.length,
                     separatorBuilder: (_, _) => const SizedBox(width: 10),
                     itemBuilder: (context, index) {
-                      final reserve = session.reserves[index];
+                      final reserve = allModules[index];
                       return _ReserveTile(
                         reserve: reserve,
                         spec: specs[reserve.kind],

@@ -215,7 +215,7 @@ class ModuleChassis extends StatelessWidget {
               child: Padding(
                 padding: EdgeInsets.fromLTRB(
                   inset,
-                  compact ? 1.5 : 2.5,
+                  compact ? 1.0 : 1.0,
                   inset,
                   sideDepth,
                 ),

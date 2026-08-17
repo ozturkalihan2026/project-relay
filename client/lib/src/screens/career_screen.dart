@@ -537,13 +537,9 @@ class _CareerInlineEditor extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final validation = state.validation;
     final placement = state.selectedPlacement;
     final selectedKind = placement?.kind ?? state.selectedKind;
     final selectedSpec = selectedKind == null ? null : specs[selectedKind];
-    final validationColor = validation?.unpoweredIds.isEmpty ?? false
-        ? RelayColors.mint
-        : RelayColors.amber;
 
     return SizedBox(
       height: 600,
@@ -563,32 +559,6 @@ class _CareerInlineEditor extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             _CareerModuleInspector(placement: placement, spec: selectedSpec),
-            if (validation != null) ...[
-              const SizedBox(height: 10),
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Row(
-                    children: [
-                      Icon(Icons.circle, size: 10, color: validationColor),
-                      const SizedBox(width: 7),
-                      Expanded(
-                        child: Text(
-                          validation.unpoweredIds.isEmpty
-                              ? 'Devre geçerli • Bütün modüller enerjili'
-                              : 'Devre geçerli • ${validation.unpoweredIds.length} modül enerjisiz',
-                          style: TextStyle(
-                            color: validationColor,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
             const SizedBox(height: 10),
             sideActions,
           ],

@@ -1,6 +1,5 @@
 import 'dart:convert';
 
-import 'package:flame/game.dart' show GameWidget;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -8,8 +7,6 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:project_relay_client/src/api/relay_api.dart';
 import 'package:project_relay_client/src/api/session_storage.dart';
-import 'package:project_relay_client/src/game/replay_event_formatter.dart';
-import 'package:project_relay_client/src/game/replay_game.dart';
 import 'package:project_relay_client/src/models/relay_models.dart';
 import 'package:project_relay_client/src/screens/career_battle_screen.dart';
 import 'package:project_relay_client/src/screens/career_live_battle_screen.dart';
@@ -50,14 +47,17 @@ void main() {
     );
     expect(find.textContaining('MÜDAHALE RAFI AKTİF'), findsOneWidget);
     final draggables = find.byType(Draggable<ModuleDragData>);
-    expect(draggables, findsOneWidget);
-    final draggable = tester.widget<Draggable<ModuleDragData>>(draggables);
-    expect(draggable.data!.moduleId, 'reserve-shield');
+    expect(draggables, findsWidgets);
+    final reserveDraggable = find.byWidgetPredicate(
+      (widget) =>
+          widget is Draggable<ModuleDragData> &&
+          widget.data?.moduleId == 'reserve-shield',
+    );
+    expect(reserveDraggable, findsOneWidget);
     expect(
       find.byKey(const ValueKey('career-live-battle-stage')),
       findsOneWidget,
     );
-    expect(find.byKey(const ValueKey('live-player-board')), findsNothing);
     expect(tester.takeException(), isNull);
 
     await tester.pumpWidget(const SizedBox.shrink());
@@ -128,29 +128,13 @@ void main() {
     );
     await tester.pump();
 
-    final stageFinder = find.byKey(
-      const ValueKey('career-live-battle-stage'),
-    );
-    final stageSize = tester.getSize(stageFinder);
-    final stageTopLeft = tester.getTopLeft(stageFinder);
-    final leftBoard = ReplayStageGeometry.leftBoard(stageSize);
-    final cellSize = leftBoard.width / CircuitPresentationSpec.gridSize;
-
     final laser = _session(active: true).playerBoard.modules.firstWhere(
       (module) => module.id == 'player-laser',
     );
-    final center = leftBoard.topLeft +
-        Offset(
-          (laser.column + 0.5) * cellSize,
-          (laser.row + 0.5) * cellSize,
-        );
-    final shear = ReplayStageGeometry.perspectiveShear;
-    final target =
-        stageTopLeft +
-        Offset(
-          center.dx + shear * (center.dy - leftBoard.height / 2),
-          center.dy,
-        );
+    final cellIndex = laser.row * CircuitPresentationSpec.gridSize + laser.column;
+    final cellFinder = find.byKey(ValueKey('circuit-cell-$cellIndex'));
+    expect(cellFinder, findsOneWidget);
+    final cellCenter = tester.getCenter(cellFinder);
 
     final reserve = find.byKey(
       const ValueKey('live-reserve-reserve-shield'),
@@ -160,7 +144,7 @@ void main() {
       reserveRect.topLeft + const Offset(6, 6),
     );
     await tester.pump(const Duration(milliseconds: 120));
-    await gesture.moveTo(target);
+    await gesture.moveTo(cellCenter);
     await tester.pump(const Duration(milliseconds: 120));
     await gesture.up();
     await tester.pump(const Duration(milliseconds: 200));

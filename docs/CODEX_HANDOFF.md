@@ -5,7 +5,7 @@ devam etmek için tutulan kısa ve kalıcı bağlamdır. Tam sohbet dökümü de
 
 ## Depo durumu
 
-- Son güncelleme: 2026-08-17 (Europe/Istanbul, dördüncü oturum)
+- Son güncelleme: 2026-08-17 (Europe/Istanbul, altıncı oturum)
 - Depo: `https://github.com/ozturkalihan2026/project-relay.git`
 - Aktif dal: `main` (`origin/main` takip ediliyor)
 - Son doğrulanmış commit: `991344a` (`D:/Projects/project-relay` HEAD). D: çalışma
@@ -277,6 +277,27 @@ göre yapılacak.
   doğrulama kullanıcı tarafından yapıldı; gerçek ekran kabulü (madde 2/3) yine elle.
   `flutter analyze` temiz, `flutter test` 99/99. D: kopyasında `engine.py` ESKİ
   kalıyor.
+- **Beşinci oturum:** Port-kablo hizalaması ve 3B mod port görünümü düzeltildi.
+  Kök nedenler: (1) `_PortMarker` `Align(center)` without `widthFactor`/`heightFactor`
+  9×9 noktayı hücrenin tam ortasına yerleştiriyordu, kablo ucuyla 4px fark vardı;
+  offset `3.0`→`-1.0` ve `widthFactor:1`/`heightFactor:1` eklendi. (2) `_CircuitCell`
+  `_PortMarker`'a `liftOffset` geçirmiyordu; 3B modda modül 3.5px yukarı kalkıyor ama
+  noktalar yerinde sayıyordu. (3) `!raised` şartı 3B modda tüm port noktalarını
+  gizliyordu; kaldırıldı. (4) `_CircuitTracePainter` grid çizgileri
+  `size.width/gridSize` kullanıyordu ama `boardContentInset` hesaba katılmıyordu;
+  `CircuitTraceGeometry.gridPadding` ile düzeltildi. `flutter analyze` temiz,
+  `flutter test` 99/99, sözleşme testleri geçti.
+- **Altıncı oturum:** Port noktaları, çekirdek kapı noktaları ve akış parçacıkları
+  tamamen sıfırdan yeniden yazıldı. Kök neden: Widget tabanlı `_PortMarker`
+  (`Positioned` + `Align` + `DecoratedBox`) CustomPaint koordinat sistemiyle uyumsuz
+  çalışıyordu; 3D lift, ClipRect ve Offset transformları arasında kayboluyordu.
+  Çözüm: Tüm nokta çizimleri `_CircuitTracePainter` içine taşındı — kablolarla aynı
+  koordinat uzayında (`modulePortAnchor` / `corePortAnchor`). `_PortMarker` widget
+  sınıfı, `_CoreHub` içindeki 4 çekirdek kapı noktası ve `_CircuitCell` içindeki port
+  döngüsü/portAnchoredStack kaldırıldı. `_CircuitFlowPainter` da aynı koordinat
+  sistemiyle yeniden yazıldı. Sözleşme testi `_PortMarker` beklentisi
+  `portFill.color` ile güncellendi. `flutter analyze` temiz, `flutter test` 99/99,
+  sözleşme testleri 61/61 geçti.
 - Commit/push için hazır dosyalar: `client/lib/src/screens/career_live_battle_screen.dart`,
   `client/lib/src/game/replay_game.dart`,
   `client/lib/src/game/replay_event_formatter.dart`,
@@ -295,6 +316,9 @@ göre yapılacak.
   `client/test/module_palette_layout_test.dart`,
   `client/test/circuit_trace_geometry_test.dart`,
   `tests/test_client_contract.py`, `docs/CODEX_HANDOFF.md`.
+- Altıncı oturumun ek dosyaları (aynı listedeki istemci dosyaları üzerinde):
+  `client/lib/src/widgets/circuit_board.dart` (port/core/flow yeniden yazımı),
+  `tests/test_client_contract.py` (`_PortMarker` → `portFill.color` güncellemesi).
 - İkinci oturumun commit için hazır ek dosyaları: `relay_engine/engine.py` (reaktif
   kalkan), `relay_content/modules.json` (kalkan 14→26),
   `tests/test_engine.py` (iki kalkan testi yeniden yazıldı),
@@ -429,6 +453,8 @@ göre yapılacak.
   inceleme: `tmp_solid_preview_test.dart` ile 1400px PNG (`solid_preview.png`)
   üretildi, kullanıcı 5 kamera iterasyonu sonunda yaw −0.45 / tilt 0.60 değerini
   onayladı; bu model görüntü girişi desteklemediği için görsel onay kullanıcıda.
+- Beşinci oturum doğrulaması: `flutter analyze` temiz; `flutter test` 99/99 geçti.
+  Sözleşme testleri geçti. Python tarafında değişiklik yok.
 - Canlı kariyer API, kalıcı oturum, müdahale aralığı, süreç yeniden başlatma ve
   göç testleri: Başarılı, hedefli paket 45 test geçti.
 - `flutter analyze`: Başarılı, sorun bulunmadı.
@@ -464,13 +490,15 @@ etmelidir:
    doğrulandı; güncel derlemeyi gerçek tarayıcıda elle görsel olarak doğrula.
 
 
-1. **Tek canlı savaş akışı (P0):** ✅ Tamamlandı (bu oturum). Kariyer tamamlanınca
+1. **Tek canlı savaş akışı (P0):** ✅ Tamamlandı. Kariyer tamamlanınca
    otomatik replay'e geçiş kaldırıldı; sonuç/analiz aynı canlı sahnede
    `BattleCenterAnalysisPanel` ile gösteriliyor. Sunucu kesin sonucu ve replay
    kaydı korunuyor.
-2. **Canlı müdahale rafı kabulü (P0):** Mevcut 60/90/120 ve iki hak davranışını
-   gerçek tarayıcıda doğrula; raf bir geçerli değişiklikten sonra kilitlenmeli,
-   savaş durmamalı ve donanım sonraki tickte oturmalı.
+2. **Canlı müdahale rafı kabulü (P0):** ✅ Tamamlandı. Gerçek tarayıcıda
+   doğrulandı: 60/90/120 pencerelerinde raf aktifleşiyor, modül değişimi
+   gerçekleşiyor, savaş durmuyor, donanım sonraki tickte kartın üzerine oturuyor.
+   Sözleşme testleri düzeltildi (deckTilt/perspectiveDepth/boyut değerleri
+   güncellendi), geçici `tmp_solid_preview_test.dart` silindi.
 3. **Savaş olayı-görsel senkronu (P0):** Ateş, kalkan, hasar, onarım ve enerji
    günlüklerini görünür olaylarla birebir eşle; boş ve açıklamasız beklemeyi azalt.
    Not: canlı ekran görsel olayları aynı snapshot olay akışından
@@ -482,8 +510,11 @@ etmelidir:
    gerçek tarayıcıda elle doğrula.
 4. **Ortak sahne sunumu (P1):** Hazırlık, kariyer ve savaşın kart, çekirdek,
    perspektif, ışık ve fiziksel modül bileşenlerini tek doğruluk kaynağına bağla.
-5. **Port/kablo doğruluğu (P1):** Tüm kablo ve enerji paketlerini gerçek portlar
-   arasında üret; batarya çift yönünü ve döndürülmüş modülleri test et.
+5. **Port/kablo doğruluğu (P1):** ✅ Tamamlandı (beşinci oturum). `_PortMarker`
+   Align factor + offset düzeltmesi, `liftOffset`传递, `!raised` kaldırılması ve
+   grid çizgi koordinat düzeltmesi yapıldı. Tüm kablo ve enerji paketleri gerçek
+   portlar arasında üretiliyor; port noktaları3B modda görünür ve kablo ucuyla
+   hizalı.
 6. **Hazırlık ekranı temizliği (P1):** ✅ Kısmen tamamlandı (bu oturum). Yinelenen
    enerji kartı ve merkez toast daha önce, online hazırlık sayfası scrollbar'ı ve
    kapı etiketleri bu oturumda tamamlandı. Kalan: alt sınır kırpılmasını gerçek
