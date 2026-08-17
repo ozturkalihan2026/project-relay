@@ -21,31 +21,21 @@ import '../widgets/module_visuals.dart';
 import '../widgets/relay_notice.dart';
 import '../widgets/replay_attack_overlay.dart';
 
-/// Sunucu otoriteli kariyer savaşını müdahale için duraklatmadan canlı oynatır.
-///
-/// Savaşın görsel akışı replay ile aynı donanımı kullanır: gerçek portlar,
-/// kablolar, enerji parçacıkları ve saldırı/kalkan/onarım olayları canlı sahnede
-/// eş zamanlı oynatılır. Yedek rafı savaş boyunca görünür kalır, açık müdahale
-/// penceresinde sürüklenebilir ve sıraya alınan değişim sonraki güvenli sunucu
-/// tick'inde uygulanır. Savaş tamamlanınca sonuç aynı sahnede analiz paneliyle
-/// gösterilir; otomatik replay ekranı açılmaz.
-class CareerLiveBattleScreen extends ConsumerStatefulWidget {
-  const CareerLiveBattleScreen({
+class OnlineLiveBattleScreen extends ConsumerStatefulWidget {
+  const OnlineLiveBattleScreen({
     required this.initialSession,
     required this.modules,
     required this.visuals,
-    required this.stageNumber,
     super.key,
   });
 
-  final CareerBattleSessionSnapshot initialSession;
+  final OnlineBattleSessionSnapshot initialSession;
   final List<ModuleSpec> modules;
   final EquippedVisuals visuals;
-  final int stageNumber;
 
   @override
-  ConsumerState<CareerLiveBattleScreen> createState() =>
-      _CareerLiveBattleScreenState();
+  ConsumerState<OnlineLiveBattleScreen> createState() =>
+      _OnlineLiveBattleScreenState();
 }
 
 const _visualEventTypes = <String>{
@@ -62,11 +52,11 @@ const _visualEventTypes = <String>{
   'energy_starved',
 };
 
-class _CareerLiveBattleScreenState
-    extends ConsumerState<CareerLiveBattleScreen> {
+class _OnlineLiveBattleScreenState
+    extends ConsumerState<OnlineLiveBattleScreen> {
   static const _tickInterval = Duration(milliseconds: 540);
 
-  late CareerBattleSessionSnapshot _session;
+  late OnlineBattleSessionSnapshot _session;
   late final Map<ModuleKind, ModuleSpec> _specs;
   late final EventSoundPlayer _soundPlayer;
   late final ValueNotifier<List<BattleEvent>> _attackOverlayEvents;
@@ -94,7 +84,8 @@ class _CareerLiveBattleScreenState
       (_) => unawaited(_advanceBattle()),
     );
     if (_session.complete) {
-      _markLiveComplete();
+      _battleTimer.cancel();
+      unawaited(_loadResultReplay());
     }
   }
 
@@ -107,14 +98,12 @@ class _CareerLiveBattleScreenState
   }
 
   Future<void> _advanceBattle() async {
-    if (_advancing || _session.complete) {
-      return;
-    }
+    if (_advancing || _session.complete) return;
     _advancing = true;
     try {
       final next = await ref
           .read(relayApiProvider)
-          .advanceCareerBattleSession();
+          .advanceOnlineBattleSession();
       if (!mounted) return;
       setState(() {
         _session = next;
@@ -122,7 +111,8 @@ class _CareerLiveBattleScreenState
       });
       _feedSession(next);
       if (next.complete) {
-        _markLiveComplete();
+        _battleTimer.cancel();
+        unawaited(_loadResultReplay());
       }
     } on RelayApiException catch (error) {
       _showAdvanceError(error.message);
@@ -133,12 +123,7 @@ class _CareerLiveBattleScreenState
     }
   }
 
-  void _markLiveComplete() {
-    _battleTimer.cancel();
-    unawaited(_loadResultReplay());
-  }
-
-  void _feedSession(CareerBattleSessionSnapshot session) {
+  void _feedSession(OnlineBattleSessionSnapshot session) {
     final newEvents = session.events.length <= _processedEventCount
         ? const <BattleEvent>[]
         : session.events.sublist(_processedEventCount);
@@ -169,7 +154,7 @@ class _CareerLiveBattleScreenState
       final replay = await ref.read(relayApiProvider).fetchReplay(match.id);
       if (replay.checksum != match.replayChecksum) {
         throw const RelayApiException(
-          'Kariyer tekrar özeti maç sonucuyla uyuşmuyor.',
+          'Çevrimiçi tekrar özeti maç sonucuyla uyuşmuyor.',
         );
       }
       if (!mounted) return;
@@ -199,7 +184,7 @@ class _CareerLiveBattleScreenState
     try {
       final next = await ref
           .read(relayApiProvider)
-          .swapCareerBattleModule(
+          .swapOnlineBattleModule(
             outgoingId: outgoing.id,
             incomingId: incomingId,
             orientation: outgoing.orientation,
@@ -245,13 +230,13 @@ class _CareerLiveBattleScreenState
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
-          key: const ValueKey('live-battle-back-button'),
-          tooltip: 'Kariyere dön',
+          key: const ValueKey('online-live-battle-back-button'),
+          tooltip: 'Editöre dön',
           onPressed: () => Navigator.of(context).pop(),
           icon: const Icon(Icons.arrow_back),
         ),
         centerTitle: true,
-        title: const AppHeaderTitle(pageTitle: 'CANLI KARİYER SAVAŞI'),
+        title: const AppHeaderTitle(pageTitle: 'CANLI ÇEVRİMİÇİ SAVAŞ'),
         actions: const [AppHeaderActions(), SizedBox(width: 8)],
       ),
       body: AmbientMusic(
@@ -259,15 +244,15 @@ class _CareerLiveBattleScreenState
         enabled: soundEnabled,
         volume: 0.20,
         child: Container(
-          key: const ValueKey('career-live-battle-screen'),
-          decoration: RelayDecorations.modeShell(RelayColors.coral),
+          key: const ValueKey('online-live-battle-screen'),
+          decoration: RelayDecorations.modeShell(RelayColors.cyan),
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 14),
           child: Column(
             children: [
-              _LiveBattleHeader(session: _session),
+              _OnlineBattleHeader(session: _session),
               const SizedBox(height: 10),
               Expanded(
-                child: _LiveBattleStage(
+                child: _OnlineBattleStage(
                   session: _session,
                   specs: _specs,
                   visuals: widget.visuals,
@@ -279,7 +264,7 @@ class _CareerLiveBattleScreenState
                 ),
               ),
               const SizedBox(height: 10),
-              _InterventionShelf(
+              _OnlineModuleShelf(
                 session: _session,
                 specs: _specs,
                 visuals: widget.visuals,
@@ -293,10 +278,10 @@ class _CareerLiveBattleScreenState
   }
 }
 
-class _LiveBattleHeader extends StatelessWidget {
-  const _LiveBattleHeader({required this.session});
+class _OnlineBattleHeader extends StatelessWidget {
+  const _OnlineBattleHeader({required this.session});
 
-  final CareerBattleSessionSnapshot session;
+  final OnlineBattleSessionSnapshot session;
 
   @override
   Widget build(BuildContext context) {
@@ -309,7 +294,7 @@ class _LiveBattleHeader extends StatelessWidget {
         ? 'MÜDAHALE SİNYALİ AÇIK • SAVAŞ DEVAM EDİYOR'
         : 'SİNYAL AKIŞI • CANLI';
     return Container(
-      key: const ValueKey('live-battle-status'),
+      key: const ValueKey('online-live-battle-status'),
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 11),
       decoration: RelayDecorations.panel(
         accent: session.intervention.active
@@ -341,7 +326,7 @@ class _LiveBattleHeader extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   event == null
-                      ? '${session.opponent.displayName} ile bağlantı kuruldu.'
+                      ? '${session.opponentName} ile bağlantı kuruldu.'
                       : _eventLabel(event),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -407,8 +392,8 @@ class _CoreHealth extends StatelessWidget {
   }
 }
 
-class _LiveBattleStage extends StatefulWidget {
-  const _LiveBattleStage({
+class _OnlineBattleStage extends StatefulWidget {
+  const _OnlineBattleStage({
     required this.session,
     required this.specs,
     required this.visuals,
@@ -419,7 +404,7 @@ class _LiveBattleStage extends StatefulWidget {
     required this.modules,
   });
 
-  final CareerBattleSessionSnapshot session;
+  final OnlineBattleSessionSnapshot session;
   final Map<ModuleKind, ModuleSpec> specs;
   final EquippedVisuals visuals;
   final ValueListenable<List<BattleEvent>> attackOverlayEvents;
@@ -429,10 +414,10 @@ class _LiveBattleStage extends StatefulWidget {
   final List<ModuleSpec> modules;
 
   @override
-  State<_LiveBattleStage> createState() => _LiveBattleStageState();
+  State<_OnlineBattleStage> createState() => _OnlineBattleStageState();
 }
 
-class _LiveBattleStageState extends State<_LiveBattleStage> {
+class _OnlineBattleStageState extends State<_OnlineBattleStage> {
   @override
   Widget build(BuildContext context) {
     final session = widget.session;
@@ -446,7 +431,7 @@ class _LiveBattleStageState extends State<_LiveBattleStage> {
     };
     final finalTick = session.complete ? session.tick : null;
     return Card(
-      key: const ValueKey('career-live-battle-stage'),
+      key: const ValueKey('online-live-battle-stage'),
       clipBehavior: Clip.antiAlias,
       margin: EdgeInsets.zero,
       child: BattleArenaAtmosphere(
@@ -475,7 +460,7 @@ class _LiveBattleStageState extends State<_LiveBattleStage> {
                       validationVisible: false,
                       selectedCell: null,
                       onCellTap: (_) {},
-                      onModuleDropped: widget.onModuleDropped,
+                      onModuleDropped: (_, _) {},
                       onRotateModule: (_) {},
                       visuals: widget.visuals,
                       presentation3d: true,
@@ -557,15 +542,15 @@ class _LiveBattleStageState extends State<_LiveBattleStage> {
   }
 }
 
-class _InterventionShelf extends StatelessWidget {
-  const _InterventionShelf({
+class _OnlineModuleShelf extends StatelessWidget {
+  const _OnlineModuleShelf({
     required this.session,
     required this.specs,
     required this.visuals,
     required this.enabled,
   });
 
-  final CareerBattleSessionSnapshot session;
+  final OnlineBattleSessionSnapshot session;
   final Map<ModuleKind, ModuleSpec> specs;
   final EquippedVisuals visuals;
   final bool enabled;
@@ -583,7 +568,7 @@ class _InterventionShelf extends StatelessWidget {
     final accent = enabled ? RelayColors.amber : RelayColors.cyan;
     final allModules = session.reserves;
     return AnimatedContainer(
-      key: const ValueKey('career-live-intervention-shelf'),
+      key: const ValueKey('online-live-intervention-shelf'),
       duration: const Duration(milliseconds: 180),
       height: 116,
       padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
@@ -641,7 +626,7 @@ class _InterventionShelf extends StatelessWidget {
                     ),
                   )
                 : ListView.separated(
-                    key: const ValueKey('career-live-reserve-list'),
+                    key: const ValueKey('online-live-reserve-list'),
                     scrollDirection: Axis.horizontal,
                     itemCount: allModules.length,
                     separatorBuilder: (_, _) => const SizedBox(width: 10),
@@ -678,7 +663,7 @@ class _ReserveTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tile = Container(
-      key: ValueKey('live-reserve-${reserve.id}'),
+      key: ValueKey('online-live-reserve-${reserve.id}'),
       width: 158,
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
       decoration: BoxDecoration(

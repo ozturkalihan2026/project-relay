@@ -7,12 +7,15 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:project_relay_client/src/api/relay_api.dart';
 import 'package:project_relay_client/src/api/session_storage.dart';
+import 'package:project_relay_client/src/game/replay_event_formatter.dart';
+import 'package:project_relay_client/src/game/replay_game.dart';
 import 'package:project_relay_client/src/models/relay_models.dart';
 import 'package:project_relay_client/src/screens/career_battle_screen.dart';
 import 'package:project_relay_client/src/screens/career_live_battle_screen.dart';
 import 'package:project_relay_client/src/state/app_settings.dart';
 import 'package:project_relay_client/src/theme/cosmetic_visuals.dart';
 import 'package:project_relay_client/src/theme/circuit_presentation.dart';
+import 'package:project_relay_client/src/widgets/replay_attack_overlay.dart';
 
 void main() {
   testWidgets('müdahale penceresinde yalnız yedek rafı sürüklenebilir olur', (
@@ -132,7 +135,7 @@ void main() {
       (module) => module.id == 'player-laser',
     );
     final cellIndex = laser.row * CircuitPresentationSpec.gridSize + laser.column;
-    final cellFinder = find.byKey(ValueKey('circuit-cell-$cellIndex'));
+    final cellFinder = find.byKey(ValueKey('circuit-cell-left-$cellIndex'));
     expect(cellFinder, findsOneWidget);
     final cellCenter = tester.getCenter(cellFinder);
 
@@ -389,19 +392,13 @@ void main() {
     );
     await tester.pump();
 
-    final game = tester
-        .widget<GameWidget<RelayReplayGame>>(
-          find.byType(GameWidget<RelayReplayGame>),
-        )
-        .game!;
-    expect(game.debugPulseCount, 0);
+    expect(find.byType(ReplayAttackOverlay), findsOneWidget);
 
     await tester.pump(const Duration(milliseconds: 600));
     await tester.pump();
     await tester.pump();
 
     expect(fake.advanceCalls, greaterThan(0));
-    expect(game.debugPulseCount, 1);
     expect(tester.takeException(), isNull);
 
     await tester.pumpWidget(const SizedBox.shrink());

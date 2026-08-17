@@ -21,6 +21,7 @@ import '../widgets/app_header_actions.dart';
 import '../widgets/preparation_workspace.dart';
 import '../widgets/relay_notice.dart';
 import 'collection_screen.dart';
+import 'online_live_battle_screen.dart';
 import 'replay_screen.dart';
 
 enum EditorMode {
@@ -420,18 +421,27 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
       final validation = await api.validateBoard(state.board);
       ref.read(_boardProvider.notifier).applyValidation(validation);
       await api.saveBoard(state.board);
-      final match = await api.createAsyncMatch();
+      final battleSession = await api.startOnlineBattleSession();
       ref
           .read(productTelemetryProvider)
           .track(
             'async_match_started',
             context: {
               'module_count': state.placements.length,
-              'opponent_kind': match.opponent.kind,
-              'weekly_protocol': match.weeklyProtocolKey,
+              'session_id': battleSession.sessionId,
+              'opponent_name': battleSession.opponentName,
             },
           );
-      await _openReplay(api, match);
+      if (!mounted) return;
+      await Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => OnlineLiveBattleScreen(
+            initialSession: battleSession,
+            modules: ref.read(catalogsProvider).requireValue.modules,
+            visuals: _visuals,
+          ),
+        ),
+      );
       final tour = ref.read(onboardingTourProvider);
       if (tour.step == OnboardingTourStep.validateAndBattle) {
         ref.read(onboardingTourProvider.notifier).battleViewed();

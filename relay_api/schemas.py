@@ -621,6 +621,23 @@ class CareerBattleSwapRequest(ApiModel):
     orientation: Direction | None = None
 
 
+class OnlineBattleSessionResponse(ApiModel):
+    session_id: str
+    player_id: str
+    status: str
+    tick: int
+    complete: bool
+    player_board: BoardPayload
+    opponent_board: BoardPayload
+    frame: dict[str, Any]
+    intervention: dict[str, Any]
+    reserves: list[dict[str, Any]]
+    events: list[dict[str, Any]]
+    opponent_name: str
+    opponent_description: str
+    match: MatchResponse | None
+
+
 class ControlledKitResponse(ApiModel):
     name: str
     module_kinds: list[ModuleKind]

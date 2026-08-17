@@ -29,6 +29,7 @@ class CircuitBoard extends StatelessWidget {
     this.upgradeBranches = const {},
     this.canAcceptModuleDrop,
     this.moduleDraggingEnabled = true,
+    this.keyPrefix,
     super.key,
   });
 
@@ -45,6 +46,7 @@ class CircuitBoard extends StatelessWidget {
   final Map<String, String> upgradeBranches;
   final ModuleDropPredicate? canAcceptModuleDrop;
   final bool moduleDraggingEnabled;
+  final String? keyPrefix;
 
   @override
   Widget build(BuildContext context) {
@@ -117,6 +119,7 @@ class CircuitBoard extends StatelessWidget {
                         ),
                         child: _CoreCellBackdrop(
                           cellIndex: index,
+                          keyPrefix: keyPrefix,
                           onTap: () => onCellTap(index),
                         ),
                       );
@@ -128,6 +131,7 @@ class CircuitBoard extends StatelessWidget {
                       ),
                       child: _CircuitCell(
                         cellIndex: index,
+                        keyPrefix: keyPrefix,
                         coreGate: isCoreGate(index),
                         placement: placement,
                         spec: placement == null ? null : specs[placement.kind],
@@ -209,6 +213,8 @@ class _PreparationStageShell extends StatelessWidget {
     required Color color,
     required double depth,
     required double opacity,
+    required double blurRadius,
+    required double spreadRadius,
   }) {
     return IgnorePointer(
       child: Transform.translate(
@@ -240,8 +246,8 @@ class _PreparationStageShell extends StatelessWidget {
               boxShadow: [
                 BoxShadow(
                   color: boardTheme.core.withValues(alpha: 0.30),
-                  blurRadius: 16,
-                  spreadRadius: -4,
+                  blurRadius: blurRadius,
+                  spreadRadius: spreadRadius,
                 ),
               ],
             ),
@@ -253,57 +259,81 @@ class _PreparationStageShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ClipRect(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 20, 16, 34),
-        child: AspectRatio(
-          aspectRatio: 1,
-          child: Stack(
-            clipBehavior: Clip.none,
-            children: [
-              Positioned(
-                left: 34,
-                right: 20,
-                bottom: -12,
-                height: 54,
-                child: IgnorePointer(
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(999),
-                      gradient: RadialGradient(
-                        colors: [
-                          boardTheme.core.withValues(alpha: 0.24),
-                          const Color(0x99000000),
-                          Colors.transparent,
-                        ],
-                        stops: const [0.0, 0.52, 1.0],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final available = math.min(
+          constraints.maxWidth,
+          constraints.maxHeight.isFinite
+              ? constraints.maxHeight
+              : constraints.maxWidth,
+        );
+        final scale = (available / 500.0).clamp(0.5, 1.2);
+        final hPad = 16.0 * scale;
+        final topPad = 20.0 * scale;
+        final bottomPad = 34.0 * scale;
+        final deckDepth = 22.0 * scale;
+        final boardOffset = 4.0 * scale;
+        final glowBottom = -12.0 * scale;
+        final glowHeight = 54.0 * scale;
+        final glowLeft = 34.0 * scale;
+        final glowRight = 20.0 * scale;
+        final blurRadius = 16.0 * scale;
+        final spreadRadius = -4.0 * scale;
+        return ClipRect(
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(hPad, topPad, hPad, bottomPad),
+            child: AspectRatio(
+              aspectRatio: 1,
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Positioned(
+                    left: glowLeft,
+                    right: glowRight,
+                    bottom: glowBottom,
+                    height: glowHeight,
+                    child: IgnorePointer(
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(999),
+                          gradient: RadialGradient(
+                            colors: [
+                              boardTheme.core.withValues(alpha: 0.24),
+                              const Color(0x99000000),
+                              Colors.transparent,
+                            ],
+                            stops: const [0.0, 0.52, 1.0],
+                          ),
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ),
-              Positioned.fill(
-                child: _deckLayer(
-                  color: const Color(0xFF06131A),
-                  depth: 22,
-                  opacity: 0.09,
-                ),
-              ),
-              Positioned.fill(
-                child: Transform.translate(
-                  offset: const Offset(0, 4),
-                  child: Transform(
-                    alignment: Alignment.center,
-                    transform: _deckTransform(),
-                    transformHitTests: true,
-                    child: child,
+                  Positioned.fill(
+                    child: _deckLayer(
+                      color: const Color(0xFF06131A),
+                      depth: deckDepth,
+                      opacity: 0.09,
+                      blurRadius: blurRadius,
+                      spreadRadius: spreadRadius,
+                    ),
                   ),
-                ),
+                  Positioned.fill(
+                    child: Transform.translate(
+                      offset: Offset(0, boardOffset),
+                      child: Transform(
+                        alignment: Alignment.center,
+                        transform: _deckTransform(),
+                        transformHitTests: true,
+                        child: child,
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }
@@ -349,6 +379,7 @@ class _CircuitCell extends StatelessWidget {
     required this.raised,
     required this.upgradeBranch,
     required this.moduleDraggingEnabled,
+    this.keyPrefix,
   });
 
   final int cellIndex;
@@ -365,6 +396,7 @@ class _CircuitCell extends StatelessWidget {
   final bool raised;
   final String? upgradeBranch;
   final bool moduleDraggingEnabled;
+  final String? keyPrefix;
 
   @override
   Widget build(BuildContext context) {
@@ -411,7 +443,7 @@ class _CircuitCell extends StatelessWidget {
             : null;
 
         final cell = Semantics(
-          key: ValueKey('circuit-cell-$cellIndex'),
+          key: ValueKey('circuit-cell-${keyPrefix != null ? '$keyPrefix-' : ''}$cellIndex'),
           button: true,
           label: module == null
               ? coreGate
@@ -698,16 +730,21 @@ class _CircuitCell extends StatelessWidget {
 }
 
 class _CoreCellBackdrop extends StatelessWidget {
-  const _CoreCellBackdrop({required this.cellIndex, required this.onTap});
+  const _CoreCellBackdrop({
+    required this.cellIndex,
+    required this.onTap,
+    this.keyPrefix,
+  });
 
   final int cellIndex;
   final VoidCallback onTap;
+  final String? keyPrefix;
 
   @override
   Widget build(BuildContext context) {
     final visuals = CosmeticVisualScope.of(context);
     return Semantics(
-      key: ValueKey('circuit-cell-$cellIndex'),
+      key: ValueKey('circuit-cell-${keyPrefix != null ? '$keyPrefix-' : ''}$cellIndex'),
       button: true,
       label: 'Pasif çekirdek hücresi',
       child: Material(

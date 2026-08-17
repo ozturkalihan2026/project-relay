@@ -585,6 +585,51 @@ class RelayApi {
     return CareerRunSnapshot.fromJson(payload);
   }
 
+  Future<OnlineBattleSessionSnapshot> startOnlineBattleSession() async {
+    final payload = await _post(
+      '/api/v1/me/online-battle-session',
+      const {},
+      authorized: true,
+    );
+    return OnlineBattleSessionSnapshot.fromJson(payload);
+  }
+
+  Future<OnlineBattleSessionSnapshot> fetchOnlineBattleSession() async {
+    final payload = await _get(
+      '/api/v1/me/online-battle-session',
+      authorized: true,
+    );
+    return OnlineBattleSessionSnapshot.fromJson(payload);
+  }
+
+  Future<OnlineBattleSessionSnapshot> advanceOnlineBattleSession({
+    int ticks = 1,
+  }) async {
+    final payload = await _post(
+      '/api/v1/me/online-battle-session/advance',
+      {'ticks': ticks},
+      authorized: true,
+    );
+    return OnlineBattleSessionSnapshot.fromJson(payload);
+  }
+
+  Future<OnlineBattleSessionSnapshot> swapOnlineBattleModule({
+    required String outgoingId,
+    required String incomingId,
+    RelayDirection? orientation,
+  }) async {
+    final payload = await _post(
+      '/api/v1/me/online-battle-session/swap',
+      {
+        'outgoing_id': outgoingId,
+        'incoming_id': incomingId,
+        if (orientation != null) 'orientation': orientation.wireValue,
+      },
+      authorized: true,
+    );
+    return OnlineBattleSessionSnapshot.fromJson(payload);
+  }
+
   Future<ProgressionReward> claimDailyMission(String missionId) async {
     final payload = await _post(
       '/api/v1/me/daily-missions/$missionId/claim',

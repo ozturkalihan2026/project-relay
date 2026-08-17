@@ -56,6 +56,7 @@ class MigrationTests(unittest.TestCase):
         self.assertIn("CREATE TABLE chat_messages", sql)
         self.assertIn("CREATE TABLE product_events", sql)
         self.assertIn("CREATE TABLE career_battle_sessions", sql)
+        self.assertIn("CREATE TABLE online_battle_sessions", sql)
 
     def test_initial_migration_creates_and_downgrades_online_schema(
         self,
@@ -122,6 +123,7 @@ class MigrationTests(unittest.TestCase):
                     "chat_messages",
                     "product_events",
                     "career_battle_sessions",
+                    "online_battle_sessions",
                 },
             )
             engine.dispose()

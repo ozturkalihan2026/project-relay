@@ -980,7 +980,7 @@ class FlutterClientContractTests(unittest.TestCase):
         ).read_text(encoding="utf-8")
 
         self.assertIn("createBotMatch", editor_source)
-        self.assertIn("createAsyncMatch", editor_source)
+        self.assertIn("startOnlineBattleSession", editor_source)
         self.assertIn("saveBoard", editor_source)
         self.assertIn("fetchReplay", editor_source)
         self.assertIn("replay.checksum != match.replayChecksum", editor_source)
@@ -1944,7 +1944,7 @@ def test_v0822_rev1_preparation_scene_rebuild_contract():
     assert 'CircuitPresentationSpec.preparationPerspectiveDepth' in board
     assert '_RaisedModuleShell' in board
     assert '_DeckFastener' not in board
-    assert 'depth: 22' in board
+    assert 'depth: deckDepth' in board
     assert 'offset: const Offset(0, -11)' in board
     assert 'viewportHeight * 0.57' in editor
     assert 'presentation3d: true' in editor

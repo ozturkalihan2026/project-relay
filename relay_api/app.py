@@ -47,6 +47,7 @@ from .database import Database
 from .db_models import PlayerRecord
 from .chat import ChatError, ChatService, ChatChannel, ChatMessage
 from .online import OnlinePlayError, OnlinePlayService, SavedBoard
+from .online_live import OnlineLiveBattleError, OnlineLiveBattleService, OnlineBattleSessionSnapshot
 from .progression import (
     ProgressionError,
     ProgressionService,
@@ -103,6 +104,7 @@ from .schemas import (
     CreateChatGroupRequest,
     VerifyReplayRequest,
     VerifyReplayResponse,
+    OnlineBattleSessionResponse,
     WeeklyProtocolResponse,
 )
 from .season import (
@@ -817,6 +819,11 @@ def create_app(
         match_service,
         resolved_settings,
     )
+    resolved_online_live = OnlineLiveBattleService(
+        resolved_database,
+        match_service,
+        resolved_online,
+    )
     resolved_competitive = competitive_service or CompetitiveService(
         resolved_database,
         clock=match_service.clock,
@@ -880,6 +887,7 @@ def create_app(
     application.state.social_service = resolved_social
     application.state.chat_service = resolved_chat
     application.state.telemetry_service = resolved_telemetry
+    application.state.online_live_service = resolved_online_live
 
     def current_player(
         credentials: HTTPAuthorizationCredentials | None = Depends(bearer),
@@ -990,6 +998,20 @@ def create_app(
     async def online_error_handler(
         _request: Request,
         exc: OnlinePlayError,
+    ) -> JSONResponse:
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={
+                "code": exc.code,
+                "message": exc.message,
+                "details": None,
+            },
+        )
+
+    @application.exception_handler(OnlineLiveBattleError)
+    async def online_live_battle_error_handler(
+        _request: Request,
+        exc: OnlineLiveBattleError,
     ) -> JSONResponse:
         return JSONResponse(
             status_code=exc.status_code,
@@ -1447,6 +1469,105 @@ def create_app(
         player: PlayerView = Depends(current_player),
     ) -> dict[str, Any]:
         return _career_run_payload(resolved_career.abandon(player.player_id))
+
+    # ── Online live battle endpoints ──────────────────────────────────
+
+    def _online_battle_session_payload(
+        snapshot: OnlineBattleSessionSnapshot,
+    ) -> dict[str, Any]:
+        return {
+            "session_id": snapshot.session_id,
+            "player_id": snapshot.player_id,
+            "status": snapshot.status,
+            "tick": snapshot.tick,
+            "complete": snapshot.complete,
+            "player_board": snapshot.player_board.to_dict(),
+            "opponent_board": snapshot.opponent_board.to_dict(),
+            "frame": snapshot.frame.to_dict(),
+            "intervention": snapshot.intervention.to_dict(),
+            "reserves": [item.to_dict() for item in snapshot.reserves],
+            "events": [item.to_dict() for item in snapshot.events],
+            "opponent_name": snapshot.opponent_name,
+            "opponent_description": snapshot.opponent_description,
+            "match": (
+                _match_payload(snapshot.match)
+                if snapshot.match is not None
+                else None
+            ),
+        }
+
+    @application.post(
+        "/api/v1/me/online-battle-session",
+        response_model=OnlineBattleSessionResponse,
+        responses={401: {"model": ErrorResponse}, 409: {"model": ErrorResponse}},
+        tags=["online"],
+    )
+    def start_online_battle_session(
+        player: PlayerView = Depends(current_player),
+    ) -> dict[str, Any]:
+        return _online_battle_session_payload(
+            resolved_online_live.start_session(player.player_id),
+        )
+
+    @application.get(
+        "/api/v1/me/online-battle-session",
+        response_model=OnlineBattleSessionResponse,
+        responses={
+            401: {"model": ErrorResponse},
+            404: {"model": ErrorResponse},
+        },
+        tags=["online"],
+    )
+    def get_online_battle_session(
+        player: PlayerView = Depends(current_player),
+    ) -> dict[str, Any]:
+        return _online_battle_session_payload(
+            resolved_online_live.current_session(player.player_id),
+        )
+
+    @application.post(
+        "/api/v1/me/online-battle-session/advance",
+        response_model=OnlineBattleSessionResponse,
+        responses={
+            401: {"model": ErrorResponse},
+            404: {"model": ErrorResponse},
+            409: {"model": ErrorResponse},
+        },
+        tags=["online"],
+    )
+    def advance_online_battle_session(
+        request: CareerBattleAdvanceRequest,
+        player: PlayerView = Depends(current_player),
+    ) -> dict[str, Any]:
+        return _online_battle_session_payload(
+            resolved_online_live.advance_session(
+                player.player_id,
+                ticks=request.ticks,
+            ),
+        )
+
+    @application.post(
+        "/api/v1/me/online-battle-session/swap",
+        response_model=OnlineBattleSessionResponse,
+        responses={
+            401: {"model": ErrorResponse},
+            404: {"model": ErrorResponse},
+            409: {"model": ErrorResponse},
+        },
+        tags=["online"],
+    )
+    def swap_online_battle_module(
+        request: CareerBattleSwapRequest,
+        player: PlayerView = Depends(current_player),
+    ) -> dict[str, Any]:
+        return _online_battle_session_payload(
+            resolved_online_live.swap_module(
+                player.player_id,
+                outgoing_id=request.outgoing_id,
+                incoming_id=request.incoming_id,
+                orientation=request.orientation,
+            ),
+        )
 
     def _chat_channel_payload(channel: ChatChannel) -> dict[str, Any]:
         return {

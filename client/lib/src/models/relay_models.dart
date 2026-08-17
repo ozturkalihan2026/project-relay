@@ -1860,6 +1860,74 @@ class CareerBattleSessionSnapshot {
   final MatchResponse? match;
 }
 
+class OnlineBattleSessionSnapshot {
+  const OnlineBattleSessionSnapshot({
+    required this.sessionId,
+    required this.status,
+    required this.tick,
+    required this.complete,
+    required this.playerBoard,
+    required this.opponentBoard,
+    required this.frame,
+    required this.intervention,
+    required this.reserves,
+    required this.events,
+    required this.opponentName,
+    required this.opponentDescription,
+    this.match,
+  });
+
+  factory OnlineBattleSessionSnapshot.fromJson(Map<String, dynamic> json) {
+    final matchPayload = json['match'];
+    return OnlineBattleSessionSnapshot(
+      sessionId: json['session_id'] as String,
+      status: json['status'] as String,
+      tick: json['tick'] as int,
+      complete: json['complete'] as bool,
+      playerBoard: BoardDraft.fromJson(
+        json['player_board'] as Map<String, dynamic>,
+      ),
+      opponentBoard: BoardDraft.fromJson(
+        json['opponent_board'] as Map<String, dynamic>,
+      ),
+      frame: ReplayStateFrame.fromJson(
+        json['frame'] as Map<String, dynamic>,
+      ),
+      intervention: CareerInterventionState.fromJson(
+        json['intervention'] as Map<String, dynamic>,
+      ),
+      reserves: (json['reserves'] as List<dynamic>)
+          .map(
+            (item) =>
+                CareerReserveModule.fromJson(item as Map<String, dynamic>),
+          )
+          .toList(growable: false),
+      events: (json['events'] as List<dynamic>)
+          .map((item) => BattleEvent.fromJson(item as Map<String, dynamic>))
+          .toList(growable: false),
+      opponentName: json['opponent_name'] as String,
+      opponentDescription: json['opponent_description'] as String,
+      match: matchPayload is Map<String, dynamic>
+          ? MatchResponse.fromJson(matchPayload)
+          : null,
+    );
+  }
+
+  final String sessionId;
+  final String status;
+  final int tick;
+  final bool complete;
+  final BoardDraft playerBoard;
+  final BoardDraft opponentBoard;
+  final ReplayStateFrame frame;
+  final CareerInterventionState intervention;
+  final List<CareerReserveModule> reserves;
+  final List<BattleEvent> events;
+  final String opponentName;
+  final String opponentDescription;
+  final MatchResponse? match;
+}
+
 enum KitMode {
   online,
   training,
