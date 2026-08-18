@@ -70,8 +70,8 @@ class _CareerLiveBattleScreenState
   late final Map<ModuleKind, ModuleSpec> _specs;
   late final EventSoundPlayer _soundPlayer;
   late final ValueNotifier<List<BattleEvent>> _attackOverlayEvents;
-  late final Timer _battleTimer;
-  bool _advancing = false;
+  bool _battleLoopActive = false;
+  Timer? _tickTimer;
   bool _swapping = false;
   bool _resultLoading = false;
   int _processedEventCount = 0;
@@ -89,10 +89,8 @@ class _CareerLiveBattleScreenState
     );
     _attackOverlayEvents = ValueNotifier<List<BattleEvent>>(const []);
     _processedEventCount = _session.events.length;
-    _battleTimer = Timer.periodic(
-      _tickInterval,
-      (_) => unawaited(_advanceBattle()),
-    );
+    _battleLoopActive = true;
+    _startBattleLoop();
     if (_session.complete) {
       _markLiveComplete();
     }
@@ -100,17 +98,31 @@ class _CareerLiveBattleScreenState
 
   @override
   void dispose() {
-    _battleTimer.cancel();
+    _battleLoopActive = false;
+    _tickTimer?.cancel();
     unawaited(_soundPlayer.dispose());
     _attackOverlayEvents.dispose();
     super.dispose();
   }
 
-  Future<void> _advanceBattle() async {
-    if (_advancing || _session.complete) {
-      return;
+  Future<void> _startBattleLoop() async {
+    while (_battleLoopActive && mounted && !_session.complete) {
+      await _advanceBattle();
+      if (!_battleLoopActive || !mounted || _session.complete) break;
+      await _waitForTick();
     }
-    _advancing = true;
+  }
+
+  Future<void> _waitForTick() {
+    final completer = Completer<void>();
+    _tickTimer = Timer(_tickInterval, () {
+      _tickTimer = null;
+      if (!completer.isCompleted) completer.complete();
+    });
+    return completer.future;
+  }
+
+  Future<void> _advanceBattle() async {
     try {
       final next = await ref
           .read(relayApiProvider)
@@ -128,13 +140,13 @@ class _CareerLiveBattleScreenState
       _showAdvanceError(error.message);
     } catch (error) {
       _showAdvanceError('Canlı savaş bağlantısı yenileniyor: $error');
-    } finally {
-      _advancing = false;
     }
   }
 
   void _markLiveComplete() {
-    _battleTimer.cancel();
+    _battleLoopActive = false;
+    _tickTimer?.cancel();
+    _tickTimer = null;
     unawaited(_loadResultReplay());
   }
 
@@ -473,6 +485,14 @@ class _LiveBattleStageState extends State<_LiveBattleStage> {
                         for (final m in session.frame.left.modules)
                           if (m.powered && m.hp > 0) m.id,
                       },
+                      moduleHp: {
+                        for (final m in session.frame.left.modules)
+                          m.id: m.hp,
+                      },
+                      moduleMaxHp: {
+                        for (final m in session.frame.left.modules)
+                          m.id: m.maxHp,
+                      },
                       validationVisible: false,
                       selectedCell: null,
                       onCellTap: (_) {},
@@ -493,6 +513,14 @@ class _LiveBattleStageState extends State<_LiveBattleStage> {
                           poweredIds: {
                             for (final m in session.frame.right.modules)
                               if (m.powered && m.hp > 0) m.id,
+                          },
+                          moduleHp: {
+                            for (final m in session.frame.right.modules)
+                              m.id: m.hp,
+                          },
+                          moduleMaxHp: {
+                            for (final m in session.frame.right.modules)
+                              m.id: m.maxHp,
                           },
                         validationVisible: false,
                         selectedCell: null,

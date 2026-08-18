@@ -1225,7 +1225,7 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertNotIn("CareerBattleScreen(", live_battle)
         self.assertIn("BattleCenterAnalysisPanel(", live_battle)
         self.assertIn("markLiveComplete", live_battle)
-        self.assertIn("Timer.periodic", live_battle)
+        self.assertIn("_startBattleLoop", live_battle)
         self.assertIn("advanceCareerBattleSession", live_battle)
         self.assertIn("swapCareerBattleModule", live_battle)
         self.assertIn("MÜDAHALE RAFI AKTİF", live_battle)

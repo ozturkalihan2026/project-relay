@@ -27,6 +27,8 @@ class CircuitBoard extends StatelessWidget {
     this.visuals = const EquippedVisuals.defaults(),
     this.presentation3d = false,
     this.upgradeBranches = const {},
+    this.moduleHp = const {},
+    this.moduleMaxHp = const {},
     this.canAcceptModuleDrop,
     this.moduleDraggingEnabled = true,
     this.keyPrefix,
@@ -44,6 +46,8 @@ class CircuitBoard extends StatelessWidget {
   final EquippedVisuals visuals;
   final bool presentation3d;
   final Map<String, String> upgradeBranches;
+  final Map<String, double> moduleHp;
+  final Map<String, double> moduleMaxHp;
   final ModuleDropPredicate? canAcceptModuleDrop;
   final bool moduleDraggingEnabled;
   final String? keyPrefix;
@@ -140,6 +144,12 @@ class CircuitBoard extends StatelessWidget {
                         powered:
                             placement != null &&
                             poweredIds.contains(placement.id),
+                        hp: placement == null
+                            ? null
+                            : moduleHp[placement.id],
+                        maxHp: placement == null
+                            ? null
+                            : moduleMaxHp[placement.id],
                         onTap: () => onCellTap(index),
                         onModuleDropped: (data) => onModuleDropped(index, data),
                         canAcceptDrop: (data) =>
@@ -379,6 +389,8 @@ class _CircuitCell extends StatelessWidget {
     required this.raised,
     required this.upgradeBranch,
     required this.moduleDraggingEnabled,
+    this.hp,
+    this.maxHp,
     this.keyPrefix,
   });
 
@@ -389,6 +401,8 @@ class _CircuitCell extends StatelessWidget {
   final bool selected;
   final bool validationVisible;
   final bool powered;
+  final double? hp;
+  final double? maxHp;
   final VoidCallback onTap;
   final ValueChanged<ModuleDragData> onModuleDropped;
   final bool Function(ModuleDragData data) canAcceptDrop;
@@ -658,6 +672,41 @@ class _CircuitCell extends StatelessWidget {
                                       ? RelayColors.cyan
                                       : RelayColors.coral,
                                   size: 15,
+                                ),
+                              ),
+                            if (hp != null && maxHp != null && maxHp! > 0)
+                              Positioned(
+                                left: 4,
+                                right: 4,
+                                bottom: 4,
+                                child: LayoutBuilder(
+                                  builder: (context, constraints) {
+                                    final ratio =
+                                        (hp! / maxHp!).clamp(0.0, 1.0);
+                                    final barColor = ratio > 0.35
+                                        ? RelayColors.mint
+                                        : RelayColors.coral;
+                                    return Container(
+                                      height: 3,
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFF263F48),
+                                        borderRadius: BorderRadius.circular(2),
+                                      ),
+                                      child: Align(
+                                        alignment: Alignment.centerLeft,
+                                        child: FractionallySizedBox(
+                                          widthFactor: ratio,
+                                          child: Container(
+                                            decoration: BoxDecoration(
+                                              color: barColor,
+                                              borderRadius:
+                                                  BorderRadius.circular(2),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                                  },
                                 ),
                               ),
                             if (dropActive)

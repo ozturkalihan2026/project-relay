@@ -1226,46 +1226,17 @@ class _ValidationCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (result == null)
-              const Row(
-                children: [
-                  Icon(Icons.help_outline, color: RelayColors.muted),
-                  SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      'Devre henüz sunucuda doğrulanmadı.',
-                      style: TextStyle(color: RelayColors.muted),
-                    ),
-                  ),
-                ],
-              )
-            else ...[
-              Row(
-                children: [
-                  const Icon(Icons.check_circle, color: RelayColors.mint),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      '${result.poweredIds.length}/'
-                      '${state.placements.length} modül enerjili',
-                      style: const TextStyle(fontWeight: FontWeight.w800),
-                    ),
-                  ),
-                ],
-              ),
-              if (result.unpoweredIds.isNotEmpty) ...[
-                const SizedBox(height: 8),
-                Text(
-                  'Enerjisiz: ${unpoweredLabels.join(', ')}',
-                  style: const TextStyle(
-                    color: RelayColors.coral,
-                    fontSize: 11,
-                  ),
+            if (result != null && result.unpoweredIds.isNotEmpty) ...[
+              Text(
+                'Enerjisiz: ${unpoweredLabels.join(', ')}',
+                style: const TextStyle(
+                  color: RelayColors.coral,
+                  fontSize: 11,
                 ),
-              ],
+              ),
+              const SizedBox(height: 8),
             ],
             if (showAction) ...[
-              const SizedBox(height: 9),
               OutlinedButton.icon(
                 onPressed: busy ? null : onValidate,
                 icon: const Icon(Icons.electrical_services),

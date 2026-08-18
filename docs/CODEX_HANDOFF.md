@@ -5,7 +5,7 @@ devam etmek için tutulan kısa ve kalıcı bağlamdır. Tam sohbet dökümü de
 
 ## Depo durumu
 
-- Son güncelleme: 2026-08-18 (Europe/Istanbul, sekizinci oturum)
+- Son güncelleme: 2026-08-18 (Europe/Istanbul, dokuzuncu oturum)
 - Depo: `https://github.com/ozturkalihan2026/project-relay.git`
 - Aktif dal: `main` (`origin/main` takip ediliyor)
 - Son doğrulanmış commit: `8fdd4d2` (`D:/Projects/project-relay` HEAD). Canlı savaş
@@ -282,6 +282,21 @@ göre yapılacak.
      `widget.onModuleDropped` olarak düzeltildi (önceki `(_, _) {}` → müdahale hiç
      çalışmıyordu). Rakip tahta IgnorePointer ile korunmaya devam ediyor.
    `flutter analyze` temiz, `flutter test` 99/99, `pytest` 204/204 geçti.
+- **Dokuzuncu oturum:** Üç sorun düzeltildi:
+  1. **Savaş ksılması**: `Timer.periodic` → chained async `_startBattleLoop()`
+     ile değiştirildi. Tick tamamlanmadan bir sonraki tick bekler; `_tickTimer`
+     cancel ile dispose'ta temizlenir.
+  2. **Modül can barları**: `CircuitBoard`'a `moduleHp`/`moduleMaxHp`
+     parametreleri eklendi; `_CircuitCell`'de 3px yüksekliğinde mint/coral renkli
+     can barı render ediliyor (≥%35 mint, altı coral).
+  3. **Sunucu cache**: `_rebuild_battle_session()` artık `LiveBattleSession`
+     nesnesini `_battle_session_cache` dict'inde saklıyor; her tick'te 0'dan replay
+     yerine cached nesneye `advance_to` uygulanıyor. Swap ve complete'te cache
+     invalidasyonu yapılıyor.
+  4. **Validation toast**: `_ValidationCard` inline "X/Y modül enerjili" metni
+     kaldırıldı; durum artık yalnız `RelayNotice.show()` toast ile gösteriliyor.
+  Sözleşme testi `_startBattleLoop` assertion'ı ile güncellendi.
+  `flutter analyze` temiz, `flutter test` 99/99, `pytest` 204/204 geçti.
 - Commit/push için hazır dosyalar: Tüm değişiklikler `8fdd4d2` commit'inde
   gönderildi. Yeni dosyalar: `relay_api/online_live.py` (sunucu canlı savaş
   endpointleri), `client/lib/src/screens/online_live_battle_screen.dart` (istemci
@@ -431,6 +446,8 @@ göre yapılacak.
   `test_live_battle_session.py` max_swaps=999 güncellemesi sonrası düzeltildi.
 - Sekizinci oturum doğrulaması: `flutter analyze` temiz; `flutter test` 99/99 geçti.
   Python: `pytest` 204/204 (529 alt test) geçti; kod değişikliği yok (yalnız istemci).
+- Dokuzuncu oturum doğrulaması: `flutter analyze` temiz; `flutter test` 99/99 geçti.
+  Python: `pytest` 204/204 (529 alt test) geçti.
 - Canlı kariyer API, kalıcı oturum, müdahale aralığı, süreç yeniden başlatma ve
   göç testleri: Başarılı, hedefli paket 45 test geçti.
 - `flutter analyze`: Başarılı, sorun bulunmadı.

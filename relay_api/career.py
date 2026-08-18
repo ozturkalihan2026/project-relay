@@ -228,6 +228,7 @@ class CareerRunService:
             database,
             clock=self.clock,
         )
+        self._battle_session_cache: dict[str, LiveBattleSession] = {}
 
     def save_board(self, player_id: str, board: BoardLayout) -> SavedBoard:
         """Save the independent career circuit without touching async PvP."""
@@ -681,6 +682,7 @@ class CareerRunService:
                 complete = battle.complete
                 if complete:
                     record.status = "resolving"
+                    self._battle_session_cache.pop(record.id, None)
                 session.flush()
                 record_id = record.id
 
@@ -731,6 +733,7 @@ class CareerRunService:
             )
             record.commands = commands
             record.updated_at = now
+            self._battle_session_cache.pop(record.id, None)
             session.flush()
         return self._battle_session_snapshot(player_id, record, battle)
 
@@ -883,6 +886,13 @@ class CareerRunService:
         self,
         record: CareerBattleSessionRecord,
     ) -> LiveBattleSession:
+        cached = self._battle_session_cache.get(record.id)
+        if cached is not None:
+            try:
+                cached.advance_to(record.current_tick)
+                return cached
+            except Exception:
+                self._battle_session_cache.pop(record.id, None)
         battle = self.match_service.engine.start_live_session(
             self._board_from_payload(record.player_board),
             self._board_from_payload(record.opponent_board),
@@ -932,6 +942,7 @@ class CareerRunService:
                     status_code=500,
                 ) from error
         battle.advance_to(record.current_tick)
+        self._battle_session_cache[record.id] = battle
         return battle
 
     def _battle_session_snapshot(
