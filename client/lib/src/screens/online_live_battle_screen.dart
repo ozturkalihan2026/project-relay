@@ -99,7 +99,7 @@ class _OnlineLiveBattleScreenState
     while (_battleLoopActive && mounted && !_session.complete) {
       await _advanceBattle();
       if (!_battleLoopActive || !mounted || _session.complete) break;
-      await _sleep(60);
+      await _sleep(200);
     }
   }
 
