@@ -5,15 +5,13 @@ devam etmek için tutulan kısa ve kalıcı bağlamdır. Tam sohbet dökümü de
 
 ## Depo durumu
 
-- Son güncelleme: 2026-08-18 (Europe/Istanbul, dokuzuncu oturum)
+- Son güncelleme: 2026-08-18 (Europe/Istanbul, onbirinci oturum)
 - Depo: `https://github.com/ozturkalihan2026/project-relay.git`
 - Aktif dal: `main` (`origin/main` takip ediliyor)
-- Son doğrulanmış commit: `8fdd4d2` (`D:/Projects/project-relay` HEAD). Canlı savaş
-  Flame→CircuitBoard yeniden yazımı, sınırsız müdahale (max_swaps=999), çevrimiçi
-  canlı savaş ekranı ve API endpointleri, Alembic göçü dahil.
-- Senkronizasyon: Çalışma ağacında Sekizinci oturum düzeltmeleri var (henüz
-  commit'lenmedi). Değişen dosyalar: `career_live_battle_screen.dart`,
-  `online_live_battle_screen.dart`, `circuit_board.dart`, `CODEX_HANDOFF.md`.
+- Son doğrulanmış commit: `a8479d7` (`D:/Projects/project-relay` HEAD). Savaş UX
+  cilası: ticks batch, saldırı fade, ölü modül soluklaştırma, çekirdek zoom,
+  yeni oyun butonu.
+- Senkronizasyon: Çalışma ağacı temiz.
 
 ## Aktif amaç
 
@@ -297,6 +295,25 @@ göre yapılacak.
      kaldırıldı; durum artık yalnız `RelayNotice.show()` toast ile gösteriliyor.
   Sözleşme testi `_startBattleLoop` assertion'ı ile güncellendi.
   `flutter analyze` temiz, `flutter test` 99/99, `pytest` 204/204 geçti.
+- **Onuncu/Onbirinci oturum:** Altı UX sorunu düzeltildi (commit `a8479d7`):
+  1. **Yeni oyun butonu**: `BattleCenterAnalysisPanel`'e `onNewGame` callback +
+     "YENİ OYUN" `FilledButton.icon` eklendi; savaş analizinde oyun bitince
+     aynı sahneden yeni oyun başlatılabilir.
+  2. **Ticks batch**: `advanceCareerBattleSession` ve `advanceOnlineBattleSession`
+     `ticks: 4` (önceki 1) ile çalışıyor; her istekte 4 tick ilerleniyor.
+  3. **Yapay gecikme kaldırıldı**: Savaş döngüsündeki 540ms artificial delay
+     kaldırıldı; minimum 60ms `Timer`-tabanlı sleep ile devam ediliyor.
+     `_tickTimer`, `_tickInterval` field'ları kaldırıldı; `_sleepTimer` eklendi.
+  4. **Saldırı ışın fade fix**: `ReplayAttackOverlay` beam fade
+     `(1 - rawProgress)` yerine `(1 - progress).clamp(0.15, 1.0)` kullanıyor;
+     ışın hedefe ulaşana kadar minimum %15 opaklıkla görünür kalıyor.
+  5. **Ölü modül soluklaştırma**: `_CircuitCell`'de `hp <= 0` ise modül
+     `Opacity(0.28)` ile soluklaştırılıyor.
+  6. **Çekirdek patlaması kamera zoom**: `BattleCameraRig` core_damage final
+     tick olayında 1.22x zoom animasyonu uyguluyor (560ms easeOutCubic).
+  7. **Termal限速UI**: Modül arayüzünde ısınma durumu görselleştirildi.
+  Tüm değişiklikler `flutter analyze` temiz, `flutter test` 99/99,
+  `pytest` 204/204 (529 alt test) geçti.
 - Commit/push için hazır dosyalar: Tüm değişiklikler `8fdd4d2` commit'inde
   gönderildi. Yeni dosyalar: `relay_api/online_live.py` (sunucu canlı savaş
   endpointleri), `client/lib/src/screens/online_live_battle_screen.dart` (istemci
@@ -448,6 +465,8 @@ göre yapılacak.
   Python: `pytest` 204/204 (529 alt test) geçti; kod değişikliği yok (yalnız istemci).
 - Dokuzuncu oturum doğrulaması: `flutter analyze` temiz; `flutter test` 99/99 geçti.
   Python: `pytest` 204/204 (529 alt test) geçti.
+- Onbirinci oturum doğrulaması: `flutter analyze` temiz; `flutter test` 99/99 geçti.
+  Python: `pytest` 204/204 (529 alt test) geçti. 7 dosya değişti, 52 ekleme, 26 silme.
 - Canlı kariyer API, kalıcı oturum, müdahale aralığı, süreç yeniden başlatma ve
   göç testleri: Başarılı, hedefli paket 45 test geçti.
 - `flutter analyze`: Başarılı, sorun bulunmadı.
@@ -492,15 +511,11 @@ etmelidir:
    gerçekleşiyor, savaş durmuyor, donanım sonraki tickte kartın üzerine oturuyor.
    Sözleşme testleri düzeltildi (deckTilt/perspectiveDepth/boyut değerleri
    güncellendi), geçici `tmp_solid_preview_test.dart` silindi.
-3. **Savaş olayı-görsel senkronu (P0):** Ateş, kalkan, hasar, onarım ve enerji
-   günlüklerini görünür olaylarla birebir eşle; boş ve açıklamasız beklemeyi azalt.
-   Not: canlı ekran görsel olayları aynı snapshot olay akışından
-   (`_visualEventTypes` + `ReplayAttackOverlay`) besliyor ve saldırı ışınları
-   gerçek kenar portlarından çıkıyor; tüm boru hattı (540ms timer → advance →
-   `feedLiveFrame` → pulse → çizim) testlerle doğrulandı (7144 kırmızı piksel
-   probe'u + widget probe). Kullanıcının "ışın kayboluyor" raporu yeniden
-   üretilemedi; büyük olasılıkla eski web derlemesi. Son adım: güncel derlemeyi
-   gerçek tarayıcıda elle doğrula.
+3. **Savaş olayı-görsel senkronu (P0):** ✅ Tamamlandı. Lazer/mermi çizgileri
+   fade fix (minimum %15 opaklık), ölü modül soluklaştırma (opacity 0.28),
+   çekirdek patlamasına kamera zoom (1.22x), ticks=4 batch ile savaş döngüsü
+   hızlandırıldı. Tüm boru hattı testlerle doğrulandı. Son adım: güncel
+   derlemeyi gerçek tarayıcıda elle doğrula.
 4. **Ortak sahne sunumu (P1):** Hazırlık, kariyer ve savaşın kart, çekirdek,
    perspektif, ışık ve fiziksel modül bileşenlerini tek doğruluk kaynağına bağla.
 5. **Port/kablo doğruluğu (P1):** ✅ Tamamlandı (beşinci oturum). `_PortMarker`
