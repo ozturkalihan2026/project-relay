@@ -5,19 +5,15 @@ devam etmek için tutulan kısa ve kalıcı bağlamdır. Tam sohbet dökümü de
 
 ## Depo durumu
 
-- Son güncelleme: 2026-08-17 (Europe/Istanbul, altıncı oturum)
+- Son güncelleme: 2026-08-18 (Europe/Istanbul, sekizinci oturum)
 - Depo: `https://github.com/ozturkalihan2026/project-relay.git`
 - Aktif dal: `main` (`origin/main` takip ediliyor)
-- Son doğrulanmış commit: `991344a` (`D:/Projects/project-relay` HEAD). D: çalışma
-  ağacında commit'lenmemiş canlı savaş yeniden yazımı var; `replay_game.dart` dahil
-  değişen dosyaların içeriği bu oturumda Desktop kopyasıyla birebir aynı (SHA256
-  eşit) doğrulandı.
-- Senkronizasyon: Yerel `main` ile `origin/main` aynı commit'i gösteriyordu; yerel
-  değişiklik varken otomatik pull yapılmadı.
-- Bu oturum `C:\Users\S-A\Desktop\Project Relay` kopyasında çalıştı; bu kopya git
-  deposu değildir (`.git` eklenmedi, kullanıcı kararı). Değişiklikler yalnız dosya
-  sisteminde; commit/push, değişiklikler git etkinleştirilen depoya aktarıldıktan
-  sonra yapılabilir.
+- Son doğrulanmış commit: `8fdd4d2` (`D:/Projects/project-relay` HEAD). Canlı savaş
+  Flame→CircuitBoard yeniden yazımı, sınırsız müdahale (max_swaps=999), çevrimiçi
+  canlı savaş ekranı ve API endpointleri, Alembic göçü dahil.
+- Senkronizasyon: Çalışma ağacında Sekizinci oturum düzeltmeleri var (henüz
+  commit'lenmedi). Değişen dosyalar: `career_live_battle_screen.dart`,
+  `online_live_battle_screen.dart`, `circuit_board.dart`, `CODEX_HANDOFF.md`.
 
 ## Aktif amaç
 
@@ -251,42 +247,8 @@ göre yapılacak.
 
 ## Mevcut kullanıcı çalışması
 
-- Önceki canlı savaş, müdahale, Alembic, API ve Flutter değişiklikleri `aaa24da`
-  commit'inde yer alıyor ve `origin/main` üzerine gönderilmiş durumda.
-- Bu oturumda v0.8.23'ün P0 madde 1 (tek canlı savaş akışı) kodlandı ve doğrulandı;
-  ayrıca canlı savaş olay sesi ve madde 6'nın scrollbar/kapı etiketi bölümleri
-  tamamlandı. Değişiklikler git etkinleştirilmemiş Desktop kopyasında duruyor,
-  commit edilmedi.
-- **İkinci oturum:** Reaktif kalkan motor değişikliği + shield=26 rebalance'ı
-  Desktop kopyasında tamamlandı ve doğrulandı. **D: kopyasında `engine.py` ESKİ**
-  (reaktif değişiklik yok); Desktop `tests/` ile D: `tests/` içerik olarak aynı.
-  Kullanıcı dosyaları D:'ye elle aktaracak — aktarımda mutlaka `relay_engine/engine.py`,
-  `relay_content/modules.json`, `tests/test_engine.py`, `tests/test_balance.py` ve bu
-  belge gidecek.
-- **Üçüncü oturum:** Canlı savaş modül sürükle-bırak yerleştirme hatası düzeltildi
-  (kök neden + kalıcı regresyon testi) ve çekirdek çöküşü görseli katmanlı reaktör
-  patlamasına yükseltildi. `flutter analyze` temiz, `flutter test` 99/99. İkinci
-  oturumun motor/sunucu değişiklikleri (reaktif kalkan, shield=26) aynen geçerli;
-  D: kopyasında `engine.py` ESKİ kalıyor.
-- **Dördüncü oturum:** Fiziksel 3D modül gövdeleri (madde 7) tamamlandı ve
-  kullanıcı görsel onayı verdi (kamera yaw=−0.45 / tilt=0.60 / fov=46 / d=100).
-  Modüller küp+simge görünümünden çıkarıldı; ince kaide üzerinde hücreyi dolduran
-  fiziksel cihazlar olarak çiziliyor. Görsel inceleme sırasında `tmp_solid_preview_test.dart`
-  ile PNG üretildi (`C:\Users\S-A\AppData\Local\Temp\opencode\solid_preview.png`);
-  onay sonrası geçici test dosyası silindi. Bu model görüntü okuyamıyor — görsel
-  doğrulama kullanıcı tarafından yapıldı; gerçek ekran kabulü (madde 2/3) yine elle.
-  `flutter analyze` temiz, `flutter test` 99/99. D: kopyasında `engine.py` ESKİ
-  kalıyor.
-- **Beşinci oturum:** Port-kablo hizalaması ve 3B mod port görünümü düzeltildi.
-  Kök nedenler: (1) `_PortMarker` `Align(center)` without `widthFactor`/`heightFactor`
-  9×9 noktayı hücrenin tam ortasına yerleştiriyordu, kablo ucuyla 4px fark vardı;
-  offset `3.0`→`-1.0` ve `widthFactor:1`/`heightFactor:1` eklendi. (2) `_CircuitCell`
-  `_PortMarker`'a `liftOffset` geçirmiyordu; 3B modda modül 3.5px yukarı kalkıyor ama
-  noktalar yerinde sayıyordu. (3) `!raised` şartı 3B modda tüm port noktalarını
-  gizliyordu; kaldırıldı. (4) `_CircuitTracePainter` grid çizgileri
-  `size.width/gridSize` kullanıyordu ama `boardContentInset` hesaba katılmıyordu;
-  `CircuitTraceGeometry.gridPadding` ile düzeltildi. `flutter analyze` temiz,
-  `flutter test` 99/99, sözleşme testleri geçti.
+- Tüm canlı savaş, müdahale, API, Alembic ve istemci değişiklikleri `8fdd4d2`
+  commit'inde `origin/main` üzerine gönderildi. Çalışma ağacı temiz.
 - **Altıncı oturum:** Port noktaları, çekirdek kapı noktaları ve akış parçacıkları
   tamamen sıfırdan yeniden yazıldı. Kök neden: Widget tabanlı `_PortMarker`
   (`Positioned` + `Align` + `DecoratedBox`) CustomPaint koordinat sistemiyle uyumsuz
@@ -298,24 +260,33 @@ göre yapılacak.
   sistemiyle yeniden yazıldı. Sözleşme testi `_PortMarker` beklentisi
   `portFill.color` ile güncellendi. `flutter analyze` temiz, `flutter test` 99/99,
   sözleşme testleri 61/61 geçti.
-- Commit/push için hazır dosyalar: `client/lib/src/screens/career_live_battle_screen.dart`,
-  `client/lib/src/game/replay_game.dart`,
-  `client/lib/src/game/replay_event_formatter.dart`,
-  `client/lib/src/game/battle_visual_director.dart`,
-  `client/lib/src/game/event_sound_player.dart`,
-  `client/lib/src/widgets/replay_attack_overlay.dart`,
-  `client/lib/src/widgets/battle_camera_rig.dart`,
-  `client/lib/src/widgets/battle_arena_atmosphere.dart`,
-  `client/lib/src/widgets/ambient_music.dart`,
-  `client/lib/src/widgets/module_palette.dart`,
-  `client/lib/src/widgets/circuit_board.dart`,
-  `client/lib/src/screens/replay_screen.dart`,
-  `client/lib/src/screens/editor_screen.dart`,
-  `client/test/career_live_battle_screen_test.dart`,
-  `client/test/event_sound_player_test.dart`,
-  `client/test/module_palette_layout_test.dart`,
-  `client/test/circuit_trace_geometry_test.dart`,
-  `tests/test_client_contract.py`, `docs/CODEX_HANDOFF.md`.
+- **Yedinci oturum:** Commit `8fdd4d2` ile canlı savaş ekranında Flame bağımlılığı
+  tamamen kaldırıldı; `CircuitBoard(presentation3d: true)` ile 3B devre kartı
+  entegre edildi. Müdahale rafı tüm yedek modülleri gösterir hale getirildi
+  (`1/2 değişim hakkı` → `N yedek modül • savaş duraklatılmaz`);`InterventionPolicy`
+  `max_swaps=999`, `max_swaps_per_window=999` ile sınırsız müdahale sağlandı.
+  Çevrimiçi canlı savaş ekranı (`online_live_battle_screen.dart`, 734 satır) ve
+  sunucu endpointleri (`relay_api/online_live.py`, 574 satır) eklendi; Alembic göçü
+  `20260817_0017_live_online_battles.py` yazıldı. Bu oturumda 4 Python testi
+  düzeltildi (max_swaps=999 geçişinden kaynaklanan `swaps_remaining` ve
+  `swap_limit_reached` assertions). `flutter analyze` temiz, `flutter test` 99/99,
+  `pytest` 204/204 (529 alt test) geçti.
+- **Sekizinci oturum:** 3B görsel geçiş sonrası üç run-time hatası düzeltildi:
+  1. `poweredIds` artık statik `playerBoard.modules` yerine canlı
+     `session.frame.left/right.modules` (dead modül hariç) kullanıyor — ölü modüller
+     artık sönük gösteriliyor. 2. `circuit_board.dart` border rengi `validationVisible`
+     bağımlılığından kurtarıldı; `powered ? accent : coral` her zaman gösteriliyor.
+  3. `ReplayAttackOverlay` `Positioned.fill` ile sarıldı; saldırı simülasyonları
+     tahta üzerinde doğru sırayla render ediliyor. Ek olarak,
+     `online_live_battle_screen.dart`'te sol tahta `onModuleDropped` callback'i
+     `widget.onModuleDropped` olarak düzeltildi (önceki `(_, _) {}` → müdahale hiç
+     çalışmıyordu). Rakip tahta IgnorePointer ile korunmaya devam ediyor.
+   `flutter analyze` temiz, `flutter test` 99/99, `pytest` 204/204 geçti.
+- Commit/push için hazır dosyalar: Tüm değişiklikler `8fdd4d2` commit'inde
+  gönderildi. Yeni dosyalar: `relay_api/online_live.py` (sunucu canlı savaş
+  endpointleri), `client/lib/src/screens/online_live_battle_screen.dart` (istemci
+  canlı savaş ekranı), `alembic/versions/20260817_0017_live_online_battles.py`
+  (göç).
 - Altıncı oturumun ek dosyaları (aynı listedeki istemci dosyaları üzerinde):
   `client/lib/src/widgets/circuit_board.dart` (port/core/flow yeniden yazımı),
   `tests/test_client_contract.py` (`_PortMarker` → `portFill.color` güncellemesi).
@@ -455,6 +426,11 @@ göre yapılacak.
   onayladı; bu model görüntü girişi desteklemediği için görsel onay kullanıcıda.
 - Beşinci oturum doğrulaması: `flutter analyze` temiz; `flutter test` 99/99 geçti.
   Sözleşme testleri geçti. Python tarafında değişiklik yok.
+- Yedinci oturum doğrulaması: `flutter analyze` temiz; `flutter test` 99/99 geçti.
+  Python: `pytest` 204/204 (529 alt test) geçti; `test_intervention.py` ve
+  `test_live_battle_session.py` max_swaps=999 güncellemesi sonrası düzeltildi.
+- Sekizinci oturum doğrulaması: `flutter analyze` temiz; `flutter test` 99/99 geçti.
+  Python: `pytest` 204/204 (529 alt test) geçti; kod değişikliği yok (yalnız istemci).
 - Canlı kariyer API, kalıcı oturum, müdahale aralığı, süreç yeniden başlatma ve
   göç testleri: Başarılı, hedefli paket 45 test geçti.
 - `flutter analyze`: Başarılı, sorun bulunmadı.

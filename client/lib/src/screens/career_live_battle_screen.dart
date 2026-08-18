@@ -470,7 +470,8 @@ class _LiveBattleStageState extends State<_LiveBattleStage> {
                       placements: playerPlacements,
                       specs: widget.specs,
                       poweredIds: {
-                        for (final m in session.playerBoard.modules) m.id,
+                        for (final m in session.frame.left.modules)
+                          if (m.powered && m.hp > 0) m.id,
                       },
                       validationVisible: false,
                       selectedCell: null,
@@ -486,12 +487,13 @@ class _LiveBattleStageState extends State<_LiveBattleStage> {
                   Positioned.fromRect(
                     rect: rightBoard,
                     child: IgnorePointer(
-                      child: CircuitBoard(
-                        placements: opponentPlacements,
-                        specs: widget.specs,
-                        poweredIds: {
-                          for (final m in session.opponentBoard.modules) m.id,
-                        },
+                        child: CircuitBoard(
+                          placements: opponentPlacements,
+                          specs: widget.specs,
+                          poweredIds: {
+                            for (final m in session.frame.right.modules)
+                              if (m.powered && m.hp > 0) m.id,
+                          },
                         validationVisible: false,
                         selectedCell: null,
                         onCellTap: (_) {},
@@ -504,12 +506,14 @@ class _LiveBattleStageState extends State<_LiveBattleStage> {
                       ),
                     ),
                   ),
-                  ReplayAttackOverlay(
-                    events: widget.attackOverlayEvents,
-                    playerBoard: session.playerBoard,
-                    opponentBoard: session.opponentBoard,
-                    finalTick: finalTick,
-                    leftVisuals: widget.visuals,
+                  Positioned.fill(
+                    child: ReplayAttackOverlay(
+                      events: widget.attackOverlayEvents,
+                      playerBoard: session.playerBoard,
+                      opponentBoard: session.opponentBoard,
+                      finalTick: finalTick,
+                      leftVisuals: widget.visuals,
+                    ),
                   ),
                   if (session.complete &&
                       session.match != null &&

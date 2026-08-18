@@ -151,7 +151,7 @@ class LiveBattleSessionTests(unittest.TestCase):
         state = session.intervention_state(Side.LEFT)
         self.assertTrue(state.active)
         self.assertEqual(state.window_tick, 120)
-        self.assertEqual(state.swaps_remaining, 2)
+        self.assertEqual(state.swaps_remaining, 999)
 
     def test_second_swap_can_return_benched_module_with_preserved_hp(self) -> None:
         engine = CircuitBattleEngine(
@@ -179,7 +179,7 @@ class LiveBattleSessionTests(unittest.TestCase):
         )
 
         self.assertEqual(second.incoming.hp, laser_hp)
-        self.assertEqual(second.swaps_remaining, 0)
+        self.assertEqual(second.swaps_remaining, 997)
         session.advance()
         frame_ids = {
             module.module_id for module in session.snapshot().frame.left.modules

@@ -429,7 +429,7 @@ class _CircuitCell extends StatelessWidget {
                   : RelayColors.amber
             : selected
             ? RelayColors.amber
-            : module == null || !validationVisible
+            : module == null
             ? coreGate
                   ? visuals.board.gate
                   : visuals.board.border.withValues(alpha: 0.72)

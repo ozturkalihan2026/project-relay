@@ -19,7 +19,7 @@ class ModuleHealthRackTests(unittest.TestCase):
         )
         self.assertEqual(first.outgoing.hp, 34)
         self.assertEqual(first.incoming.hp, 95)
-        self.assertEqual(first.swaps_remaining, 1)
+        self.assertEqual(first.swaps_remaining, 998)
 
         rack.update_active_hp("shield", 41)
         second = rack.swap(
@@ -29,7 +29,7 @@ class ModuleHealthRackTests(unittest.TestCase):
         )
         self.assertEqual(second.outgoing.hp, 41)
         self.assertEqual(second.incoming.hp, 34)
-        self.assertEqual(second.swaps_remaining, 0)
+        self.assertEqual(second.swaps_remaining, 997)
         self.assertEqual(rack.vitality("shield").hp, 41)
 
     def test_unused_right_carries_but_each_window_allows_only_one_swap(self) -> None:
@@ -70,7 +70,7 @@ class ModuleHealthRackTests(unittest.TestCase):
         rack = ModuleHealthRack(
             active={"generator": (120, 120), "laser": (80, 80)},
             reserves={"shield": 95, "repair": 70},
-            policy=InterventionPolicy(),
+            policy=InterventionPolicy(max_swaps=2, max_swaps_per_window=1),
         )
         with self.assertRaises(InterventionError) as closed:
             rack.swap(tick=59, outgoing_id="laser", incoming_id="shield")
