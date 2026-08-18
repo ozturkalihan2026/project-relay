@@ -64,14 +64,13 @@ const _visualEventTypes = <String>{
 
 class _CareerLiveBattleScreenState
     extends ConsumerState<CareerLiveBattleScreen> {
-  static const _tickInterval = Duration(milliseconds: 540);
 
   late CareerBattleSessionSnapshot _session;
   late final Map<ModuleKind, ModuleSpec> _specs;
   late final EventSoundPlayer _soundPlayer;
   late final ValueNotifier<List<BattleEvent>> _attackOverlayEvents;
   bool _battleLoopActive = false;
-  Timer? _tickTimer;
+  Timer? _sleepTimer;
   bool _swapping = false;
   bool _resultLoading = false;
   int _processedEventCount = 0;
@@ -99,7 +98,7 @@ class _CareerLiveBattleScreenState
   @override
   void dispose() {
     _battleLoopActive = false;
-    _tickTimer?.cancel();
+    _sleepTimer?.cancel();
     unawaited(_soundPlayer.dispose());
     _attackOverlayEvents.dispose();
     super.dispose();
@@ -109,14 +108,14 @@ class _CareerLiveBattleScreenState
     while (_battleLoopActive && mounted && !_session.complete) {
       await _advanceBattle();
       if (!_battleLoopActive || !mounted || _session.complete) break;
-      await _waitForTick();
+      await _sleep(60);
     }
   }
 
-  Future<void> _waitForTick() {
+  Future<void> _sleep(int ms) {
     final completer = Completer<void>();
-    _tickTimer = Timer(_tickInterval, () {
-      _tickTimer = null;
+    _sleepTimer = Timer(Duration(milliseconds: ms), () {
+      _sleepTimer = null;
       if (!completer.isCompleted) completer.complete();
     });
     return completer.future;
@@ -145,8 +144,6 @@ class _CareerLiveBattleScreenState
 
   void _markLiveComplete() {
     _battleLoopActive = false;
-    _tickTimer?.cancel();
-    _tickTimer = null;
     unawaited(_loadResultReplay());
   }
 
@@ -580,6 +577,7 @@ class _LiveBattleStageState extends State<_LiveBattleStage> {
                 match: match,
                 replay: replay,
                 modules: widget.modules,
+                onNewGame: () => Navigator.of(context).pop(),
               ),
             ),
           );

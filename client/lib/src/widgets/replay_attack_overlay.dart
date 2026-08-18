@@ -337,7 +337,7 @@ class _AttackPainter extends CustomPainter {
     final to = event.type == 'core_damage'
         ? targetCore
         : _modulePoint(event.targetId, targetBoard, targetRect) ?? from;
-    final fade = (1 - rawProgress).clamp(0.0, 1.0).toDouble();
+    final fade = (1 - progress).clamp(0.15, 1.0).toDouble();
     final sideVisuals = event.side == 'left' ? leftVisuals : rightVisuals;
     final color = switch (event.type) {
       'shield' || 'shield_absorb' => const Color(0xFF74A7FF),

@@ -553,7 +553,7 @@ class RelayApi {
   }
 
   Future<CareerBattleSessionSnapshot> advanceCareerBattleSession({
-    int ticks = 1,
+    int ticks = 4,
   }) async {
     final payload = await _post(
       '/api/v1/me/career-run/battle-session/advance',
@@ -603,7 +603,7 @@ class RelayApi {
   }
 
   Future<OnlineBattleSessionSnapshot> advanceOnlineBattleSession({
-    int ticks = 1,
+    int ticks = 4,
   }) async {
     final payload = await _post(
       '/api/v1/me/online-battle-session/advance',

@@ -419,6 +419,7 @@ class _CircuitCell extends StatelessWidget {
     final color = module == null
         ? RelayColors.muted
         : visuals.modules.moduleColorFor(module.kind);
+    final isDead = hp != null && hp! <= 0 && maxHp != null && maxHp! > 0;
     final compactStats = spec == null
         ? const <ModuleCompactStat>[]
         : moduleCompactStats(spec!);
@@ -558,7 +559,9 @@ class _CircuitCell extends StatelessWidget {
                                   ],
                                 ),
                         )
-                       : Stack(
+                       : Opacity(
+                          opacity: isDead ? 0.28 : 1,
+                          child: Stack(
                           children: [
                             Positioned.fill(
                               child: Padding(
@@ -739,6 +742,7 @@ class _CircuitCell extends StatelessWidget {
                                 ),
                               ),
                           ],
+                        ),
                         ),
                 ),
               ),

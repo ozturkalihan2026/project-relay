@@ -54,14 +54,13 @@ const _visualEventTypes = <String>{
 
 class _OnlineLiveBattleScreenState
     extends ConsumerState<OnlineLiveBattleScreen> {
-  static const _tickInterval = Duration(milliseconds: 540);
 
   late OnlineBattleSessionSnapshot _session;
   late final Map<ModuleKind, ModuleSpec> _specs;
   late final EventSoundPlayer _soundPlayer;
   late final ValueNotifier<List<BattleEvent>> _attackOverlayEvents;
   bool _battleLoopActive = false;
-  Timer? _tickTimer;
+  Timer? _sleepTimer;
   bool _swapping = false;
   bool _resultLoading = false;
   int _processedEventCount = 0;
@@ -83,7 +82,6 @@ class _OnlineLiveBattleScreenState
     _startBattleLoop();
     if (_session.complete) {
       _battleLoopActive = false;
-      _tickTimer?.cancel();
       unawaited(_loadResultReplay());
     }
   }
@@ -91,7 +89,7 @@ class _OnlineLiveBattleScreenState
   @override
   void dispose() {
     _battleLoopActive = false;
-    _tickTimer?.cancel();
+    _sleepTimer?.cancel();
     unawaited(_soundPlayer.dispose());
     _attackOverlayEvents.dispose();
     super.dispose();
@@ -101,14 +99,14 @@ class _OnlineLiveBattleScreenState
     while (_battleLoopActive && mounted && !_session.complete) {
       await _advanceBattle();
       if (!_battleLoopActive || !mounted || _session.complete) break;
-      await _waitForTick();
+      await _sleep(60);
     }
   }
 
-  Future<void> _waitForTick() {
+  Future<void> _sleep(int ms) {
     final completer = Completer<void>();
-    _tickTimer = Timer(_tickInterval, () {
-      _tickTimer = null;
+    _sleepTimer = Timer(Duration(milliseconds: ms), () {
+      _sleepTimer = null;
       if (!completer.isCompleted) completer.complete();
     });
     return completer.future;
@@ -127,7 +125,6 @@ class _OnlineLiveBattleScreenState
       _feedSession(next);
       if (next.complete) {
         _battleLoopActive = false;
-        _tickTimer?.cancel();
         unawaited(_loadResultReplay());
       }
     } on RelayApiException catch (error) {

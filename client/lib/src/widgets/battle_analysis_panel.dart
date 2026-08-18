@@ -226,12 +226,14 @@ class BattleCenterAnalysisPanel extends StatefulWidget {
     required this.match,
     required this.replay,
     required this.modules,
+    this.onNewGame,
     super.key,
   });
 
   final MatchResponse match;
   final ReplayResponse replay;
   final List<ModuleSpec> modules;
+  final VoidCallback? onNewGame;
 
   @override
   State<BattleCenterAnalysisPanel> createState() =>
@@ -401,6 +403,18 @@ class _BattleCenterAnalysisPanelState extends State<BattleCenterAnalysisPanel> {
                 textAlign: TextAlign.center,
                 style: const TextStyle(color: RelayColors.muted, fontSize: 8),
               ),
+              if (widget.onNewGame != null) ...[
+                const SizedBox(height: 10),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    key: const ValueKey('battle-center-new-game'),
+                    onPressed: widget.onNewGame,
+                    icon: const Icon(Icons.play_arrow, size: 18),
+                    label: const Text('YENİ OYUN'),
+                  ),
+                ),
+              ],
             ],
           ),
         ),

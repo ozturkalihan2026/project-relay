@@ -29,6 +29,8 @@ class _BattleCameraRigState extends State<BattleCameraRig>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
   double _strength = 0;
+  bool _coreDestruction = false;
+  double _zoomTarget = 1;
 
   @override
   void initState() {
@@ -51,7 +53,9 @@ class _BattleCameraRigState extends State<BattleCameraRig>
   void _handle() {
     final events = widget.events.value;
     if (events.isEmpty) return;
-    _strength = events.fold<double>(0, (value, event) {
+    _strength = 0;
+    _coreDestruction = false;
+    for (final event in events) {
       final next = switch (event.type) {
         'core_damage' =>
           widget.finalTick != null && event.tick >= widget.finalTick!
@@ -62,8 +66,14 @@ class _BattleCameraRigState extends State<BattleCameraRig>
         'shield_absorb' => 0.30,
         _ => 0.12,
       };
-      return math.max(value, next);
-    });
+      if (next > _strength) _strength = next;
+      if (event.type == 'core_damage' &&
+          widget.finalTick != null &&
+          event.tick >= widget.finalTick!) {
+        _coreDestruction = true;
+      }
+    }
+    _zoomTarget = _coreDestruction ? 1.22 : 1;
     _controller.forward(from: 0);
   }
 
@@ -93,7 +103,10 @@ class _BattleCameraRigState extends State<BattleCameraRig>
         final t = _controller.value;
         final fade = (1 - t).clamp(0.0, 1.0);
         final shake = math.sin(t * math.pi * 7) * 4.5 * _strength * fade;
-        final zoom = 1 + math.sin(t * math.pi) * 0.018 * _strength;
+        final baseZoom = 1 + math.sin(t * math.pi) * 0.018 * _strength;
+        final zoom = _coreDestruction
+            ? baseZoom + (_zoomTarget - 1) * Curves.easeOutCubic.transform(t)
+            : baseZoom;
         return Transform.translate(
           offset: Offset(shake, -shake * 0.28),
           child: Transform.scale(scale: zoom, child: child),
