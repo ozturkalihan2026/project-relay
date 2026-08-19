@@ -27,7 +27,7 @@ class FlutterClientContractTests(unittest.TestCase):
             encoding="utf-8"
         )
 
-        self.assertIn("version: 0.8.22+90", pubspec)
+        self.assertIn("version: 0.8.23+91", pubspec)
         career_screen = (CLIENT / "lib/src/screens/career_screen.dart").read_text(encoding="utf-8")
         self.assertNotIn("class _Metric extends StatelessWidget", career_screen)
         self.assertIn("await tester.ensureVisible(profileBack);", widget_test)
@@ -36,7 +36,7 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertNotIn("final horizontalScrollable = find.byWidgetPredicate(\n    (widget)", widget_test)
         self.assertIn("AppHeaderTitle(pageTitle: widget.mode.title.toUpperCase())", editor)
         self.assertNotIn("ANA MERKEZ VE MENÜ DÜZENİ", main_menu)
-        self.assertIn("PROJECT RELAY • v0.8.22-r1-fix1", manual)
+        self.assertIn("PROJECT RELAY • v0.8.23", manual)
         self.assertIn("audioplayers:", pubspec)
         self.assertIn("assets/sounds/", pubspec)
         self.assertIn("flame:", pubspec)
@@ -1491,7 +1491,7 @@ class FlutterClientContractTests(unittest.TestCase):
         self.assertIn("Komutan Sistemi", feature_pool)
         self.assertIn("devreyi kurduktan ve doğruladıktan sonra", feature_pool.lower())
         self.assertIn("v0.8.4", release)
-        self.assertIn("PROJECT RELAY • v0.8.22-r1-fix1", widget_test)
+        self.assertIn("PROJECT RELAY • v0.8.23", widget_test)
         self.assertIn("main-menu-online", widget_test)
         self.assertIn("main-menu-career", widget_test)
         self.assertIn("career-path-node-5", widget_test)
@@ -1789,8 +1789,8 @@ def test_v0820_rev1_analyzer_regressions():
     assert theme.count("chipTheme:") == 1
     assert "separatorBuilder: (_, _)" in chat
     assert "separatorBuilder: (_, __)" not in chat
-    assert "version: 0.8.22+90" in pubspec
-    assert 'version = "0.8.22"' in pyproject
+    assert "version: 0.8.23+91" in pubspec
+    assert 'version = "0.8.23"' in pyproject
 
 
 def test_profile_goal_scrollbars_use_explicit_controller() -> None:
@@ -1854,7 +1854,7 @@ def test_v0820_rev5_modern_chat_core_and_energy_contract() -> None:
     career = (CLIENT / "lib/src/screens/career_screen.dart").read_text(encoding="utf-8")
     pubspec = (CLIENT / "pubspec.yaml").read_text(encoding="utf-8")
 
-    assert "version: 0.8.22+90" in pubspec
+    assert "version: 0.8.23+91" in pubspec
     assert "class RelayFormDialog extends StatelessWidget" in dialogs
     assert "RelayFormDialog(" in chat
     assert social.count("RelayFormDialog(") >= 2

@@ -44,7 +44,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(tester.takeException(), isNull);
     expect(find.text('ÇEVRİMİÇİ SAVAŞ'), findsOneWidget);
-    expect(find.text('PROJECT RELAY • v0.8.22-r1-fix1'), findsOneWidget);
+    expect(find.text('PROJECT RELAY • v0.8.23'), findsOneWidget);
     expect(find.text('DEVRE KARTI'), findsOneWidget);
     expect(find.byKey(const ValueKey('module-shelf')), findsOneWidget);
     expect(

@@ -434,6 +434,32 @@ class _AttackPainter extends CustomPainter {
         ..color = color.withValues(alpha: 0.36 * chargeFade)
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6),
     );
+    if (chargePhase > 0.1 && chargePhase < 0.92) {
+      final sparkIntensity = chargePhase < 0.5
+          ? chargePhase * 2
+          : (1 - chargePhase) * 2;
+      for (var i = 0; i < 6; i++) {
+        final angle = i * math.pi / 3 + eventIndex * 0.4;
+        final dist = 10 + 22 * chargePhase;
+        final spark =
+            from + Offset(math.cos(angle), math.sin(angle)) * dist;
+        canvas.drawCircle(
+          spark,
+          1.0 + sparkIntensity * 1.6,
+          Paint()..color = color.withValues(alpha: 0.72 * chargeFade * sparkIntensity),
+        );
+        final trailEnd =
+            spark + Offset(math.cos(angle), math.sin(angle)) * (4 + sparkIntensity * 5);
+        canvas.drawLine(
+          spark,
+          trailEnd,
+          Paint()
+            ..color = color.withValues(alpha: 0.34 * chargeFade * sparkIntensity)
+            ..strokeWidth = 1.0 + sparkIntensity
+            ..strokeCap = StrokeCap.round,
+        );
+      }
+    }
 
     final beamPath = Path()
       ..moveTo(tail.dx, tail.dy)
@@ -529,6 +555,27 @@ class _AttackPainter extends CustomPainter {
         ..color = color.withValues(alpha: 0.18 * fade)
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10),
     );
+    if (charge > 0.1 && charge < 0.85) {
+      final ringRadius = 6 + charge * 18;
+      canvas.drawCircle(
+        from - unit * recoil,
+        ringRadius,
+        Paint()
+          ..color = color.withValues(alpha: 0.52 * fade * (1 - charge))
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.8 + (1 - charge) * 2,
+      );
+      for (var i = 0; i < 5; i++) {
+        final a = i * math.pi * 2 / 5 + eventIndex * 0.3;
+        final d = 5 + charge * 12;
+        final sp = from - unit * recoil + Offset(math.cos(a), math.sin(a)) * d;
+        canvas.drawCircle(
+          sp,
+          0.8 + (1 - charge) * 1.2,
+          Paint()..color = color.withValues(alpha: 0.6 * fade * (1 - charge)),
+        );
+      }
+    }
     final trailStart = projectile - unit * 34;
     canvas.drawLine(
       trailStart,
@@ -865,6 +912,39 @@ class _AttackPainter extends CustomPainter {
         1.6 + 2.2 * (1 - phase),
         Paint()..color = color.withValues(alpha: 0.78 * fade),
       );
+    }
+    for (var index = 0; index < 12; index++) {
+      final angle = (index * 0.61803 + 0.7) * math.pi * 2;
+      final speed = 14 + (index % 5) * 7;
+      final travel = speed * phase;
+      final gravity = phase * phase * 18;
+      final spark = center +
+          Offset(math.cos(angle) * travel, math.sin(angle) * travel + gravity);
+      final sparkAlpha = (1 - phase * 0.85).clamp(0.0, 1.0);
+      canvas.drawCircle(
+        spark,
+        math.max(0.5, 1.4 - phase * 0.7),
+        Paint()..color = (index.isEven ? color : Colors.white).withValues(
+          alpha: 0.68 * fade * sparkAlpha,
+        ),
+      );
+      if (phase < 0.5) {
+        final prevT = (phase - 0.06).clamp(0.0, 1.0);
+        final prevTravel = speed * prevT;
+        final prevGravity = prevT * prevT * 18;
+        final prev = center + Offset(
+          math.cos(angle) * prevTravel,
+          math.sin(angle) * prevTravel + prevGravity,
+        );
+        canvas.drawLine(
+          prev,
+          spark,
+          Paint()
+            ..color = color.withValues(alpha: 0.32 * fade * sparkAlpha)
+            ..strokeWidth = 1.0
+            ..strokeCap = StrokeCap.round,
+        );
+      }
     }
   }
 

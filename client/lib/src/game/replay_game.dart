@@ -1699,6 +1699,19 @@ class RelayReplayGame extends FlameGame {
         2.8 + 3.2 * opacity,
         Paint()..color = RelayColors.white.withValues(alpha: 0.96 * opacity),
       );
+      if (opacity > 0.3) {
+        final sparkIntensity = (opacity - 0.3) / 0.7;
+        for (var i = 0; i < 4; i++) {
+          final angle = i * math.pi / 2 + event.tick * 0.8;
+          final dist = 8 + 16 * sparkIntensity;
+          final spark = from + Offset(math.cos(angle), math.sin(angle)) * dist;
+          canvas.drawCircle(
+            spark,
+            0.8 + sparkIntensity * 1.2,
+            Paint()..color = pulse.color.withValues(alpha: 0.55 * opacity * sparkIntensity),
+          );
+        }
+      }
       canvas.drawLine(
         from,
         to,
@@ -1708,6 +1721,23 @@ class RelayReplayGame extends FlameGame {
           ..strokeCap = StrokeCap.round,
       );
       canvas.drawCircle(to, 5 + 8 * opacity, Paint()..color = color);
+      if (opacity > 0.2) {
+        final debrisAlpha = (opacity - 0.2) / 0.8;
+        for (var i = 0; i < 6; i++) {
+          final angle = i * math.pi / 3 + 0.4;
+          final travel = 6 + 18 * debrisAlpha;
+          final gravity = debrisAlpha * debrisAlpha * 12;
+          final spark = to + Offset(
+            math.cos(angle) * travel,
+            math.sin(angle) * travel + gravity,
+          );
+          canvas.drawCircle(
+            spark,
+            math.max(0.5, 1.0 - debrisAlpha * 0.5),
+            Paint()..color = pulse.color.withValues(alpha: 0.48 * opacity * debrisAlpha),
+          );
+        }
+      }
       return;
     }
     canvas.drawCircle(
@@ -1953,6 +1983,16 @@ class RelayReplayGame extends FlameGame {
           3 + action * 3,
           Paint()..color = RelayColors.white.withValues(alpha: action * 0.95),
         );
+        if (action > 0.1) {
+          final flashSize = action * 8;
+          canvas.drawCircle(
+            laserCenter,
+            flashSize,
+            Paint()
+              ..color = color.withValues(alpha: 0.18 * action)
+              ..maskFilter = const ui.MaskFilter.blur(ui.BlurStyle.normal, 6),
+          );
+        }
         break;
       case ModuleKind.pulseCannon:
         final recoil = action * 7 + math.sin(phase).abs() * 1.2;
@@ -1980,6 +2020,26 @@ class RelayReplayGame extends FlameGame {
             ..style = PaintingStyle.stroke
             ..strokeWidth = 3,
         );
+        if (action > 0.15) {
+          final muzzlePt = center + ui.Offset(11 + recoil, 0);
+          canvas.drawCircle(
+            muzzlePt,
+            action * 10,
+            Paint()
+              ..color = color.withValues(alpha: 0.14 * action)
+              ..maskFilter = const ui.MaskFilter.blur(ui.BlurStyle.normal, 5),
+          );
+          for (var i = 0; i < 4; i++) {
+            final a = i * math.pi / 2 + recoil * 0.15;
+            final d = 3 + action * 8;
+            final sp = muzzlePt + ui.Offset(math.cos(a), math.sin(a)) * d;
+            canvas.drawCircle(
+              sp,
+              0.6 + action * 0.8,
+              Paint()..color = RelayColors.white.withValues(alpha: 0.45 * action),
+            );
+          }
+        }
         break;
       case ModuleKind.shield:
         canvas.drawArc(

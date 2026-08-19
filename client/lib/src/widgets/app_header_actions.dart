@@ -65,7 +65,7 @@ class AppHeaderActions extends StatelessWidget {
 class AppHeaderTitle extends StatelessWidget {
   const AppHeaderTitle({
     required this.pageTitle,
-    this.version = 'v0.8.22-r1-fix1',
+    this.version = 'v0.8.23',
     super.key,
   });
 

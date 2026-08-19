@@ -1,9 +1,9 @@
-# Project Relay v0.8.22 rev1 — Preparation Scene Rebuild
+# Project Relay v0.8.23 — Battle Presentation
 
-Bu sürüm v0.8.19 rev1 üzerine savaş ekranındaki gradient kaynaklı görünmezlik hatasını giderir; savaş geri bildirimini kalkan/yok oluş/enerji sönmesiyle güçlendirir; modül bağlantı yönlerini büyük ölçüde otomatikleştirir; oyun geneline açılır-kapanır sohbet sistemi ekler ve görev/başarım/sezon ödülü içeriklerini genişletir.
+Bu sürüm v0.8.22 üzerine savaş ekranını tek canlı sahneye taşır, fiziksel devre görünümlü modül donanımını ekler, namlu/ateşleme geri tepmesi ve çarpma partikülü efektlerini güçlendirir; ses ve yaşam döngüsü iyileştirmelerini içerir.
 
-- Sunucu API: `0.8.22`
-- Flutter istemci: `0.8.22+88`
+- Sunucu API: `0.8.23`
+- Flutter istemci: `0.8.23+91`
 - Savaş kuralları: `0.8`
 - Alembic başı: `20260808_0012`
 

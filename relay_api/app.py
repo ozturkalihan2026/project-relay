@@ -862,7 +862,7 @@ def create_app(
         title="Project Relay API",
         version=API_VERSION,
         description=(
-            "Project Relay v0.8.22 Preparation Scene Rebuild API'si. "
+            "Project Relay v0.8.23 Battle Presentation API'si. "
             "Arkadaşlık istekleri, oyuncu profilleri, açık klan keşfi ve "
             "sunucu yetkili üyelik kuralları birlikte doğrulanır."
         ),

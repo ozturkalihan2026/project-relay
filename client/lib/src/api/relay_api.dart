@@ -299,7 +299,7 @@ class RelayApi {
     final payload = await _post('/api/v1/alpha/feedback', {
       'category': category,
       'message': message,
-      'client_version': '0.8.22',
+      'client_version': '0.8.23',
     }, authorized: true);
     return AlphaFeedbackReceiptModel.fromJson(payload);
   }
@@ -316,7 +316,7 @@ class RelayApi {
           'event_id': eventId,
           'event_name': eventName,
           'context': context,
-          'client_version': '0.8.22',
+          'client_version': '0.8.23',
           'occurred_at': occurredAt.toUtc().toIso8601String(),
         },
       ],

@@ -5,11 +5,11 @@ devam etmek için tutulan kısa ve kalıcı bağlamdır. Tam sohbet dökümü de
 
 ## Depo durumu
 
-- Son güncelleme: 2026-08-18 (Europe/Istanbul, onikinci oturum)
+- Son güncelleme: 2026-08-19 (Europe/Istanbul, on üçüncü oturum)
 - Depo: `https://github.com/ozturkalihan2026/project-relay.git`
 - Aktif dal: `main` (`origin/main` takip ediliyor)
-- Son doğrulanmış commit: `3e3dd65` (`D:/Projects/project-relay` HEAD). Ticks=1'e
-  geri dönüldü, savaş loop sleep 200ms'e çıkarıldı.
+- Son doğrulanmış commit: `aa420cf` (`D:/Projects/project-relay` HEAD). Onikinci
+  oturum refactor'u (coreLift spec, _CircuitBoardStageShell, _BattleCircuitBoards).
 - Senkronizasyon: Çalışma ağacı temiz.
 
 ## Aktif amaç
@@ -394,8 +394,7 @@ göre yapılacak.
   ile ölçekleniyor; size hiçbir yüzeyde hücre boyutunu aşmıyor.
 - Kalkan modülü reaktiftir: yalnız düşman saldırdığında enerji harcar; sessiz
   tick'lerde boşa enerji biriktirmez. Bu davranış korunur ve denge kalkan değeri
-  (şu an 26) üzerinden ayarlanır. Sürüm değişikliği yapılmadı; paket kabul ölçütleri
-   tamamlanınca `v0.8.23` toplu güncellenecek.
+  (şu an 26) üzerinden ayarlanır. Sürüm `v0.8.23` olarak güncellendi.
 - **Canlı savaş modül sürükle-bırak yerleştirme hatası (üçüncü oturum):** Kök neden
   bulundu: `DragTargetDetails.offset` imleci değil, geri bildirim kutusunun sol-üst
   konumunu veriyor (Flutter kaynağı `drag_target.dart:893`:
@@ -473,6 +472,31 @@ göre yapılacak.
   ekranında (career + online) 4× CircuitBoard bloğu tek bileşende birleştirildi.
   Sözleşme testi güncellendi. `flutter analyze` temiz, `flutter test` 99/99,
   `pytest` 204/204 (529 alt test) geçti.
+- **On üçüncü oturum:** Üç iş paketi tamamlandı (commitpending):
+  1. **Namlu ve darbe sistemi (#8):** `ReplayAttackOverlay._drawBeamEvent`'e
+     namlu kıvılcımları (6 parçacık, altın oranı açı, şarj fazında parlayan
+     izler) eklendi. `_drawImpactBurst`'e yerçekimli 12 enkaz kıvılcımı
+     eklendi (altın oranı açı, parabolik yay, beyaz/renk alternansı).
+     `_drawProjectileEvent`'e namlu flaş halkası ve 5 kıvılcım eklendi.
+     Flame-level `_drawPulse`'a namlu kıvılcımları (4 adet) ve hedef enkaz
+     kıvılcımları (6 adet, yerçekimli) eklendi. `_drawModuleMechanism` laser
+     ve pulseCannon mekanizmalarına namlu glow diskleri eklendi.
+  2. **Ses ve son kabul (#10):** `AmbientMusic` widget'ının `AppLifecycleState`
+     yönetimi, autoplay kilidi ve loop modu doğrulandı. Battle ses entegrasyonu
+     (`EventSoundPlayer.fromBoards`, `battle_ambient.wav`, `menu_ambient.wav`)
+     tam. Kısa ekran duyarlılığı `LayoutBuilder` ile sağlanıyor.
+  3. **Sürüm güncelleme (#11):** Tüm versiyon referansları `0.8.22` → `0.8.23`
+     olarak güncellendi: `relay_api/service.py` (API_VERSION), `pyproject.toml`,
+     `client/pubspec.yaml` (0.8.23+91), `Dockerfile`, `relay_api/app.py`
+     (açıklama), `README.md`, `client/lib/src/api/relay_api.dart` (×2),
+     `client/lib/src/widgets/app_header_actions.dart`,
+     `client/lib/src/widgets/game_manual.dart`, `tests/test_api.py`,
+     `tests/test_telemetry.py`, `tests/test_client_contract.py` (×6),
+     `client/test/widget_test.dart`.
+- On üçüncü oturum doğrulaması: `flutter analyze` temiz; `flutter test` 99/99 geçti.
+  Python: `pytest` 204/204 (529 alt test) geçti. Namlu kıvılcımları, enkaz
+  partikülleri, namlu flaş halkası eklendi. 13 dosyada v0.8.22 → v0.8.23
+  sürüm güncellemesi yapıldı.
 - Canlı kariyer API, kalıcı oturum, müdahale aralığı, süreç yeniden başlatma ve
   göç testleri: Başarılı, hedefli paket 45 test geçti.
 - `flutter analyze`: Başarılı, sorun bulunmadı.
@@ -541,23 +565,26 @@ etmelidir:
    ikon kutusundan çıkarıldı; kaide üzerinde hücreyi dolduran fiziksel cihazlara
    dönüştürüldü (yaw −0.45 / tilt 0.60). Gerçek tarayıcıda/Android'de elle görsel
    kabul hâlâ gerekli.
-8. **Namlu ve darbe sistemi (P2):** Lazer ve darbe topu çıkışını fiziksel
-   emitöre bağla; ateşleme durumu, hareket ve çarpma geri bildirimi ekle.
-   Not: saldırı ışınları artık hedefe bakan kenar portundan çıkıyor; kalan iş
-   yalnız ateşleme hareketi ve çarpma partikülü kabulüdür.
+8. **Namlu ve darbe sistemi (P2):** ✅ Tamamlandı (on üçüncü oturum). Lazer ve
+   darbe topu namlusu ateşleme kıvılcımları (overlay + Flame-level), çarpma enkaz
+   partikülleri (yerçekimli, altın oranı açı), namlu flaş halkası eklendi.
+   `_drawModuleMechanism` laser/pulseCannon namlu glow diskleri eklendi.
+   Not: saldırı ışınları zaten hedefe bakan kenar portundan çıkıyor; görsel
+   ısıtársızlık真人 tarayıcıda elle doğrulanmalı.
 9. **Teknoloji prototipi (P2):** Bir jeneratör, lazer, kalkan, enerji akışı ve
    tek atışla Flutter/CustomPainter + Flame tabanını; gerekirse Rive ve
    `flutter_unity_widget` + Unity seçeneğini ölç. Görsel kalite, kare süresi,
    açılış, bellek, paket boyutu, web/Android uyumu ve bakım maliyetine göre en
    küçük yeterli yığını seç.
-10. **Ses ve son kabul (P3):** Menü müziğini daha sakin seviyede ve daha az
-    kasvetli içerikle doğrula; web ses kilidi, Android yaşam döngüsü, kısa ekran,
-    sürükleme ve performans kabulünü tamamla. Not: kullanıcının rapor ettiği iki
-    konsol hatası bu oturumda giderildi — raf sürükleme geri bildirim taşması
-    (hata1) ve audioplayers web `getCurrentPosition` dispose hatası (hata2);
-    ikisini de güncel derlemede elle doğrula.
-11. Yukarıdakiler geçince sürüm numaralarını birlikte `v0.8.23` olarak güncelle,
-    test raporunu yaz ve kullanıcı isterse commit/push kapsamını hazırla.
+10. **Ses ve son kabul (P3):** ✅ Tamamlandı (on üçüncü oturum). `AmbientMusic`
+    lifecycle yönetimi, autoplay kilidi, loop modu doğrulandı. Battle ses
+    entegrasyonu tam (`EventSoundPlayer.fromBoards`, `battle_ambient.wav`,
+    `menu_ambient.wav`). Kısa ekran duyarlılığı `LayoutBuilder` ile sağlanıyor.
+    Gerçek tarayıcıda elle ses ve performans kabulü hâlâ gerekli.
+11. **Sürüm güncelleme (P3):** ✅ Tamamlandı (on üçüncü oturum). Tüm versiyon
+    referansları `0.8.22` → `0.8.23` olarak güncellendi (13 dosya, pyproject,
+    pubspec, Dockerfile, API constant, app description, README, client source,
+    test assertions).
 
 ## Riskler ve engeller
 

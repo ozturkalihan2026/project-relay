@@ -36,7 +36,7 @@ class TelemetryApiTests(unittest.TestCase):
                     "event_id": "evt:test:0001",
                     "event_name": event_name,
                     "context": {"mode": "online", "module_count": 3},
-                    "client_version": "0.8.22",
+                    "client_version": "0.8.23",
                     "occurred_at": "2026-08-13T12:00:00Z",
                 }
             ]
