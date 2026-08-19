@@ -1937,7 +1937,8 @@ def test_v0822_rev1_preparation_scene_rebuild_contract():
     presentation = (CLIENT / 'lib' / 'src' / 'theme' / 'circuit_presentation.dart').read_text(encoding='utf-8')
     editor = (CLIENT / 'lib' / 'src' / 'screens' / 'editor_screen.dart').read_text(encoding='utf-8')
     career = (CLIENT / 'lib' / 'src' / 'screens' / 'career_screen.dart').read_text(encoding='utf-8')
-    assert '_PreparationStageShell' in board
+    assert '_CircuitBoardStageShell' in board
+    assert 'coreLift = 11.0' in presentation
     assert 'preparationDeckTilt = -0.26' in presentation
     assert 'preparationPerspectiveDepth = 0.00140' in presentation
     assert 'CircuitPresentationSpec.preparationDeckTilt' in board
@@ -1945,7 +1946,7 @@ def test_v0822_rev1_preparation_scene_rebuild_contract():
     assert '_RaisedModuleShell' in board
     assert '_DeckFastener' not in board
     assert 'depth: deckDepth' in board
-    assert 'offset: const Offset(0, -11)' in board
+    assert 'Offset(0, -CircuitPresentationSpec.coreLift)' in board
     assert 'viewportHeight * 0.57' in editor
     assert 'presentation3d: true' in editor
     assert 'presentation3d: true' in career

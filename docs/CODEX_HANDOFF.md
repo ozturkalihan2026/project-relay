@@ -5,12 +5,11 @@ devam etmek için tutulan kısa ve kalıcı bağlamdır. Tam sohbet dökümü de
 
 ## Depo durumu
 
-- Son güncelleme: 2026-08-18 (Europe/Istanbul, onbirinci oturum)
+- Son güncelleme: 2026-08-18 (Europe/Istanbul, onikinci oturum)
 - Depo: `https://github.com/ozturkalihan2026/project-relay.git`
 - Aktif dal: `main` (`origin/main` takip ediliyor)
-- Son doğrulanmış commit: `a8479d7` (`D:/Projects/project-relay` HEAD). Savaş UX
-  cilası: ticks batch, saldırı fade, ölü modül soluklaştırma, çekirdek zoom,
-  yeni oyun butonu.
+- Son doğrulanmış commit: `3e3dd65` (`D:/Projects/project-relay` HEAD). Ticks=1'e
+  geri dönüldü, savaş loop sleep 200ms'e çıkarıldı.
 - Senkronizasyon: Çalışma ağacı temiz.
 
 ## Aktif amaç
@@ -300,10 +299,10 @@ göre yapılacak.
      "YENİ OYUN" `FilledButton.icon` eklendi; savaş analizinde oyun bitince
      aynı sahneden yeni oyun başlatılabilir.
   2. **Ticks batch**: `advanceCareerBattleSession` ve `advanceOnlineBattleSession`
-     `ticks: 4` (önceki 1) ile çalışıyor; her istekte 4 tick ilerleniyor.
-  3. **Yapay gecikme kaldırıldı**: Savaş döngüsündeki 540ms artificial delay
-     kaldırıldı; minimum 60ms `Timer`-tabanlı sleep ile devam ediliyor.
+     `ticks: 1` ile çalışıyor (önceki deneme ticks=4太快ydı, geri alındı).
+  3. **Savaş döngüsü**: 540ms artificial delay → `Timer`-tabanlı `_sleep(200)`.
      `_tickTimer`, `_tickInterval` field'ları kaldırıldı; `_sleepTimer` eklendi.
+     Savaş ~5 tick/sn hızında ilerliyor.
   4. **Saldırı ışın fade fix**: `ReplayAttackOverlay` beam fade
      `(1 - rawProgress)` yerine `(1 - progress).clamp(0.15, 1.0)` kullanıyor;
      ışın hedefe ulaşana kadar minimum %15 opaklıkla görünür kalıyor.
@@ -467,6 +466,13 @@ göre yapılacak.
   Python: `pytest` 204/204 (529 alt test) geçti.
 - Onbirinci oturum doğrulaması: `flutter analyze` temiz; `flutter test` 99/99 geçti.
   Python: `pytest` 204/204 (529 alt test) geçti. 7 dosya değişti, 52 ekleme, 26 silme.
+- Onikinci oturum: ticks=1'e geri dönüldü (200ms sleep). Ortak sahne sunumu
+  refactor'u tamamlandı: `coreLift` sabiti `CircuitPresentationSpec`'e taşındı,
+  `_PreparationStageShell` → `_CircuitBoardStageShell` yeniden adlandırıldı,
+  `_BattleCircuitBoards` shared widget'ı oluşturuldu ve her iki canlı savaş
+  ekranında (career + online) 4× CircuitBoard bloğu tek bileşende birleştirildi.
+  Sözleşme testi güncellendi. `flutter analyze` temiz, `flutter test` 99/99,
+  `pytest` 204/204 (529 alt test) geçti.
 - Canlı kariyer API, kalıcı oturum, müdahale aralığı, süreç yeniden başlatma ve
   göç testleri: Başarılı, hedefli paket 45 test geçti.
 - `flutter analyze`: Başarılı, sorun bulunmadı.
@@ -513,11 +519,14 @@ etmelidir:
    güncellendi), geçici `tmp_solid_preview_test.dart` silindi.
 3. **Savaş olayı-görsel senkronu (P0):** ✅ Tamamlandı. Lazer/mermi çizgileri
    fade fix (minimum %15 opaklık), ölü modül soluklaştırma (opacity 0.28),
-   çekirdek patlamasına kamera zoom (1.22x), ticks=4 batch ile savaş döngüsü
-   hızlandırıldı. Tüm boru hattı testlerle doğrulandı. Son adım: güncel
-   derlemeyi gerçek tarayıcıda elle doğrula.
-4. **Ortak sahne sunumu (P1):** Hazırlık, kariyer ve savaşın kart, çekirdek,
-   perspektif, ışık ve fiziksel modül bileşenlerini tek doğruluk kaynağına bağla.
+   çekirdek patlamasına kamera zoom (1.22x), ticks=1 ile savaş döngüsü
+   200ms sleep'e ayarlandı. Tüm boru hattı testlerle doğrulandı. Son adım:
+   güncel derlemeyi gerçek tarayıcıda elle doğrula.
+4. **Ortak sahne sunumu (P1):** ✅ Tamamlandı. `coreLift` sabiti
+   `CircuitPresentationSpec`'e taşındı; `_PreparationStageShell` →
+   `_CircuitBoardStageShell` yeniden adlandırıldı; `_BattleCircuitBoards` shared
+   widget'ı oluşturuldu (her iki savaş ekranındaki 4× CircuitBoard kurulumu
+   tek bileşende birleştirildi).
 5. **Port/kablo doğruluğu (P1):** ✅ Tamamlandı (beşinci oturum). `_PortMarker`
    Align factor + offset düzeltmesi, `liftOffset`传递, `!raised` kaldırılması ve
    grid çizgi koordinat düzeltmesi yapıldı. Tüm kablo ve enerji paketleri gerçek

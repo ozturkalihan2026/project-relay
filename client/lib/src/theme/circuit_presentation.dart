@@ -28,6 +28,7 @@ abstract final class CircuitPresentationSpec {
 
   static const double moduleRestingLift = 3.5;
   static const double moduleLiftedExtra = 7.0;
+  static const double coreLift = 11.0;
   static const double compactModuleRestingLift = 1.5;
   static const double compactModuleLiftedExtra = 4.0;
 }

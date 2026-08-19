@@ -6,7 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../api/relay_api.dart';
 import '../game/event_sound_player.dart';
-import '../game/replay_game.dart';
+
 import '../models/relay_models.dart';
 import '../state/app_settings.dart';
 import '../theme/cosmetic_visuals.dart';
@@ -16,6 +16,7 @@ import '../widgets/app_header_actions.dart';
 import '../widgets/battle_analysis_panel.dart';
 import '../widgets/battle_arena_atmosphere.dart';
 import '../widgets/battle_camera_rig.dart';
+import '../widgets/battle_circuit_boards.dart';
 import '../widgets/circuit_board.dart';
 import '../widgets/module_visuals.dart';
 import '../widgets/relay_notice.dart';
@@ -445,14 +446,6 @@ class _LiveBattleStageState extends State<_LiveBattleStage> {
   @override
   Widget build(BuildContext context) {
     final session = widget.session;
-    final playerPlacements = {
-      for (final module in session.playerBoard.modules)
-        module.cellIndex: module,
-    };
-    final opponentPlacements = {
-      for (final module in session.opponentBoard.modules)
-        module.cellIndex: module,
-    };
     final finalTick = session.complete ? session.tick : null;
     return Card(
       key: const ValueKey('career-live-battle-stage'),
@@ -468,69 +461,16 @@ class _LiveBattleStageState extends State<_LiveBattleStage> {
           child: LayoutBuilder(
             builder: (context, constraints) {
               final size = constraints.biggest;
-              final leftBoard = ReplayStageGeometry.leftBoard(size);
-              final rightBoard = ReplayStageGeometry.rightBoard(size);
-              return Stack(
-                fit: StackFit.expand,
-                children: [
-                  Positioned.fromRect(
-                    rect: leftBoard,
-                    child: CircuitBoard(
-                      placements: playerPlacements,
-                      specs: widget.specs,
-                      poweredIds: {
-                        for (final m in session.frame.left.modules)
-                          if (m.powered && m.hp > 0) m.id,
-                      },
-                      moduleHp: {
-                        for (final m in session.frame.left.modules)
-                          m.id: m.hp,
-                      },
-                      moduleMaxHp: {
-                        for (final m in session.frame.left.modules)
-                          m.id: m.maxHp,
-                      },
-                      validationVisible: false,
-                      selectedCell: null,
-                      onCellTap: (_) {},
-                      onModuleDropped: widget.onModuleDropped,
-                      onRotateModule: (_) {},
-                      visuals: widget.visuals,
-                      presentation3d: true,
-                      moduleDraggingEnabled: widget.interventionUsable,
-                      keyPrefix: 'left',
-                    ),
-                  ),
-                  Positioned.fromRect(
-                    rect: rightBoard,
-                    child: IgnorePointer(
-                        child: CircuitBoard(
-                          placements: opponentPlacements,
-                          specs: widget.specs,
-                          poweredIds: {
-                            for (final m in session.frame.right.modules)
-                              if (m.powered && m.hp > 0) m.id,
-                          },
-                          moduleHp: {
-                            for (final m in session.frame.right.modules)
-                              m.id: m.hp,
-                          },
-                          moduleMaxHp: {
-                            for (final m in session.frame.right.modules)
-                              m.id: m.maxHp,
-                          },
-                        validationVisible: false,
-                        selectedCell: null,
-                        onCellTap: (_) {},
-                        onModuleDropped: (_, _) {},
-                        onRotateModule: (_) {},
-                        visuals: widget.visuals,
-                        presentation3d: true,
-                        moduleDraggingEnabled: false,
-                        keyPrefix: 'right',
-                      ),
-                    ),
-                  ),
+              return BattleCircuitBoards(
+                size: size,
+                playerBoard: session.playerBoard,
+                opponentBoard: session.opponentBoard,
+                frame: session.frame,
+                specs: widget.specs,
+                visuals: widget.visuals,
+                onModuleDropped: widget.onModuleDropped,
+                interventionUsable: widget.interventionUsable,
+                extraChildren: [
                   Positioned.fill(
                     child: ReplayAttackOverlay(
                       events: widget.attackOverlayEvents,

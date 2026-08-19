@@ -99,7 +99,9 @@ class CircuitBoard extends StatelessWidget {
                       moduleLift: presentation3d
                           ? CircuitPresentationSpec.moduleRestingLift
                           : 0,
-                      coreLift: presentation3d ? 11.0 : 0,
+                      coreLift: presentation3d
+                          ? CircuitPresentationSpec.coreLift
+                          : 0,
                     ),
                   ),
                 ),
@@ -186,7 +188,9 @@ class CircuitBoard extends StatelessWidget {
                       moduleLift: presentation3d
                           ? CircuitPresentationSpec.moduleRestingLift
                           : 0,
-                      coreLift: presentation3d ? 11.0 : 0,
+                      coreLift: presentation3d
+                          ? CircuitPresentationSpec.coreLift
+                          : 0,
                     ),
                   ),
                 ),
@@ -197,12 +201,12 @@ class CircuitBoard extends StatelessWidget {
       ),
     );
     if (!presentation3d) return board;
-    return _PreparationStageShell(boardTheme: boardTheme, child: board);
+    return _CircuitBoardStageShell(boardTheme: boardTheme, child: board);
   }
 }
 
-class _PreparationStageShell extends StatelessWidget {
-  const _PreparationStageShell({required this.boardTheme, required this.child});
+class _CircuitBoardStageShell extends StatelessWidget {
+  const _CircuitBoardStageShell({required this.boardTheme, required this.child});
 
   final BoardVisualTheme boardTheme;
   final Widget child;
@@ -936,7 +940,10 @@ class _CoreHub extends StatelessWidget {
             ),
           ),
         ),
-        Transform.translate(offset: const Offset(0, -11), child: hub),
+        Transform.translate(
+          offset: Offset(0, -CircuitPresentationSpec.coreLift),
+          child: hub,
+        ),
       ],
     );
   }
